@@ -2,18 +2,22 @@ package com.sandeep.eventrabackend.service;
 
 import com.sandeep.eventrabackend.dto.request.FeedbackRequest;
 import com.sandeep.eventrabackend.dto.response.FeedbackResponse;
+import com.sandeep.eventrabackend.dto.response.PublicFeedbackResponse;
 import com.sandeep.eventrabackend.exception.EventNotFoundException;
 import com.sandeep.eventrabackend.exception.FeedbackAlreadyExistsException;
 import com.sandeep.eventrabackend.exception.UserNotRegisteredException;
 import com.sandeep.eventrabackend.model.Event;
 import com.sandeep.eventrabackend.model.Feedback;
+import com.sandeep.eventrabackend.model.Role;
 import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.EventRegistrationRepository;
 import com.sandeep.eventrabackend.repository.EventRepository;
 import com.sandeep.eventrabackend.repository.FeedbackAnalyticsRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,15 +56,23 @@ public class FeedbackService {
             throw new FeedbackAlreadyExistsException("You have already submitted feedback for this event.");
         }
 
+        // Validate rating is within valid range
+        if (request.getRating() == null || request.getRating() < 1 || request.getRating() > 5) {
+            throw new IllegalArgumentException("Rating must be an integer between 1 and 5.");
+        }
+
         Feedback feedback = new Feedback();
         feedback.setUser(user);
         feedback.setEvent(event);
         feedback.setRating(request.getRating());
         feedback.setComment(request.getComment());
 
-        Feedback savedFeedback = feedbackRepository.save(feedback);
-
-        return mapToResponse(savedFeedback);
+        try {
+            Feedback savedFeedback = feedbackRepository.saveAndFlush(feedback);
+            return mapToResponse(savedFeedback);
+        } catch (DataIntegrityViolationException ex) {
+            throw new FeedbackAlreadyExistsException("You have already submitted feedback for this event.");
+        }
     }
 
     @Transactional(readOnly = true)
@@ -76,9 +88,28 @@ public class FeedbackService {
     }
 
     @Transactional(readOnly = true)
-    public List<FeedbackResponse> getOrganizerFeedback(Long organizerId) {
+    public List<FeedbackResponse> getOrganizerFeedback(Long organizerId, String callerEmail) {
+        User caller = userRepository.findByEmail(callerEmail)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + callerEmail));
+
+        boolean isAdmin = caller.getRole() == Role.ADMIN || caller.getRole() == Role.SUPER_ADMIN;
+        if (!isAdmin && !caller.getId().equals(organizerId)) {
+            throw new AccessDeniedException("You are not authorized to view feedback for this organizer.");
+        }
+
         return feedbackRepository.findByOrganizer(organizerId).stream()
                 .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<PublicFeedbackResponse> getEventFeedback(Long eventId) {
+        if (!eventRepository.existsById(eventId)) {
+            throw new EventNotFoundException("Event not found with ID: " + eventId);
+        }
+
+        return feedbackRepository.findByEvent_IdOrderBySubmittedAtDesc(eventId).stream()
+                .map(this::mapToPublicResponse)
                 .toList();
     }
 
@@ -87,6 +118,16 @@ public class FeedbackService {
                 .id(feedback.getId())
                 .eventId(feedback.getEvent().getId())
                 .userId(feedback.getUser().getId())
+                .rating(feedback.getRating())
+                .comment(feedback.getComment())
+                .submittedAt(feedback.getSubmittedAt())
+                .build();
+    }
+
+    private PublicFeedbackResponse mapToPublicResponse(Feedback feedback) {
+        return PublicFeedbackResponse.builder()
+                .id(feedback.getId())
+                .eventId(feedback.getEvent().getId())
                 .rating(feedback.getRating())
                 .comment(feedback.getComment())
                 .submittedAt(feedback.getSubmittedAt())

@@ -5,9 +5,9 @@ import com.sandeep.eventrabackend.dto.request.LoginRequest;
 import com.sandeep.eventrabackend.dto.response.AuthResponse;
 import com.sandeep.eventrabackend.model.Role;
 import com.sandeep.eventrabackend.model.User;
+import com.sandeep.eventrabackend.repository.BlacklistedTokenRepository;
 import com.sandeep.eventrabackend.repository.HackathonRegistrationRepository;
 import com.sandeep.eventrabackend.repository.NotificationRepository;
-import com.sandeep.eventrabackend.repository.TokenBlacklistRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -23,6 +23,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -53,7 +54,7 @@ public class AuthLogoutTests {
     private com.sandeep.eventrabackend.security.TokenBlacklistService tokenBlacklistService;
 
     @Autowired
-    private TokenBlacklistRepository tokenBlacklistRepository;
+    private BlacklistedTokenRepository blacklistedTokenRepository;
 
     private String jwtToken;
 
@@ -95,7 +96,8 @@ public class AuthLogoutTests {
     void testLogoutSuccess() throws Exception {
         mockMvc.perform(post("/api/auth/logout")
                         .header("Authorization", "Bearer " + jwtToken))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(cookie().maxAge("token", 0));
     }
 
     @Test
@@ -113,7 +115,7 @@ public class AuthLogoutTests {
     }
 
     @Test
-    @DisplayName("Revoked token stays rejected after in-memory cache is lost (DB-backed)")
+    @DisplayName("Revoked token stays rejected after a restart (DB-backed blacklist)")
     void testBlacklistPersistedInDatabase() throws Exception {
         // 1. Logout -> token is revoked
         mockMvc.perform(post("/api/auth/logout")
@@ -121,20 +123,30 @@ public class AuthLogoutTests {
                 .andExpect(status().isOk());
 
         // 2. The revoked entry is persisted to the database
-        assertTrue(tokenBlacklistRepository.count() >= 1,
+        assertTrue(blacklistedTokenRepository.count() >= 1,
                 "blacklist row should be persisted to the database");
 
-        // 3. Simulate a restart: drop the in-memory cache
-        java.lang.reflect.Field cache = com.sandeep.eventrabackend.security.TokenBlacklistService.class
-                .getDeclaredField("blacklist");
-        cache.setAccessible(true);
-        @SuppressWarnings("unchecked")
-        java.util.Map<String, ?> inMemory = (java.util.Map<String, ?>) cache.get(tokenBlacklistService);
-        inMemory.clear();
-
-        // 4. The token is still rejected, served from the persisted store
+        // 3. Simulate a restart: the store is read entirely from the database
+        // (no in-memory cache), so the revoked token must still be rejected.
         assertTrue(tokenBlacklistService.isBlacklisted(jwtToken),
-                "revoked token must still be rejected after the in-memory cache is lost");
+                "revoked token must still be rejected after a restart");
+    }
+
+    @Test
+    @DisplayName("Cookie-only session authenticates profile and logout clears cookie (#11974)")
+    void testCookieSessionAndLogout() throws Exception {
+        mockMvc.perform(get("/api/users/profile")
+                        .cookie(new jakarta.servlet.http.Cookie("token", jwtToken)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/auth/logout")
+                        .cookie(new jakarta.servlet.http.Cookie("token", jwtToken)))
+                .andExpect(status().isOk())
+                .andExpect(cookie().maxAge("token", 0));
+
+        mockMvc.perform(get("/api/users/profile")
+                        .cookie(new jakarta.servlet.http.Cookie("token", jwtToken)))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import {
-  X, Briefcase, Globe, Linkedin, Twitter, Github,
+  X, Briefcase, Globe,
   Send, MessageSquare, ArrowLeft
 } from "lucide-react";
+import { FaLinkedin as Linkedin, FaTwitter as Twitter, FaGithub as Github } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { safeJsonParse } from "utils/safeJsonParse";
 import { useAuth } from "context/AuthContext";
@@ -19,6 +20,7 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
   const modalRef = useRef(null);
   const chatEndRef = useRef(null);
   const replyTimerRef = useRef(null);
+  const chatLeadCapturedRef = useRef(false);
 
   /* ---------------- Lead Capture ---------------- */
   const captureLead = (action) => {
@@ -64,6 +66,7 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
 
     setShowChat(false);
     setChatMessage("");
+    chatLeadCapturedRef.current = false;
     setChatHistory([
       {
         id: 1,
@@ -76,6 +79,8 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
       },
     ]);
 
+    captureLead("Booth Visit");
+
     return () => {
       document.body.style.overflow = "unset";
       if (replyTimerRef.current) {
@@ -83,6 +88,8 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
         replyTimerRef.current = null;
       }
     };
+    // captureLead reads current user from closure; booth label only affects welcome text
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- record one visit per open
   }, [isOpen, booth]);
 
   /* ---------------- Auto Scroll Chat ---------------- */
@@ -228,7 +235,13 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
                 </div>
 
                 <button
-                  onClick={() => setShowChat(true)}
+                  onClick={() => {
+                    setShowChat(true);
+                    if (!chatLeadCapturedRef.current) {
+                      chatLeadCapturedRef.current = true;
+                      captureLead("Chat Initiated");
+                    }
+                  }}
                   className="w-full bg-indigo-600 hover:bg-indigo-700 py-3 rounded-xl text-xs uppercase font-bold"
                 >
                   <MessageSquare size={14} /> Chat

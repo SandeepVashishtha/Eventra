@@ -8,25 +8,37 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import com.sandeep.eventrabackend.dto.request.PushSubscriptionRequest;
+import com.sandeep.eventrabackend.service.PushSubscriptionService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Map;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/notifications")
+@PreAuthorize("isAuthenticated()")
 @Tag(name = "Notifications", description = "Endpoints for user notifications")
 public class NotificationController {
 
     private final NotificationService notificationService;
+    private final PushSubscriptionService pushSubscriptionService;
 
-    public NotificationController(NotificationService notificationService) {
+    public NotificationController(NotificationService notificationService,
+                                  PushSubscriptionService pushSubscriptionService) {
         this.notificationService = notificationService;
+        this.pushSubscriptionService = pushSubscriptionService;
     }
 
     @GetMapping
@@ -46,6 +58,9 @@ public class NotificationController {
             )
     })
     public ResponseEntity<List<NotificationResponse>> getNotifications(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(401).build();
+        }
         String email = authentication.getName();
         return ResponseEntity.ok(notificationService.getNotificationsForUser(email));
     }
@@ -73,6 +88,9 @@ public class NotificationController {
     public ResponseEntity<NotificationResponse> markAsRead(
             @PathVariable Long id,
             Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(401).build();
+        }
         String email = authentication.getName();
         return ResponseEntity.ok(notificationService.markAsRead(id, email));
     }
@@ -94,6 +112,9 @@ public class NotificationController {
             )
     })
     public ResponseEntity<List<NotificationResponse>> markAllAsRead(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(401).build();
+        }
         String email = authentication.getName();
         return ResponseEntity.ok(notificationService.markAllAsRead(email));
     }
@@ -121,8 +142,30 @@ public class NotificationController {
     public ResponseEntity<Void> deleteNotification(
             @PathVariable Long id,
             Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(401).build();
+        }
         String email = authentication.getName();
         notificationService.deleteNotification(id, email);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/push-subscriptions")
+    @Operation(summary = "Register a browser push subscription")
+    public ResponseEntity<Map<String, Object>> subscribePush(
+            @Valid @RequestBody PushSubscriptionRequest request,
+            Authentication authentication) {
+        pushSubscriptionService.subscribe(authentication.getName(), request);
+        return ResponseEntity.ok(Map.of("ok", true));
+    }
+
+    @PostMapping("/push-subscriptions/unsubscribe")
+    @Operation(summary = "Remove the current user's push subscription")
+    public ResponseEntity<Map<String, Object>> unsubscribePush(
+            @RequestBody(required = false) PushSubscriptionRequest request,
+            Authentication authentication) {
+        String endpoint = request != null ? request.getEndpoint() : null;
+        pushSubscriptionService.unsubscribe(authentication.getName(), endpoint);
+        return ResponseEntity.ok(Map.of("ok", true));
     }
 }
