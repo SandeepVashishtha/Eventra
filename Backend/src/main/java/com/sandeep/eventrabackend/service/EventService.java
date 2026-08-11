@@ -1304,8 +1304,7 @@ public class EventService {
         }
 
         public String buildIcsFeed(Long eventId) {
-                Event event = eventRepository.findById(eventId)
-                                .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + eventId));
+                Event event = requirePublicEvent(eventId);
 
                 java.time.Instant start = event.getEventDate() != null
                                 ? event.getEventDate().atZone(java.time.ZoneId.systemDefault()).toInstant()
