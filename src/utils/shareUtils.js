@@ -22,6 +22,15 @@ const DEFAULT_EVENT_SHARE_HOST = "sandeepvashishtha.tech";
 //
 // Rejects: external URLs, javascript: URIs, data: URIs
 // ---------------------------------------------------------------------------
+const normalizeOrigin = (origin) => {
+  if (!origin) return "";
+  try {
+    return new URL(origin).origin;
+  } catch {
+    return origin.replace(/\/+$/, "");
+  }
+};
+
 export const isValidShareUrl = (url) => {
   if (!url || typeof url !== "string") return false;
   if (url.startsWith("/")) return true; // relative path — always same-origin
@@ -31,15 +40,14 @@ export const isValidShareUrl = (url) => {
     if (parsed.protocol === "javascript:" || parsed.protocol === "data:") return false;
 
     const allowedOrigins = new Set();
-    if (typeof window !== "undefined") allowedOrigins.add(window.location.origin);
+    if (typeof window !== "undefined") {
+      allowedOrigins.add(normalizeOrigin(window.location.origin));
+    }
 
     const configuredPublicUrl = ENV.PUBLIC_URL;
     if (configuredPublicUrl) {
-      try {
-        allowedOrigins.add(new URL(configuredPublicUrl).origin);
-      } catch {
-        /* ignore malformed env var */
-      }
+      const normalized = normalizeOrigin(configuredPublicUrl);
+      if (normalized) allowedOrigins.add(normalized);
     }
 
     return allowedOrigins.has(parsed.origin);
