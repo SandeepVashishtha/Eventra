@@ -44,8 +44,8 @@ export const validateForm = (formData) => {
   }
   if (formData.capacity) {
     const capacity = Number(formData.capacity);
-    if (!capacity || capacity <= 0) {
-      newErrors.capacity = "Please enter a valid number of attendees";
+    if (!Number.isFinite(capacity) || capacity <= 0 || !Number.isInteger(capacity)) {
+      newErrors.capacity = "Please enter a valid whole number of attendees";
     } else if (capacity > 100000) {
       newErrors.capacity = "Maximum capacity is 100,000 attendees";
     }
