@@ -43,7 +43,7 @@ export default function AnonymousZkpFeedbackForm({
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">
               Anonymous ZKP Feedback Portal
             </h2>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-gray-500 dark:text-gray-200">
               100% Cryptographic Anonymity • {eventName}
             </p>
           </div>
@@ -62,7 +62,7 @@ export default function AnonymousZkpFeedbackForm({
             Your feedback was verified using Zero-Knowledge Proofs confirming event membership without revealing your name, email, or IP address.
           </p>
           {submittedProof && (
-            <div className="p-3 rounded-lg bg-white dark:bg-gray-900 text-left font-mono text-[10px] space-y-1 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-800">
+            <div className="p-3 rounded-lg bg-white dark:bg-gray-900 text-left font-mono text-[10px] space-y-1 text-gray-600 dark:text-gray-200 border border-gray-200 dark:border-gray-800">
               <div>Nullifier Hash: {submittedProof.nullifierHash}</div>
               <div>Proof Hash: {submittedProof.proofHash}</div>
             </div>
@@ -112,7 +112,7 @@ export default function AnonymousZkpFeedbackForm({
                       ? lvl === "CRITICAL"
                         ? "bg-rose-600 text-white"
                         : "bg-indigo-600 text-white"
-                      : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
+                      : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-200"
                   }`}
                 >
                   {lvl}

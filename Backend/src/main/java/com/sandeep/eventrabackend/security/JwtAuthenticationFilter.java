@@ -113,4 +113,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
         return authCookieHelper.extractToken(request);
     }
+
+    public boolean isTokenIssuedBeforePasswordUpdate(Date tokenIssuedAt, Date passwordUpdatedAt) {
+        if (passwordUpdatedAt == null || tokenIssuedAt == null) {
+            return false;
+        }
+        return tokenIssuedAt.before(passwordUpdatedAt);
+    }
 }

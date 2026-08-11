@@ -56,7 +56,7 @@ const ReAuthModal = ({ onSuccess }) => {
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
             Verify Your Session
           </h2>
-          <p className="text-gray-500 dark:text-gray-400 text-sm">
+          <p className="text-gray-500 dark:text-gray-200 text-sm">
             For your security, we need to verify your identity. Your session has been flagged due to inactivity or a security rule.
           </p>
         </div>

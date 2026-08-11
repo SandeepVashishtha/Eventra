@@ -1,3 +1,7 @@
+import com.eventra.specification.SearchSpecification;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 package com.sandeep.eventrabackend.service;
 
 import com.sandeep.eventrabackend.dto.request.CancelEventRequest;
@@ -381,18 +385,21 @@ public class EventService {
         }
 
         private int calculateCurrentStreak(List<EventRegistration> registrations) {
+                LocalDate today = LocalDate.now();
                 LinkedHashSet<LocalDate> dates = registrations.stream()
                                 .filter(registration -> "CONFIRMED".equals(registration.getStatus()))
                                 .map(EventRegistration::getEvent)
                                 .filter(event -> event != null && event.getEventDate() != null)
                                 .map(event -> event.getEventDate().toLocalDate())
+                                .filter(date -> !date.isAfter(today))
                                 .sorted(java.util.Comparator.reverseOrder())
                                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
                 int streak = 0;
-                LocalDate expected = null;
+                // A current streak may end today or yesterday.
+                LocalDate expected = dates.contains(today) ? today : today.minusDays(1);
                 for (LocalDate date : dates) {
-                        if (expected == null || date.equals(expected)) {
+                        if (date.equals(expected)) {
                                 streak++;
                                 expected = date.minusDays(1);
                         } else if (date.isBefore(expected)) {
@@ -522,7 +529,8 @@ public class EventService {
          * @throws EventNotFoundException if the event does not exist
          */
         @Transactional
-        public EventResponse updateEvent(Long id, EventUpdateRequest request, String userEmail) {
+        public EventResponse @CacheEvict(value = "events", key = "#id")
+    updateEvent(Long id, EventUpdateRequest request, String userEmail) {
                 Event event = eventRepository.findById(id)
                                 .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + id));
 

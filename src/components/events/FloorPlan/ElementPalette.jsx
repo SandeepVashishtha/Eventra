@@ -48,7 +48,7 @@ export default function ElementPalette({
       <div className="fp-sidebar-section">
         <div className="fp-section-title">Designer Settings</div>
         <div className="fp-toggle-container mb-4">
-          <span className="text-xs font-semibold text-gray-300 dark:text-gray-400">Snap to 20px Grid</span>
+          <span className="text-xs font-semibold text-gray-300 dark:text-gray-200">Snap to 20px Grid</span>
           <label className="fp-switch">
             <input type="checkbox" checked={snapToGrid} onChange={(e) => setSnapToGrid(e.target.checked)} />
             <span className="fp-slider-round"></span>
@@ -85,7 +85,7 @@ export default function ElementPalette({
         <div className="fp-import-zone">
           <label className="fp-import-label cursor-pointer">
             <Upload size={18} className="text-indigo-400 mb-1.5" />
-            <span className="text-[11px] font-bold text-gray-300 dark:text-gray-400">Restore Layout JSON</span>
+            <span className="text-[11px] font-bold text-gray-300 dark:text-gray-200">Restore Layout JSON</span>
             <span className="text-[9px] text-gray-500 dark:text-gray-500 mt-0.5 text-center">Click to browse and upload</span>
             <input type="file" accept=".json" className="hidden" onChange={handleImportJSON} />
           </label>

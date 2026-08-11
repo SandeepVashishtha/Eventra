@@ -32,7 +32,7 @@ export default function ImageQualityPreviewModal({
               <h3 className="font-bold text-base text-gray-900 dark:text-white">
                 Client-Side WASM Image Compressor
               </h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-gray-500 dark:text-gray-200">
                 Zero-Server WebP Conversion & Scaling
               </p>
             </div>
@@ -52,7 +52,7 @@ export default function ImageQualityPreviewModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Original Card */}
             <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 space-y-2">
-              <div className="flex items-center justify-between text-xs font-semibold text-gray-500 dark:text-gray-400">
+              <div className="flex items-center justify-between text-xs font-semibold text-gray-500 dark:text-gray-200">
                 <span>Original File</span>
                 <span className="font-mono text-gray-700 dark:text-gray-300">
                   {formatBytes(compressedResult.originalSize)}
@@ -118,7 +118,7 @@ export default function ImageQualityPreviewModal({
           <div className="flex items-center gap-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              className="px-4 py-2 text-xs font-semibold rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
             >
               Cancel
             </button>

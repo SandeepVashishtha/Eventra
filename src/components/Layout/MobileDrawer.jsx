@@ -40,7 +40,7 @@ const MobileDrawerHeader = ({ closeBtnRef, closeAllMenus }) => (
       onClick={closeAllMenus}
       // 🔥 FIX 2: Added missing aria-label and focus-visible states for screen readers/keyboard users
       aria-label="Close mobile menu"
-      className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-gray-400 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+      className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-gray-200 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
     >
       <ChevronDown className="w-6 h-6 rotate-90" />
     </button>
