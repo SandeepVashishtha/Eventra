@@ -179,9 +179,9 @@ export const calculateFeedbackTrend = (
     return "Stable";
   }
 
-  const first = trends[0].rating;
+  const first = trends[0].rating || 0;
   const last =
-    trends[trends.length - 1].rating;
+    trends[trends.length - 1].rating || 0;
 
   if (last > first + 0.2) {
     return "Improving";
