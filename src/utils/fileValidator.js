@@ -26,11 +26,14 @@ const DEFAULT_MAX_SIZE_MB = 5;
  * @param {Object} options - Validation options
  * @param {number} options.maxSizeMB - Maximum file size in MB (default: 5)
  * @param {string[]} options.allowedTypes - Allowed MIME types
+ * @param {string[]} options.allowedExtensions - Allowed extensions
  * @returns {{ valid: boolean, error?: string }}
  */
 export function validateImageFile(file, options = {}) {
-  const maxSizeMB = options.maxSizeMB || DEFAULT_MAX_SIZE_MB;
-  const allowedTypes = options.allowedTypes || ALLOWED_IMAGE_TYPES;
+  // Use nullish coalescing (??) so explicitly passing 0 is respected
+  const maxSizeMB = options.maxSizeMB ?? DEFAULT_MAX_SIZE_MB;
+  const allowedTypes = options.allowedTypes ?? ALLOWED_IMAGE_TYPES;
+  const allowedExtensions = options.allowedExtensions ?? ALLOWED_IMAGE_EXTENSIONS;
 
   if (!file) {
     return { valid: false, error: "No file provided" };
@@ -68,10 +71,10 @@ export function validateImageFile(file, options = {}) {
     };
   }
 
-  if (!ALLOWED_IMAGE_EXTENSIONS.includes(ext)) {
+  if (!allowedExtensions.includes(ext)) {
     return {
       valid: false,
-      error: `File extension "${ext}" is not a recognized image format`,
+      error: `File extension "${ext}" is not a recognized or allowed image format`,
     };
   }
 
@@ -87,7 +90,8 @@ export function validateImageFile(file, options = {}) {
  * @returns {{ valid: boolean, error?: string }}
  */
 export function validateFile(file, options = {}) {
-  const maxSizeMB = options.maxSizeMB || 10;
+  // Use nullish coalescing (??) so explicitly passing 0 is respected
+  const maxSizeMB = options.maxSizeMB ?? 10;
 
   if (!file) {
     return { valid: false, error: "No file provided" };
@@ -99,6 +103,11 @@ export function validateFile(file, options = {}) {
       valid: false,
       error: `File exceeds ${maxSizeMB}MB limit`,
     };
+  }
+
+  // Added missing zero-byte check for consistency
+  if (file.size === 0) {
+    return { valid: false, error: "File is empty" };
   }
 
   const fileName = file.name.toLowerCase();
