@@ -36,6 +36,7 @@ const EventFiltersToolbar = ({
   searchQuery,
   onSearchChange,
   onResetFilters,
+  currentFilterConfig = {},
   visibleEvents = [],
   // onApplyPreset,
   // totalElements = 0,
