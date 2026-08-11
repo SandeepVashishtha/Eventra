@@ -294,7 +294,16 @@ export const getEventWaitlist = async (eventId, userId) => {
   const records = await getGlobalWaitlist(userId);
   return records
     .filter((r) => r.eventId === id && r.status === "waiting")
-    .sort((a, b) => (new Date(a.joinedAt).getTime() || Infinity) - (new Date(b.joinedAt).getTime() || Infinity));
+    .sort((a, b) => {
+      const ta = new Date(a.joinedAt).getTime();
+      const tb = new Date(b.joinedAt).getTime();
+      const aValid = Number.isFinite(ta);
+      const bValid = Number.isFinite(tb);
+      if (!aValid && !bValid) return 0;
+      if (!aValid) return 1;
+      if (!bValid) return -1;
+      return ta - tb;
+    });
 };
 
 // Calculate queue position (1-indexed) for a user on a specific event
