@@ -39,7 +39,7 @@ function evaluateSubmission(submission) {
                   {comparison.similarityPercentage}% Match
                 </span>
               </h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-gray-500 dark:text-gray-200">
                 Comparing {comparison.teamNameA} vs {comparison.teamNameB}
               </p>
             </div>
@@ -87,7 +87,7 @@ function evaluateSubmission(submission) {
 
           <button
             onClick={onClose}
-            className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors"
+            className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
           >
             Close Diff Inspector
           </button>

@@ -328,7 +328,7 @@ const ContactUsInner = () => {
                 >
                   {t("contactUs.formHeading")}
                 </h2>
-                <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                <p className="mt-2 text-sm text-gray-600 dark:text-gray-200">
                   {t("contactUs.formSubtitle")}
                 </p>
               </div>

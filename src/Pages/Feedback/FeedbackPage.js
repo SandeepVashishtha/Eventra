@@ -60,7 +60,7 @@ const StarRating = ({ rating, onRatingChange, error }) => {
           <motion.span
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
-            className="ml-3 text-sm text-gray-600 dark:text-gray-400"
+            className="ml-3 text-sm text-gray-600 dark:text-gray-200"
           >
             {rating === 1 && t("feedback.starRatingLabels.1")}
             {rating === 2 && t("feedback.starRatingLabels.2")}
@@ -130,7 +130,7 @@ const FloatingInput = ({
               ? "text-red-500 dark:text-red-400"
               : isFocused
                 ? "text-black dark:text-white"
-                : "text-gray-500 dark:text-gray-400"
+                : "text-gray-500 dark:text-gray-200"
             }`}
         >
           {label} {required && <span className="text-red-500">*</span>}
@@ -231,7 +231,7 @@ const CustomFloatingSelect = ({
               ? "text-red-500 dark:text-red-400"
               : isOpen
                 ? "text-black dark:text-white"
-                : "text-gray-500 dark:text-gray-400"
+                : "text-gray-500 dark:text-gray-200"
             }`}
         >
           {label} {required && <span className="text-red-500">*</span>}
@@ -256,14 +256,14 @@ const CustomFloatingSelect = ({
                 <li
                   key={option.value}
                   onClick={() => handleSelect(option.value)}
-                  className={`px-4 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 flex items-center
+                  className={`px-4 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 flex items-center
                      ${value === option.value
                       ? "bg-indigo-100 dark:bg-indigo-500"
                       : ""
                     }`}
                 >
                   {option.icon && (
-                    <option.icon className="w-5 h-5 mr-3 text-gray-500 dark:text-gray-400" />
+                    <option.icon className="w-5 h-5 mr-3 text-gray-500 dark:text-gray-200" />
                   )}
                   {option.label}
                   {value === option.value && (
@@ -586,7 +586,7 @@ const FeedbackPage = () => {
                   {t("feedback.formHeading")}
                 </h2>
 
-                <p className="mt-2 text-gray-600 dark:text-gray-400">
+                <p className="mt-2 text-gray-600 dark:text-gray-200">
                   {t("feedback.formSubtitle")}
                 </p>
               </div>
@@ -686,7 +686,7 @@ const FeedbackPage = () => {
                                   ? "text-red-500"
                                   : formData.featureProblem
                                   ? "text-black dark:text-white"
-                                  : "text-gray-500 dark:text-gray-400"
+                                  : "text-gray-500 dark:text-gray-200"
                               }`}
                             >
                               {t("feedback.featureRequest.problemLabel")}{" "}
@@ -718,7 +718,7 @@ const FeedbackPage = () => {
                               className={`absolute left-14 pointer-events-none transition-all duration-200 ease-out ${
                                 formData.featureAlternatives
                                   ? "top-2 text-xs font-medium text-black dark:text-white"
-                                  : "top-4 text-sm text-gray-500 dark:text-gray-400"
+                                  : "top-4 text-sm text-gray-500 dark:text-gray-200"
                               }`}
                             >
                               {t("feedback.featureRequest.alternativesLabel")}
@@ -771,7 +771,7 @@ const FeedbackPage = () => {
                           ? "text-red-500"
                           : formData.message
                             ? "text-black dark:text-white"
-                            : "text-gray-500 dark:text-gray-400"
+                            : "text-gray-500 dark:text-gray-200"
                         }`}
                     >
                       {t("feedback.formMessage")}
@@ -810,7 +810,7 @@ const FeedbackPage = () => {
                           <span
                             className={`font-medium transition-colors duration-300 flex-1 leading-relaxed ${
                               messageLength === 0
-                                ? "text-gray-500 dark:text-gray-400"
+                                ? "text-gray-500 dark:text-gray-200"
                                 : messageLength < 20
                                 ? "text-yellow-600 dark:text-yellow-400"
                                 : messageLength >= 400
@@ -828,7 +828,7 @@ const FeedbackPage = () => {
                           </span>
 
                           {/* Character Counter */}
-                          <span className={`font-mono shrink-0 text-gray-500 dark:text-gray-400 ${messageLength === MAX_MESSAGE_LENGTH ? "text-red-500 dark:text-red-400 font-bold" : ""}`}>
+                          <span className={`font-mono shrink-0 text-gray-500 dark:text-gray-200 ${messageLength === MAX_MESSAGE_LENGTH ? "text-red-500 dark:text-red-400 font-bold" : ""}`}>
                             {messageLength} / {MAX_MESSAGE_LENGTH}
                           </span>
                         </div>
@@ -868,7 +868,7 @@ const FeedbackPage = () => {
                           <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
                             {t("feedback.sentimentLabel", { sentiment: getSentimentDisplay(sentimentScore).label })}
                           </p>
-                          <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                          <p className="text-[10px] text-gray-500 dark:text-gray-200">
                             {t("feedback.sentimentSubtitle")}
                           </p>
                         </div>

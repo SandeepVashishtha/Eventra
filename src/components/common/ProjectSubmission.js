@@ -118,7 +118,7 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
         <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100 mb-2">
           Please Login
         </h2>
-        <p className="text-gray-600 dark:text-gray-400 mb-6">
+        <p className="text-gray-600 dark:text-gray-200 mb-6">
           You need to be logged in to submit a project.
         </p>
         <button

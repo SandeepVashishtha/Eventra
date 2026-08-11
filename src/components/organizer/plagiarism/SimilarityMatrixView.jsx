@@ -33,7 +33,7 @@ export default function SimilarityMatrixView({
 
         <div className="flex items-center gap-2">
           <Filter className="w-4 h-4 text-gray-400" />
-          <span className="text-xs text-gray-500 dark:text-gray-400">Risk Filter:</span>
+          <span className="text-xs text-gray-500 dark:text-gray-200">Risk Filter:</span>
           <select
             value={filterRisk}
             onChange={(e) => setFilterRisk(e.target.value)}
@@ -52,7 +52,7 @@ export default function SimilarityMatrixView({
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/60 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <tr className="border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/60 text-xs font-semibold text-gray-500 dark:text-gray-200 uppercase tracking-wider">
                 <th className="py-3 px-4">Team A</th>
                 <th className="py-3 px-4">Team B</th>
                 <th className="py-3 px-4">Similarity</th>
@@ -63,7 +63,7 @@ export default function SimilarityMatrixView({
             <tbody className="divide-y divide-gray-200 dark:divide-gray-800 text-xs">
               {filteredComparisons.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="py-8 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan="5" className="py-8 text-center text-gray-500 dark:text-gray-200">
                     No plagiarism flags matching active filters.
                   </td>
                 </tr>
