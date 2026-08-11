@@ -2,23 +2,37 @@ import { logger } from "./logger.js";
 import { jsPDF } from "jspdf";
 
 export const exportTicketToPdf = async (event, userData) => {
+  if (!event || typeof event !== "object") {
+    logger.error("exportTicketToPdf called with invalid event object");
+    return false;
+  }
+
   logger.log("Generating PDF Ticket for:", event?.title);
 
   const doc = new jsPDF();
 
-  doc.setFontSize(20);
-  doc.text("Eventra Ticket", 105, 20, { align: "center" });
+  const title = String(event.title || "Unknown Event").slice(0, 80);
+  const attendee = String(userData?.name || userData?.email || "Guest").slice(0, 60);
+  const location = String(event.location || "Virtual").slice(0, 60);
+  const eventDate = event.date
+    ? new Date(event.date).toLocaleDateString()
+    : new Date().toLocaleDateString();
 
-  doc.setFontSize(14);
-  doc.text(`Event: ${event?.title || "Unknown Event"}`, 20, 50);
-  doc.text(`Attendee: ${userData?.name || "Guest"}`, 20, 65);
-  doc.text(`Location: ${event?.location || "Virtual"}`, 20, 80);
-  doc.text(`Date: ${event?.date || new Date().toLocaleDateString()}`, 20, 95);
+  const ticketId = String(event.id || Date.now());
+
+  doc.setFontSize(22);
+  doc.text("Eventra Event Ticket", 105, 20, { align: "center" });
+
+  doc.setFontSize(12);
+  doc.text(`Event: ${title}`, 20, 50);
+  doc.text(`Attendee: ${attendee}`, 20, 65);
+  doc.text(`Location: ${location}`, 20, 80);
+  doc.text(`Date: ${eventDate}`, 20, 95);
 
   doc.setFontSize(10);
-  doc.text("Thank you for registering with Eventra!", 105, 120, { align: "center" });
+  doc.text("Present this ticket at the entry scanner. Thank you for using Eventra!", 105, 120, { align: "center" });
 
-  doc.save(`Eventra_Ticket_${event?.id || "event"}.pdf`);
+  doc.save(`Eventra_Ticket_${ticketId}.pdf`);
 
   return true;
 };

@@ -50,6 +50,27 @@ public class EventRegistration {
     @Column(name = "show_profile_in_attendee_directory", nullable = false)
     private boolean showProfileInAttendeeDirectory = false;
 
+    /**
+     * Group ID for group/bulk registrations (e.g., "Table of 10" tickets).
+     * All registrations with the same groupId belong to the same group.
+     */
+    @Column(name = "group_id", length = 100)
+    private String groupId;
+
+    /**
+     * Flag indicating if this registration is the primary buyer for a group.
+     * Used to identify the main contact person for group tickets.
+     */
+    @Column(name = "is_group_primary", nullable = false)
+    private boolean isGroupPrimary = false;
+
+    /**
+     * Name of the group (e.g., "Acme Corp - Table 5").
+     * Used for display purposes when managing group check-ins.
+     */
+    @Column(name = "group_name", length = 200)
+    private String groupName;
+
     public Long getId() {
         return id;
     }
@@ -104,5 +125,29 @@ public class EventRegistration {
 
     public void setShowProfileInAttendeeDirectory(boolean showProfileInAttendeeDirectory) {
         this.showProfileInAttendeeDirectory = showProfileInAttendeeDirectory;
+    }
+
+    public String getGroupId() {
+        return groupId;
+    }
+
+    public void setGroupId(String groupId) {
+        this.groupId = groupId;
+    }
+
+    public boolean isGroupPrimary() {
+        return isGroupPrimary;
+    }
+
+    public void setGroupPrimary(boolean groupPrimary) {
+        isGroupPrimary = groupPrimary;
+    }
+
+    public String getGroupName() {
+        return groupName;
+    }
+
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
     }
 }

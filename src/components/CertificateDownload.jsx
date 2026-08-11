@@ -1,3 +1,4 @@
+import useToast from "hooks/useToast";
 import { useState } from "react";
 import jsPDF from "jspdf";
 import { toast } from "react-toastify";
@@ -66,6 +67,7 @@ export const generateCertificatePDF = (options) => {
 };
 
 const CertificateDownload = ({ eventName, eventDate, eventType, organizerName, template = 'classic' }) => {
+  const { loading: toastLoading } = useToast();
   const { user } = useAuth();
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -80,16 +82,18 @@ const CertificateDownload = ({ eventName, eventDate, eventType, organizerName, t
   const handleGenerate = async () => {
     if (isGenerating) return;
     setIsGenerating(true);
-    const toastId = toast.loading("Generating your certificate...");
+    const dismiss = toastLoading("Generating your certificate...");
     try {
       await new Promise(resolve => setTimeout(resolve, 50));
       const participantName = `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Guest Participant";
       const doc = generateCertificatePDF({ participantName, eventName, eventDate, eventType, organizerName, template });
       const safeFileName = `${sanitizeText(eventName || "Event", 30).replace(/[^a-zA-Z0-9]/g, "_")}_Certificate.pdf`;
       doc.save(safeFileName);
-      toast.update(toastId, { render: "Certificate downloaded!", type: "success", isLoading: false, autoClose: 3000 });
+      dismiss();
+      toast.success("Certificate downloaded!", { autoClose: 3000 });
     } catch {
-      toast.update(toastId, { render: "Failed to generate certificate.", type: "error", isLoading: false, autoClose: 3000 });
+      dismiss();
+      toast.error("Failed to generate certificate.", { autoClose: 3000 });
     } finally {
       setIsGenerating(false);
     }

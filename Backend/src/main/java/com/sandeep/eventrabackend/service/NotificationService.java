@@ -19,7 +19,11 @@ public class NotificationService {
         this.notificationRepository = notificationRepository;
     }
 
+    @Transactional(readOnly = true)
     public List<NotificationResponse> getNotificationsForUser(String email) {
+        if (email == null || email.isBlank()) {
+            return List.of();
+        }
         List<Notification> notifications = notificationRepository.findByUserEmailOrderByCreatedAtDesc(email);
         return notifications.stream()
                 .map(this::mapToResponse)

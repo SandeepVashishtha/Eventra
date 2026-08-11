@@ -1,7 +1,6 @@
 package com.sandeep.eventrabackend.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -31,12 +30,10 @@ public class HackathonUpdateRequest {
     private String organizer;
 
     @NotNull(message = "Start date is required")
-    @Future(message = "Start date must be in the future")
     @Schema(description = "Start date and time of the hackathon")
     private LocalDateTime startDate;
 
     @NotNull(message = "End date is required")
-    @Future(message = "End date must be in the future")
     @Schema(description = "End date and time of the hackathon")
     private LocalDateTime endDate;
 
@@ -52,7 +49,6 @@ public class HackathonUpdateRequest {
     private String prizePool;
 
     @NotNull(message = "Registration deadline is required")
-    @Future(message = "Registration deadline must be in the future")
     @Schema(description = "Deadline for registration")
     private LocalDateTime registrationDeadline;
 
