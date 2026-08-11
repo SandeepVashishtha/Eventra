@@ -689,6 +689,16 @@ if (typeof window !== "undefined") {
 // written to localStorage, so this Map is the only in-flight plaintext store.
 const pendingWrites = new Map();
 
+// Keys with a queued / in-flight / completed remove. Read helpers treat them
+// as absent immediately, before the queued remove op reaches localStorage, so
+// a synchronous removeItem is visible to getItem / getItemAsync right away.
+const removedKeys = new Set();
+
+// True between a clear() call and its queued clear op reaching localStorage.
+// While set, every read reports null so a clear is visible immediately even
+// though the disk wipe is serialized behind earlier queued writes.
+let pendingClear = false;
+
 /**
  * Encrypts `value` and writes the ciphertext to localStorage under `key`.
  *
@@ -715,28 +725,54 @@ const writeWithEncryption = async (key, value) => {
 };
 
 export const syncSecureStorage = {
-  // Serialized write queue: ensures last-write-wins and no plaintext window.
-  // Each key enqueues its latest value; the queue processes one at a time,
-  // writing only the ciphertext to localStorage. If the queue is already
-  // processing, a new enqueue updates the pending value for that key without
-  // starting a new chain, so the final write always reflects the last call.
-  _writeQueue: new Map(),
+  // Serialized mutation queue: every set / remove / clear is enqueued in call
+  // order and executed one at a time by _drainQueue. This guarantees
+  // last-write-wins on disk for the same key (concurrent setItem calls can no
+  // longer write out of order because encryption happens inside the queue),
+  // and that a remove / clear issued after a set can never land on disk
+  // before that set (issue #14613). Reads stay consistent because the
+  // in-memory state (pendingWrites / removedKeys / pendingClear) is updated
+  // synchronously, before the queued op reaches localStorage.
+  _opQueue: [],
   _processing: false,
 
-  _processQueue: async function () {
+  /**
+   * Append a mutation op and return a promise that resolves when it lands on
+   * disk. Never enqueues inside _drainQueue, so the writer cannot recursively
+   * re-acquire itself.
+   * @private
+   */
+  _enqueue: function (op) {
+    return new Promise((resolve, reject) => {
+      this._opQueue.push({ ...op, resolve, reject });
+      this._drainQueue();
+    });
+  },
+
+  /**
+   * Serialized writer. Processes queued ops one at a time; ops enqueued while
+   * a batch is running are picked up by the next loop iteration.
+   * @private
+   */
+  _drainQueue: async function () {
     if (this._processing) return;
     this._processing = true;
     try {
-      while (this._writeQueue.size > 0) {
-        const entries = [...this._writeQueue.entries()];
-        this._writeQueue.clear();
-        for (const [key, plaintext] of entries) {
-          try {
-            const encrypted = await encryptValue(key, plaintext);
-            localStorage.setItem(key, encrypted);
-          } catch (err) {
-            console.error("[secureStorage] Encryption failed for", key, err);
+      while (this._opQueue.length > 0) {
+        const { key, type, value, resolve, reject } = this._opQueue.shift();
+        try {
+          if (type === "clear") {
+            localStorage.clear();
+            pendingClear = false;
+          } else if (type === "remove") {
+            localStorage.removeItem(key);
+          } else {
+            await writeWithEncryption(key, value);
           }
+          resolve();
+        } catch (err) {
+          console.error("[secureStorage] Mutation failed for", key, err);
+          reject(err);
         }
       }
     } finally {
@@ -765,10 +801,11 @@ export const syncSecureStorage = {
    * @returns {Promise<boolean>} `true` on success; `false` when the write
    *   could not be persisted (localStorage full, encryption error, etc.).
    */
-  setItem: async (key, value) => {
+  setItem: async function (key, value) {
     try {
       pendingWrites.set(key, value);
-      await writeWithEncryption(key, value);
+      removedKeys.delete(key);
+      await this._enqueue({ key, type: "set", value });
       if (pendingWrites.get(key) === value) {
         pendingWrites.delete(key);
       }
@@ -798,8 +835,14 @@ export const syncSecureStorage = {
    */
   getItem: (key) => {
     try {
+      if (pendingClear) {
+        return null;
+      }
       if (pendingWrites.has(key)) {
         return pendingWrites.get(key);
+      }
+      if (removedKeys.has(key)) {
+        return null;
       }
       return localStorage.getItem(key);
     } catch (error) {
@@ -827,8 +870,14 @@ export const syncSecureStorage = {
    */
   getItemAsync: async (key) => {
     try {
+      if (pendingClear) {
+        return null;
+      }
       if (pendingWrites.has(key)) {
         return pendingWrites.get(key);
+      }
+      if (removedKeys.has(key)) {
+        return null;
       }
 
       const stored = localStorage.getItem(key);
@@ -858,11 +907,15 @@ export const syncSecureStorage = {
    *
    * @param {string} key
    */
-  removeItem: (key) => {
+  removeItem: function (key) {
     try {
       /* Removed destructive cleanup to prevent queued writes from being dropped silently */
       pendingWrites.delete(key);
-      localStorage.removeItem(key);
+      removedKeys.add(key);
+      // Enqueued after any prior setItem for this key, so the disk removal is
+      // guaranteed to happen after that write (issue #14613). Reads already
+      // see null via removedKeys.
+      this._enqueue({ key, type: "remove" }).catch(() => {});
       localStorage.removeItem(key + PLAINTEXT_SUFFIX);
     } catch (error) {
       console.error("[secureStorage] removeItem failed:", error);
@@ -873,10 +926,14 @@ export const syncSecureStorage = {
    * Clears all localStorage data for the current origin.
    * Use with caution: this removes ALL keys, not just Eventra's.
    */
-  clear: () => {
+  clear: function () {
     try {
       pendingWrites.clear();
-      localStorage.clear();
+      pendingClear = true;
+      // Enqueued behind any prior setItem / removeItem, so the wipe happens
+      // after them rather than racing with them (issue #14613). Reads report
+      // null immediately via pendingClear.
+      this._enqueue({ key: null, type: "clear" }).catch(() => {});
       _keyPromise = null;
     } catch (error) {
       console.error("[secureStorage] clear failed:", error);
