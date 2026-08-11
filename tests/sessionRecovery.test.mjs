@@ -174,5 +174,37 @@ assert.ok(
   "Must guard saveSession from writing to localStorage if initial session load is in progress"
 );
 
+// ── Test 7: unmount cleanup clears latest timers & guards async (#14608) ─────
+assert.ok(
+  !contextSrc.includes("const saveTimeout = saveTimeoutRef.current;"),
+  "Unmount cleanup must not capture a stale snapshot of the save timer at mount"
+);
+assert.ok(
+  contextSrc.includes("unmountedRef = useRef(false)"),
+  "Must declare an unmounted guard ref"
+);
+assert.ok(
+  contextSrc.includes("unmountedRef.current = true"),
+  "Unmount cleanup must set the unmounted guard flag"
+);
+assert.ok(
+  contextSrc.includes("activityTimeoutRef.current = interval"),
+  "Inactivity interval id must be stored on the stable ref so cleanup can clear it"
+);
+assert.ok(
+  contextSrc.includes("clearInterval(activityTimeoutRef.current)"),
+  "Unmount cleanup must clear the inactivity interval"
+);
+assert.ok(
+  contextSrc.includes("clearTimeout(saveTimeoutRef.current)"),
+  "Unmount cleanup must clear the latest pending save timer"
+);
+const postAwaitGuardPos = contextSrc.indexOf("if (unmountedRef.current) return;");
+const setItemPos = contextSrc.indexOf("localStorage.setItem(SESSION_KEY, ciphertext)");
+assert.ok(
+  postAwaitGuardPos !== -1 && setItemPos !== -1 && postAwaitGuardPos < setItemPos,
+  "saveSession must abandon the save when unmounted before writing to storage"
+);
+
 console.log("All Session Recovery Sanitization & Cryptography tests passed successfully ✓");
 

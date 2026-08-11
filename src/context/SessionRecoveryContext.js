@@ -117,6 +117,9 @@ export const SessionRecoveryProvider = ({ children }) => {
   const isLoadingRef = useRef(true);
   const saveTimeoutRef = useRef(null);
   const activityTimeoutRef = useRef(null);
+  // Set on unmount so any in-flight async save continuation is abandoned
+  // instead of writing to storage after the context is gone (issue #14608).
+  const unmountedRef = useRef(false);
   const cloudRecovery = useCloudSessionRecovery({
     user,
     isAuthenticated: isAuthenticated?.() || false,
@@ -265,6 +268,10 @@ export const SessionRecoveryProvider = ({ children }) => {
           };
 
           const ciphertext = await encryptSession(JSON.stringify(currentSession), key);
+
+          // Abort if unmounted while encrypting (issue #14608)
+          if (unmountedRef.current) return;
+
           localStorage.setItem(SESSION_KEY, ciphertext);
           setSessionData(currentSession);
           setHasSession(true);
@@ -358,21 +365,31 @@ export const SessionRecoveryProvider = ({ children }) => {
         clearSession();
       }
     }, 60000);
-    return () => clearInterval(interval);
+    // Keep the latest interval id on the stable ref so the unmount cleanup can
+    // always clear it, even when this effect re-runs (issue #14608).
+    activityTimeoutRef.current = interval;
+    return () => {
+      if (activityTimeoutRef.current) {
+        clearInterval(activityTimeoutRef.current);
+        activityTimeoutRef.current = null;
+      }
+    };
   }, [hasSession, clearSession]);
 
   useEffect(() => {
-    if ((multiRecovery.hasSessions || cloudRecovery.hasCloudSessions) && !sessionData) {
-      setShowRecoveryPrompt(true);
-    }
-  }, [cloudRecovery.hasCloudSessions, multiRecovery.hasSessions, sessionData]);
-
-  useEffect(() => {
-    const saveTimeout = saveTimeoutRef.current;
-    const activityTimeout = activityTimeoutRef.current;
     return () => {
-      if (saveTimeout) clearTimeout(saveTimeout);
-      if (activityTimeout) clearTimeout(activityTimeout);
+      // Mark unmounted and read the latest timer ids from the refs instead of a
+      // stale snapshot captured at mount, so timers created after the initial
+      // mount are also cleared (issue #14608).
+      unmountedRef.current = true;
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
+      }
+      if (activityTimeoutRef.current) {
+        clearInterval(activityTimeoutRef.current);
+        activityTimeoutRef.current = null;
+      }
     };
   }, []);
 
