@@ -62,6 +62,7 @@ import { useCallback, useMemo } from "react";
  * const FormInput = ({ label, name, value, onChange, validationState, error, touched }) => {
  *   const {
  *     shouldShowError,
+    ariaProps,
     isWarning,
     shouldShowWarning,
  *     isValidating,
@@ -259,11 +260,22 @@ export const useValidationState = (
     return attributes;
   }, [name, err, isTouched, state, isValid]);
 
+    const ariaProps = useMemo(() => {
+    const isInvalid = state === "error" && shouldShowError;
+    return {
+      "aria-invalid": isInvalid,
+      "aria-errormessage": isInvalid ? `${name}-error` : undefined,
+      "aria-describedby": statusMessage ? `${name}-status` : undefined,
+    };
+  }, [state, shouldShowError,
+    ariaProps, statusMessage, name]);
+
   return {
     // Status checks
     statusIndicator,
     statusMessage,
     shouldShowError,
+    ariaProps,
     isWarning,
     shouldShowWarning,
     isValidating,
