@@ -26,6 +26,13 @@ export const NOTIFICATION_CATEGORIES = {
   },
 };
 
+export const NOTIFICATION_PRIORITIES = {
+  LOW: "low",
+  NORMAL: "normal",
+  HIGH: "high",
+  CRITICAL: "critical",
+};
+
 export const NOTIFICATION_SOUNDS = {
   none: { label: "Silent", frequency: null },
   chime: { label: "Soft chime", frequency: 660 },
@@ -61,6 +68,19 @@ export const getNotificationCategory = (notification = {}) => {
     "system";
   const category = String(rawCategory).toLowerCase();
   return NOTIFICATION_CATEGORIES[category] ? category : "system";
+};
+
+export const getNotificationPriority = (notification = {}) => {
+  if (!notification) return NOTIFICATION_PRIORITIES.NORMAL;
+  const rawPriority =
+    notification.priority ||
+    notification.level ||
+    notification.metadata?.priority ||
+    NOTIFICATION_PRIORITIES.NORMAL;
+  const priority = String(rawPriority).toLowerCase();
+  return Object.values(NOTIFICATION_PRIORITIES).includes(priority)
+    ? priority
+    : NOTIFICATION_PRIORITIES.NORMAL;
 };
 
 export const normalizeNotificationPreferences = (preferences = {}) => {
@@ -118,8 +138,20 @@ export const writeNotificationPreferences = (preferences) => {
 
 export const shouldDeliverNotification = (notification, preferences, channel) => {
   const normalized = normalizeNotificationPreferences(preferences);
+
+  // Global channel check (e.g. email/push/inApp completely toggled off)
+  const isChannelEnabled = Boolean(normalized[channel]);
+  if (!isChannelEnabled) return false;
+
+  // Critical notifications bypass category-level mutes
+  const priority = getNotificationPriority(notification);
+  if (priority === NOTIFICATION_PRIORITIES.CRITICAL) {
+    return true;
+  }
+
+  // Standard category check
   const category = getNotificationCategory(notification);
-  return Boolean(normalized[channel] && normalized.categories[category]?.[channel]);
+  return Boolean(normalized.categories[category]?.[channel]);
 };
 
 export const getNotificationTitle = (notification = {}) =>

@@ -29,7 +29,7 @@ const MESSAGE_REQUIRED_FIELDS = {
   UNSUBSCRIBE_ALL: ["tabId", "paths"],
   QUERY_SUBSCRIBERS: ["tabId"],
   SUBSCRIBERS_RESPONSE: ["tabId", "paths"],
-  SSE_MESSAGE: ["path", "data", "tabId"],
+  SSE_MESSAGE: ["path", "data", "eventType", "tabId"],
   SSE_STATUS: ["path", "status", "tabId"],
   RECONNECT_REQUEST: ["path"],
   PING: ["tabId"],
@@ -557,24 +557,33 @@ class SseMultiplexer {
       this.updatePathStatus(path, "connected");
     };
 
-    source.onmessage = (evt) => {
+    // Named SSE events (backend sends e.g. SseEmitter.event().name("availability"))
+    // never reached the default `onmessage` handler — EventSource only routes
+    // named events through addEventListener, and `evt.type` is always "message"
+    // for the default handler. Dispatch both so consumers can key on eventType.
+    const handleEvent = (eventType) => (evt) => {
       let payload = evt.data;
       try {
         payload = JSON.parse(evt.data);
       } catch { console.warn("[sseMultiplexer] JSON parse failed"); }
 
       // Dispatch locally
-      this.dispatchLocalMessage(path, payload, evt.type);
+      this.dispatchLocalMessage(path, payload, eventType);
 
       // Broadcast to follower tabs
       this.broadcastMessage({
         type: "SSE_MESSAGE",
         path,
         data: payload,
-        eventType: evt.type,
+        eventType,
         tabId: this.tabId,
       });
     };
+
+    source.onmessage = handleEvent("message");
+    ["availability", "init", "notification", "leaderboard", "analytics"].forEach((name) => {
+      source.addEventListener(name, handleEvent(name));
+    });
 
     source.onerror = () => {
       // FIX (#7855 Bug 4): Replace the browser's native immediate-retry

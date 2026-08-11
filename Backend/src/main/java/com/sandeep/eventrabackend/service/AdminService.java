@@ -64,7 +64,8 @@ public class AdminService {
      * @param role optional role filter (e.g. "CLIENT") — null means all users
      */
     public PagedResponse<AdminUserResponse> getUsers(int page, int size, String role, String search) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        int safePage = Math.max(page, 0);
+        Pageable pageable = PageRequest.of(safePage, size, Sort.by("createdAt").descending());
         Page<User> userPage;
         boolean hasSearch = StringUtils.hasText(search);
         String trimmedSearch = hasSearch ? search.trim() : null;
@@ -195,7 +196,8 @@ public class AdminService {
      * Returns all events (paginated), visible to admin regardless of isPublic.
      */
     public PagedResponse<EventResponse> getEvents(int page, int size, String search) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("eventDate").descending());
+        int safePage = Math.max(page, 0);
+        Pageable pageable = PageRequest.of(safePage, size, Sort.by("eventDate").descending());
         Specification<com.sandeep.eventrabackend.model.Event> spec = EventSpecifications.searchContains(search);
         Page<com.sandeep.eventrabackend.model.Event> eventPage = spec == null
                 ? eventRepository.findAll(pageable)
@@ -282,7 +284,8 @@ public class AdminService {
      * Returns all hackathons (paginated).
      */
     public PagedResponse<HackathonResponse> getHackathons(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("startDate").descending());
+        int safePage = Math.max(page, 0);
+        Pageable pageable = PageRequest.of(safePage, size, Sort.by("startDate").descending());
         return PagedResponse.from(hackathonRepository.findAll(pageable).map(this::toHackathonResponse));
     }
 
@@ -405,7 +408,8 @@ public class AdminService {
      * Returns all feedback entries (paginated).
      */
     public PagedResponse<AdminFeedbackResponse> getAllFeedback(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("submittedAt").descending());
+        int safePage = Math.max(page, 0);
+        Pageable pageable = PageRequest.of(safePage, size, Sort.by("submittedAt").descending());
         return PagedResponse.from(feedbackRepository.findAll(pageable).map(this::toAdminFeedbackResponse));
     }
 
