@@ -227,26 +227,49 @@ export const getTagStats = (eventId) => {
 };
 
 /**
- * Delete feedback
+ * Delete feedback for a specific user from an event
  * @param {string} eventId - Event identifier
  * @param {string} userId - User identifier
  * @returns {boolean} Success status
  */
-export const deleteFeedback = (eventId, userId = null) => {
+export const deleteUserFeedback = (eventId, userId) => {
+  if (!eventId || !userId) {
+    throw new Error('Both eventId and userId are required to delete single user feedback.');
+  }
+
   try {
     const allFeedback = safeJsonParse(localStorage.getItem(FEEDBACK_STORAGE_KEY), {});
     const eventFeedback = allFeedback[eventId] || [];
 
-    if (userId) {
-      allFeedback[eventId] = eventFeedback.filter((f) => f.userId !== userId);
-    } else {
-      delete allFeedback[eventId];
-    }
+    allFeedback[eventId] = eventFeedback.filter((f) => f.userId !== userId);
 
     localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(allFeedback));
     return true;
   } catch (error) {
-    //console.error('Error deleting feedback:', error);
+    //console.error('Error deleting user feedback:', error);
+    return false;
+  }
+};
+
+/**
+ * Clear all feedback records for an entire event
+ * @param {string} eventId - Event identifier
+ * @returns {boolean} Success status
+ */
+export const clearEventFeedback = (eventId) => {
+  if (!eventId) {
+    throw new Error('eventId is required to clear event feedback.');
+  }
+
+  try {
+    const allFeedback = safeJsonParse(localStorage.getItem(FEEDBACK_STORAGE_KEY), {});
+
+    delete allFeedback[eventId];
+
+    localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(allFeedback));
+    return true;
+  } catch (error) {
+    //console.error('Error clearing event feedback:', error);
     return false;
   }
 };
