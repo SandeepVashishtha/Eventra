@@ -11,6 +11,8 @@ import { MotionConfig } from "framer-motion";
 import { THEMES } from "../components/styles/theme";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 import { safeJsonParse } from "../utils/safeJsonParse";
+import { useAuth } from "../context/AuthContext";
+import { getProfileTheme, syncThemeToProfile } from "../utils/themeSync";
 const THEME_STORAGE_KEY = "eventra_theme";
 
 export const ThemeContext = createContext(null);
