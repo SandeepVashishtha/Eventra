@@ -36,6 +36,9 @@ app:
     refresh:
       capacity: ${RATE_LIMIT_REFRESH_CAPACITY:30}
       window: ${RATE_LIMIT_REFRESH_WINDOW:1m}
+    validate:
+      capacity: ${RATE_LIMIT_VALIDATE_CAPACITY:20}
+      window: ${RATE_LIMIT_VALIDATE_WINDOW:1m}
 
 google:
   client:
