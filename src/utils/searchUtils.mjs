@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import Fuse from "fuse.js";
 
 /**
@@ -52,11 +53,16 @@ export const normalizeSearchText = (value) => {
     return "";
   }
 
+  if (typeof value === "object") {
+    return Object.values(value).map(normalizeSearchText).filter(Boolean).join(" ");
+  }
+
   return String(value)
     .toLowerCase()
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
     .trim();
 };
 
@@ -187,8 +193,11 @@ export const getRouteSearchResults = (items, query, keys, options = {}) => {
   const { stripStopwords = false, limit, ...fuseOptions } = options;
   const tokens = getSearchTokens(query, stripStopwords);
 
-  if (tokens.length === 0) {
-    return items;
+  // Check cache hit
+  const cacheKey = globalSearchCache.generateKey(query, keys, filters, options);
+  if (enableCache) {
+    const cachedResults = globalSearchCache.get(cacheKey);
+    if (cachedResults) return cachedResults;
   }
 
   const normalizedQuery = tokens.join(" ");
@@ -209,6 +218,8 @@ export const getRouteSearchResults = (items, query, keys, options = {}) => {
   items.forEach((item) => {
     if (matchedMap.has(item)) return;
 
+  filteredItems.forEach((item) => {
+    const fuseData = fuseMatchedMap.get(item);
     const searchableText = getSearchableText(item, keys);
     const containsFullQuery = searchableText.includes(normalizedQuery);
     const matchesAllTokens = tokens.every((token) => searchableText.includes(token));

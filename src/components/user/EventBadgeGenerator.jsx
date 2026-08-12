@@ -99,7 +99,10 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
       const a = document.createElement("a");
       a.href = url;
       a.download = `eventra-badge-${attendeeName.toLowerCase().replace(/\s+/g, "-")}.png`;
+      // Anchor must be in the DOM before .click() for Firefox to trigger the download
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
       toast.success("PNG Badge exported successfully.");
     } catch (err) {
       console.error(err);
@@ -127,6 +130,8 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
       const imgHeight = 135; // Badge height in mm
       const xOffset = (210 - imgWidth) / 2;
       const yOffset = (297 - imgHeight) / 2;
+      const footerTitleY = yOffset + imgHeight + 18;
+      const footerSubtitleY = footerTitleY + 10;
 
       pdf.setFillColor(15, 23, 42); // Dark slate background fill
       pdf.rect(0, 0, 210, 297, "F");
@@ -139,16 +144,17 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
       // Render badge
       pdf.addImage(imgData, "PNG", xOffset, yOffset, imgWidth, imgHeight);
 
-      // Certify text at bottom
+      // Certify text at bottom — badge ends at yOffset + imgHeight = 81 + 135 = 216mm
+      // Place text below the badge with comfortable spacing toward the footer.
       pdf.setTextColor(255, 255, 255);
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(16);
-      pdf.text("OFFICIAL ATTENDEE EVENT CREDENTIAL", 105, 45, { align: "center" });
+      pdf.text("OFFICIAL ATTENDEE EVENT CREDENTIAL", 105, footerTitleY, { align: "center" });
 
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(10);
       pdf.setTextColor(148, 163, 184);
-      pdf.text("This badge grants access to the Eventra Contribution Arena.", 105, 55, { align: "center" });
+      pdf.text("This badge grants access to the Eventra Contribution Arena.", 105, footerSubtitleY, { align: "center" });
       
       pdf.save(`eventra-badge-${attendeeName.toLowerCase().replace(/\s+/g, "-")}.pdf`);
       toast.success("PDF Pass generated and downloaded.");
@@ -200,7 +206,7 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
               {/* Progress bar */}
               <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
                 <motion.div 
-                  className="h-full bg-gradient-to-r from-indigo-500 to-purple-500" 
+                  className="h-full bg-linear-to-r from-indigo-500 to-purple-500" 
                   animate={{ width: `${(completedCount / 3) * 100}%` }}
                 />
               </div>
@@ -320,7 +326,7 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
           {/* Badge element to snapshot */}
           <div 
             ref={badgeRef}
-            className={`w-[260px] h-[400px] bg-gradient-to-b ${currentTemplate.bgGradient} border-2 ${currentTemplate.borderClass} rounded-3xl relative overflow-hidden flex flex-col justify-between items-center p-5 select-none`}
+            className={`w-[260px] h-[400px] bg-linear-to-b ${currentTemplate.bgGradient} border-2 ${currentTemplate.borderClass} rounded-3xl relative overflow-hidden flex flex-col justify-between items-center p-5 select-none`}
             style={{ fontFamily: "Inter, sans-serif" }}
           >
             {/* Template Ambient Glow Overlay */}
@@ -339,7 +345,7 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
             <div className="flex flex-col items-center space-y-3 z-10 mt-3">
               <div className="relative">
                 {/* Aura border */}
-                <span className={`absolute -inset-1 rounded-full bg-gradient-to-r ${currentTemplate.ringClass} blur-xs opacity-80 animate-pulse`} />
+                <span className={`absolute -inset-1 rounded-full bg-linear-to-r ${currentTemplate.ringClass} blur-xs opacity-80 animate-pulse`} />
                 <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-slate-800 bg-slate-900 flex items-center justify-center">
                   {avatar ? (
                     <img src={avatar} alt="Avatar" className="w-full h-full object-cover" loading="lazy" />
@@ -394,10 +400,16 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
                 <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider block mt-1">Verified Member</span>
               </div>
               <div className="p-1 bg-white rounded-md shrink-0">
-                <QRCode 
-                  value={`https://eventra.dev/verify/attendee/${attendeeName.toLowerCase().replace(/\s+/g, "-")}`}
-                  size={36} 
-                  level="M" 
+                <QRCode
+                  value={
+                    attendeeName.trim()
+                      ? `https://eventra.dev/verify/attendee/${encodeURIComponent(
+                        attendeeName.trim().toLowerCase().replace(/\s+/g, "-")
+                      )}`
+                      : "https://eventra.dev/verify"
+                  }
+                  size={36}
+                  level="M"
                   bgColor="#ffffff"
                   fgColor="#020617"
                 />
