@@ -4,16 +4,11 @@ const DEFAULT_TIMEOUT_MS = 8000;
 const DEFAULT_RETRIES = 1;
 // const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
 
+// In-memory response cache for validation results
+const validationCache = new Map();
+
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-/**
- * Builds the standard validation response object used across async validators.
- *
- * @param {boolean} isValid - Whether the value passed validation.
- * @param {string} [message=""] - Message shown when validation fails.
- * @param {Object} [extra={}] - Extra metadata such as API data, status, or error details.
- * @returns {{isValid: boolean, message: string, isLoading: boolean}} Normalized response.
- */
 export const createValidationResponse = (
   isValid,
   message = "",
@@ -25,31 +20,12 @@ export const createValidationResponse = (
   ...extra,
 });
 
-/**
- * Builds a temporary response for UI states while an async validator is running.
- *
- * @param {string} [message="Validating..."] - Loading message shown to users.
- * @returns {{isValid: boolean, message: string, isLoading: boolean}}
- */
 export const validationLoadingResponse = (message = "Validating...") => ({
   isValid: false,
   message,
   isLoading: true,
 });
 
-/**
- * Converts common validation API payloads into the standard response shape.
- *
- * Supported payload examples include booleans, `{ isValid: true }`,
- * `{ valid: false }`, and availability checks like `{ available: true }`.
- *
- * @param {boolean|Object} data - Raw API response data.
- * @param {Object} [options]
- * @param {string} [options.validMessage=""] - Message used for valid results.
- * @param {string} [options.invalidMessage="Validation failed"] - Message used for invalid results.
- * @param {string} [options.availabilityField="available"] - Field name to read for availability APIs.
- * @returns {{isValid: boolean, message: string, isLoading: boolean, data: *}}
- */
 export const normalizeValidationApiResponse = (
   data,
   {
@@ -82,27 +58,6 @@ export const normalizeValidationApiResponse = (
   );
 };
 
-/**
- * Sends a validation request with timeout, retry, JSON parsing, and fallback errors.
- *
- * Retryable HTTP status codes are retried with a small increasing delay. Timeout,
- * missing `fetch`, network failures, and invalid responses are converted into
- * user-safe validation responses instead of throwing.
- *
- * @param {string} endpoint - URL or path to request.
- * @param {Object} [options]
- * @param {string} [options.method="GET"] - HTTP method.
- * @param {Object} [options.body] - JSON body sent with the request.
- * @param {Object} [options.headers={}] - Extra request headers.
- * @param {number} [options.timeoutMs=8000] - Abort timeout in milliseconds.
- * @param {number} [options.retries=1] - Number of retry attempts for retryable failures.
- * @param {number} [options.retryDelayMs=300] - Base retry delay in milliseconds.
- * @param {string} [options.invalidMessage="Validation failed"] - Fallback invalid message.
- * @param {string} [options.networkMessage] - Fallback network error message.
- * @param {string} [options.validMessage=""] - Message used for valid responses.
- * @param {string} [options.availabilityField="available"] - Availability field in API payloads.
- * @returns {Promise<{isValid: boolean, message: string, isLoading: boolean}>}
- */
 export const requestValidation = async (endpoint, options = {}) => {
   const {
     method = "GET",
@@ -115,7 +70,15 @@ export const requestValidation = async (endpoint, options = {}) => {
     networkMessage = "Unable to validate right now. Please try again.",
     validMessage = "",
     availabilityField = "available",
+    signal: externalSignal,
+    useCache = true,
   } = options;
+
+  // Cache Lookup Key
+  const cacheKey = `${method}:${endpoint}:${JSON.stringify(body || {})}`;
+  if (useCache && validationCache.has(cacheKey)) {
+    return validationCache.get(cacheKey);
+  }
 
   let lastError = null;
 
@@ -152,11 +115,20 @@ export const requestValidation = async (endpoint, options = {}) => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
+    // Link external signal for request cancellation
+    if (externalSignal) {
+      if (externalSignal.aborted) {
+        clearTimeout(timeoutId);
+        return createValidationResponse(false, "Validation cancelled", { isCancelled: true });
+      }
+      externalSignal.addEventListener("abort", () => controller.abort(), { once: true });
+    }
+
     try {
       const config = { headers, signal: controller.signal };
       let response;
       const uppercaseMethod = method.toUpperCase();
-      
+
       if (uppercaseMethod === "GET") {
         response = await apiUtils.get(endpoint, config);
       } else if (uppercaseMethod === "POST") {
@@ -173,55 +145,65 @@ export const requestValidation = async (endpoint, options = {}) => {
 
       clearTimeout(timeoutId);
 
+      // Verify HTTP status code
+      if (response && !response.ok) {
+        const status = response.status;
+        let errData = null;
+        try {
+          errData = await response.json();
+        } catch {}
+
+        if (!RETRYABLE_STATUS_CODES.includes(status) && status < 500) {
+          const failureResponse = createValidationResponse(
+            false,
+            errData?.message || invalidMessage,
+            { status, data: errData },
+          );
+          if (useCache) validationCache.set(cacheKey, failureResponse);
+          return failureResponse;
+        }
+
+        throw { status, data: errData, message: `HTTP Error ${status}` };
+      }
+
       let data = null;
       // Parse JSON response. Errors are logged but do not fail the request
       // to maintain backward compatibility. Invalid JSON responses are treated
       // as null data, which normalizeValidationApiResponse handles gracefully.
       try {
-        data = await response.json();
-      } catch (error) {
-        console.error(
-          "[validationApi] Failed to parse JSON response",
-          {
-            endpoint,
-            method: method.toUpperCase(),
-            error: error.message,
-            stack: error.stack,
-          }
-        );
+        data = typeof response.json === "function" ? await response.json() : response;
+      } catch {
         data = null;
       }
 
-      return normalizeValidationApiResponse(data, {
+      const normalized = normalizeValidationApiResponse(data, {
         validMessage,
         invalidMessage,
         availabilityField,
       });
+
+      if (useCache && normalized.isValid) {
+        validationCache.set(cacheKey, normalized);
+      }
+
+      return normalized;
     } catch (error) {
       clearTimeout(timeoutId);
       lastError = error;
 
-      const status = error.status;
-      const data = error.data;
+      const status = error?.status || error?.response?.status;
+      const data = error?.data || error?.response?.data;
 
-      // If the API explicitly returned an authentication or validation failure.
-      if (status === 409) {
-        return createValidationResponse(
-          false,
-          invalidMessage,
-          { status, data }
-        );
-      }
-
-      if (status === 401 || status === 403) {
-        return createValidationResponse(
+      if (status && !RETRYABLE_STATUS_CODES.includes(status) && status < 500) {
+        const failureResponse = createValidationResponse(
           false,
           networkMessage,
           { status, data }
         );
+        if (useCache) validationCache.set(cacheKey, failureResponse);
+        return failureResponse;
       }
 
-      // Retry on network errors, timeouts, or 5xx server errors
       if (attempt < retries) {
         await wait(retryDelayMs * (attempt + 1));
         continue;
@@ -244,13 +226,6 @@ export const requestValidation = async (endpoint, options = {}) => {
   );
 };
 
-/**
- * Checks whether an email is available using the configured API endpoint.
- *
- * @param {string} email - Email address to check.
- * @param {Object} [options] - `requestValidation` options plus optional `endpoint`.
- * @returns {Promise<{isValid: boolean, message: string, isLoading: boolean}>}
- */
 export const checkEmailAvailability = (email, options = {}) =>
   requestValidation(
     options.endpoint || `/api/validate/email/${encodeURIComponent(email)}`,
@@ -261,13 +236,6 @@ export const checkEmailAvailability = (email, options = {}) =>
     },
   );
 
-/**
- * Checks whether a username is available using the configured API endpoint.
- *
- * @param {string} username - Username to check.
- * @param {Object} [options] - `requestValidation` options plus optional `endpoint`.
- * @returns {Promise<{isValid: boolean, message: string, isLoading: boolean}>}
- */
 export const checkUsernameAvailability = (username, options = {}) =>
   requestValidation(
     options.endpoint ||
@@ -279,16 +247,6 @@ export const checkUsernameAvailability = (username, options = {}) =>
     },
   );
 
-/**
- * Validates a phone number through the configured API endpoint.
- *
- * The default endpoint expects a POST body of `{ phone }` and reads the `valid`
- * response field.
- *
- * @param {string} phone - Phone number to validate.
- * @param {Object} [options] - `requestValidation` options plus optional `endpoint`.
- * @returns {Promise<{isValid: boolean, message: string, isLoading: boolean}>}
- */
 export const checkPhoneValidation = (phone, options = {}) =>
   requestValidation(options.endpoint || "/api/validate/phone", {
     method: "POST",
