@@ -1,6 +1,8 @@
 package com.sandeep.eventrabackend.model;
 
 import java.time.LocalDateTime;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class SessionQuestion {
     private String id;
@@ -11,6 +13,7 @@ public class SessionQuestion {
     private boolean isPinned;
     private boolean isAnswered;
     private LocalDateTime createdAt;
+    private final Set<String> voterKeys = ConcurrentHashMap.newKeySet();
 
     public SessionQuestion() {
         this.createdAt = LocalDateTime.now();
@@ -25,6 +28,14 @@ public class SessionQuestion {
         this.isPinned = false;
         this.isAnswered = false;
         this.createdAt = LocalDateTime.now();
+    }
+
+    public boolean hasVoted(String voterKey) {
+        return voterKeys.contains(voterKey);
+    }
+
+    public boolean addVoter(String voterKey) {
+        return voterKeys.add(voterKey);
     }
 
     // Getters and Setters
