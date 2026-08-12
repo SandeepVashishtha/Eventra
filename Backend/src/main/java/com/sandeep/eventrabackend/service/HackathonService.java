@@ -140,6 +140,15 @@ public class HackathonService {
         if (registrationDeadline != null && endDate != null && registrationDeadline.isAfter(endDate)) {
             throw new IllegalArgumentException("Registration deadline cannot be after end date.");
         }
+        if (registrationDeadline != null && startDate != null && registrationDeadline.isAfter(startDate)) {
+            throw new IllegalArgumentException("Registration deadline cannot be after start date.");
+        }
+        if (startDate != null && startDate.isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Start date must be in the future.");
+        }
+        if (registrationDeadline != null && registrationDeadline.isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Registration deadline must be in the future.");
+        }
     }
 
     @Transactional
