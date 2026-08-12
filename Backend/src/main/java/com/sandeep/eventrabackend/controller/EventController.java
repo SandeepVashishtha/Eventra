@@ -404,6 +404,22 @@ public class EventController {
                                 eventService.cancelEvent(id, authentication.getName(), request));
         }
 
+        @PostMapping("/{id}/archive")
+        @PreAuthorize("isAuthenticated()")
+        @Operation(summary = "Archive an event", description = "Allows an event ORGANIZER/OWNER (or platform ADMIN) to archive an event. Archived events are hidden from the public listing.", security = @SecurityRequirement(name = "bearerAuth"))
+        @ApiResponses({
+                        @ApiResponse(responseCode = "200", description = "Event archived successfully", content = @Content(schema = @Schema(implementation = EventResponse.class))),
+                        @ApiResponse(responseCode = "401", description = "Unauthorized - JWT token missing or invalid", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                        @ApiResponse(responseCode = "403", description = "Forbidden - Insufficient event role", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                        @ApiResponse(responseCode = "404", description = "Event not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                        @ApiResponse(responseCode = "409", description = "Event is already archived or cancelled", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+        })
+        public ResponseEntity<EventResponse> archiveEvent(
+                        @Parameter(description = "ID of the event to archive") @PathVariable Long id,
+                        Authentication authentication) {
+                return ResponseEntity.ok(eventService.archiveEvent(id, authentication.getName()));
+        }
+
         @PostMapping("/{id}/resend-cancellation-notice")
         @PreAuthorize("isAuthenticated()")
         @Operation(summary = "Resend cancellation notice", description = "Resends the cancellation notification to a specific attendee.", security = @SecurityRequirement(name = "bearerAuth"))
