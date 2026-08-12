@@ -191,7 +191,6 @@ export const API_ENDPOINTS = {
     REFRESH: buildApiUrl("/auth/refresh"),
     GOOGLE: buildApiUrl("/auth/google"),
     REAUTH: buildApiUrl("/auth/reauth"),
-    GITHUB: buildApiUrl("/auth/github"),
   },
   EVENTS: {
     CREATE: buildApiUrl("/events/create"),
@@ -275,12 +274,6 @@ export const API_ENDPOINTS = {
     SESSION: (id) => buildApiUrl(`/session-recovery/${id}`),
     RESTORE: (id) => buildApiUrl(`/session-recovery/${id}/restore`),
     CLEANUP_EXPIRED: buildApiUrl("/session-recovery/cleanup"),
-  },
-  WAITLIST: {
-    BASE: buildApiUrl("/waitlist"),
-    JOIN: buildApiUrl("/waitlist/join"),
-    LEAVE: (id) => buildApiUrl(`/waitlist/${id}/leave`),
-    STATUS: (id) => buildApiUrl(`/waitlist/${id}/status`),
   },
   FEEDBACK: {
     BASE: buildApiUrl("/feedback"),
