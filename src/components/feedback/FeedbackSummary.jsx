@@ -5,7 +5,7 @@ import {
   getRecommendationStats,
   getTagStats,
   getRatingBreakdown,
-} from '../../utils/feedbackUtils';
+} from 'utils/feedbackUtils';
 
 /**
  * FeedbackSummary Component
@@ -39,7 +39,7 @@ const FeedbackSummary = ({ eventId, compact = false }) => {
           <span className="font-semibold text-gray-900 dark:text-white">
             {averageRating.average}
           </span>
-          <span className="text-gray-500 dark:text-gray-400">({averageRating.count})</span>
+          <span className="text-gray-500 dark:text-gray-200">({averageRating.count})</span>
         </div>
       </div>
     );
@@ -47,7 +47,7 @@ const FeedbackSummary = ({ eventId, compact = false }) => {
 
   // Full view (for event details page)
   return (
-    <div className="bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 rounded-2xl border border-indigo-200 dark:border-indigo-800 p-6 space-y-6">
+    <div className="bg-linear-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 rounded-2xl border border-indigo-200 dark:border-indigo-800 p-6 space-y-6">
       {/* Rating Section */}
       <div className="border-b border-indigo-200 dark:border-indigo-800 pb-6">
         <div className="flex items-start justify-between mb-4">
@@ -79,7 +79,7 @@ const FeedbackSummary = ({ eventId, compact = false }) => {
           </div>
 
           <div className="flex-1">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+            <p className="text-sm text-gray-600 dark:text-gray-200 mb-3">
               Based on {averageRating.count} review{averageRating.count !== 1 ? 's' : ''}
             </p>
 
@@ -93,16 +93,16 @@ const FeedbackSummary = ({ eventId, compact = false }) => {
 
                 return (
                   <div key={stars} className="flex items-center gap-2">
-                    <span className="text-xs text-gray-600 dark:text-gray-400 w-8">
+                    <span className="text-xs text-gray-600 dark:text-gray-200 w-8">
                       {stars}★
                     </span>
                     <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full transition-all"
+                        className="h-full bg-linear-to-r from-yellow-400 to-yellow-500 rounded-full transition-all"
                         style={{ width: `${percentage}%` }}
                       />
                     </div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 w-8 text-right">
+                    <span className="text-xs text-gray-500 dark:text-gray-200 w-8 text-right">
                       {percentage}%
                     </span>
                   </div>
@@ -131,7 +131,7 @@ const FeedbackSummary = ({ eventId, compact = false }) => {
               <div className="text-2xl font-bold text-green-600">
                 {recommendationStats.percentage}%
               </div>
-              <p className="text-xs text-gray-600 dark:text-gray-400">
+              <p className="text-xs text-gray-600 dark:text-gray-200">
                 {recommendationStats.recommendCount} of {recommendationStats.total}
               </p>
             </div>
