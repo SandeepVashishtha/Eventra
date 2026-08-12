@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ZoomIn,
@@ -10,6 +10,8 @@ import {
   HelpCircle,
 } from "lucide-react";
 import "./SpatialSeatSelector.css";
+import { safeJsonParse } from "utils/safeJsonParse";
+import { API_ENDPOINTS, apiUtils } from "config/api";
 
 // Fallback presets if no venue layout is stored yet
 const DEFAULT_PRESETS = {
@@ -27,6 +29,19 @@ const DEFAULT_PRESETS = {
       assignedAttendees: {},
     },
     {
+      id: "accessible-1",
+      type: "round-table",
+      label: "Accessible Seating",
+      x: 50,
+      y: 500,
+      width: 120,
+      height: 120,
+      rotation: 0,
+      seatsCount: 4,
+      tier: "Accessible",
+      assignedAttendees: {},
+    },
+    {
       id: "table-1",
       type: "round-table",
       label: "VIP Table A",
@@ -37,7 +52,7 @@ const DEFAULT_PRESETS = {
       rotation: 0,
       seatsCount: 8,
       tier: "VIP Front Row",
-      assignedAttendees: { 0: "Amit Sharma", 1: "Priya Singh" },
+      assignedAttendees: {},
     },
     {
       id: "table-2",
@@ -50,7 +65,7 @@ const DEFAULT_PRESETS = {
       rotation: 0,
       seatsCount: 8,
       tier: "VIP Front Row",
-      assignedAttendees: { 2: "Rohit Verma", 3: "Neha Kapoor" },
+      assignedAttendees: {},
     },
     {
       id: "table-3",
@@ -128,6 +143,9 @@ const SpatialSeatSelector = ({
   const [zoom, setZoom] = useState(0.85);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [hoveredSeat, setHoveredSeat] = useState(null);
+  // Occupied seat keys ("elementId:seatIndex") loaded from the backend so
+  // occupancy is shared across browsers instead of per-browser localStorage.
+  const [occupiedSeats, setOccupiedSeats] = useState([]);
 
   const containerRef = useRef(null);
   const isDraggingRef = useRef(false);
@@ -140,7 +158,7 @@ const SpatialSeatSelector = ({
     let initialElements = [];
     if (savedLayout) {
       try {
-        const parsed = JSON.parse(savedLayout);
+        const parsed = safeJsonParse(savedLayout, {});
         if (Array.isArray(parsed)) {
           // Strict schema validation and sanitization
           initialElements = parsed.map((el) => ({
@@ -168,7 +186,7 @@ const SpatialSeatSelector = ({
         } else {
           initialElements = DEFAULT_PRESETS.banquet;
         }
-      } catch (e) {
+      } catch {
         initialElements = DEFAULT_PRESETS.banquet;
       }
     } else {
@@ -176,6 +194,61 @@ const SpatialSeatSelector = ({
     }
     setElements(initialElements);
   }, [eventId]);
+
+  // Fetch reserved seats from the backend for real events. Skipped for the
+  // "default" fallback layout (e.g. virtual venue walkthrough) which has no
+  // event id. Best-effort: on failure the seat map still renders locally.
+  useEffect(() => {
+    if (!eventId || eventId === "default") return;
+    let isCancelled = false;
+    (async () => {
+      try {
+        const res = await apiUtils.get(
+          `${API_ENDPOINTS.EVENTS.DETAIL(eventId)}/seats`
+        );
+        if (isCancelled) return;
+        setOccupiedSeats(Array.isArray(res?.data) ? res.data : []);
+      } catch {
+        // Occupancy is best-effort; the layout remains usable without it.
+      }
+    })();
+    return () => {
+      isCancelled = true;
+    };
+  }, [eventId]);
+
+  // Map backend seat keys ("elementId:seatIndex") to their owning elements.
+  const occupiedSeatsByElement = useMemo(() => {
+    const map = new Map();
+    occupiedSeats.forEach((key) => {
+      if (typeof key !== "string") return;
+      const sep = key.lastIndexOf(":");
+      if (sep <= 0 || sep === key.length - 1) return;
+      const elId = key.slice(0, sep);
+      const idx = Number(key.slice(sep + 1));
+      if (!Number.isInteger(idx)) return;
+      if (!map.has(elId)) map.set(elId, new Set());
+      map.get(elId).add(idx);
+    });
+    return map;
+  }, [occupiedSeats]);
+
+  // Mark backend-reserved seats as occupied (anonymous) so all users see the
+  // same live occupancy instead of stale per-browser presets.
+  useEffect(() => {
+    if (!occupiedSeatsByElement.size) return;
+    setElements((prev) =>
+      prev.map((el) => {
+        const idxSet = occupiedSeatsByElement.get(el.id);
+        if (!idxSet || !idxSet.size) return el;
+        const assignedAttendees = { ...(el.assignedAttendees || {}) };
+        idxSet.forEach((idx) => {
+          if (idx >= 0 && idx < el.seatsCount) assignedAttendees[idx] = true;
+        });
+        return { ...el, assignedAttendees };
+      })
+    );
+  }, [occupiedSeatsByElement]);
 
   // Stable math projection function for seat coordinates
   const getSeatPositions = useCallback((el) => {
@@ -261,6 +334,28 @@ const SpatialSeatSelector = ({
     return map;
   }, [elements, getSeatPositions]);
 
+  // Compute flat list of all seats across all elements for cross-table navigation
+  const allSeats = useMemo(() => {
+    const list = [];
+    elements.forEach((el) => {
+      if (el.seatsCount > 0) {
+        const positions = elementSeatPositions.get(el.id) || [];
+        positions.forEach((seat) => {
+          list.push({
+            ...seat,
+            elementId: el.id,
+          });
+        });
+      }
+    });
+    return list;
+  }, [elements, elementSeatPositions]);
+
+  const allSeatsRef = useRef(allSeats);
+  useEffect(() => {
+    allSeatsRef.current = allSeats;
+  }, [allSeats]);
+
   // Auto-center and zoom to highlighted seat in read-only dashboard view
   useEffect(() => {
     if (readOnly && selectedSeat && elements.length > 0) {
@@ -323,13 +418,12 @@ const SpatialSeatSelector = ({
     e.currentTarget.releasePointerCapture(e.pointerId);
   };
 
-  // Check if a specific seat index on an element is selected
-  const isSeatSelected = (elId, idx) => {
+  const isSeatSelected = useCallback((elId, idx) => {
     return selectedSeat && selectedSeat.elementId === elId && selectedSeat.seatIndex === idx;
-  };
+  }, [selectedSeat]);
 
   // Selection callback
-  const handleSeatClick = (el, seat, seatIdx) => {
+  const handleSeatClick = useCallback((el, seat, seatIdx) => {
     if (readOnly) return;
     const isOccupied = el.assignedAttendees[seatIdx];
     if (isOccupied) return;
@@ -343,7 +437,7 @@ const SpatialSeatSelector = ({
       seatLabel: `${el.label} - ${label}`,
       tier: tier,
     });
-  };
+  }, [onSelectSeat, readOnly]);
 
   return (
     <div className="ssp-container">
@@ -434,9 +528,9 @@ const SpatialSeatSelector = ({
                 {el.type === "round-table" ? (
                   <>
                     <path
-                      d={`M ${el.x + el.width / 2 - el.width / 2} ${el.y + el.height / 2} 
-                          A ${el.width / 2} ${el.height / 2} 0 0 0 ${el.x + el.width / 2 + el.width / 2} ${el.y + el.height / 2} 
-                          L ${el.x + el.width / 2 + el.width / 2 - projOffset} ${el.y + el.height / 2 + projOffset} 
+                      d={`M ${el.x + el.width / 2 - el.width / 2} ${el.y + el.height / 2}
+                          A ${el.width / 2} ${el.height / 2} 0 0 0 ${el.x + el.width / 2 + el.width / 2} ${el.y + el.height / 2}
+                          L ${el.x + el.width / 2 + el.width / 2 - projOffset} ${el.y + el.height / 2 + projOffset}
                           A ${el.width / 2} ${el.height / 2} 0 0 1 ${el.x + el.width / 2 - el.width / 2 - projOffset} ${el.y + el.height / 2 + projOffset} Z`}
                       fill="rgba(8, 7, 24, 0.9)"
                       stroke="rgba(255, 255, 255, 0.03)"
@@ -456,9 +550,9 @@ const SpatialSeatSelector = ({
                   el.type !== "booth" ? (
                   <>
                     <path
-                      d={`M ${el.x} ${el.y + el.height} 
-                          L ${el.x - projOffset} ${el.y + el.height - projOffset} 
-                          L ${el.x + el.width - projOffset} ${el.y + el.height - projOffset} 
+                      d={`M ${el.x} ${el.y + el.height}
+                          L ${el.x - projOffset} ${el.y + el.height - projOffset}
+                          L ${el.x + el.width - projOffset} ${el.y + el.height - projOffset}
                           L ${el.x + el.width} ${el.y + el.height} Z`}
                       fill="rgba(8, 7, 24, 0.9)"
                     />
@@ -510,86 +604,19 @@ const SpatialSeatSelector = ({
                 </text>
 
                 {/* Render Interactive Chair elements */}
-                {(elementSeatPositions.get(el.id) || []).map((seat) => {
-                  const isOccupied = el.assignedAttendees[seat.index];
-                  const isSelected = isSeatSelected(el.id, seat.index);
-                  const seatLabel =
-                    (el.seatLabels && el.seatLabels[seat.index]) || `Seat ${seat.index + 1}`;
-                  const seatTier = el.tier || (isVIP ? "VIP Front Row" : "General Seating");
-
-                  // Glow effect for selected seat or active highlight
-                  const glowClass = isSelected ? "ssp-seat-glowing" : "";
-
-                  return (
-                    <g
-                      key={`seat-${el.id}-${seat.index}`}
-                      className={`ssp-interactive-seat ${glowClass}`}
-                      onClick={() => handleSeatClick(el, seat, seat.index)}
-                      onMouseEnter={(e) => {
-                        const bbox = e.currentTarget.getBoundingClientRect();
-                        const vrect = containerRef.current.getBoundingClientRect();
-                        setHoveredSeat({
-                          el,
-                          seatIdx: seat.index,
-                          label: seatLabel,
-                          tier: seatTier,
-                          occupiedBy: isOccupied || null,
-                          x: bbox.left - vrect.left + bbox.width / 2,
-                          y: bbox.top - vrect.top - 10,
-                        });
-                      }}
-                      onMouseLeave={() => setHoveredSeat(null)}
-                      style={{ cursor: isOccupied ? "not-allowed" : "pointer" }}
-                    >
-                      {/* 2.5D Chair base drop shadow */}
-                      <circle cx={seat.x} cy={seat.y + 3} r={11} fill="rgba(0, 0, 0, 0.45)" />
-
-                      {/* Main Interactive Seat circle */}
-                      <circle
-                        cx={seat.x}
-                        cy={seat.y}
-                        r={11}
-                        fill={
-                          isSelected
-                            ? "url(#ssp-selected)"
-                            : isOccupied
-                              ? "#27272a"
-                              : isVIP
-                                ? "url(#ssp-vip-avail)"
-                                : "url(#ssp-gen-avail)"
-                        }
-                        stroke={
-                          isSelected
-                            ? "#67e8f9"
-                            : isOccupied
-                              ? "#18181b"
-                              : isVIP
-                                ? "#f59e0b"
-                                : "#6366f1"
-                        }
-                        strokeWidth={1.5}
-                        style={{
-                          transition:
-                            "fill 0.25s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
-                        }}
-                      />
-
-                      {/* RADAR pulsing overlay loop animation inside dashboard view */}
-                      {readOnly && isSelected && (
-                        <circle
-                          cx={seat.x}
-                          cy={seat.y}
-                          r={28}
-                          fill="none"
-                          stroke="#22d3ee"
-                          strokeWidth={2}
-                          className="ssp-radar-pulse"
-                          pointerEvents="none"
-                        />
-                      )}
-                    </g>
-                  );
-                })}
+                {(elementSeatPositions.get(el.id) || []).map((seat) => (
+                  <MemoizedSeat
+                    key={`seat-${el.id}-${seat.index}`}
+                    el={el}
+                    seat={seat}
+                    allSeatsRef={allSeatsRef}
+                    isSelected={isSeatSelected(el.id, seat.index)}
+                    readOnly={readOnly}
+                    onSelect={handleSeatClick}
+                    onHover={setHoveredSeat}
+                    containerRef={containerRef}
+                  />
+                ))}
               </g>
             );
           })}
@@ -697,5 +724,163 @@ const SpatialSeatSelector = ({
     </div>
   );
 };
+
+// Export at end to ensure helper components are defined first
+// (avoids potential parser issues in some linting environments)
+// export will be moved to file end.
+
+// ── Optimized Seat Component ────────────────────────────────────────────────
+
+const Seat = ({ el, seat, allSeatsRef, isSelected, readOnly, onSelect, onHover, containerRef }) => {
+  const isVIP = el.tier && el.tier.toLowerCase().includes("vip");
+  const isOccupied = el.assignedAttendees[seat.index];
+  const seatLabel = (el.seatLabels && el.seatLabels[seat.index]) || `Seat ${seat.index + 1}`;
+  const seatTier = el.tier || (isVIP ? "VIP Front Row" : "General Seating");
+
+  const tabIndex = readOnly || isOccupied ? -1 : 0;
+  const role = !readOnly && !isOccupied ? "button" : undefined;
+  const availability = isOccupied ? "Occupied" : "Available";
+  const ariaLabel = `${el.label} - ${seatLabel}, ${availability} (${seatTier})`;
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      if (readOnly || isOccupied) return;
+      e.preventDefault();
+      onSelect(el, seat, seat.index);
+      return;
+    }
+
+    const arrowKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
+    if (arrowKeys.includes(e.key)) {
+      e.preventDefault();
+      let tx = 0,
+        ty = 0;
+      if (e.key === "ArrowRight") tx = 1;
+      if (e.key === "ArrowLeft") tx = -1;
+      if (e.key === "ArrowUp") ty = -1;
+      if (e.key === "ArrowDown") ty = 1;
+
+      let bestSeat = null;
+      let minScore = Infinity;
+
+      (allSeatsRef.current || []).forEach((s) => {
+        if (s.elementId === el.id && s.index === seat.index) return;
+        const dx = s.x - seat.x;
+        const dy = s.y - seat.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist === 0) return;
+
+        const nx = dx / dist;
+        const ny = dy / dist;
+        const dot = nx * tx + ny * ty;
+
+        if (dot > 0.1) {
+          const score = dist / dot;
+          if (score < minScore) {
+            minScore = score;
+            bestSeat = s;
+          }
+        }
+      });
+
+      if (bestSeat) {
+        const nextSeatEl = document.getElementById(`seat-element-${bestSeat.elementId}-${bestSeat.index}`);
+        if (nextSeatEl) {
+          nextSeatEl.focus();
+        }
+      }
+    }
+  };
+
+  const handleFocus = (e) => {
+    if (!containerRef.current) return;
+    const bbox = e.currentTarget.getBoundingClientRect();
+    const vrect = containerRef.current.getBoundingClientRect();
+    onHover({
+      el,
+      seatIdx: seat.index,
+      label: seatLabel,
+      tier: seatTier,
+      occupiedBy: isOccupied || null,
+      x: bbox.left - vrect.left + bbox.width / 2,
+      y: bbox.top - vrect.top - 10,
+    });
+  };
+
+  const handleBlur = () => {
+    onHover(null);
+  };
+
+  const handleMouseEnter = useCallback((e) => {
+    const bbox = e.currentTarget.getBoundingClientRect();
+    const vrect = containerRef.current.getBoundingClientRect();
+    onHover({
+      el,
+      seatIdx: seat.index,
+      label: seatLabel,
+      tier: seatTier,
+      occupiedBy: isOccupied || null,
+      x: bbox.left - vrect.left + bbox.width / 2,
+      y: bbox.top - vrect.top - 10,
+    });
+  }, [containerRef, el, onHover, seat.index, seatLabel, seatTier, isOccupied]);
+
+  const handleMouseLeave = useCallback(() => {
+    onHover(null);
+  }, [onHover]);
+
+  const handleClick = useCallback(() => {
+    onSelect(el, seat, seat.index);
+  }, [el, onSelect, seat]);
+
+  return (
+    <g
+      id={`seat-element-${el.id}-${seat.index}`}
+      className={`ssp-interactive-seat ${isSelected ? "ssp-seat-glowing" : ""}`}
+      tabIndex={tabIndex}
+      role={role}
+      aria-label={ariaLabel}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      style={{ cursor: isOccupied ? "not-allowed" : "pointer" }}
+    >
+      <circle cx={seat.x} cy={seat.y + 3} r={11} fill="rgba(0, 0, 0, 0.45)" />
+      <circle
+        cx={seat.x}
+        cy={seat.y}
+        r={11}
+        fill={
+          isSelected
+            ? "url(#ssp-selected)"
+            : isOccupied
+              ? "#27272a"
+              : isVIP
+                ? "url(#ssp-vip-avail)"
+                : "url(#ssp-gen-avail)"
+        }
+        stroke={isSelected ? "#67e8f9" : isOccupied ? "#18181b" : isVIP ? "#f59e0b" : "#6366f1"}
+        strokeWidth={1.5}
+      />
+      {readOnly && isSelected && (
+        <circle
+          cx={seat.x}
+          cy={seat.y}
+          r={28}
+          fill="none"
+          stroke="#22d3ee"
+          strokeWidth={2}
+          className="ssp-radar-pulse"
+          pointerEvents="none"
+        />
+      )}
+    </g>
+  );
+};
+
+const MemoizedSeat = memo(Seat);
 
 export default SpatialSeatSelector;

@@ -243,6 +243,7 @@ export const filterByStatus = (events, selectedStatuses) => {
   const normalizedStatuses = selectedStatuses.map((s) => normalizeFilterValue(s));
 
   return events.filter((event) => {
+    if (!event) return false;
     const status = normalizeFilterValue(event.status || "upcoming");
     return normalizedStatuses.includes(status);
   });
@@ -372,6 +373,8 @@ export const hasActiveFilters = (filters = {}) => {
     (filters.categories && filters.categories.length > 0) ||
     (filters.modes && filters.modes.length > 0) ||
     (filters.statuses && filters.statuses.length > 0) ||
+    (filters.skillLevels && filters.skillLevels.length > 0) ||
+    (filters.tags && filters.tags.length > 0) ||
     (filters.location && filters.location.trim() !== "") ||
     (filters.priceRange && (filters.priceRange.min > 0 || filters.priceRange.max < Infinity)) ||
     (filters.dateRange && (filters.dateRange.startDate || filters.dateRange.endDate))
@@ -383,6 +386,8 @@ export const getDefaultFilters = () => ({
   categories: [],
   modes: [],
   statuses: [],
+  skillLevels: [],
+  tags: [],
   location: "",
   priceRange: null,
   dateRange: null,
@@ -395,6 +400,8 @@ export const normalizeAdvancedFilters = (filters = {}) => ({
   categories: Array.isArray(filters.categories) ? filters.categories : [],
   modes: Array.isArray(filters.modes) ? filters.modes : [],
   statuses: Array.isArray(filters.statuses) ? filters.statuses : [],
+  skillLevels: Array.isArray(filters.skillLevels) ? filters.skillLevels : [],
+  tags: Array.isArray(filters.tags) ? filters.tags : [],
   location: typeof filters.location === "string" ? filters.location : "",
   priceRange: filters.priceRange
     ? {
@@ -418,6 +425,8 @@ export const serializeAdvancedFilters = (filters = {}) => {
   if (normalized.categories.length) payload.categories = normalized.categories;
   if (normalized.modes.length) payload.modes = normalized.modes;
   if (normalized.statuses.length) payload.statuses = normalized.statuses;
+  if (normalized.skillLevels.length) payload.skillLevels = normalized.skillLevels;
+  if (normalized.tags.length) payload.tags = normalized.tags;
   if (normalized.location.trim()) payload.location = normalized.location.trim();
   if (normalized.priceRange) payload.priceRange = normalized.priceRange;
   if (normalized.dateRange && (normalized.dateRange.startDate || normalized.dateRange.endDate)) {
@@ -435,7 +444,11 @@ export const encodeAdvancedFilters = (filters = {}) => {
 export const decodeAdvancedFilters = (value) => {
   if (!value) return getDefaultFilters();
   try {
-    return normalizeAdvancedFilters(JSON.parse(decodeURIComponent(value)));
+    const parsed = JSON.parse(decodeURIComponent(value));
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return getDefaultFilters();
+    }
+    return normalizeAdvancedFilters(parsed);
   } catch {
     return getDefaultFilters();
   }
