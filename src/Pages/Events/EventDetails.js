@@ -173,11 +173,13 @@ const EventDetails = () => {
   const abortControllerRef = useRef(null);
   const latestRequestIdRef = useRef(0);
 
-  // Live, real-time seat availability for this event. Subscribes to the shared
-  // SSE stream and falls back to polling. Safe to call with a null eventId
-  // (returns early) before the event details finish loading.
+  // Live, real-time seat availability for this event. Subscribes to the
+  // per-event SSE stream so the backend only broadcasts availability for this
+  // event. Safe to call with a null eventId (returns early) before the event
+  // details finish loading.
   const { availability: liveAvailability } = useEventAvailability(eventId, {
     enabled: eventId != null,
+    scoped: true,
   });
   const copyLink = async () => {
     const success = await copy(window.location.href, "eventLink");
