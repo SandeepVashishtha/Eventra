@@ -1,59 +1,91 @@
-import java.util.Date;
 package com.sandeep.eventrabackend.security;
 
 import org.springframework.stereotype.Component;
 
+import javax.crypto.SecretKey;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * JWT Grace-Period Key Rotation Manager (#14083).
- * Maintains a keyring with current and previous keys to prevent session termination.
+ *
+ * Maintains a small keyring of the current signing key plus the immediately
+ * previous key, so tokens issued under the previous key remain valid during
+ * the grace period after a rotation instead of invalidating every session.
+ * The keyring is bounded: only the current and the most recent previous key
+ * are retained, so it cannot grow without limit.
+ *
+ * Issuance and validation delegate to this manager via {@link JwtTokenProvider}.
  */
 @Component
 public class JwtKeyRotationManager {
 
-    private final ConstantTimeJwtVerifier verifier;
-    private final Map<String, String> keyRing = new ConcurrentHashMap<>();
+    private static final int MAX_RETAINED_KEYS = 2;
+
+    private final Map<String, SecretKey> keyRing = new ConcurrentHashMap<>();
+    private final Deque<String> keyOrder = new ArrayDeque<>();
     private String currentKeyId;
 
-    public JwtKeyRotationManager(ConstantTimeJwtVerifier verifier) {
-        this.verifier = verifier;
-        // Initial seed keys
-        rotateKeys("key_id_v1", "secret_payload_signature_v1");
-    }
+    /**
+     * Registers {@code secretKey} as the current signing key. The previously
+     * current key is retained as a grace key; older keys are evicted.
+     */
+    public synchronized void rotateKeys(String nextKeyId, SecretKey secretKey) {
+        if (nextKeyId == null || secretKey == null) {
+            return;
+        }
+        if (secretKey.equals(keyRing.get(nextKeyId))) {
+            return; // Re-registering the same key id with the same key: no-op
+        }
 
-    public synchronized void rotateKeys(String nextKeyId, String secretKey) {
-        if (nextKeyId == null || secretKey == null) return;
-        
-        // Retain previous currentKeyId as grace key
-        this.currentKeyId = nextKeyId;
         keyRing.put(nextKeyId, secretKey);
+        keyOrder.remove(nextKeyId);
+        keyOrder.addFirst(nextKeyId);
+        this.currentKeyId = nextKeyId;
+
+        while (keyOrder.size() > MAX_RETAINED_KEYS) {
+            String oldest = keyOrder.removeLast();
+            keyRing.remove(oldest);
+        }
     }
 
     /**
-     * Validate signature against either current or valid grace period keys.
+     * @return the current signing key, or {@code null} if none has been registered
      */
-    public boolean validateTokenSignature(String keyId, String incomingSignature) {
-        if (keyId == null || incomingSignature == null) return false;
-
-        String keySecret = keyRing.get(keyId);
-        if (keySecret == null) {
-            return false;
-        }
-
-        // Validate using constant time comparison
-        return verifier.constantTimeEquals(incomingSignature, keySecret);
+    public SecretKey getCurrentKey() {
+        return keyRing.get(currentKeyId);
     }
 
     public String getCurrentKeyId() {
         return currentKeyId;
     }
 
-    public boolean isTokenIssuedBeforePasswordUpdate(Date tokenIssuedAt, Date passwordUpdatedAt) {
-        if (passwordUpdatedAt == null || tokenIssuedAt == null) {
-            return false;
+    public SecretKey getKey(String keyId) {
+        if (keyId == null) {
+            return null;
         }
-        return tokenIssuedAt.before(passwordUpdatedAt);
+        return keyRing.get(keyId);
+    }
+
+    /**
+     * @return the retained grace keys (all keys other than the current one),
+     *         ordered from most recently current to oldest
+     */
+    public List<SecretKey> getGraceKeys() {
+        List<SecretKey> graceKeys = new ArrayList<>();
+        for (String keyId : keyOrder) {
+            if (!keyId.equals(currentKeyId)) {
+                SecretKey key = keyRing.get(keyId);
+                if (key != null) {
+                    graceKeys.add(key);
+                }
+            }
+        }
+        return Collections.unmodifiableList(graceKeys);
     }
 }

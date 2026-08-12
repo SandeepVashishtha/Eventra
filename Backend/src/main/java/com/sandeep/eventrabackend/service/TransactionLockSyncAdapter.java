@@ -7,17 +7,20 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Transaction Synchronization Adapter (#14078).
- * Releases a lock ONLY after the active DB transaction has successfully committed.
+ * Transaction Synchronization Adapter (#14078, #14507).
+ * Releases a lock when the active DB transaction finishes, regardless of the
+ * outcome (commit, rollback or unknown), so the lock can never be leaked by a
+ * rolled-back transaction.
  */
 @Component
 public class TransactionLockSyncAdapter {
 
-    public void registerPostCommitRelease(ReentrantLock lock) {
+    public void registerReleaseOnCompletion(ReentrantLock lock) {
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
-                public void afterCommit() {
+                public void afterCompletion(int status) {
+                    // Releases on STATUS_COMMITTED, STATUS_ROLLED_BACK and STATUS_UNKNOWN.
                     if (lock.isHeldByCurrentThread()) {
                         lock.unlock();
                     }

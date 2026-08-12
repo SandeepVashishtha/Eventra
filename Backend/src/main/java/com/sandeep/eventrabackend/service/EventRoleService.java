@@ -54,7 +54,7 @@ public class EventRoleService {
 
         return eventTeamMemberRepository.findByEvent_IdAndUser_Id(eventId, user.getId())
                 .map(member -> member.getRole().includes(requiredRole))
-                .orElse(requiredRole == EventRole.ATTENDEE);
+                .orElse(false);
     }
 
     @Transactional(readOnly = true)

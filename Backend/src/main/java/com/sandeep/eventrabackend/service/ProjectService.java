@@ -73,6 +73,10 @@ public class ProjectService {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + userEmail));
 
+        if (project.getOwnerId().equals(user.getId())) {
+            throw new RegistrationConflictException("You cannot upvote your own project.");
+        }
+
         if (projectUpvoteRepository.existsByProject_IdAndUser_Id(id, user.getId())) {
             throw new RegistrationConflictException("You have already upvoted this project.");
         }

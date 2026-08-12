@@ -196,8 +196,8 @@ const RideshareSurgeMitigation = () => {
             <div className="absolute inset-0 z-10 pointer-events-none">
                {Array.from({ length: activeDrivers > 100 ? 15 : 3 }).map((_, i) => (
                  <div key={i} className="absolute w-2 h-2 bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(79,70,229,1)] transition-all duration-1000" style={{
-                   left: \`\${20 + Math.random() * 60}%\`,
-                   top: \`\${20 + Math.random() * 60}%\`,
+                   left: `${20 + Math.random() * 60}%`,
+                   top: `${20 + Math.random() * 60}%`,
                  }}></div>
                ))}
             </div>

@@ -9,6 +9,8 @@ export const MAX_SESSION_BACKUP_BYTES = 1024 * 1024;
 
 const pad = (value) => String(value).padStart(2, "0");
 
+let cloneCounter = 0;
+
 export const getSessionBackupDateStamp = (date = new Date()) =>
   `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 
@@ -132,8 +134,9 @@ export const validateSessionBackup = (backup) => {
 
 const cloneSessionWithNewId = (session, suffix = "imported") => {
   const now = new Date();
+  cloneCounter += 1;
   return createRecoverySession({
-    sessionId: `${session.sessionId}-${suffix}-${Date.now()}`,
+    sessionId: `${session.sessionId}-${suffix}-${Date.now()}-${cloneCounter}`,
     name: `${session.name} (Imported)`,
     type: session.type,
     draftData: session.draftData,

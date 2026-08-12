@@ -52,19 +52,12 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { getServerTime } from "utils/timeSync";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Time source
 // ─────────────────────────────────────────────────────────────────────────────
-
-let getTime;
-try {
-  // Use getServerTime when available — prevents client clock manipulation
-  const { getServerTime } = require("utils/timeSync");
-  getTime = getServerTime;
-} catch {
-  getTime = () => new Date();
-}
+// Uses getServerTime() from timeSync.js — prevents client clock manipulation.
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Calculate time remaining to a deadline
@@ -73,7 +66,7 @@ try {
 const calculateTimeLeft = (deadline) => {
   if (!deadline) return { days: 0, hours: 0, minutes: 0, seconds: 0, ended: true, total: 0 };
 
-  const now = getTime();
+  const now = getServerTime();
   const end = deadline instanceof Date ? deadline : new Date(deadline);
   const diff = end - now;
 

@@ -249,12 +249,16 @@ export const API_ENDPOINTS = {
     PREFERENCES: buildApiUrl("/users/preferences"),
     PUSH_SUBSCRIBE: buildApiUrl("/notifications/push-subscriptions"),
     PUSH_UNSUBSCRIBE: buildApiUrl("/notifications/push-subscriptions/unsubscribe"),
+    TEST_EMAIL: buildApiUrl("/notifications/send-test-email"),
+    SAVE_TEMPLATE: buildApiUrl("/notifications/save-template"),
+    GET_TEMPLATE: (eventId, templateType) => buildApiUrl(`/notifications/templates/${eventId}/${templateType}`),
   },
   USERS: {
     PROFILE: buildApiUrl("/users/profile"),
     ACHIEVEMENTS: buildApiUrl("/users/achievements"),
     // (#7653) Endpoint for persisting user preferences (theme, etc.) across devices
     PREFERENCES: buildApiUrl("/users/preferences"),
+    CHANGE_PASSWORD: buildApiUrl("/users/change-password"),
   },
   ANALYTICS: {
     SUMMARY: buildApiUrl("/analytics/summary"),
@@ -280,6 +284,7 @@ export const API_ENDPOINTS = {
     JOIN: buildApiUrl("/waitlist/join"),
     LEAVE: (id) => buildApiUrl(`/waitlist/${id}/leave`),
     STATUS: (id) => buildApiUrl(`/waitlist/${id}/status`),
+    IMPORT_CSV: (id) => buildApiUrl(`/events/${id}/waitlist/import`),
   },
   FEEDBACK: {
     BASE: buildApiUrl("/feedback"),

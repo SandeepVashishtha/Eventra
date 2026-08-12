@@ -4,7 +4,7 @@ import { apiUtils, API_ENDPOINTS } from "../config/api.js";
 import { useAuth } from "../context/AuthContext.js";
 import usePageVisibility from "./usePageVisibility.js";
 import { safeJsonParse } from "../utils/safeJsonParse.js";
-import { getNotificationMessage } from "../utils/notificationPreferences.js";
+import { getNotificationDedupeKey } from "../utils/notificationPreferences.js";
 import { get as idbGet, del as idbDel } from "idb-keyval";
 import { showUndoToast } from "../utils/toast.js";
 
@@ -29,7 +29,7 @@ const getStorageKey = (userId) => {
 
 const normalize = (n = {}) => ({
   ...n,
-  id: n.id || n._id || `${n.timestamp || n.createdAt || Date.now()}-${Math.random().toString(36).slice(2)}`,
+  id: getNotificationDedupeKey(n) || `${n.timestamp || n.createdAt || Date.now()}-${Math.random().toString(36).slice(2)}`,
   timestamp: n.timestamp || n.createdAt || n.updatedAt || new Date().toISOString(),
   isRead: Boolean(n.isRead ?? n.read),
 });
@@ -110,20 +110,31 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
 
   const applyList = useCallback(
     (list, { deliverNew: shouldDeliver = false } = {}) => {
-      const normalized = list.map(normalize);
-      const incomingUnread = normalized.filter((n) => {
+      // Dedupe the batch by canonical id, then merge against the latest known
+      // list (notificationsRef keeps the freshest state between renders). The
+      // same logical notification arriving over SSE and the poller therefore
+      // converges on a single entry, and unreadCount is recomputed from that
+      // deduped set so it can never be counted twice (issue #14612).
+      const byId = new Map();
+      const deduped = [];
+      for (const raw of list) {
+        const n = normalize(raw);
+        if (byId.has(n.id)) continue;
+        byId.set(n.id, n);
+        deduped.push(n);
+      }
+      const incomingUnread = deduped.filter((n) => {
         const isNew = !seenIds.current.has(n.id);
         return isNew && !n.isRead;
       });
-      normalized.forEach((n) => addSeenId(n.id));
-      setNotifications((prev) => {
-        const byId = new Map(normalized.map((n) => [n.id, n]));
-        const merged = normalized.concat(prev.filter((p) => !byId.has(p.id)));
-        const sorted = merged.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        persist(sorted, storageKeyRef.current);
-        return sorted;
-      });
-      setUnreadCount((prev) => Math.max(0, prev + incomingUnread.length));
+      deduped.forEach((n) => addSeenId(n.id));
+      const prev = notificationsRef.current || [];
+      const merged = deduped.concat(prev.filter((p) => !byId.has(p.id)));
+      const sorted = merged.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      notificationsRef.current = sorted;
+      setNotifications(sorted);
+      persist(sorted, storageKeyRef.current);
+      setUnreadCount(Math.max(0, sorted.filter((n) => !n.isRead).length));
       if (shouldDeliver && hasCompletedInitialFetchRef.current && incomingUnread.length > 0) {
         deliverNew(incomingUnread);
       }
@@ -163,6 +174,7 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
   useEffect(() => {
     if (!token) {
       setNotifications([]);
+      notificationsRef.current = [];
       setUnreadCount(0);
       seenIds.current = new Set();
       hasCompletedInitialFetchRef.current = false;
@@ -205,6 +217,7 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
         if (!isMounted.current || tokenRef.current !== t) return;
         setNotifications((prev) => {
           const updated = prev.map((n) => (n.id === id ? { ...n, isRead: true } : n));
+          notificationsRef.current = updated;
           persist(updated, storageKeyRef.current);
           return updated;
         });
@@ -230,6 +243,7 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
     if (!endpoint) return;
     setNotifications((prev) => {
       const updated = prev.map((n) => ({ ...n, isRead: true }));
+      notificationsRef.current = updated;
       persist(updated, storageKeyRef.current);
       return updated;
     });
@@ -252,6 +266,7 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
       const removedWasUnread = target ? !target.isRead : false;
       setNotifications((prev) => {
         const updated = prev.filter((n) => n.id !== id);
+        notificationsRef.current = updated;
         persist(updated, storageKeyRef.current);
         return updated;
       });
@@ -305,6 +320,7 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
           (n) => n.id && !seenIds.current.has(n.id) && !n.isRead
         );
         setNotifications(persisted);
+        notificationsRef.current = persisted;
         setUnreadCount(persisted.filter((n) => !n.isRead).length);
         persisted.forEach((n) => {
           if (n.id) addSeenId(n.id);
@@ -361,6 +377,7 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
             merged.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
             persist(merged, storageKeyRef.current);
             setNotifications(merged);
+            notificationsRef.current = merged;
             setUnreadCount(merged.filter((n) => !n.isRead).length);
             merged.forEach((n) => {
               if (n.id) seenIds.current.add(n.id);

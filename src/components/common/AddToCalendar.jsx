@@ -20,6 +20,19 @@ const to24HourTime = (timeStr) => {
 };
 
 const generateICalContent = (event, reminderMinutes = 30) => {
+  const rawReminder =
+    typeof reminderMinutes === "number"
+      ? reminderMinutes
+      : parseInt(reminderMinutes, 10);
+  // Only emit a VALARM for a finite, positive, integer minute value; anything
+  // else (negative, NaN, fractional, non-numeric) would produce a malformed
+  // iCalendar TRIGGER such as -PT-15M or -PTNaNM. Invalid values disable the
+  // reminder instead of emitting broken syntax.
+  const validatedReminderMinutes =
+    Number.isFinite(rawReminder) && rawReminder > 0 && Number.isInteger(rawReminder)
+      ? rawReminder
+      : 0;
+
   const formatICalDate = (dateStr, timeStr) => {
     if (!dateStr) return '';
     const dt = new Date(`${dateStr}T${to24HourTime(timeStr)}:00`);
@@ -41,11 +54,15 @@ const generateICalContent = (event, reminderMinutes = 30) => {
     `LOCATION:${event.location || ''}`,
     `URL:${event.joiningLink || window.location.href}`,
     `UID:${event.id || Date.now()}@eventra`,
-    'BEGIN:VALARM',
-    `TRIGGER:-PT${reminderMinutes}M`,
-    'ACTION:DISPLAY',
-    'DESCRIPTION:Reminder',
-    'END:VALARM',
+    ...(validatedReminderMinutes > 0
+      ? [
+          'BEGIN:VALARM',
+          `TRIGGER:-PT${validatedReminderMinutes}M`,
+          'ACTION:DISPLAY',
+          'DESCRIPTION:Reminder',
+          'END:VALARM',
+        ]
+      : []),
     'END:VEVENT',
     'END:VCALENDAR',
   ].join('\r\n');

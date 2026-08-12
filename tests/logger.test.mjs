@@ -11,10 +11,16 @@ globalThis.console = {
 import { logger } from "../src/utils/logger.js";
 
 logger.warn("Attention");
-assert.equal(logged.some(([msg]) => msg === "[WARN] Attention"), true);
+assert.equal(
+  logged.some(([prefix, msg]) => prefix === "[WARN]" && msg === "Attention"),
+  true,
+);
 
 logger.error("Failed");
-assert.equal(logged.some(([msg]) => msg === "[ERROR] Failed"), true);
+assert.equal(
+  logged.some(([prefix, msg]) => prefix === "[ERROR]" && msg === "Failed"),
+  true,
+);
 
 logger.info("User login", {
   email: "person@example.com",
@@ -23,10 +29,16 @@ logger.info("User login", {
   password: "super-secret",
 });
 
-const infoEntry = logged.find(([msg]) => msg === "[INFO] User login");
+const infoEntry = logged.find(([prefix]) => prefix === "[INFO]");
 assert.ok(infoEntry, "Should log info entry");
-assert.equal(infoEntry[1].email, "[REDACTED_SECRET]");
-assert.equal(infoEntry[1].Authorization, "[REDACTED_SECRET]");
-assert.equal(infoEntry[1].password, "[REDACTED_SECRET]");
+assert.equal(infoEntry[1], "User login");
+assert.equal(infoEntry[2].email, "[REDACTED_SECRET]");
+assert.equal(infoEntry[2].Authorization, "[REDACTED_SECRET]");
+assert.equal(infoEntry[2].password, "[REDACTED_SECRET]");
+
+logger.security("csrf_token_missing", { token: "super-secret-token" });
+const securityEntry = logged.find(([prefix]) => prefix === "[SECURITY]");
+assert.ok(securityEntry, "Should log security entry");
+assert.equal(securityEntry[1].token, "[REDACTED_SECRET]");
 
 console.log("logger tests passed");

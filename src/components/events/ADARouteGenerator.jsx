@@ -177,10 +177,10 @@ const ADARouteGenerator = () => {
               {/* Waypoints */}
               <div className="absolute z-10 w-full h-full pointer-events-none">
                  {/* Origin */}
-                 <div className="absolute w-4 h-4 bg-white rounded-full border-2 border-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)]" style={{ left: \`\${path.origin.x}%\`, top: \`\${path.origin.y}%\`, transform: 'translate(-50%, -50%)' }}></div>
+                 <div className="absolute w-4 h-4 bg-white rounded-full border-2 border-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)]" style={{ left: `${path.origin.x}%`, top: `${path.origin.y}%`, transform: 'translate(-50%, -50%)' }}></div>
                  
                  {/* Destination */}
-                 <div className="absolute w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center border-2 border-white shadow-[0_0_15px_rgba(59,130,246,1)]" style={{ left: \`\${path.destination.x}%\`, top: \`\${path.destination.y}%\`, transform: 'translate(-50%, -50%)' }}>
+                 <div className="absolute w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center border-2 border-white shadow-[0_0_15px_rgba(59,130,246,1)]" style={{ left: `${path.destination.x}%`, top: `${path.destination.y}%`, transform: 'translate(-50%, -50%)' }}>
                    <span className="text-[10px] text-white">📍</span>
                  </div>
 
@@ -198,7 +198,7 @@ const ADARouteGenerator = () => {
               <svg className="absolute inset-0 w-full h-full z-0 pointer-events-none">
                 {routeState === 'recalculating' ? (
                   <path 
-                    d={\`M \${path.nodes.map(n => \`\${n.x}% \${n.y}%\`).join(' L ')}\`} 
+                    d={`M ${path.nodes.map(n => `${n.x}% ${n.y}%`).join(' L ')}`} 
                     fill="none" 
                     stroke="rgba(59,130,246,0.3)" 
                     strokeWidth="6" 
@@ -211,7 +211,7 @@ const ADARouteGenerator = () => {
                   <>
                     {/* Shadow/Glow */}
                     <path 
-                      d={\`M \${path.nodes.map(n => \`\${n.x}% \${n.y}%\`).join(' L ')}\`} 
+                      d={`M ${path.nodes.map(n => `${n.x}% ${n.y}%`).join(' L ')}`} 
                       fill="none" 
                       stroke="rgba(59,130,246,0.4)" 
                       strokeWidth="12" 
@@ -221,7 +221,7 @@ const ADARouteGenerator = () => {
                     />
                     {/* Main Line */}
                     <path 
-                      d={\`M \${path.nodes.map(n => \`\${n.x}% \${n.y}%\`).join(' L ')}\`} 
+                      d={`M ${path.nodes.map(n => `${n.x}% ${n.y}%`).join(' L ')}`} 
                       fill="none" 
                       stroke="#3b82f6" 
                       strokeWidth="4" 

@@ -110,23 +110,37 @@ export const sendNotification = (title, options = {}) => {
 
     const notification = new Notification(title, notificationOptions);
 
+    let autoCloseTimer = null;
+
+    const clearAutoClose = () => {
+      if (autoCloseTimer !== null) {
+        clearTimeout(autoCloseTimer);
+        autoCloseTimer = null;
+      }
+    };
+
     // Attach event handlers if provided
     if (typeof options.onClick === "function") {
       notification.onclick = (event) => {
         event.preventDefault();
+        clearAutoClose();
         options.onClick(notification);
-        // Focus the window when notification is clicked
         window.focus();
       };
     }
 
     if (typeof options.onClose === "function") {
-      notification.onclose = () => options.onClose(notification);
+      notification.onclose = () => {
+        clearAutoClose();
+        options.onClose(notification);
+      };
+    } else {
+      notification.onclose = () => clearAutoClose();
     }
 
     // Auto-close after 10 seconds if requireInteraction is false
     if (!notificationOptions.requireInteraction) {
-      setTimeout(() => notification.close(), 10000);
+      autoCloseTimer = setTimeout(() => notification.close(), 10000);
     }
 
     return notification;

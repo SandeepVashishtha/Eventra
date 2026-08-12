@@ -115,6 +115,8 @@ export const getImprovementAreas = (
 export const getFeedbackTrends = (
   feedback = []
 ) => {
+  if (!Array.isArray(feedback)) return [];
+
   const grouped = {};
 
   feedback.forEach((item) => {
@@ -173,15 +175,16 @@ export const getFeedbackTrends = (
 export const calculateFeedbackTrend = (
   feedback = []
 ) => {
+  if (!Array.isArray(feedback)) return "Stable";
+
   const trends = getFeedbackTrends(feedback);
 
-  if (trends.length < 2) {
+  if (!trends || trends.length < 2) {
     return "Stable";
   }
 
-  const first = trends[0].rating;
-  const last =
-    trends[trends.length - 1].rating;
+  const first = trends[0]?.rating ?? 0;
+  const last = trends[trends.length - 1]?.rating ?? 0;
 
   if (last > first + 0.2) {
     return "Improving";

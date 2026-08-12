@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   X, Briefcase, Globe,
   Send, MessageSquare, ArrowLeft
@@ -21,6 +21,7 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
   const chatEndRef = useRef(null);
   const replyTimerRef = useRef(null);
   const chatLeadCapturedRef = useRef(false);
+  const isMountedRef = useRef(true);
 
   /* ---------------- Lead Capture ---------------- */
   const captureLead = (action) => {
@@ -63,6 +64,7 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
     if (!isOpen) return;
 
     document.body.style.overflow = "hidden";
+    isMountedRef.current = true;
 
     setShowChat(false);
     setChatMessage("");
@@ -83,6 +85,7 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
 
     return () => {
       document.body.style.overflow = "unset";
+      isMountedRef.current = false;
       if (replyTimerRef.current) {
         clearTimeout(replyTimerRef.current);
         replyTimerRef.current = null;
@@ -121,6 +124,8 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
     if (replyTimerRef.current) clearTimeout(replyTimerRef.current);
     replyTimerRef.current = setTimeout(() => {
       replyTimerRef.current = null;
+      if (!isMountedRef.current) return;
+
       setIsTyping(false);
 
       const replies = [

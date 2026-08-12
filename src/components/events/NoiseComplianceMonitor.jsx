@@ -26,7 +26,7 @@ const NoiseComplianceMonitor = () => {
         const hrs = 21 + Math.floor(seconds / 3600);
         const mins = Math.floor((seconds % 3600) / 60);
         const secs = seconds % 60;
-        setTime(\`\${hrs.toString().padStart(2, '0')}:\${mins.toString().padStart(2, '0')}:\${secs.toString().padStart(2, '0')}\`);
+        setTime(`${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`);
         
         setDecibels(prev => {
           let newDb = prev + (Math.random() * 3 - 1);
@@ -253,7 +253,7 @@ const NoiseComplianceMonitor = () => {
                      className={`absolute w-12 h-6 rounded shadow-lg flex items-center justify-center transition-all duration-1000 ease-out z-10 ${
                        compressionActive ? 'bg-red-600 border-b-4 border-red-800 shadow-[0_0_15px_rgba(220,38,38,0.5)]' : 'bg-yellow-600 border-b-4 border-yellow-800'
                      }`} 
-                     style={{ bottom: \`\${subBassLevel}%\` }}
+                     style={{ bottom: `${subBassLevel}%` }}
                    >
                      <div className="w-8 h-1 bg-white/50"></div>
                    </div>

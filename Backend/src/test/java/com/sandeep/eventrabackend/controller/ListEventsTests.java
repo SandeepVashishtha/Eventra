@@ -80,6 +80,15 @@ public class ListEventsTests {
 
     @Test
     @WithMockUser
+    void testGetAllEventsExcludesPrivateEvents() throws Exception {
+        // Issue #12071 — private (isPublic=false) events must not be listed publicly.
+        mockMvc.perform(get("/api/events"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[?(@.title == 'Second Event')]").isEmpty());
+    }
+
+    @Test
+    @WithMockUser
     void testGetAllEventsRespectsPagination() throws Exception {
         mockMvc.perform(get("/api/events")
                         .param("page", "0")

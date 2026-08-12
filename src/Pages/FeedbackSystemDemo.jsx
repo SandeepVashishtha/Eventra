@@ -284,7 +284,7 @@ const FeedbackSystemDemo = () => {
                       ))}
                     </div>
                     <span className="text-xs text-gray-500">
-                      {new Date(item.submittedAt).toLocaleDateString()}
+                      {new Date(item.updatedAt || item.createdAt).toLocaleDateString()}
                     </span>
                   </div>
 

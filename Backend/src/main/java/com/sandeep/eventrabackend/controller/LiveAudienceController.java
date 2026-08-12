@@ -51,6 +51,21 @@ public class LiveAudienceController {
         return ResponseEntity.ok(liveAudienceService.getInitialData(eventId));
     }
 
+    @GetMapping("/questions")
+    @Operation(summary = "List live audience questions",
+            description = "Returns the Q&A questions for an event, ordered by upvotes then recency. Requires authentication.",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Questions fetched successfully",
+                    content = @Content(schema = @Schema(implementation = LiveAudienceQuestionResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Event not found",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<java.util.List<LiveAudienceQuestionResponse>> getQuestions(
+            @PathVariable Long eventId) {
+        return ResponseEntity.ok(liveAudienceService.getQuestions(eventId));
+    }
+
     @PostMapping("/questions")
     @Operation(summary = "Submit a Q&A question",
             description = "Posts a question to the live audience board. Requires authentication.",

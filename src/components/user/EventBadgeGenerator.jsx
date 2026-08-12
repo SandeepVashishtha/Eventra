@@ -1,3 +1,4 @@
+import useFileUpload from "hooks/useFileUpload";
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { 
@@ -52,11 +53,16 @@ const BADGE_TEMPLATES = {
 };
 
 export default function EventBadgeGenerator({ onClose, userStats = {} }) {
+  // Fix: useFileUpload replaces raw FileReader with no error handling
+  const {
+    preview: avatarPreview,
+    handleFileChange: handleAvatarChange,
+  } = useFileUpload({ mode: "base64", accept: ["image/*"], maxBytes: 2_097_152 });
+
   const { totalEvents = 0, currentStreak = 0, unlockedCount = 0 } = userStats;
 
   // Local state for customizations
   const [selectedTemplate, setSelectedTemplate] = useState("vip");
-  const [avatar, setAvatar] = useState(null);
   const [attendeeName, setAttendeeName] = useState("Aditya Narayan");
   const [attendeeRole, setAttendeeRole] = useState("Open Source Developer");
   const [exporting, setExporting] = useState(false);
@@ -72,18 +78,7 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
   const completedCount = checklist.filter(item => item.done).length;
   const isFullyVerified = completedCount === checklist.length;
 
-  // Handle avatar upload
-  const handleAvatarChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (uploadEvent) => {
-        setAvatar(uploadEvent.target.result);
-        toast.success("Profile avatar uploaded successfully.");
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+  // Fix: handleAvatarChange now provided by useFileUpload — avatarPreview is the base64 string
 
   // Trigger PNG download using html2canvas
   const downloadPNG = async () => {
@@ -348,7 +343,7 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
                 <span className={`absolute -inset-1 rounded-full bg-linear-to-r ${currentTemplate.ringClass} blur-xs opacity-80 animate-pulse`} />
                 <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-slate-800 bg-slate-900 flex items-center justify-center">
                   {avatar ? (
-                    <img src={avatar} alt="Avatar" className="w-full h-full object-cover" loading="lazy" />
+                    <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" loading="lazy" />
                   ) : (
                     <User className="w-8 h-8 text-slate-655" />
                   )}

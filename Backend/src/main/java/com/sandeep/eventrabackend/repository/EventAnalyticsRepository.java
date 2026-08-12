@@ -13,12 +13,12 @@ import java.util.List;
 @Repository
 public interface EventAnalyticsRepository extends JpaRepository<Event, Long> {
 
-    // "Active" = event date is in the future (no status field on Event)
-    @Query("SELECT COUNT(e) FROM Event e WHERE e.eventDate > :now")
+    // "Active" = public, non-cancelled event whose date is in the future
+    @Query("SELECT COUNT(e) FROM Event e WHERE e.eventDate > :now AND e.isPublic = TRUE AND (e.status IS NULL OR e.status <> 'CANCELLED')")
     long countActiveEvents(@Param("now") LocalDateTime now);
 
-    // "Completed" = event date is in the past
-    @Query("SELECT COUNT(e) FROM Event e WHERE e.eventDate <= :now")
+    // "Completed" = public, non-cancelled event whose date is in the past
+    @Query("SELECT COUNT(e) FROM Event e WHERE e.eventDate <= :now AND e.isPublic = TRUE AND (e.status IS NULL OR e.status <> 'CANCELLED')")
     long countCompletedEvents(@Param("now") LocalDateTime now);
 
     // Uses registeredCount (denormalised counter already on Event — free query!)

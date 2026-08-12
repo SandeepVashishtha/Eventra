@@ -71,6 +71,30 @@ public class EventRegistration {
     @Column(name = "group_name", length = 200)
     private String groupName;
 
+    @Column(name = "ticket_price", precision = 10, scale = 2)
+    private java.math.BigDecimal ticketPrice;
+
+    @Column(name = "payment_status", length = 30)
+    private String paymentStatus = "PENDING"; // PENDING, PARTIAL, COMPLETED, FAILED, REFUNDED
+
+    @Column(name = "payment_method", length = 50)
+    private String paymentMethod;
+
+    @Column(name = "payment_provider", length = 50)
+    private String paymentProvider;
+
+    @Column(name = "stripe_payment_intent_id", length = 255)
+    private String stripePaymentIntentId;
+
+    @Column(name = "stripe_customer_id", length = 255)
+    private String stripeCustomerId;
+
+    @Column(name = "qr_activated", nullable = false)
+    private boolean qrActivated = false;
+
+    @Column(name = "qr_activation_date")
+    private java.time.LocalDateTime qrActivationDate;
+
     public Long getId() {
         return id;
     }
@@ -149,5 +173,81 @@ public class EventRegistration {
 
     public void setGroupName(String groupName) {
         this.groupName = groupName;
+    }
+
+    public java.math.BigDecimal getTicketPrice() {
+        return ticketPrice;
+    }
+
+    public void setTicketPrice(java.math.BigDecimal ticketPrice) {
+        this.ticketPrice = ticketPrice;
+    }
+
+    public String getPaymentStatus() {
+        return paymentStatus;
+    }
+
+    public void setPaymentStatus(String paymentStatus) {
+        this.paymentStatus = paymentStatus;
+    }
+
+    public String getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public void setPaymentMethod(String paymentMethod) {
+        this.paymentMethod = paymentMethod;
+    }
+
+    public String getPaymentProvider() {
+        return paymentProvider;
+    }
+
+    public void setPaymentProvider(String paymentProvider) {
+        this.paymentProvider = paymentProvider;
+    }
+
+    public String getStripePaymentIntentId() {
+        return stripePaymentIntentId;
+    }
+
+    public void setStripePaymentIntentId(String stripePaymentIntentId) {
+        this.stripePaymentIntentId = stripePaymentIntentId;
+    }
+
+    public String getStripeCustomerId() {
+        return stripeCustomerId;
+    }
+
+    public void setStripeCustomerId(String stripeCustomerId) {
+        this.stripeCustomerId = stripeCustomerId;
+    }
+
+    public boolean isQrActivated() {
+        return qrActivated;
+    }
+
+    public void setQrActivated(boolean qrActivated) {
+        this.qrActivated = qrActivated;
+    }
+
+    public java.time.LocalDateTime getQrActivationDate() {
+        return qrActivationDate;
+    }
+
+    public void setQrActivationDate(java.time.LocalDateTime qrActivationDate) {
+        this.qrActivationDate = qrActivationDate;
+    }
+
+    public boolean isPaymentCompleted() {
+        return "COMPLETED".equalsIgnoreCase(paymentStatus);
+    }
+
+    public boolean isPaymentPartial() {
+        return "PARTIAL".equalsIgnoreCase(paymentStatus);
+    }
+
+    public boolean isPaymentPending() {
+        return "PENDING".equalsIgnoreCase(paymentStatus);
     }
 }
