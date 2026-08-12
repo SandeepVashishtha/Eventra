@@ -1,79 +1,107 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
-import { AlertCircle, X as XIcon } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '../../context/AuthContext';
-import useDocumentTitle from "../../hooks/useDocumentTitle";
-import useReducedMotion from "../../hooks/useReducedMotion";
+import { useState, useEffect, useMemo, lazy, Suspense } from "react";
+import { AlertCircle, X as XIcon } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "context/AuthContext";
+import useDocumentTitle from "hooks/useDocumentTitle";
+import useReducedMotion from "hooks/useReducedMotion";
 
-const LoginForm = lazy(() => import('./LoginForm'));
-const SignupForm = lazy(() => import('./SignupForm'));
+const LoginForm = lazy(() => import("./LoginForm"));
+const SignupForm = lazy(() => import("./SignupForm"));
+
+const AUTH_ROUTES = new Set([
+  "/login",
+  "/register",
+  "/signup",
+  "/unauthorized",
+  "/password-reset",
+]);
+
+/**
+ * Only allow same-origin relative paths. Reject schemes, protocol-relative
+ * URLs, and anything that is not a single path starting with "/".
+ */
+export function sanitizeRedirectPath(candidate, fallback = "/dashboard") {
+  if (typeof candidate !== "string" || candidate.length === 0) {
+    return fallback;
+  }
+  const trimmed = candidate.trim();
+  if (
+    !trimmed.startsWith("/") ||
+    trimmed.startsWith("//") ||
+    trimmed.includes("\\") ||
+    /^\/[a-z][a-z0-9+.-]*:/i.test(trimmed)
+  ) {
+    return fallback;
+  }
+  if (AUTH_ROUTES.has(trimmed.split(/[?#]/, 1)[0])) {
+    return fallback;
+  }
+  return trimmed;
+}
 
 const AuthPage = () => {
   const prefersReducedMotion = useReducedMotion();
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  
-  const isLogin = location.pathname === '/login';
+
+  const isLogin = location.pathname === "/login";
   const sessionExpired = location.state?.sessionExpired === true;
   const from = location.state?.from;
-  const redirectPath =
+
+  const rawRedirectPath =
     typeof from === "string"
       ? from
       : from?.pathname
         ? `${from.pathname}${from.search || ""}${from.hash || ""}`
         : "/dashboard";
+
   const [showExpiredBanner, setShowExpiredBanner] = useState(sessionExpired);
-  
+
   useDocumentTitle(isLogin ? "Login | Eventra" : "Sign Up | Eventra");
 
   useEffect(() => {
     if (isAuthenticated()) {
-      navigate(redirectPath, { replace: true });
+      navigate(sanitizeRedirectPath(rawRedirectPath), { replace: true });
     }
-  }, [navigate, isAuthenticated, redirectPath]);
+  }, [navigate, isAuthenticated, rawRedirectPath]);
 
-  // Animation variants
-  const formVariants = {
-    hidden: (isLoginView) => ({
-      x: isLoginView ? -50 : 50,
-      opacity: 0,
-      scale: 0.95,
-    }),
-    visible: {
-      x: 0,
-      opacity: 1,
-      scale: 1,
-      transition: {
-        type: 'spring',
-        stiffness: 300,
-        damping: 30,
+  // 🔥 FIX 2: Memoized Animation Variants
+  // Hoisted into useMemo to prevent unnecessary re-instantiation and layout thrashing.
+  const formVariants = useMemo(
+    () => ({
+      hidden: (isLoginView) => ({
+        x: isLoginView ? -50 : 50,
+        opacity: 0,
+        scale: 0.95,
+      }),
+      visible: {
+        x: 0,
+        opacity: 1,
+        scale: 1,
+        transition: {
+          type: "spring",
+          stiffness: 300,
+          damping: 30,
+        },
       },
-    },
-    exit: (isLoginView) => ({
-      x: isLoginView ? 50 : -50,
-      opacity: 0,
-      scale: 0.95,
-      transition: {
-        duration: prefersReducedMotion ? 0 : 0.2,
-      },
+      exit: (isLoginView) => ({
+        x: isLoginView ? 50 : -50,
+        opacity: 0,
+        scale: 0.95,
+        transition: {
+          duration: prefersReducedMotion ? 0 : 0.2,
+        },
+      }),
     }),
-  };
+    [prefersReducedMotion]
+  );
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-bg py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
       <div className="w-full max-w-[32rem]">
         <div className="bg-card-bg border border-border rounded-3xl shadow-premium-lg p-6 sm:p-8">
-          <div className="mb-6 text-center">
-            <h2 className="text-3xl font-extrabold text-text tracking-tight">{isLogin ? "Welcome Back" : "Create Your Account"}</h2>
-            <p className="mt-2 text-sm text-text-light">
-              {isLogin
-                ? "Sign in to continue to your Eventra dashboard."
-                : "Create an account to start using Eventra features."}
-            </p>
-          </div>
-
           <div className="w-full">
             {/* Session-expired banner */}
             {showExpiredBanner && (
@@ -93,11 +121,13 @@ const AuthPage = () => {
                 </button>
               </motion.div>
             )}
-            <Suspense fallback={
-              <div className="flex items-center justify-center min-h-[400px]">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
-              </div>
-            }>
+            <Suspense
+              fallback={
+                <div className="flex items-center justify-center min-h-[400px]">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+                </div>
+              }
+            >
               <AnimatePresence mode="wait" custom={isLogin}>
                 <motion.div
                   key={isLogin ? "login" : "signup"}

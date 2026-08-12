@@ -1,0 +1,467 @@
+package com.sandeep.eventrabackend.service;
+
+import com.sandeep.eventrabackend.model.EventRegistration;
+import com.sandeep.eventrabackend.model.Payment;
+import com.sandeep.eventrabackend.model.PaymentPlan;
+import com.sandeep.eventrabackend.repository.PaymentPlanRepository;
+import com.sandeep.eventrabackend.repository.PaymentRepository;
+import com.stripe.Stripe;
+import com.stripe.exception.StripeException;
+import com.stripe.model.*;
+import com.stripe.net.Webhook;
+import com.stripe.param.*;
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
+
+@Service
+public class StripeService {
+
+    @Value("${stripe.api.key:}")
+    private String stripeApiKey;
+
+    @Value("${stripe.webhook.secret:}")
+    private String stripeWebhookSecret;
+
+    private final PaymentRepository paymentRepository;
+    private final PaymentPlanRepository paymentPlanRepository;
+
+    public StripeService(PaymentRepository paymentRepository, 
+                         PaymentPlanRepository paymentPlanRepository) {
+        this.paymentRepository = paymentRepository;
+        this.paymentPlanRepository = paymentPlanRepository;
+    }
+
+    @PostConstruct
+    public void init() {
+        if (stripeApiKey != null && !stripeApiKey.isEmpty()) {
+            Stripe.apiKey = stripeApiKey;
+        }
+    }
+
+    // Initialize Stripe with custom API key
+    public void setApiKey(String apiKey) {
+        Stripe.apiKey = apiKey;
+    }
+
+    // Create a Stripe Customer
+    public Customer createCustomer(String email, String name, String phone, Map<String, String> metadata) throws StripeException {
+        CustomerCreateParams params = CustomerCreateParams.builder()
+                .setEmail(email)
+                .setName(name)
+                .setPhone(phone)
+                .setMetadata(metadata)
+                .build();
+        
+        return Customer.create(params);
+    }
+
+    // Retrieve a Customer
+    public Customer getCustomer(String customerId) throws StripeException {
+        return Customer.retrieve(customerId);
+    }
+
+    // Create a Setup Intent for saving payment method
+    public SetupIntent createSetupIntent(String customerId, String paymentMethodType) throws StripeException {
+        SetupIntentCreateParams params = SetupIntentCreateParams.builder()
+                .setCustomer(customerId)
+                .setPaymentMethodTypes(Arrays.asList(paymentMethodType))
+                .setUsage(SetupIntentCreateParams.Usage.OFF_SESSION)
+                .putMetadata("payment_type", "installment")
+                .build();
+        
+        return SetupIntent.create(params);
+    }
+
+    // Create a Payment Intent for the upfront payment
+    public PaymentIntent createPaymentIntent(
+            String customerId,
+            long amount,
+            String currency,
+            String paymentMethodId,
+            String description,
+            Map<String, String> metadata) throws StripeException {
+        
+        PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
+                .setCustomer(customerId)
+                .setAmount(amount)
+                .setCurrency(currency)
+                .setPaymentMethod(paymentMethodId)
+                .setConfirm(true)
+                .setCaptureMethod(PaymentIntentCreateParams.CaptureMethod.AUTOMATIC)
+                .setDescription(description)
+                .setMetadata(metadata)
+                .build();
+        
+        return PaymentIntent.create(params);
+    }
+
+    // Create a Payment Intent without immediate confirmation
+    public PaymentIntent createPaymentIntentWithoutConfirmation(
+            String customerId,
+            long amount,
+            String currency,
+            String description,
+            Map<String, String> metadata) throws StripeException {
+        
+        PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
+                .setCustomer(customerId)
+                .setAmount(amount)
+                .setCurrency(currency)
+                .setCaptureMethod(PaymentIntentCreateParams.CaptureMethod.AUTOMATIC)
+                .setDescription(description)
+                .setMetadata(metadata)
+                .build();
+        
+        return PaymentIntent.create(params);
+    }
+
+    // Confirm a Payment Intent
+    public PaymentIntent confirmPaymentIntent(String paymentIntentId, String paymentMethodId) throws StripeException {
+        PaymentIntent intent = PaymentIntent.retrieve(paymentIntentId);
+        
+        PaymentIntentConfirmParams params = PaymentIntentConfirmParams.builder()
+                .setPaymentMethod(paymentMethodId)
+                .build();
+        
+        return intent.confirm(params);
+    }
+
+    // Create a Subscription for installment payments
+    public Subscription createSubscription(
+            String customerId,
+            String priceId,
+            String paymentMethodId,
+            Long trialEnd,
+            Map<String, String> metadata) throws StripeException {
+        
+        SubscriptionCreateParams params = SubscriptionCreateParams.builder()
+                .setCustomer(customerId)
+                .addItem(SubscriptionCreateParams.Item.builder()
+                        .setPrice(priceId)
+                        .build())
+                .setDefaultPaymentMethod(paymentMethodId)
+                .setTrialEnd(trialEnd)
+                .setPaymentBehavior(SubscriptionCreateParams.PaymentBehavior.DEFAULT_INCOMPLETE)
+                .setExpand(new ArrayList<>(Arrays.asList("latest_invoice.payment_intent")))
+                .setMetadata(metadata)
+                .build();
+        
+        return Subscription.create(params);
+    }
+
+    // Schedule installment payments using Payment Intents with scheduled confirmation
+    public List<String> scheduleInstallmentPayments(
+            PaymentPlan paymentPlan,
+            String customerId,
+            String paymentMethodId) throws StripeException {
+        
+        List<String> paymentIntentIds = new ArrayList<>();
+        
+        // Calculate installment amounts
+        BigDecimal installmentAmount = paymentPlan.getInstallmentAmount();
+        BigDecimal upfrontAmount = paymentPlan.getUpfrontAmount();
+        BigDecimal remainingAmount = paymentPlan.getRemainingAmount();
+        
+        // Convert to cents (Stripe uses smallest currency unit)
+        long upfrontAmountCents = upfrontAmount.multiply(new BigDecimal(100)).longValue();
+        long installmentAmountCents = installmentAmount.multiply(new BigDecimal(100)).longValue();
+        
+        // Create upfront payment (25%)
+        PaymentIntent upfrontIntent = createPaymentIntent(
+                customerId,
+                upfrontAmountCents,
+                paymentPlan.getCurrency().toLowerCase(),
+                paymentMethodId,
+                "Upfront payment for " + paymentPlan.getRegistration().getEvent().getTitle(),
+                createMetadata(paymentPlan, 1, paymentPlan.getTotalInstallments())
+        );
+        
+        paymentIntentIds.add(upfrontIntent.getId());
+        
+        // Create remaining installments (3 monthly payments)
+        LocalDateTime eventDate = paymentPlan.getRegistration().getEvent().getEventDate();
+        LocalDateTime now = LocalDateTime.now();
+        
+        for (int i = 2; i <= paymentPlan.getTotalInstallments(); i++) {
+            // Calculate due date: spread payments evenly between now and event date
+            long daysBetween = ChronoUnit.DAYS.between(now.toLocalDate(), eventDate.toLocalDate());
+            long daysUntilInstallment = (daysBetween / (paymentPlan.getTotalInstallments() - 1)) * (i - 1);
+            LocalDateTime dueDate = now.plusDays(daysUntilInstallment);
+            
+            PaymentIntent intent = createPaymentIntentWithoutConfirmation(
+                    customerId,
+                    installmentAmountCents,
+                    paymentPlan.getCurrency().toLowerCase(),
+                    "Installment " + i + " of " + paymentPlan.getTotalInstallments() + 
+                            " for " + paymentPlan.getRegistration().getEvent().getTitle(),
+                    createMetadata(paymentPlan, i, paymentPlan.getTotalInstallments())
+            );
+            
+            paymentIntentIds.add(intent.getId());
+        }
+        
+        return paymentIntentIds;
+    }
+
+    // Create metadata for payment intents
+    private Map<String, String> createMetadata(PaymentPlan paymentPlan, int installmentNumber, int totalInstallments) {
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("registration_id", String.valueOf(paymentPlan.getRegistration().getId()));
+        metadata.put("event_id", String.valueOf(paymentPlan.getRegistration().getEvent().getId()));
+        metadata.put("user_id", String.valueOf(paymentPlan.getRegistration().getUser().getId()));
+        metadata.put("installment_number", String.valueOf(installmentNumber));
+        metadata.put("total_installments", String.valueOf(totalInstallments));
+        metadata.put("payment_plan_id", String.valueOf(paymentPlan.getId()));
+        metadata.put("payment_type", "installment");
+        return metadata;
+    }
+
+    // Retrieve a Payment Intent
+    public PaymentIntent getPaymentIntent(String paymentIntentId) throws StripeException {
+        return PaymentIntent.retrieve(paymentIntentId);
+    }
+
+    // Retrieve a Subscription
+    public Subscription getSubscription(String subscriptionId) throws StripeException {
+        return Subscription.retrieve(subscriptionId);
+    }
+
+    // Verify webhook signature
+    public boolean verifyWebhookSignature(String payload, String signatureHeader) {
+        if (stripeWebhookSecret == null || stripeWebhookSecret.isEmpty()) {
+            return false;
+        }
+        
+        try {
+            String computedSignature = Webhook.constructEvent(
+                    payload,
+                    signatureHeader,
+                    stripeWebhookSecret
+            ).toString();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    // Parse webhook event
+    public Event parseWebhookEvent(String payload, String signatureHeader) throws StripeException {
+        return Webhook.constructEvent(payload, signatureHeader, stripeWebhookSecret);
+    }
+
+    // Handle payment intent succeeded event
+    public void handlePaymentIntentSucceeded(PaymentIntent paymentIntent) {
+        String paymentIntentId = paymentIntent.getId();
+        String registrationId = paymentIntent.getMetadata().get("registration_id");
+        String installmentNumberStr = paymentIntent.getMetadata().get("installment_number");
+        String totalInstallmentsStr = paymentIntent.getMetadata().get("total_installments");
+        
+        if (registrationId == null) {
+            return;
+        }
+        
+        try {
+            Long regId = Long.parseLong(registrationId);
+            Integer installmentNumber = installmentNumberStr != null ? Integer.parseInt(installmentNumberStr) : 1;
+            Integer totalInstallments = totalInstallmentsStr != null ? Integer.parseInt(totalInstallmentsStr) : 1;
+            
+            // Find the payment in database
+            Optional<Payment> paymentOptional = paymentRepository.findByStripePaymentIntentId(paymentIntentId);
+            
+            Payment payment;
+            if (paymentOptional.isPresent()) {
+                payment = paymentOptional.get();
+            } else {
+                // Create new payment record
+                payment = new Payment();
+                payment.setStripePaymentIntentId(paymentIntentId);
+                payment.setTransactionId(paymentIntent.getCharges().getData().isEmpty() ? 
+                        null : paymentIntent.getCharges().getData().get(0).getId());
+                payment.setAmount(new BigDecimal(paymentIntent.getAmount()).divide(new BigDecimal(100)));
+                payment.setCurrency(paymentIntent.getCurrency().toUpperCase());
+                payment.setPaymentMethod(paymentIntent.getPaymentMethod());
+                payment.setPaymentProvider("STRIPE");
+                payment.setInstallmentNumber(installmentNumber);
+                payment.setTotalInstallments(totalInstallments);
+                
+                // Find registration
+                EventRegistration registration = new EventRegistration();
+                registration.setId(regId);
+                payment.setRegistration(registration);
+            }
+            
+            // Update payment status
+            payment.setStatus("COMPLETED");
+            payment.setPaidAt(LocalDateTime.now());
+            paymentRepository.save(payment);
+            
+            // Check if this is the last installment
+            if (installmentNumber.equals(totalInstallments)) {
+                // Mark payment plan as completed
+                Optional<PaymentPlan> paymentPlanOptional = paymentPlanRepository.findByRegistration_Id(regId);
+                if (paymentPlanOptional.isPresent()) {
+                    PaymentPlan paymentPlan = paymentPlanOptional.get();
+                    paymentPlan.setStatus("COMPLETED");
+                    paymentPlan.setCompletedAt(LocalDateTime.now());
+                    paymentPlanRepository.save(paymentPlan);
+                    
+                    // Update registration payment status
+                    EventRegistration registration = paymentPlan.getRegistration();
+                    registration.setPaymentStatus("COMPLETED");
+                    registration.setQrActivated(true);
+                    registration.setQrActivationDate(LocalDateTime.now());
+                    // Note: We would need to update registration through its repository
+                }
+            }
+            
+        } catch (Exception e) {
+            System.err.println("Error handling payment intent succeeded: " + e.getMessage());
+        }
+    }
+
+    // Handle payment intent failed event
+    public void handlePaymentIntentFailed(PaymentIntent paymentIntent) {
+        String paymentIntentId = paymentIntent.getId();
+        String registrationId = paymentIntent.getMetadata().get("registration_id");
+        
+        if (registrationId == null) {
+            return;
+        }
+        
+        try {
+            Long regId = Long.parseLong(registrationId);
+            
+            Optional<Payment> paymentOptional = paymentRepository.findByStripePaymentIntentId(paymentIntentId);
+            
+            if (paymentOptional.isPresent()) {
+                Payment payment = paymentOptional.get();
+                payment.setStatus("FAILED");
+                payment.setFailedAt(LocalDateTime.now());
+                payment.setFailureReason(paymentIntent.getLastPaymentError() != null ? 
+                        paymentIntent.getLastPaymentError().getMessage() : "Payment failed");
+                paymentRepository.save(payment);
+            }
+            
+        } catch (Exception e) {
+            System.err.println("Error handling payment intent failed: " + e.getMessage());
+        }
+    }
+
+    // Calculate installment schedule
+    public List<LocalDateTime> calculateInstallmentSchedule(LocalDateTime startDate, LocalDateTime eventDate, int totalInstallments) {
+        List<LocalDateTime> schedule = new ArrayList<>();
+        
+        long totalDays = ChronoUnit.DAYS.between(startDate.toLocalDate(), eventDate.toLocalDate());
+        long intervalDays = totalDays / (totalInstallments - 1);
+        
+        for (int i = 0; i < totalInstallments; i++) {
+            LocalDateTime dueDate = startDate.plusDays(i * intervalDays);
+            // Ensure due date doesn't go beyond event date
+            if (dueDate.isAfter(eventDate)) {
+                dueDate = eventDate;
+            }
+            schedule.add(dueDate);
+        }
+        
+        return schedule;
+    }
+
+    // Format amount for Stripe (convert to cents)
+    public long formatAmountForStripe(BigDecimal amount) {
+        return amount.multiply(new BigDecimal(100)).longValue();
+    }
+
+    // Format amount from Stripe (convert from cents)
+    public BigDecimal formatAmountFromStripe(long amount) {
+        return new BigDecimal(amount).divide(new BigDecimal(100), 2, java.math.RoundingMode.HALF_UP);
+    }
+
+    // Create a Product for installment plans
+    public Product createInstallmentProduct(String name, String description) throws StripeException {
+        ProductCreateParams params = ProductCreateParams.builder()
+                .setName(name)
+                .setDescription(description)
+                .build();
+        
+        return Product.create(params);
+    }
+
+    // Create a Price for installment payments
+    public Price createInstallmentPrice(
+            String productId,
+            long unitAmount,
+            String currency,
+            String interval,
+            int intervalCount) throws StripeException {
+        
+        PriceCreateParams params = PriceCreateParams.builder()
+                .setProduct(productId)
+                .setUnitAmount(unitAmount)
+                .setCurrency(currency)
+                .setRecurring(PriceCreateParams.Recurring.builder()
+                        .setInterval(interval)
+                        .setIntervalCount(intervalCount)
+                        .build())
+                .build();
+        
+        return Price.create(params);
+    }
+
+    // Get customer's default payment method
+    public PaymentMethod getDefaultPaymentMethod(String customerId) throws StripeException {
+        Customer customer = Customer.retrieve(customerId);
+        String invoiceSettingsDefaultPaymentMethod = customer.getInvoiceSettings().getDefaultPaymentMethod();
+        
+        if (invoiceSettingsDefaultPaymentMethod != null) {
+            return PaymentMethod.retrieve(invoiceSettingsDefaultPaymentMethod);
+        }
+        
+        return null;
+    }
+
+    // List customer's payment methods
+    public List<PaymentMethod> listCustomerPaymentMethods(String customerId) throws StripeException {
+        PaymentMethodListParams params = PaymentMethodListParams.builder()
+                .setCustomer(customerId)
+                .setType(PaymentMethodListParams.Type.CARD)
+                .build();
+        
+        PaymentMethodCollection paymentMethods = PaymentMethod.list(params);
+        return paymentMethods.getData();
+    }
+
+    // Attach payment method to customer
+    public PaymentMethod attachPaymentMethod(String paymentMethodId, String customerId) throws StripeException {
+        PaymentMethod paymentMethod = PaymentMethod.retrieve(paymentMethodId);
+        
+        PaymentMethodAttachParams params = PaymentMethodAttachParams.builder()
+                .setCustomer(customerId)
+                .build();
+        
+        return paymentMethod.attach(params);
+    }
+
+    // Detach payment method from customer
+    public PaymentMethod detachPaymentMethod(String paymentMethodId) throws StripeException {
+        PaymentMethod paymentMethod = PaymentMethod.retrieve(paymentMethodId);
+        return paymentMethod.detach();
+    }
+
+    // Create refund
+    public Refund createRefund(String chargeId, long amount) throws StripeException {
+        RefundCreateParams params = RefundCreateParams.builder()
+                .setCharge(chargeId)
+                .setAmount(amount)
+                .build();
+        
+        return Refund.create(params);
+    }
+}

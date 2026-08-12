@@ -1,9 +1,12 @@
+import { showSuccessToast } from "./toast.js";
 // ---------------------------------------------------------------------------
 // Self-Healing Offline Queue Utility (IndexedDB backed with LocalStorage Backup)
 // Enterprise Offline Synchronization Engine & Resilient Storage Architecture
 // ---------------------------------------------------------------------------
 import { safeJsonParse } from "./safeJsonParse.js";
 import { logger } from "./logger.js";
+import { ensureSessionSnapshot } from "./sessionSnapshot.js";
+import offlineSyncConfig from "../config/offlineSyncConfig.json" with { type: "json" };
 
 const QUEUE_KEY = "eventra_offline_queue";
 const DB_NAME = "eventra_offline_db";
@@ -12,13 +15,23 @@ const METRICS_STORE_NAME = "sync_metrics";
 const BACKUP_STORE_NAME = "migration_backups";
 const BACKGROUND_SYNC_TAG = "eventra-offline-queue-sync";
 
+// Background-sync registration is best-effort: never let service-worker
+// availability block a durable queue write (see #14604).
+const BACKGROUND_SYNC_TIMEOUT_MS = 2000;
+
 const requestBackgroundSync = async () => {
   if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) {
     return false;
   }
 
   try {
-    const registration = await navigator.serviceWorker.ready;
+    // navigator.serviceWorker.ready never settles when no service worker is
+    // active (blocked registration, failed install, incognito). Race it against
+    // a timeout so callers are never blocked on background-sync availability.
+    const registration = await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise((resolve) => setTimeout(() => resolve(null), BACKGROUND_SYNC_TIMEOUT_MS)),
+    ]);
     if (registration?.sync && typeof registration.sync.register === "function") {
       await registration.sync.register(BACKGROUND_SYNC_TAG);
       return true;
@@ -51,6 +64,7 @@ const DB_VERSION = 3;
 // Internal: rescue items from localStorage mirror before schema wipe
 // ---------------------------------------------------------------------------
 const _rescueFromLocalStorage = () => {
+  if (typeof localStorage === "undefined") return [];
   try {
     const raw = localStorage.getItem(QUEUE_KEY);
     return safeJsonParse(raw, []);
@@ -63,19 +77,23 @@ const _rescueFromLocalStorage = () => {
 // Internal: notify the UI that a schema upgrade occurred
 // ---------------------------------------------------------------------------
 const _dispatchUpgradeEvent = (rescuedCount) => {
+  const message =
+    rescuedCount > 0
+      ? `IndexedDB schema upgraded. ${rescuedCount} queued action(s) were safely migrated.`
+      : "IndexedDB schema upgraded. No queued actions were affected.";
+
   if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
     window.dispatchEvent(
       new CustomEvent("eventra-offline-queue-upgraded", {
         detail: {
           rescuedItems: rescuedCount,
-          message:
-            rescuedCount > 0
-              ? `IndexedDB schema upgraded. ${rescuedCount} queued action(s) were safely migrated.`
-              : "IndexedDB schema upgraded. No queued actions were affected.",
+          message,
         },
       })
     );
   }
+
+  showSuccessToast(message);
 };
 
 // ---------------------------------------------------------------------------
@@ -180,6 +198,9 @@ const openDB = () => {
         newStore.createIndex("by_userId", "userId", { unique: false });
         newStore.createIndex("by_priority", "priority", { unique: false });
       }
+
+      // Step 4: Dispatch upgrade event
+      _dispatchUpgradeEvent(rescuedItems.length);
     };
 
     request.onsuccess = (e) => resolve(e.target.result);
@@ -204,6 +225,7 @@ const openDB = () => {
  * Read the current offline queue from localStorage (Synchronous fallback).
  */
 export const getQueue = () => {
+  if (typeof localStorage === "undefined") return [];
   try {
     const raw = localStorage.getItem(QUEUE_KEY);
     return safeJsonParse(raw, []);
@@ -223,7 +245,17 @@ export const getQueueIndexedDB = async () => {
       const tx = db.transaction(STORE_NAME, "readonly");
       const store = tx.objectStore(STORE_NAME);
       const request = store.getAll();
-      request.onsuccess = () => resolve(request.result || []);
+      request.onsuccess = () => {
+        const items = request.result || [];
+        // SECURITY (Issue #6449): Validate structural integrity to prevent cache poisoning
+        const validItems = items.filter(item => 
+          item && 
+          typeof item.id === 'string' && 
+          typeof item.actionType === 'string' &&
+          typeof item.payload === 'object'
+        );
+        resolve(validItems);
+      };
       request.onerror = () => reject(request.error);
     });
   } catch (err) {
@@ -262,10 +294,7 @@ export const pushToQueue = async (item, userId = null) => {
     payload: item.payload || {},
     endpoint: item.endpoint || null,
     userId: userId || null,
-    sessionId:
-      typeof sessionStorage !== "undefined"
-        ? sessionStorage.getItem("session_id") || null
-        : null,
+    sessionId: ensureSessionSnapshot(userId),
   };
 
   const serialisedPayload = JSON.stringify(actionItem.payload);
@@ -284,18 +313,49 @@ export const pushToQueue = async (item, userId = null) => {
   }
 
   const queue = getQueue();
-  if (queue.length >= 15) {
+  if (queue.length >= offlineSyncConfig.maxQueueSize) {
     logger.warn("Offline queue limit reached. Dropping item to prevent local overflow.");
-    if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
-      window.dispatchEvent(
-        new CustomEvent("eventra-offline-queue-full", {
-          detail: { eventId: item.eventId, limit: 15 },
-        })
-      );
-    }
     return false;
   }
-  queue.push(actionItem);
+  const isDuplicate = queue.some((existing) => {
+    if (actionItem.idempotencyKey && existing.idempotencyKey) {
+      return existing.idempotencyKey === actionItem.idempotencyKey;
+    }
+
+    // SECURITY (Issue #11074): offline check-ins must dedupe per attendee
+    // ticket, not per operator. Every offline scan for the same event shares
+    // the same eventId + operator userId + actionType, so the generic key
+    // below would collapse the second and every later attendee into the first
+    // item and they would never be synced.
+    if (actionItem.actionType === "TICKET_CHECK_IN") {
+      return (
+        existing.actionType === "TICKET_CHECK_IN" &&
+        existing.eventId === actionItem.eventId &&
+        Boolean(actionItem.payload?.ticketId) &&
+        existing.payload?.ticketId === actionItem.payload?.ticketId
+      );
+    }
+
+    return (
+      existing.eventId === actionItem.eventId &&
+      existing.userId === actionItem.userId &&
+      existing.actionType === actionItem.actionType
+    );
+  });
+
+if (isDuplicate) {
+  const identity =
+    actionItem.actionType === "TICKET_CHECK_IN"
+      ? `ticket ${actionItem.payload?.ticketId}`
+      : `user ${actionItem.userId}`;
+  logger.warn(
+    `[OfflineQueue] Duplicate action detected for event ${actionItem.eventId} ` +
+      `(${identity}, type ${actionItem.actionType}). Skipping enqueue.`
+  );
+  return true;
+}
+
+queue.push(actionItem);
 
   let localStorageSuccess = false;
   try {
@@ -324,7 +384,11 @@ export const pushToQueue = async (item, userId = null) => {
 
   if (queued) {
     notifyQueueUpdated(actionItem);
-    await requestBackgroundSync();
+    // Fire-and-forget: background-sync registration must never block the
+    // caller, even when no service worker becomes active (see #14604).
+    requestBackgroundSync().catch((error) => {
+      logger.warn("[OfflineQueue] Background sync request failed:", error);
+    });
   }
 
   return queued;
@@ -337,8 +401,6 @@ export const setQueue = async (newQueue) => {
     } else {
       localStorage.setItem(QUEUE_KEY, JSON.stringify(newQueue));
     }
-  } catch (error) {
-    logger.error("Error setting localStorage backup:", error);
   }
 
   try {
@@ -354,15 +416,15 @@ export const setQueue = async (newQueue) => {
           return;
         }
 
-        let completed = 0;
-        newQueue.forEach((item) => {
-          const putReq = store.put(item);
-          putReq.onsuccess = () => {
-            completed++;
-            if (completed === newQueue.length) resolve();
-          };
-          putReq.onerror = () => reject(putReq.error);
-        });
+        try {
+          newQueue.forEach((item) => store.put(item));
+        } catch (err) {
+          if (err.name === "QuotaExceededError") logger.error("[OfflineQueue] IndexedDB quota exceeded during setQueue", err);
+          throw err;
+        }
+
+        tx.oncomplete = () => resolve();
+        tx.onerror = (e) => reject(e.target?.error || new Error('IndexedDB transaction failed'));
       };
       clearReq.onerror = () => reject(clearReq.error);
     });
