@@ -249,6 +249,9 @@ export const API_ENDPOINTS = {
     PREFERENCES: buildApiUrl("/users/preferences"),
     PUSH_SUBSCRIBE: buildApiUrl("/notifications/push-subscriptions"),
     PUSH_UNSUBSCRIBE: buildApiUrl("/notifications/push-subscriptions/unsubscribe"),
+    TEST_EMAIL: buildApiUrl("/notifications/send-test-email"),
+    SAVE_TEMPLATE: buildApiUrl("/notifications/save-template"),
+    GET_TEMPLATE: (eventId, templateType) => buildApiUrl(`/notifications/templates/${eventId}/${templateType}`),
   },
   USERS: {
     PROFILE: buildApiUrl("/users/profile"),
