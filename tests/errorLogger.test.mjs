@@ -7,6 +7,7 @@
  */
 
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 
 // Mock localStorage store
 let store = {};
@@ -150,3 +151,63 @@ globalThis.localStorage.setItem = (key, val) => {
 };
 
 console.log("All errorLogger tests passed successfully! ✓");
+
+// ---------------------------------------------------------------------------
+// 5. Stack Redaction by Environment (dev preserves, production redacts)
+// ---------------------------------------------------------------------------
+const probe = `
+const storage = new Map();
+globalThis.localStorage = {
+  getItem: (key) => (storage.has(key) ? storage.get(key) : null),
+  setItem: (key, value) => storage.set(key, value),
+  removeItem: (key) => storage.delete(key),
+};
+process.env.VITE_API_URL = process.env.VITE_API_URL || "/api";
+const { logError, getErrorLog } = await import(
+  "file:///D:/Imp%20Docs/AdvanceDev/OpenSourceContributions/Eventra/src/utils/errorLogger.js"
+);
+logError(new Error("boom"), { componentStack: "at <App>" });
+const entry = getErrorLog()[0];
+console.log(JSON.stringify({ stack: entry.stack, componentStack: entry.componentStack }));
+`;
+
+const runProbe = (nodeEnv) => {
+  const result = spawnSync(
+    process.execPath,
+    ["--input-type=module", "-e", probe],
+    {
+      env: { ...process.env, NODE_ENV: nodeEnv },
+      encoding: "utf8",
+    },
+  );
+  assert.equal(
+    result.status,
+    0,
+    `probe failed under NODE_ENV=${nodeEnv}: ${result.stderr}`,
+  );
+  return JSON.parse(result.stdout.trim().split("\n").pop());
+};
+
+console.log("Running Group 5: Stack Redaction by Environment...");
+
+const productionEntry = runProbe("production");
+assert.equal(
+  productionEntry.stack,
+  "Redacted in production",
+  "stack should be redacted in production",
+);
+assert.equal(
+  productionEntry.componentStack,
+  "Redacted in production",
+  "componentStack should be redacted in production",
+);
+
+const devEntry = runProbe("development");
+assert.match(devEntry.stack, /boom/, "stack preserved in development");
+assert.match(
+  devEntry.componentStack,
+  /at <App>/,
+  "componentStack preserved in development",
+);
+
+console.log("errorLogger isDevelopment export + redaction tests passed");
