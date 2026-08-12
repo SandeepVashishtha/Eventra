@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Component
+@Component("authRateLimitingFilter")
 public class RateLimitingFilter extends OncePerRequestFilter {
 
     private static final String POST = "POST";
