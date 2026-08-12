@@ -22,11 +22,18 @@ const initialLeaderboardState = {
   status: SSE_STATUS.IDLE,
 };
 
+// Maximum number of checked-in attendee ids retained in the analytics reducer.
+// Bounded so long-lived, high-traffic sessions do not grow without limit.
+const CHECKED_IN_IDS_MAX = 500;
+
 const initialAnalyticsState = {
   recentCheckins: [],
   liveCount: 0,
   scanVelocity: 0,
   status: SSE_STATUS.IDLE,
+  // Id-based source of truth for the live count: an attendee is counted at
+  // most once, and a check-out removes them from the set.
+  checkedInIds: [],
 };
 
 // --- 3. Split the Reducers ---
@@ -47,12 +54,44 @@ function leaderboardReducer(state, action) {
 
 function analyticsReducer(state, action) {
   switch (action.type) {
-    case "CHECKIN":
+    case "CHECKIN": {
+      const payload = action.payload || {};
+      const id =
+        payload.id ||
+        payload.eventId ||
+        (payload.name && payload.event ? `${payload.name}::${payload.event}` : null);
+
+      // A "checked-out / removed" broadcast (increment: -1, type CHECKOUT, or
+      // checkout flag) removes the attendee from the live set instead of adding.
+      if (payload.increment === -1 || payload.type === "CHECKOUT" || payload.checkout === true) {
+        if (id !== null && state.checkedInIds.includes(id)) {
+          const checkedInIds = state.checkedInIds.filter((existing) => existing !== id);
+          return { ...state, checkedInIds, liveCount: Math.max(0, checkedInIds.length) };
+        }
+        // Unknown attendee — nothing to remove; clamp so the count never goes below zero.
+        return { ...state, liveCount: Math.max(0, state.liveCount) };
+      }
+
+      // Duplicate delivery (e.g. SSE reconnect replay of the same check-in)
+      // must not inflate the count — an attendee already present is not counted twice.
+      if (id !== null && state.checkedInIds.includes(id)) {
+        return state;
+      }
+
+      const checkedInIds =
+        id === null
+          ? state.checkedInIds
+          : [...state.checkedInIds, id].slice(-CHECKED_IN_IDS_MAX);
+
       return {
         ...state,
-        recentCheckins: [action.payload, ...state.recentCheckins.slice(0, 49)],
-        liveCount: state.liveCount + 1,
+        checkedInIds,
+        recentCheckins: [payload, ...state.recentCheckins.slice(0, 49)],
+        // Derive the live count from the id set instead of summing deltas so a
+        // duplicate check-in can never inflate it.
+        liveCount: id === null ? state.liveCount + 1 : Math.max(0, checkedInIds.length),
       };
+    }
     case "UPDATE":
       return { ...state, ...action.payload };
     case "STATUS":
@@ -118,7 +157,9 @@ function AnalyticsProvider({ children }) {
   const [state, dispatch] = useReducer(analyticsReducer, initialAnalyticsState);
 
   const onMessage = useCallback((data) => {
-    if (data?.name && data?.event) {
+    if (data?.increment === -1 || data?.type === "CHECKOUT" || data?.checkout === true) {
+      dispatch({ type: "CHECKIN", payload: data });
+    } else if (data?.name && data?.event) {
       dispatch({ type: "CHECKIN", payload: data });
     } else if (data?.checkin) {
       dispatch({ type: "CHECKIN", payload: data.checkin });
@@ -143,11 +184,11 @@ function AnalyticsProvider({ children }) {
 
   // FIX (#7855 Bug 3): Memoize context value — AnalyticsContext consumers
   // wrapped in React.memo can now bail out of re-renders when recentCheckins,
-  // liveCount, scanVelocity, and status are all unchanged.
+  // liveCount, scanVelocity, checkedInIds, and status are all unchanged.
   const contextValue = useMemo(
     () => state,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [state.recentCheckins, state.liveCount, state.scanVelocity, state.status]
+    [state.recentCheckins, state.liveCount, state.scanVelocity, state.checkedInIds, state.status]
   );
 
   return (
