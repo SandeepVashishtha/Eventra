@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDateTime;
 
 @Repository
 public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecificationExecutor<Event> {
@@ -48,4 +49,19 @@ public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecific
      */
     @Query("SELECT e.category, COUNT(e) FROM Event e WHERE e.category IS NOT NULL AND e.category <> '' GROUP BY e.category")
     List<Object[]> countEventsByCategory();
+
+    @Query("""
+            SELECT e FROM Event e WHERE
+            e.id <> :excludeEventId AND
+            e.isPublic = true AND
+            e.status <> 'CANCELLED' AND
+            e.eventDate >= :from AND
+            e.eventDate <= :to
+            ORDER BY e.eventDate ASC
+            """)
+    List<Event> findPublicAlternativesInWindow(
+            @Param("excludeEventId") Long excludeEventId,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to,
+            org.springframework.data.domain.Pageable pageable);
 }
