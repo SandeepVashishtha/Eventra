@@ -1,7 +1,11 @@
 package com.sandeep.eventrabackend.subtitles;
 
+import com.sandeep.eventrabackend.model.EventRole;
+import com.sandeep.eventrabackend.service.EventRoleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.http.*;
@@ -27,6 +31,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class SubtitleStreamController {
     
     private final SubtitleService subtitleService;
+    private final EventRoleService eventRoleService;
     
     /**
      * Map of event ID to active SSE emitters and their requested target
@@ -347,9 +352,16 @@ public class SubtitleStreamController {
     
     /**
      * Close all connections for a specific event
+     *
+     * Requires authentication and the ORGANIZER (or higher) role on the event,
+     * mirroring {@code LiveAudienceService.requireModerator} so an anonymous
+     * caller cannot sever the live caption streams of an event (issue #15336).
      */
     @PostMapping("/event/{eventId}/disconnect")
-    public ResponseEntity<Map<String, Object>> disconnectEventClients(@PathVariable Long eventId) {
+    public ResponseEntity<Map<String, Object>> disconnectEventClients(
+            @PathVariable Long eventId,
+            Authentication authentication) {
+        requireOrganizer(eventId, authentication);
         Map<SseEmitter, String> emitters = eventEmitters.remove(eventId);
         
         if (emitters != null) {
@@ -372,9 +384,16 @@ public class SubtitleStreamController {
     
     /**
      * Close all connections for a specific session
+     *
+     * Requires authentication and the ORGANIZER (or higher) role on the event
+     * the session belongs to (issue #15336). If the session cannot be resolved
+     * to an event, the request is denied.
      */
     @PostMapping("/session/{sessionId}/disconnect")
-    public ResponseEntity<Map<String, Object>> disconnectSessionClients(@PathVariable String sessionId) {
+    public ResponseEntity<Map<String, Object>> disconnectSessionClients(
+            @PathVariable String sessionId,
+            Authentication authentication) {
+        requireSessionOrganizer(sessionId, authentication);
         List<SseEmitter> emitters = sessionEmitters.remove(sessionId);
         
         if (emitters != null) {
@@ -396,7 +415,34 @@ public class SubtitleStreamController {
     }
     
     // ==================== Helper Methods ====================
-    
+
+    /**
+     * Resolve the authenticated caller's email, rejecting anonymous calls
+     */
+    private String authenticatedEmail(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated() || authentication.getName() == null) {
+            throw new AccessDeniedException("Authentication required for this action.");
+        }
+        return authentication.getName();
+    }
+
+    /**
+     * Require the caller to hold the ORGANIZER role (or higher) on the event
+     */
+    private void requireOrganizer(Long eventId, Authentication authentication) {
+        eventRoleService.requireRole(eventId, authenticatedEmail(authentication), EventRole.ORGANIZER);
+    }
+
+    /**
+     * Require the caller to hold the ORGANIZER role on the event a session belongs to
+     */
+    private void requireSessionOrganizer(String sessionId, Authentication authentication) {
+        Long eventId = subtitleService.getSession(sessionId)
+                .map(SubtitleSession::getEventId)
+                .orElseThrow(() -> new AccessDeniedException("Insufficient event role for this action."));
+        requireOrganizer(eventId, authentication);
+    }
+
     /**
      * Notify all event subscribers about a new subtitle
      * 
