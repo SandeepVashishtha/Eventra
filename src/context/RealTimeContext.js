@@ -6,6 +6,7 @@ import {
   useMemo,
   useReducer,
   useRef,
+  useState,
 } from "react";
 import useRealTimeConnection, { SSE_STATUS } from "../hooks/useRealTimeConnection";
 
@@ -27,138 +28,41 @@ const initialAnalyticsState = {
   liveCount: 0,
   scanVelocity: 0,
   status: SSE_STATUS.IDLE,
+  // Id-based source of truth for the live count: an attendee is counted at
+  // most once, and a check-out removes them from the set.
+  checkedInIds: [],
 };
 
-// --- 3. Split the Reducers ---
-function leaderboardReducer(state, action) {
-  switch (action.type) {
-    case "UPDATE":
-      return {
-        ...state,
-        contributors: action.payload,
-        lastSynced: Date.now(),
-      };
-    case "STATUS":
-      return { ...state, status: action.payload };
-    default:
-      return state;
-  }
-}
-
-function analyticsReducer(state, action) {
-  switch (action.type) {
-    case "CHECKIN":
-      return {
-        ...state,
-        recentCheckins: [action.payload, ...state.recentCheckins.slice(0, 49)],
-        liveCount: state.liveCount + 1,
-      };
-    case "UPDATE":
-      return { ...state, ...action.payload };
-    case "STATUS":
-      return { ...state, status: action.payload };
-    default:
-      return state;
-  }
-}
-
-// --- 4. Isolated Providers ---
-// FIX (#7855 Bug 3): STATUS_DEBOUNCE_MS throttles the STATUS dispatch so that
-// rapid connect/disconnect cycles (e.g. flaky connections) do not trigger a
-// re-render storm. 500 ms matches the suggested batch window in the issue.
-const STATUS_DEBOUNCE_MS = 500;
+// --- 3. Isolated Providers ---
+// The `leaderboard` and `analytics` SSE topics have no backend publisher
+// (issue #15334), so the subscriptions are dropped. Leaderboard.jsx hydrates
+// from its REST endpoint (`fetchLeaderboardData`) and AnalyticsDashboard.jsx
+// from `useAnalytics` plus local simulation, so the providers only hand out
+// their initial (IDLE) state.
 
 function LeaderboardProvider({ children }) {
-  const [state, dispatch] = useReducer(leaderboardReducer, initialLeaderboardState);
-
-  const onMessage = useCallback((data) => {
-    if (Array.isArray(data)) {
-      dispatch({ type: "UPDATE", payload: data });
-    } else if (Array.isArray(data?.contributors)) {
-      dispatch({ type: "UPDATE", payload: data.contributors });
-    }
-  }, []);
-
-  const { status } = useRealTimeConnection("/stream/leaderboard", {
-    onMessage,
-  });
-
-  // FIX (#7855 Bug 3): Debounce STATUS dispatches so rapid SSE reconnection
-  // cycles (CONNECTING → OPEN → CLOSED → RECONNECTING in quick succession)
-  // are collapsed into a single state update, preventing a re-render cascade
-  // in every consumer of LeaderboardContext.
-  const statusDebounceRef = useRef(null);
-  useEffect(() => {
-    clearTimeout(statusDebounceRef.current);
-    statusDebounceRef.current = setTimeout(() => {
-      dispatch({ type: "STATUS", payload: status });
-    }, STATUS_DEBOUNCE_MS);
-    return () => clearTimeout(statusDebounceRef.current);
-  }, [status]);
-
-  // FIX (#7855 Bug 3): Memoize the context value so that LeaderboardContext
-  // consumers wrapped in React.memo can bail out of re-renders when neither
-  // contributors nor lastSynced nor status has changed.
-  // Without this, `value={state}` creates a new object reference on every
-  // render of LeaderboardProvider, defeating all downstream memoization.
-  const contextValue = useMemo(
-    () => state,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [state.contributors, state.lastSynced, state.status]
-  );
-
   return (
-    <LeaderboardContext.Provider value={contextValue}>
+    <LeaderboardContext.Provider value={initialLeaderboardState}>
       {children}
     </LeaderboardContext.Provider>
   );
 }
 
 function AnalyticsProvider({ children }) {
-  const [state, dispatch] = useReducer(analyticsReducer, initialAnalyticsState);
-
-  const onMessage = useCallback((data) => {
-    if (data?.name && data?.event) {
-      dispatch({ type: "CHECKIN", payload: data });
-    } else if (data?.checkin) {
-      dispatch({ type: "CHECKIN", payload: data.checkin });
-    } else if (data?.liveCount !== undefined || data?.scanVelocity !== undefined) {
-      dispatch({ type: "UPDATE", payload: data });
-    }
-  }, []);
-
-  const { status } = useRealTimeConnection("/stream/analytics", {
-    onMessage,
-  });
-
-  // FIX (#7855 Bug 3): Same debounce pattern as LeaderboardProvider.
-  const statusDebounceRef = useRef(null);
-  useEffect(() => {
-    clearTimeout(statusDebounceRef.current);
-    statusDebounceRef.current = setTimeout(() => {
-      dispatch({ type: "STATUS", payload: status });
-    }, STATUS_DEBOUNCE_MS);
-    return () => clearTimeout(statusDebounceRef.current);
-  }, [status]);
-
-  // FIX (#7855 Bug 3): Memoize context value — AnalyticsContext consumers
-  // wrapped in React.memo can now bail out of re-renders when recentCheckins,
-  // liveCount, scanVelocity, and status are all unchanged.
-  const contextValue = useMemo(
-    () => state,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [state.recentCheckins, state.liveCount, state.scanVelocity, state.status]
-  );
-
   return (
-    <AnalyticsContext.Provider value={contextValue}>
+    <AnalyticsContext.Provider value={initialAnalyticsState}>
       {children}
     </AnalyticsContext.Provider>
   );
 }
 
 // --- 4.5 Live Audience Coordination Provider ---
-const LiveAudienceContext = createContext(null);
+export const LiveAudienceContext = createContext(null);
+
+// Maximum number of questions retained per event. The reducer keeps a rolling
+// window so long-running, high-traffic sessions (hackathon demo rooms, live
+// Q&A) do not grow the event history without bound (issue #14611).
+const MAX_LIVE_QUESTIONS = 200;
 
 function liveAudienceReducer(state, action) {
   switch (action.type) {
@@ -182,7 +86,7 @@ function liveAudienceReducer(state, action) {
           ...state.events,
           [eventId]: {
             ...eventData,
-            questions: [...eventData.questions, question]
+            questions: [...eventData.questions, question].slice(-MAX_LIVE_QUESTIONS)
           }
         }
       };
@@ -243,8 +147,27 @@ function LiveAudienceProvider({ children }) {
     status: SSE_STATUS.IDLE,
   });
 
+  // Only events the client is actively viewing are tracked. Live-audience
+  // traffic for any other event is ignored (issue #15333): a client must not
+  // receive the Q&A/poll activity of events it is not on.
+  const subscribedEventsRef = useRef(new Set());
+  const [subscribedCount, setSubscribedCount] = useState(0);
+
+  const subscribeToEvent = useCallback((eventId) => {
+    if (!eventId) return;
+    subscribedEventsRef.current.add(String(eventId));
+    setSubscribedCount(subscribedEventsRef.current.size);
+  }, []);
+
+  const unsubscribeFromEvent = useCallback((eventId) => {
+    if (!eventId) return;
+    subscribedEventsRef.current.delete(String(eventId));
+    setSubscribedCount(subscribedEventsRef.current.size);
+  }, []);
+
   const onMessage = useCallback((data) => {
-    if (!data || !data.eventId || !data.type) return;
+    if (!data || !data.eventId || !subscribedEventsRef.current.has(String(data.eventId))) return;
+    if (!data.type) return;
     const { eventId, type, payload } = data;
     switch (type) {
       case "NEW_QUESTION":
@@ -265,8 +188,11 @@ function LiveAudienceProvider({ children }) {
     }
   }, []);
 
+  // The global stream is only opened while at least one event is actively
+  // subscribed, so idle clients do not keep the live-audience connection open.
   const { status } = useRealTimeConnection("/stream/live-audience", {
     onMessage,
+    enabled: subscribedCount > 0,
   });
 
   useEffect(() => {
@@ -280,10 +206,10 @@ function LiveAudienceProvider({ children }) {
     });
   }, []);
 
-  const value = {
-    state,
-    loadInitialData
-  };
+  const value = useMemo(
+    () => ({ state, loadInitialData, subscribeToEvent, unsubscribeFromEvent }),
+    [state, loadInitialData, subscribeToEvent, unsubscribeFromEvent]
+  );
 
   return (
     <LiveAudienceContext.Provider value={value}>

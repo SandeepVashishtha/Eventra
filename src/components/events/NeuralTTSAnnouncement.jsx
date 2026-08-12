@@ -173,7 +173,7 @@ const NeuralTTSAnnouncement = () => {
                     key={i} 
                     className={`w-3 rounded-full transition-all duration-150 ${systemState === 'broadcasting' ? 'bg-rose-500' : 'bg-slate-800 h-2'}`}
                     style={{ 
-                      height: systemState === 'broadcasting' ? \`\${Math.max(10, Math.random() * 100)}%\` : '8px',
+                      height: systemState === 'broadcasting' ? `${Math.max(10, Math.random() * 100)}%` : '8px',
                       boxShadow: systemState === 'broadcasting' ? '0 0 15px rgba(225,29,72,0.5)' : 'none'
                     }}
                   ></div>

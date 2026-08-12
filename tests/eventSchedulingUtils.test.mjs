@@ -129,6 +129,57 @@ const resourceAndOrganizerConflict = detectScheduleConflicts(
 assert.equal(resourceAndOrganizerConflict.length, 1);
 assert.deepEqual(resourceAndOrganizerConflict[0].types, ["time", "organizer", "resource"]);
 
+// ── Issue #14616 — id-less events must participate in conflict detection ──
+
+const draftA = {
+  title: "Draft A",
+  date: "2026-08-10",
+  time: "10:00 AM",
+  durationMinutes: 60,
+  location: "Hall A",
+};
+const draftB = {
+  title: "Draft B",
+  date: "2026-08-10",
+  time: "10:30 AM",
+  durationMinutes: 60,
+  location: "Hall A",
+};
+
+// Two unsaved (id-less) overlapping events must conflict.
+const idlessConflicts = detectScheduleConflicts(draftA, [draftB]);
+assert.equal(idlessConflicts.length, 1, "id-less overlapping events must conflict");
+assert.equal(idlessConflicts[0].event.title, "Draft B");
+assert.deepEqual(idlessConflicts[0].types, ["time", "venue"]);
+
+// Unsaved candidate vs saved overlapping event must conflict.
+const unsavedVsSaved = detectScheduleConflicts(draftA, [baseEvents[0]]);
+assert.equal(unsavedVsSaved.length, 1, "unsaved vs saved overlapping events must conflict");
+assert.equal(unsavedVsSaved[0].event.title, "React Workshop");
+
+// The candidate itself (same object reference) must be excluded, but other
+// id-less events must still be compared.
+const selfExcluded = detectScheduleConflicts(draftA, [draftA, draftB]);
+assert.equal(selfExcluded.length, 1, "only the candidate itself is excluded");
+assert.equal(selfExcluded[0].event.title, "Draft B");
+
+// Non-overlapping id-less events must not conflict (no false positive).
+const noFalsePositive = detectScheduleConflicts(draftA, [
+  {
+    title: "Draft C",
+    date: "2026-08-10",
+    time: "2:00 PM",
+    durationMinutes: 60,
+    location: "Hall A",
+  },
+]);
+assert.equal(noFalsePositive.length, 0, "non-overlapping id-less events do not conflict");
+
+// A saved candidate still excludes its own row from the list.
+const savedCandidateConflicts = detectScheduleConflicts(baseEvents[0], baseEvents);
+assert.equal(savedCandidateConflicts.length, 1, "saved candidate excludes its own row");
+assert.equal(savedCandidateConflicts[0].event.id, "evt-2");
+
 const monthDays = buildCalendarDays("month", new Date("2026-08-15T00:00:00"));
 assert.equal(monthDays.length, 42);
 assert.equal(toDateKey(monthDays[0]), "2026-07-26");

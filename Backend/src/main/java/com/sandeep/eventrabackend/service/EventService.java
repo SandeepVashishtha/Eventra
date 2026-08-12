@@ -1,13 +1,14 @@
-import com.eventra.specification.SearchSpecification;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 package com.sandeep.eventrabackend.service;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+
 import com.sandeep.eventrabackend.dto.request.CancelEventRequest;
+import com.sandeep.eventrabackend.dto.request.CsvWaitlistImportRequest;
 import com.sandeep.eventrabackend.dto.request.EventCreateRequest;
 import com.sandeep.eventrabackend.dto.request.EventScheduleRequest;
 import com.sandeep.eventrabackend.dto.request.EventUpdateRequest;
+import com.sandeep.eventrabackend.dto.response.CsvWaitlistImportResponse;
 import com.sandeep.eventrabackend.dto.response.EventAvailabilityResponse;
 import com.sandeep.eventrabackend.dto.response.AttendeeDirectoryResponse;
 import com.sandeep.eventrabackend.dto.response.EventResponse;
@@ -22,6 +23,7 @@ import com.sandeep.eventrabackend.dto.response.UserAchievementsResponse;
 import com.sandeep.eventrabackend.dto.response.WaitlistResponse;
 import com.sandeep.eventrabackend.exception.EventFullException;
 import com.sandeep.eventrabackend.exception.EventNotFoundException;
+import com.sandeep.eventrabackend.exception.RegistrationClosedException;
 import com.sandeep.eventrabackend.exception.RegistrationConflictException;
 import com.sandeep.eventrabackend.model.Event;
 import com.sandeep.eventrabackend.model.EventRegistration;
@@ -188,7 +190,8 @@ public class EventService {
          * <p>
          * Events that are explicitly marked not public are excluded from the
          * public read path (Issue #11230); they are only visible to their
-         * organizer or an admin via the admin endpoints.
+         * organizer or an admin via the admin endpoints. Cancelled events are
+         * likewise excluded from the public read path (Issue #12081).
          * </p>
          *
          * @throws EventNotFoundException if the event does not exist or is not public
@@ -196,6 +199,7 @@ public class EventService {
         public EventResponse getPublicEventById(long id) {
                 return eventRepository.findById(id)
                                 .filter(Event::isPublic)
+                                .filter(event -> !"CANCELLED".equals(event.getStatus()))
                                 .map(this::toPublicEventResponse)
                                 .orElseThrow(() -> new EventNotFoundException(
                                                 "Event not found with id: " + id));
@@ -209,6 +213,7 @@ public class EventService {
         private Event requirePublicEvent(Long id) {
                 return eventRepository.findById(id)
                                 .filter(Event::isPublic)
+                                .filter(event -> !"CANCELLED".equals(event.getStatus()))
                                 .orElseThrow(() -> new EventNotFoundException(
                                                 "Event not found with id: " + id));
         }
@@ -415,29 +420,31 @@ public class EventService {
                 }
 
                 if (startDate != null && !startDate.trim().isEmpty()) {
+                        LocalDateTime startDateTime;
                         try {
-                                LocalDateTime startDateTime = LocalDateTime.parse(startDate);
-                                List<Event> filteredEvents = events.stream()
-                                                .filter(event -> event.getEventDate() != null &&
-                                                                !event.getEventDate().isBefore(startDateTime))
-                                                .collect(Collectors.toList());
-                                events = filteredEvents;
+                                startDateTime = LocalDateTime.parse(startDate);
                         } catch (Exception e) {
-                                // Invalid date format, ignore this filter
+                                throw new IllegalArgumentException("Invalid startDate parameter: " + startDate);
                         }
+                        List<Event> filteredEvents = events.stream()
+                                        .filter(event -> event.getEventDate() != null &&
+                                                        !event.getEventDate().isBefore(startDateTime))
+                                        .collect(Collectors.toList());
+                        events = filteredEvents;
                 }
 
                 if (endDate != null && !endDate.trim().isEmpty()) {
+                        LocalDateTime endDateTime;
                         try {
-                                LocalDateTime endDateTime = LocalDateTime.parse(endDate);
-                                List<Event> filteredEvents = events.stream()
-                                                .filter(event -> event.getEventDate() != null &&
-                                                                !event.getEventDate().isAfter(endDateTime))
-                                                .collect(Collectors.toList());
-                                events = filteredEvents;
+                                endDateTime = LocalDateTime.parse(endDate);
                         } catch (Exception e) {
-                                // Invalid date format, ignore this filter
+                                throw new IllegalArgumentException("Invalid endDate parameter: " + endDate);
                         }
+                        List<Event> filteredEvents = events.stream()
+                                        .filter(event -> event.getEventDate() != null &&
+                                                        !event.getEventDate().isAfter(endDateTime))
+                                        .collect(Collectors.toList());
+                        events = filteredEvents;
                 }
 
                 // Events do not currently model price, so a free filter cannot be applied.
@@ -459,8 +466,30 @@ public class EventService {
          * @return the saved event
          */
         @Transactional
+        private static final Set<String> ALLOWED_CATEGORIES = Set.of(
+                "Tech", "Art", "Music", "Sports", "Education", "Networking", "Other"
+        );
+
+        private void validateEventCategories(Set<String> categories) {
+                if (categories == null) return;
+                for (String category : categories) {
+                        if (!ALLOWED_CATEGORIES.contains(category)) {
+                                throw new IllegalArgumentException("Invalid event category: " + category);
+                        }
+                }
+        }
+
+        private void validateEventCategory(String category) {
+                if (category == null || category.isBlank()) return;
+                if (!ALLOWED_CATEGORIES.contains(category)) {
+                        throw new IllegalArgumentException("Invalid event category: " + category);
+                }
+        }
+
         public EventResponse createEvent(EventCreateRequest request, String userEmail) {
                 Event event = new Event();
+                validateEventCategory(request.getCategory());
+                validateEventCategories(request.getCategories());
                 event.setTitle(request.getTitle());
                 event.setDescription(request.getDescription());
                 event.setLocation(request.getLocation());
@@ -502,8 +531,8 @@ public class EventService {
          * @throws EventNotFoundException if the event does not exist
          */
         @Transactional
-        public EventResponse @CacheEvict(value = "events", key = "#id")
-    updateEvent(Long id, EventUpdateRequest request, String userEmail) {
+        @CacheEvict(value = "events", key = "#id")
+        public EventResponse updateEvent(Long id, EventUpdateRequest request, String userEmail) {
                 Event event = eventRepository.findById(id)
                                 .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + id));
 
@@ -517,6 +546,8 @@ public class EventService {
                 }
 
                 Integer previousCapacity = event.getCapacity();
+                validateEventCategory(request.getCategory());
+                validateEventCategories(request.getCategories());
 
                 event.setTitle(request.getTitle());
                 event.setDescription(request.getDescription());
@@ -562,7 +593,7 @@ public class EventService {
         public EventScheduleResponse getEventSchedule(Long id) {
                 Event event = eventRepository.findById(id)
                                 .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + id));
-                return toEventScheduleResponse(event, null);
+                return toEventScheduleResponse(event);
         }
 
         @Transactional
@@ -579,15 +610,16 @@ public class EventService {
                 }
 
                 event.setEventDate(request.getStartDate());
+                event.setEndDate(request.getEndDate());
                 Event saved = eventRepository.save(event);
-                return toEventScheduleResponse(saved, request.getEndDate());
+                return toEventScheduleResponse(saved);
         }
 
-        private EventScheduleResponse toEventScheduleResponse(Event event, LocalDateTime endDate) {
+        private EventScheduleResponse toEventScheduleResponse(Event event) {
                 return EventScheduleResponse.builder()
                                 .eventId(event.getId())
                                 .startDate(event.getEventDate())
-                                .endDate(endDate != null ? endDate : event.getEventDate())
+                                .endDate(event.getEndDate() != null ? event.getEndDate() : event.getEventDate())
                                 .build();
         }
 
@@ -618,11 +650,24 @@ public class EventService {
                         throw new RegistrationConflictException("Event is already cancelled.");
                 }
 
-                String refundPolicy = request.getRefundPolicy().toUpperCase();
+                String refundPolicy = request.getRefundPolicy() == null
+                                ? null
+                                : request.getRefundPolicy().toUpperCase();
+                if (refundPolicy == null
+                                || !("FULL".equals(refundPolicy)
+                                || "PARTIAL".equals(refundPolicy)
+                                || "NONE".equals(refundPolicy))) {
+                        throw new IllegalArgumentException(
+                                        "Refund policy is required and must be one of: FULL, PARTIAL, NONE");
+                }
                 if ("PARTIAL".equals(refundPolicy)) {
                         if (request.getRefundPercent() == null) {
                                 throw new IllegalArgumentException(
                                                 "Refund percentage is required when the refund policy is PARTIAL.");
+                        }
+                        if (request.getRefundPercent() < 1 || request.getRefundPercent() > 100) {
+                                throw new IllegalArgumentException(
+                                                "Refund percentage must be between 1 and 100 when the refund policy is PARTIAL.");
                         }
                 }
 
@@ -737,6 +782,16 @@ public class EventService {
                         throw new EventNotFoundException("Event not found with id: " + eventId);
                 }
 
+                // A cancelled event must never accept new waitlist joins (#12080).
+                if ("CANCELLED".equals(event.getStatus())) {
+                        throw new RegistrationConflictException("This event has been cancelled.");
+                }
+
+                // A past event will never reopen seats, so joining its waitlist would strand the user (#15283).
+                if (event.isEventPast()) {
+                        throw new RegistrationClosedException("Registration is closed for this event.");
+                }
+
                 User user = userRepository.findByEmail(userEmail)
                                 .orElseThrow(() -> new UsernameNotFoundException(
                                                 "User not found with email: " + userEmail));
@@ -758,7 +813,12 @@ public class EventService {
                         EventWaitlist entry = new EventWaitlist();
                         entry.setEvent(event);
                         entry.setUser(user);
-                        entry.setPosition(eventWaitlistRepository.findMaxPositionByEventId(eventId) + 1);
+                        int maxPosition = eventWaitlistRepository.findByEvent_IdWithLock(eventId)
+                                        .stream()
+                                        .mapToInt(EventWaitlist::getPosition)
+                                        .max()
+                                        .orElse(0);
+                        entry.setPosition(maxPosition + 1);
                         entry.setStatus("WAITING");
 
                         try {
@@ -796,7 +856,6 @@ public class EventService {
                 eventRegistrationRepository.delete(registration);
                 event.setRegisteredCount((int) eventRegistrationRepository
                                 .countByEvent_IdAndStatus(eventId, "CONFIRMED"));
-                eventRepository.save(event);
 
                 broadcastAvailability(event);
 
@@ -815,6 +874,142 @@ public class EventService {
                                 .stream()
                                 .map(this::toWaitlistResponse)
                                 .toList();
+        }
+
+        /**
+         * Bulk imports legacy waitlist data from CSV for organizers migrating from other systems.
+         * 
+         * <p>This method processes CSV entries containing Name, Email, and Timestamp, maps them to
+         * existing users in the system, sorts by the legacy timestamp to maintain fair queuing,
+         * and bulk-inserts them into the database as WAITING entries.</p>
+         * 
+         * <p>Each entry must have a corresponding user with the email address in the system.
+         * If a user doesn't exist, that entry is skipped and added to the failure list.</p>
+         * 
+         * @param request The CSV import request containing eventId and list of entries
+         * @param organizerEmail The email of the organizer performing the import
+         * @return Response containing import statistics and failure details
+         */
+        /**
+         * Parse timestamp string with various format support.
+         */
+        private LocalDateTime parseTimestamp(String timestampStr) {
+                if (timestampStr == null || timestampStr.trim().isEmpty()) {
+                    return LocalDateTime.now();
+                }
+                
+                String timestamp = timestampStr.trim();
+                
+                // Try ISO date-time format first (e.g., 2024-01-15T10:30:00Z)
+                try {
+                    return LocalDateTime.parse(timestamp.replace("Z", ""));
+                } catch (Exception e) {
+                    // Ignored, try next format
+                }
+                
+                // Try with space separator (e.g., 2024-01-15 10:30:00)
+                try {
+                    return LocalDateTime.parse(timestamp.replace(" ", "T"));
+                } catch (Exception e) {
+                    // Ignored, try next format
+                }
+                
+                // Try date only (e.g., 2024-01-15)
+                try {
+                    return LocalDateTime.parse(timestamp + "T00:00:00");
+                } catch (Exception e) {
+                    // Ignored, try next format
+                }
+                
+                // Fall back to current time
+                return LocalDateTime.now();
+        }
+
+        @Transactional
+        public CsvWaitlistImportResponse importLegacyWaitlist(CsvWaitlistImportRequest request, String organizerEmail) {
+                Long eventId = request.getEventId();
+                List<CsvWaitlistImportRequest.CsvWaitlistEntry> entries = request.getEntries();
+                
+                // Validate event exists and organizer has permission
+                Event event = eventRepository.findById(eventId)
+                                .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + eventId));
+                
+                eventRoleService.requireRole(eventId, organizerEmail, EventRole.ORGANIZER);
+                
+                CsvWaitlistImportResponse response = new CsvWaitlistImportResponse();
+                response.setTotalProcessed(entries.size());
+                
+                int successfulImports = 0;
+                int failedImports = 0;
+                
+                // Sort entries by timestamp to maintain fair queuing (oldest first)
+                List<CsvWaitlistImportRequest.CsvWaitlistEntry> sortedEntries = entries.stream()
+                        .sorted((a, b) -> a.getTimestamp().compareTo(b.getTimestamp()))
+                        .toList();
+                
+                // Get current max position for this event
+                int currentMaxPosition = eventWaitlistRepository.findMaxPositionByEventId(eventId);
+                
+                for (int i = 0; i < sortedEntries.size(); i++) {
+                        CsvWaitlistImportRequest.CsvWaitlistEntry entry = sortedEntries.get(i);
+                        
+                        try {
+                                // Parse the timestamp
+                                LocalDateTime joinedAt = parseTimestamp(entry.getTimestamp());
+                                
+                                // Find user by email
+                                User user = userRepository.findByEmail(entry.getEmail())
+                                                .orElse(null);
+                                
+                                if (user == null) {
+                                        // User not found - add to failures
+                                        response.addFailure(new CsvWaitlistImportResponse.ImportFailure(
+                                                        i, entry.getEmail(), "User with email " + entry.getEmail() + " not found"));
+                                        failedImports++;
+                                        continue;
+                                }
+                                
+                                // Check if user is already registered for this event
+                                if (eventRegistrationRepository.existsByEvent_IdAndUser_Email(eventId, user.getEmail())) {
+                                        response.addFailure(new CsvWaitlistImportResponse.ImportFailure(
+                                                        i, entry.getEmail(), "User already registered for this event"));
+                                        failedImports++;
+                                        continue;
+                                }
+                                
+                                // Check if user is already on the waitlist for this event
+                                if (eventWaitlistRepository.existsByEvent_IdAndUser_EmailAndStatus(eventId, user.getEmail(), "WAITING")) {
+                                        response.addFailure(new CsvWaitlistImportResponse.ImportFailure(
+                                                        i, entry.getEmail(), "User already on waitlist for this event"));
+                                        failedImports++;
+                                        continue;
+                                }
+                                
+                                // Create and save the waitlist entry
+                                EventWaitlist waitlistEntry = new EventWaitlist();
+                                waitlistEntry.setEvent(event);
+                                waitlistEntry.setUser(user);
+                                waitlistEntry.setPosition(currentMaxPosition + successfulImports + 1);
+                                waitlistEntry.setStatus("WAITING");
+                                // Use parsed timestamp or current time
+                                waitlistEntry.setJoinedAt(joinedAt);
+                                
+                                eventWaitlistRepository.save(waitlistEntry);
+                                successfulImports++;
+                                
+                        } catch (Exception e) {
+                                // Handle parsing errors and other exceptions
+                                response.addFailure(new CsvWaitlistImportResponse.ImportFailure(
+                                                i, entry.getEmail(), "Error processing entry: " + e.getMessage()));
+                                failedImports++;
+                        }
+                }
+                
+                response.setSuccessfulImports(successfulImports);
+                response.setFailedImports(failedImports);
+                response.setMessage("Successfully imported " + successfulImports + " of " + entries.size() + " entries");
+                
+                return response;
         }
 
         /**
@@ -1083,11 +1278,7 @@ public class EventService {
         @Transactional(readOnly = true)
         public List<String> getOccupiedSeats(Long eventId) {
                 requirePublicEvent(eventId);
-                return eventRegistrationRepository.findByEvent_Id(eventId)
-                                .stream()
-                                .map(EventRegistration::getSeatId)
-                                .filter(seatId -> seatId != null && !seatId.isBlank())
-                                .toList();
+                return eventRegistrationRepository.findSeatIdsByEvent_Id(eventId);
         }
 
         private MyRegisteredEventResponse toMyRegisteredEventResponse(
@@ -1119,9 +1310,44 @@ public class EventService {
                         return;
                 }
 
-                EventAvailabilityResponse availability = getEventAvailability(event.getId());
+                EventAvailabilityResponse availability = buildAvailability(event);
 
                 eventStreamService.broadcastAvailability(event.getId(), availability);
+        }
+
+        /**
+         * Builds the availability payload directly from the event aggregate so the
+         * broadcast path does not depend on {@link #requirePublicEvent(Long)}.
+         *
+         * <p>
+         * Cancelling a registration or promoting a waitlist entry for an event that
+         * was later made private must still commit the write; the availability
+         * broadcast is a side effect and must never throw for non-public events
+         * (Issue #14617).
+         * </p>
+         *
+         * @param event the event whose availability just changed (never null)
+         * @return availability response (no waitlist position — no user context)
+         */
+        private EventAvailabilityResponse buildAvailability(Event event) {
+                Integer capacity = event.getCapacity();
+                int registeredCount = event.getRegisteredCount();
+
+                Integer spotsLeft = (capacity == null)
+                                ? null
+                                : Math.max(0, capacity - registeredCount);
+
+                boolean isFull = (capacity != null) && (registeredCount >= capacity);
+
+                return EventAvailabilityResponse.builder()
+                                .capacity(capacity)
+                                .registeredCount(registeredCount)
+                                .spotsLeft(spotsLeft)
+                                .isFull(isFull)
+                                .eventPassed(event.isEventPast())
+                                .waitlistPosition(null)
+                                .waitlisted(false)
+                                .build();
         }
 
         private EventResponse toEventResponse(Event event) {
@@ -1207,8 +1433,10 @@ public class EventService {
                 java.time.Instant start = event.getEventDate() != null
                                 ? event.getEventDate().atZone(java.time.ZoneId.systemDefault()).toInstant()
                                 : java.time.Instant.now();
-                // Event model has no endDate; default duration is 2 hours when end is unspecified.
-                java.time.Instant end = start.plus(java.time.Duration.ofHours(2));
+                // Default duration is 2 hours when no end date was persisted.
+                java.time.Instant end = (event.getEndDate() != null
+                                ? event.getEndDate().atZone(java.time.ZoneId.systemDefault()).toInstant()
+                                : start.plus(java.time.Duration.ofHours(2)));
                 java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter
                                 .ofPattern("yyyyMMdd'T'HHmmss'Z'")
                                 .withZone(java.time.ZoneOffset.UTC);

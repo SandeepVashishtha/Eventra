@@ -436,6 +436,8 @@ export default function TicketScanner() {
       return;
     }
 
+    setScanResult(null);
+
     const manualData = {
       ticketId: manualTicketId.trim().toUpperCase(),
       userName: manualAttendeeName.trim(),

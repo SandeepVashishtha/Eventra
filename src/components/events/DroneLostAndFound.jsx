@@ -98,7 +98,7 @@ const DroneLostAndFound = () => {
                      {[...Array(5)].map((_, i) => (
                        <div key={i} className={`w-3 rounded-t transition-all duration-300 ${
                          i < (signalStrength / 20) ? 'bg-amber-500' : 'bg-neutral-800'
-                       }`} style={{ height: \`\${(i+1)*20}%\` }}></div>
+                       }`} style={{ height: `${(i+1)*20}%` }}></div>
                      ))}
                    </div>
                    <span className="text-2xl font-black text-amber-400 font-mono">{Math.floor(signalStrength)}%</span>
@@ -108,7 +108,7 @@ const DroneLostAndFound = () => {
                <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-4 flex flex-col justify-between">
                  <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest block mb-2">Drone Coordinates</span>
                  <span className="text-xl font-black text-white font-mono">
-                   {systemState === 'standby' ? 'HOME BASE' : \`\${dronePos.x.toFixed(4)}N, \${dronePos.y.toFixed(4)}W\`}
+                   {systemState === 'standby' ? 'HOME BASE' : `${dronePos.x.toFixed(4)}N, ${dronePos.y.toFixed(4)}W`}
                  </span>
                  <span className="text-[10px] text-neutral-500 font-mono mt-1">ALT: {systemState === 'searching' ? '45m' : systemState === 'found' ? '5m' : '0m'}</span>
                </div>
@@ -192,8 +192,8 @@ const DroneLostAndFound = () => {
                 <div 
                   className="absolute w-8 h-8 z-30 transition-all duration-100 ease-linear flex items-center justify-center"
                   style={{ 
-                    left: \`\${dronePos.x}%\`, 
-                    top: \`\${dronePos.y}%\`,
+                    left: `${dronePos.x}%`, 
+                    top: `${dronePos.y}%`,
                     transform: 'translate(-50%, -50%)'
                   }}
                 >
@@ -217,8 +217,8 @@ const DroneLostAndFound = () => {
                 <div 
                   className="absolute w-4 h-4 bg-emerald-500 rounded-full z-20 flex items-center justify-center shadow-[0_0_15px_rgba(16,185,129,1)] animate-bounce"
                   style={{ 
-                    left: \`\${targetPos.x}%\`, 
-                    top: \`\${targetPos.y}%\`,
+                    left: `${targetPos.x}%`, 
+                    top: `${targetPos.y}%`,
                     transform: 'translate(-50%, -50%)'
                   }}
                 >

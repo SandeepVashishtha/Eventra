@@ -32,7 +32,8 @@ const seedMockFeedback = (eventId) => {
     comment: comments[i % comments.length],
     tags: tags[i % tags.length],
     recommend: i % 5 !== 0,
-    submittedAt: new Date(Date.now() - i * 86400000 * 2).toISOString(),
+    createdAt: new Date(Date.now() - i * 86400000 * 2).toISOString(),
+    updatedAt: new Date(Date.now() - i * 86400000 * 2).toISOString(),
   }));
   localStorage.setItem(key, JSON.stringify(existing));
 };
@@ -70,7 +71,7 @@ export default function FeedbackInsightsDashboard() {
   const trendData = useMemo(() => {
     const byDate = {};
     feedback.forEach(f => {
-      const date = new Date(f.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const date = new Date(f.updatedAt || f.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       if (!byDate[date]) byDate[date] = { date, count: 0, totalRating: 0 };
       byDate[date].count++;
       byDate[date].totalRating += f.rating || 0;

@@ -213,16 +213,17 @@ public ResponseEntity<AuthResponse> googleLogin(
 
         String refreshToken = body != null ? body.getRefreshToken() : null;
 
-        if (!StringUtils.hasText(token) && !StringUtils.hasText(refreshToken)) {
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.SET_COOKIE, authCookieHelper.clearAuthCookie().toString())
-                    .body("Logged out successfully");
+        ResponseEntity.BodyBuilder responseBuilder = ResponseEntity.ok();
+        try {
+            if (StringUtils.hasText(token) || StringUtils.hasText(refreshToken)) {
+                authService.logout(token, refreshToken);
+            }
+        } catch (RuntimeException ignored) {
+            // Best-effort blacklist; cookie clear must still proceed.
+        } finally {
+            responseBuilder.header(HttpHeaders.SET_COOKIE, authCookieHelper.clearAuthCookie().toString());
         }
-
-        authService.logout(token, refreshToken);
-        return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, authCookieHelper.clearAuthCookie().toString())
-                .body("Logged out successfully");
+        return responseBuilder.body("Logged out successfully");
     }
 
     private ResponseEntity<AuthResponse> withAuthCookie(

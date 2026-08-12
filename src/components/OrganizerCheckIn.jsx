@@ -194,7 +194,8 @@ const OrganizerCheckIn = ({ eventId, eventName, sessions = [], registrations = [
                   Group Check-In
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-200 mb-3">
-                  Scan any group member's QR code to check in the entire party at once.
+                  Scan the primary buyer's QR code to open a modal listing all group members.
+                  Use the "Check In Entire Group" button or toggle individuals as needed.
                 </p>
               </div>
               <EventCheckInScanner

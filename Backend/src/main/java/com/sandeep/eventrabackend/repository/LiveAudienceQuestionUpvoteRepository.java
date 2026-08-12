@@ -7,4 +7,6 @@ public interface LiveAudienceQuestionUpvoteRepository
         extends JpaRepository<LiveAudienceQuestionUpvote, Long> {
 
     boolean existsByQuestionIdAndUserId(Long questionId, Long userId);
+
+    void deleteByQuestionId(Long questionId);
 }

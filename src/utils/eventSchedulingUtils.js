@@ -237,10 +237,21 @@ export const detectScheduleConflicts = (candidateEvent, events = []) => {
   const candidate = normalizeScheduledEvent(candidateEvent);
   if (!candidate) return [];
 
-  const candidateId = String(candidate.id);
-
-  return normalizeScheduledEvents(events)
-    .filter((event) => String(event.id) !== candidateId)
+  return normalizeScheduledEvents(
+    // Drop the candidate itself from the comparison by object reference. This
+    // is the only reliable way to exclude an id-less event without a shared
+    // sentinel (issue #14616).
+    events.filter((event) => event !== candidateEvent),
+  )
+    .filter((event) => {
+      // Saved events share a stable identity, so the candidate's own row — or
+      // a re-fetched copy of it — is excluded by id. Id-less events collapse
+      // onto the "" identity, so excluding by identity here would remove every
+      // unsaved event from the overlap check. For an id-less candidate every
+      // remaining event (saved or not) must be compared.
+      if (candidate.id === "") return true;
+      return String(event.id) !== String(candidate.id);
+    })
     .filter((event) => rangesOverlap(candidate, event))
     .map((event) => {
       const types = ["time"];
@@ -327,9 +338,18 @@ export const navigateCalendarDate = (date, view, direction) => {
   const next = new Date(date);
   const amount = direction === "next" ? 1 : -1;
 
-  if (view === "month") next.setMonth(next.getMonth() + amount);
-  else if (view === "week") next.setDate(next.getDate() + amount * 7);
-  else next.setDate(next.getDate() + amount);
+  if (view === "month") {
+    // Clamp the anchor day to the 1st before advancing the month, otherwise
+    // JS Date rolls over: setMonth on Jan 31 lands on Mar 3 (Feb 31 doesn't
+    // exist), skipping February entirely. Anchoring on day 1 guarantees the
+    // target month is reached; the caller reselects a concrete day later.
+    next.setDate(1);
+    next.setMonth(next.getMonth() + amount);
+  } else if (view === "week") {
+    next.setDate(next.getDate() + amount * 7);
+  } else {
+    next.setDate(next.getDate() + amount);
+  }
 
   return next;
 };

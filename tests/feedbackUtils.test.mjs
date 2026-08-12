@@ -34,7 +34,6 @@ const {
   exportFeedbackAsCSV,
   clearAllFeedback,
   sanitizeCSVCell,
-} from '../../utils/feedbackUtils';
 } = await import('../src/utils/feedbackUtils.js');
 
 const expect = (actual) => ({
@@ -366,6 +365,154 @@ describe('Feedback Utils', () => {
 
       const csv = exportFeedbackAsCSV(testEventId);
       expect(csv).toContain('"She said ""Awesome!"" to everyone"');
+    });
+  });
+
+  describe('getEventFeedback with options', () => {
+    it('should return array when no options provided (backward compatible)', () => {
+      saveFeedback(testEventId, { rating: 5, userId: 'user1' });
+      saveFeedback(testEventId, { rating: 4, userId: 'user2' });
+
+      const result = getEventFeedback(testEventId);
+      expect(Array.isArray(result)).toBe(true);
+      expect(result).toHaveLength(2);
+    });
+
+    describe('Filtering', () => {
+      it('should filter by rating', () => {
+        saveFeedback(testEventId, { rating: 5, userId: 'user1' });
+        saveFeedback(testEventId, { rating: 4, userId: 'user2' });
+        saveFeedback(testEventId, { rating: 5, userId: 'user3' });
+
+        const result = getEventFeedback(testEventId, { filterByRating: 5 });
+        expect(result).toHaveLength(2);
+        expect(result.every(f => f.rating === 5)).toBe(true);
+      });
+
+      it('should return empty array when no feedback matches filter', () => {
+        saveFeedback(testEventId, { rating: 5, userId: 'user1' });
+        saveFeedback(testEventId, { rating: 4, userId: 'user2' });
+
+        const result = getEventFeedback(testEventId, { filterByRating: 3 });
+        expect(result).toHaveLength(0);
+      });
+
+      it('should ignore filterByRating when undefined', () => {
+        saveFeedback(testEventId, { rating: 5, userId: 'user1' });
+        saveFeedback(testEventId, { rating: 4, userId: 'user2' });
+
+        const result = getEventFeedback(testEventId, { filterByRating: undefined });
+        expect(result).toHaveLength(2);
+      });
+    });
+
+    describe('Sorting', () => {
+      it('should sort by createdAt descending by default', () => {
+        saveFeedback(testEventId, { rating: 5, userId: 'user1' });
+        saveFeedback(testEventId, { rating: 4, userId: 'user2' });
+
+        const result = getEventFeedback(testEventId, {});
+        expect(result).toHaveLength(2);
+        expect(result[0].createdAt >= result[1].createdAt).toBe(true);
+      });
+
+      it('should sort by rating ascending', () => {
+        saveFeedback(testEventId, { rating: 3, userId: 'user1' });
+        saveFeedback(testEventId, { rating: 5, userId: 'user2' });
+        saveFeedback(testEventId, { rating: 1, userId: 'user3' });
+
+        const result = getEventFeedback(testEventId, { sortBy: 'rating', sortOrder: 'asc' });
+        expect(result[0].rating).toBe(1);
+        expect(result[1].rating).toBe(3);
+        expect(result[2].rating).toBe(5);
+      });
+
+      it('should sort by rating descending', () => {
+        saveFeedback(testEventId, { rating: 3, userId: 'user1' });
+        saveFeedback(testEventId, { rating: 5, userId: 'user2' });
+        saveFeedback(testEventId, { rating: 1, userId: 'user3' });
+
+        const result = getEventFeedback(testEventId, { sortBy: 'rating', sortOrder: 'desc' });
+        expect(result[0].rating).toBe(5);
+        expect(result[1].rating).toBe(3);
+        expect(result[2].rating).toBe(1);
+      });
+
+      it('should sort by updatedAt', () => {
+        saveFeedback(testEventId, { rating: 5, userId: 'user1' });
+        saveFeedback(testEventId, { rating: 4, userId: 'user2' });
+
+        const result = getEventFeedback(testEventId, { sortBy: 'updatedAt', sortOrder: 'desc' });
+        expect(result).toHaveLength(2);
+        expect(result[0].updatedAt >= result[1].updatedAt).toBe(true);
+      });
+    });
+
+    describe('Pagination', () => {
+      it('should paginate results', () => {
+        for (let i = 1; i <= 5; i++) {
+          saveFeedback(testEventId, { rating: i, userId: `user${i}` });
+        }
+
+        const result = getEventFeedback(testEventId, { page: 1, limit: 2 });
+        expect(result.data).toHaveLength(2);
+        expect(result.total).toBe(5);
+        expect(result.page).toBe(1);
+        expect(result.totalPages).toBe(3);
+      });
+
+      it('should return correct page', () => {
+        for (let i = 1; i <= 5; i++) {
+          saveFeedback(testEventId, { rating: i, userId: `user${i}` });
+        }
+
+        const result = getEventFeedback(testEventId, { page: 2, limit: 2 });
+        expect(result.data).toHaveLength(2);
+        expect(result.page).toBe(2);
+        expect(result.total).toBe(5);
+      });
+
+      it('should return last page with remaining items', () => {
+        for (let i = 1; i <= 5; i++) {
+          saveFeedback(testEventId, { rating: i, userId: `user${i}` });
+        }
+
+        const result = getEventFeedback(testEventId, { page: 3, limit: 2 });
+        expect(result.data).toHaveLength(1);
+        expect(result.page).toBe(3);
+        expect(result.total).toBe(5);
+      });
+
+      it('should handle page out of range', () => {
+        for (let i = 1; i <= 3; i++) {
+          saveFeedback(testEventId, { rating: i, userId: `user${i}` });
+        }
+
+        const result = getEventFeedback(testEventId, { page: 10, limit: 2 });
+        expect(result.data).toHaveLength(0);
+        expect(result.page).toBe(10);
+        expect(result.total).toBe(3);
+      });
+
+      it('should combine filtering, sorting, and pagination', () => {
+        saveFeedback(testEventId, { rating: 5, userId: 'user1' });
+        saveFeedback(testEventId, { rating: 4, userId: 'user2' });
+        saveFeedback(testEventId, { rating: 5, userId: 'user3' });
+        saveFeedback(testEventId, { rating: 3, userId: 'user4' });
+        saveFeedback(testEventId, { rating: 5, userId: 'user5' });
+
+        const result = getEventFeedback(testEventId, {
+          filterByRating: 5,
+          sortBy: 'rating',
+          sortOrder: 'desc',
+          page: 1,
+          limit: 2
+        });
+
+        expect(result.data).toHaveLength(2);
+        expect(result.total).toBe(3);
+        expect(result.data.every(f => f.rating === 5)).toBe(true);
+      });
     });
   });
 });

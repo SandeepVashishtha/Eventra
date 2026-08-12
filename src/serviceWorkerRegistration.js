@@ -90,6 +90,11 @@ function registerValidSW(swUrl, config) {
           log('[Service Worker] Cache updated to version:', event.data.version);
           window.dispatchEvent(new CustomEvent('sw-cache-updated', { detail: event.data }));
         }
+        if (event.data && (event.data.type === 'EVENTRA_BACKGROUND_SYNC' || event.data.type === 'SYNC_REQUESTED')) {
+          // The SW fired the offline queue background sync; re-dispatch as a
+          // DOM CustomEvent so the hook (and any other client) can react.
+          window.dispatchEvent(new CustomEvent('eventra-background-sync', { detail: event.data }));
+        }
       });
 
       if ('periodicSync' in registration && registration.periodicSync) {

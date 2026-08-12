@@ -82,6 +82,20 @@ export const normalizeMultiSessions = (sessions = [], options = {}) => {
   return sortRecoverySessions([...byId.values()]);
 };
 
+const deepMerge = (target, source) => {
+  if (!target || typeof target !== "object") return source;
+  if (!source || typeof source !== "object") return target;
+  const result = { ...target };
+  for (const key of Object.keys(source)) {
+    if (source[key] && typeof source[key] === "object" && !Array.isArray(source[key])) {
+      result[key] = deepMerge(result[key], source[key]);
+    } else {
+      result[key] = source[key];
+    }
+  }
+  return result;
+};
+
 export const resolveMultiSessionConflict = (left, right) => {
   if (!left) return right || null;
   if (!right) return left || null;
@@ -93,10 +107,7 @@ export const resolveMultiSessionConflict = (left, right) => {
     return {
       ...left,
       ...right,
-      draftData: {
-        ...left.draftData,
-        ...right.draftData,
-      },
+      draftData: deepMerge(left.draftData, right.draftData),
       source: left.source === right.source ? left.source : "merged",
       version: Math.max(left.version || 1, right.version || 1),
     };

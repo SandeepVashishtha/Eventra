@@ -55,6 +55,11 @@ public class EventRegistrationAttemptService {
             throw new EventNotFoundException("Event not found with id: " + eventId);
         }
 
+        // A cancelled event must never accept new registrations (#12080).
+        if ("CANCELLED".equals(event.getStatus())) {
+            throw new RegistrationConflictException("This event has been cancelled.");
+        }
+
         // Registration is only valid for events that have not already ended.
         // Without this guard the API accepted registrations for past events,
         // inflating registeredCount and creating stale registration rows (#11781).
@@ -82,8 +87,12 @@ public class EventRegistrationAttemptService {
             }
         }
 
+        // FIX (#13914): atomic capacity guard. The single UPDATE increments
+        // registeredCount only while a seat is free (row count 1), so two
+        // concurrent registrations cannot both pass an in-memory check and
+        // overshoot capacity. Row count 0 => full.
         if (event.getCapacity() != null
-                && event.getRegisteredCount() >= event.getCapacity()) {
+                && eventRepository.incrementRegisteredCountAtomically(eventId) == 0) {
             throw new EventFullException(
                     "Event is already full. Capacity: " + event.getCapacity());
         }
