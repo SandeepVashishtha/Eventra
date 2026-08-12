@@ -33,4 +33,12 @@ public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecific
     @Query("UPDATE Event e SET e.registeredCount = e.registeredCount + 1 "
             + "WHERE e.id = :id AND (e.capacity IS NULL OR e.capacity > e.registeredCount)")
     int incrementRegisteredCountAtomically(@Param("id") Long id);
+
+    /**
+     * Remove all attendee (registration) rows for a deleted user during the
+     * account-deletion cascade (#15371).
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("DELETE FROM EventRegistration r WHERE r.user.id = :userId")
+    void deleteAttendeeRowsByUserId(@Param("userId") Long userId);
 }
