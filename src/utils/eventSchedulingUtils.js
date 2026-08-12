@@ -237,10 +237,21 @@ export const detectScheduleConflicts = (candidateEvent, events = []) => {
   const candidate = normalizeScheduledEvent(candidateEvent);
   if (!candidate) return [];
 
-  const candidateId = String(candidate.id);
-
-  return normalizeScheduledEvents(events)
-    .filter((event) => String(event.id) !== candidateId)
+  return normalizeScheduledEvents(
+    // Drop the candidate itself from the comparison by object reference. This
+    // is the only reliable way to exclude an id-less event without a shared
+    // sentinel (issue #14616).
+    events.filter((event) => event !== candidateEvent),
+  )
+    .filter((event) => {
+      // Saved events share a stable identity, so the candidate's own row — or
+      // a re-fetched copy of it — is excluded by id. Id-less events collapse
+      // onto the "" identity, so excluding by identity here would remove every
+      // unsaved event from the overlap check. For an id-less candidate every
+      // remaining event (saved or not) must be compared.
+      if (candidate.id === "") return true;
+      return String(event.id) !== String(candidate.id);
+    })
     .filter((event) => rangesOverlap(candidate, event))
     .map((event) => {
       const types = ["time"];
