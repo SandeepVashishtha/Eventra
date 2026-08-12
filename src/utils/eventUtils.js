@@ -101,6 +101,33 @@ export const isEventRegistrationClosed = (eventOrStatus) => {
   return status === "past" || status === "ended" || status === "cancelled";
 };
 
+/**
+ * Check if an event has low inventory and should show FOMO badge.
+ * FOMO (Fear Of Missing Out) is triggered when remaining tickets drop below 10%
+ * of capacity OR below 20 absolute tickets.
+ *
+ * @param {number} capacity - Total event capacity
+ * @param {number} registeredCount - Number of registered participants
+ * @returns {Object} Object containing isLowInventory boolean and message string
+ */
+export const getFomoStatus = (capacity, registeredCount) => {
+  if (capacity == null || capacity <= 0) return { isLowInventory: false, message: null };
+
+  const remaining = capacity - (registeredCount ?? 0);
+  if (remaining <= 0) return { isLowInventory: false, message: null }; // Event is full, not "selling fast"
+
+  const lowThreshold = Math.max(20, Math.ceil(capacity * 0.1));
+  const isLowInventory = remaining <= lowThreshold;
+
+  if (!isLowInventory) return { isLowInventory: false, message: null };
+
+  // Generate appropriate FOMO message
+  if (remaining <= 5) {
+    return { isLowInventory: true, message: `Only ${remaining} Tickets Left!` };
+  }
+  return { isLowInventory: true, message: "Selling Fast!" };
+};
+
 export const normalizeEvent = (event) => {
   if (!event) return null;
 
