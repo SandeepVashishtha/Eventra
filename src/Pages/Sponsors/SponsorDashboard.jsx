@@ -46,7 +46,7 @@ const SponsorDashboard = () => {
     };
   }, []);
 
- useEffect(() => {
+  useEffect(() => {
   // Load custom settings
   const saved = localStorage.getItem("eventra_sponsor_settings");
 
@@ -74,6 +74,7 @@ const SponsorDashboard = () => {
         e
       );
     }
+  }
   }, [sponsorPrefs]);
 
   const handleSaveSettings = (e) => {
