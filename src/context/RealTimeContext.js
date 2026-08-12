@@ -158,7 +158,7 @@ function AnalyticsProvider({ children }) {
 }
 
 // --- 4.5 Live Audience Coordination Provider ---
-const LiveAudienceContext = createContext(null);
+export const LiveAudienceContext = createContext(null);
 
 function liveAudienceReducer(state, action) {
   switch (action.type) {
