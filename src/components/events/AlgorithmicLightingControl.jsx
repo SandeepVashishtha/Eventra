@@ -145,7 +145,7 @@ const AlgorithmicLightingControl = () => {
                          {[...Array(5)].map((_, i) => (
                            <div key={i} className={`w-1.5 rounded-t transition-all duration-500 ${
                              i < (zone.crowdLevel / 20) ? (zone.crowdLevel > 70 ? 'bg-rose-500' : 'bg-emerald-500') : 'bg-neutral-800'
-                           }`} style={{ height: \`\${(i+1)*20}%\` }}></div>
+                           }`} style={{ height: `${(i+1)*20}%` }}></div>
                          ))}
                        </div>
                      </div>
@@ -224,8 +224,8 @@ const AlgorithmicLightingControl = () => {
                           key={i} 
                           className="absolute w-1 h-1 bg-white rounded-full shadow-[0_0_3px_white] transition-all duration-1000"
                           style={{
-                            left: \`\${20 + Math.random() * 60}%\`,
-                            top: \`\${20 + Math.random() * 60}%\`,
+                            left: `${20 + Math.random() * 60}%`,
+                            top: `${20 + Math.random() * 60}%`,
                           }}
                         ></div>
                       ))}
