@@ -58,7 +58,7 @@ public class ValidationController {
         if (email == null || !EMAIL_PATTERN.matcher(email).matches()) {
             return ResponseEntity.badRequest().body(buildError("Invalid email format", "/api/validate/email/" + email));
         }
-        boolean available = !userRepository.existsByEmail(email);
+        boolean available = !userRepository.existsByEmailIgnoreCase(email);
         return ResponseEntity.ok(ValidationResponse.builder()
                 .available(available)
                 .build());
