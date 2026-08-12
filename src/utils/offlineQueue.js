@@ -12,13 +12,23 @@ const DB_NAME = "eventra_offline_db";
 const STORE_NAME = "actions_queue";
 const BACKGROUND_SYNC_TAG = "eventra-offline-queue-sync";
 
+// Background-sync registration is best-effort: never let service-worker
+// availability block a durable queue write (see #14604).
+const BACKGROUND_SYNC_TIMEOUT_MS = 2000;
+
 const requestBackgroundSync = async () => {
   if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) {
     return false;
   }
 
   try {
-    const registration = await navigator.serviceWorker.ready;
+    // navigator.serviceWorker.ready never settles when no service worker is
+    // active (blocked registration, failed install, incognito). Race it against
+    // a timeout so callers are never blocked on background-sync availability.
+    const registration = await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise((resolve) => setTimeout(() => resolve(null), BACKGROUND_SYNC_TIMEOUT_MS)),
+    ]);
     if (registration?.sync && typeof registration.sync.register === "function") {
       await registration.sync.register(BACKGROUND_SYNC_TAG);
       return true;
@@ -395,7 +405,11 @@ queue.push(actionItem);
 
   if (queued) {
     notifyQueueUpdated(actionItem);
-    await requestBackgroundSync();
+    // Fire-and-forget: background-sync registration must never block the
+    // caller, even when no service worker becomes active (see #14604).
+    requestBackgroundSync().catch((error) => {
+      logger.warn("[OfflineQueue] Background sync request failed:", error);
+    });
   }
 
   return queued;

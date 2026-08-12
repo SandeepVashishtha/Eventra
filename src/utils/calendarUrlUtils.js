@@ -285,7 +285,10 @@ export const generateIcsFileBlobUrl = (event, timezone, reminderMinutes) => {
 
   const now = new Date().toISOString().replace(/-|:|\.\d+/g, '');
 
-  const reminderMinutesNum = parseInt(reminderMinutes, 10);
+  const reminderMinutesNum =
+    typeof reminderMinutes === "number" && Number.isFinite(reminderMinutes)
+      ? reminderMinutes
+      : parseInt(reminderMinutes, 10);
 
   const icsContent = [
     'BEGIN:VCALENDAR',
@@ -301,7 +304,9 @@ export const generateIcsFileBlobUrl = (event, timezone, reminderMinutes) => {
     `SUMMARY:${(event.title || '').replace(/,/g, '\\,')}`,
     `DESCRIPTION:${(event.description || '').replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/,/g, '\\,')}`,
     `LOCATION:${(event.location || '').replace(/,/g, '\\,')}`,
-    ...(reminderMinutesNum > 0
+    ...(Number.isFinite(reminderMinutesNum) &&
+      reminderMinutesNum > 0 &&
+      Number.isInteger(reminderMinutesNum)
       ? [
           'BEGIN:VALARM',
           `TRIGGER:-PT${reminderMinutesNum}M`,

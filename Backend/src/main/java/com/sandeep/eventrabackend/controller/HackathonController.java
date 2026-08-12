@@ -1,6 +1,3 @@
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 package com.sandeep.eventrabackend.controller;
 
 import com.sandeep.eventrabackend.dto.request.HackathonCreateRequest;
@@ -129,12 +126,10 @@ public class HackathonController {
                     )
             )
     })
-    public ResponseEntity<HackathonResponse> @Transactional
-    createHackathon(
+    public ResponseEntity<HackathonResponse> createHackathon(
             @Valid @RequestBody HackathonCreateRequest request,
             Authentication authentication) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(hackathonService.@Transactional
-    createHackathon(request, authentication.getName()));
+        return ResponseEntity.status(HttpStatus.CREATED).body(hackathonService.createHackathon(request, authentication.getName()));
     }
 
     @PutMapping("/{id}")
@@ -181,14 +176,12 @@ public class HackathonController {
                     )
             )
     })
-    public ResponseEntity<HackathonResponse> @CacheEvict(value = "hackathons", key = "#id")
-    updateHackathon(
+    public ResponseEntity<HackathonResponse> updateHackathon(
             @Parameter(description = "ID of the hackathon to update")
             @PathVariable Long id,
             @Valid @RequestBody HackathonUpdateRequest request,
             Authentication authentication) {
-        return ResponseEntity.ok(hackathonService.@CacheEvict(value = "hackathons", key = "#id")
-    updateHackathon(id, request, authentication.getName()));
+        return ResponseEntity.ok(hackathonService.updateHackathon(id, request, authentication.getName()));
     }
 
     @GetMapping
@@ -206,7 +199,7 @@ public class HackathonController {
             )
     })
     public ResponseEntity<List<HackathonResponse>> getAllHackathons(@PageableDefault(size = 20, sort = "startDate") Pageable pageable) {
-        return ResponseEntity.ok(hackathonService.getAllHackathons(@PageableDefault(size = 20, sort = "startDate") Pageable pageable));
+        return ResponseEntity.ok(hackathonService.getAllHackathons());
     }
 
     @GetMapping("/{id}")
@@ -230,19 +223,17 @@ public class HackathonController {
                     )
             )
     })
-    public ResponseEntity<HackathonResponse> @Cacheable(value = "hackathons", key = "#id")
-    getHackathonById(
+    public ResponseEntity<HackathonResponse> getHackathonById(
             @Parameter(description = "ID of the hackathon")
             @PathVariable Long id) {
-        return ResponseEntity.ok(hackathonService.@Cacheable(value = "hackathons", key = "#id")
-    getHackathonById(id));
+        return ResponseEntity.ok(hackathonService.getHackathonById(id));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN', 'SUPER_ADMIN')")
     @Operation(
             summary = "Delete a hackathon",
-            description = "Allows an ADMIN or SUPER_ADMIN to delete a hackathon.",
+            description = "Allows the hackathon owner, an ADMIN, or SUPER_ADMIN to delete a hackathon.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses({
@@ -259,7 +250,7 @@ public class HackathonController {
             ),
             @ApiResponse(
                     responseCode = "403",
-                    description = "Forbidden - User does not have the required role",
+                    description = "Forbidden - User does not have the required role or is not the hackathon owner",
                     content = @Content(
                             schema = @Schema(implementation = ErrorResponse.class)
                     )
@@ -274,8 +265,9 @@ public class HackathonController {
     })
     public ResponseEntity<Void> deleteHackathon(
             @Parameter(description = "ID of the hackathon to delete")
-            @PathVariable Long id) {
-        hackathonService.deleteHackathon(id);
+            @PathVariable Long id,
+            Authentication authentication) {
+        hackathonService.deleteHackathon(id, authentication.getName());
         return ResponseEntity.noContent().build();
     }
 }

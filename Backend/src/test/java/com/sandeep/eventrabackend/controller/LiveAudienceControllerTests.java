@@ -344,6 +344,30 @@ public class LiveAudienceControllerTests {
     }
 
     @Test
+    @DisplayName("POST /polls — duplicate option texts rejected (#15301)")
+    void testCreatePollRejectsDuplicateOptions() throws Exception {
+        mockMvc.perform(post("/api/events/{id}/live-audience/polls", eventId)
+                        .with(user(organizerEmail))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                java.util.Map.of(
+                                        "question", "Duplicate options?",
+                                        "type", "single",
+                                        "options", List.of("Yes", "Yes", "No")))))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(post("/api/events/{id}/live-audience/polls", eventId)
+                        .with(user(organizerEmail))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                java.util.Map.of(
+                                        "question", "Case-insensitive dupes?",
+                                        "type", "single",
+                                        "options", List.of("Yes", "yes", "No")))))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     @DisplayName("GET initial data — reflects persisted questions and latest poll")
     void testGetInitialDataPopulated() throws Exception {
         mockMvc.perform(post("/api/events/{id}/live-audience/questions", eventId)

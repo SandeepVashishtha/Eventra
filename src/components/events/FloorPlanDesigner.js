@@ -1,3 +1,4 @@
+import useFormDirty from "hooks/useFormDirty";
 import { useState, useEffect, useRef, useCallback, useMemo, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { Layout, Save, RotateCcw, Plus, Minus, Move, AlertTriangle, Undo2, Redo2, Users } from "lucide-react";
@@ -204,28 +205,19 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
     setLastSavedElementsStr(JSON.stringify(initialElements));
   }, [eventId]);
 
-  const isDirty = !!(lastSavedElementsStr && JSON.stringify(elements) !== lastSavedElementsStr);
+  // Fix: useFormDirty replaces manual isDirty + own beforeunload listener
+  const { isDirty, markSaved } = useFormDirty(elements, {
+    message: "You have unsaved changes on your floor plan layout. Are you sure you want to leave?",
+  });
 
   useEffect(() => {
     if (onDirtyChange) onDirtyChange(isDirty);
   }, [isDirty, onDirtyChange]);
 
-  useEffect(() => {
-    const handleBeforeUnload = (e) => {
-      if (isDirty) {
-        e.preventDefault();
-        e.returnValue = "You have unsaved changes on your floor plan layout. Are you sure you want to leave?";
-        return e.returnValue;
-      }
-    };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [isDirty]);
-
   const saveLayout = () => {
     const serialized = JSON.stringify(elements);
     localStorage.setItem(`eventra_floorplan_${eventId}`, serialized);
-    setLastSavedElementsStr(serialized);
+    markSaved();
     toast.success("Venue floor plan successfully saved!");
     announce("Venue floor plan successfully saved!");
   };

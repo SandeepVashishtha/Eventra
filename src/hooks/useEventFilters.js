@@ -65,7 +65,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { safeJsonParse } from "utils/safeJsonParse";
-import { useDebounce } from "hooks/useDebounce";
+import useDebounce from "hooks/useDebounce";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers

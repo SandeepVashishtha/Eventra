@@ -1,7 +1,10 @@
 package com.sandeep.eventrabackend.security;
 
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Date;
+import java.util.HexFormat;
 
 import javax.crypto.SecretKey;
 
@@ -41,7 +44,13 @@ public class JwtTokenProvider {
     @Value("${app.jwt.refresh-expiration-ms:604800000}")
     private long jwtRefreshExpirationMs;
 
+    private final JwtKeyRotationManager keyRotationManager;
+
     private SecretKey cachedSecretKey;
+
+    public JwtTokenProvider(JwtKeyRotationManager keyRotationManager) {
+        this.keyRotationManager = keyRotationManager;
+    }
 
     @PostConstruct
     public void validateSecret() {
@@ -63,10 +72,23 @@ public class JwtTokenProvider {
             keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
         }
         this.cachedSecretKey = Keys.hmacShaKeyFor(keyBytes);
+
+        // Seed the rotation manager so issuance and validation use the same key.
+        keyRotationManager.rotateKeys(deriveKeyId(cachedSecretKey), cachedSecretKey);
+    }
+
+    private String deriveKeyId(SecretKey key) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(key.getEncoded());
+            return HexFormat.of().formatHex(digest).substring(0, 16);
+        } catch (NoSuchAlgorithmException e) {
+            // SHA-256 is mandated by the JDK; fall back to the key hash code.
+            return Integer.toHexString(key.hashCode());
+        }
     }
 
     private SecretKey getSigningKey() {
-        return this.cachedSecretKey;
+        return keyRotationManager.getCurrentKey();
     }
 
     public String generateToken(Authentication authentication) {
@@ -118,6 +140,21 @@ public class JwtTokenProvider {
         return parseClaims(token).getExpiration();
     }
 
+    /**
+     * Returns the JWT expiration even when the token is expired (for best-effort
+     * blacklisting during logout). Returns null if the token cannot be parsed.
+     */
+    public Date getExpirationDateFromTokenAllowExpired(String token) {
+        try {
+            return parseClaims(token).getExpiration();
+        } catch (ExpiredJwtException ex) {
+            return ex.getClaims().getExpiration();
+        } catch (RuntimeException ex) {
+            logger.debug("Unable to read expiration from token: {}", ex.getMessage());
+            return null;
+        }
+    }
+
     public Date getIssuedAtDateFromToken(String token) {
         return parseClaims(token).getIssuedAt();
     }
@@ -154,8 +191,26 @@ public class JwtTokenProvider {
     }
 
     private Claims parseClaims(String token) {
+        SecretKey currentKey = keyRotationManager.getCurrentKey();
+        try {
+            return parseWith(token, currentKey);
+        } catch (SignatureException ex) {
+            // Token may have been issued under the previous key before a rotation;
+            // fall back to the retained grace keys before giving up (#14083).
+            for (SecretKey graceKey : keyRotationManager.getGraceKeys()) {
+                try {
+                    return parseWith(token, graceKey);
+                } catch (SignatureException ignored) {
+                    // try the next grace key
+                }
+            }
+            throw ex;
+        }
+    }
+
+    private Claims parseWith(String token, SecretKey key) {
         return Jwts.parser()
-                .verifyWith(getSigningKey())
+                .verifyWith(key)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();

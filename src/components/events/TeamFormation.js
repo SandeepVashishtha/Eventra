@@ -561,7 +561,7 @@ const TeamFormation = ({
                     }
                   />
                 )
-              ))}
+              )}
             </div>
 
             {filteredParticipants.length ===

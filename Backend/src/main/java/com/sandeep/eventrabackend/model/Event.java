@@ -17,6 +17,12 @@ public class Event {
     private String description;
     private String location;
     private LocalDateTime eventDate;
+
+    /**
+     * Optional end date/time for the event schedule. Persisted so the end time
+     * chosen by the organizer survives reload (issue #14603).
+     */
+    private LocalDateTime endDate;
     private boolean isPublic = true;
 
     /**
@@ -158,6 +164,14 @@ public class Event {
         this.eventDate = eventDate;
     }
 
+    public LocalDateTime getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(LocalDateTime endDate) {
+        this.endDate = endDate;
+    }
+
     public boolean isPublic() {
         return isPublic;
     }
@@ -259,6 +273,9 @@ public class Event {
     }
 
     public void setCategories(Set<String> categories) {
+        if (categories != null && categories.size() > 3) {
+            throw new IllegalArgumentException("An event can have at most 3 categories.");
+        }
         this.categories = categories;
     }
 
@@ -277,6 +294,9 @@ public class Event {
     }
 
     public void setTags(Set<String> tags) {
+        if (tags != null && tags.size() > 10) {
+            throw new IllegalArgumentException("An event can have at most 10 tags.");
+        }
         this.tags = tags;
     }
 

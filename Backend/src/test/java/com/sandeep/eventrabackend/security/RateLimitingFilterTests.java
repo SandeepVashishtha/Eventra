@@ -23,6 +23,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "app.rate-limit.login.window=1m",
         "app.rate-limit.reauth.capacity=1",
         "app.rate-limit.reauth.window=1m",
+        "app.rate-limit.google.capacity=1",
+        "app.rate-limit.google.window=1m",
         "app.rate-limit.trusted-proxy-hops=1"
 })
 class RateLimitingFilterTests {
@@ -90,5 +92,23 @@ class RateLimitingFilterTests {
                 .andExpect(header().exists("Retry-After"))
                 .andExpect(jsonPath("$.status", is(429)))
                 .andExpect(jsonPath("$.path", is("/api/auth/reauth")));
+    }
+
+    @Test
+    void returnsTooManyRequestsWhenGoogleLimitIsExceeded() throws Exception {
+        String clientIp = "203.0.113.21";
+
+        mockMvc.perform(post("/api/auth/google")
+                        .header("X-Forwarded-For", clientIp)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(post("/api/auth/google")
+                        .header("X-Forwarded-For", clientIp)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.path", is("/api/auth/google")));
     }
 }

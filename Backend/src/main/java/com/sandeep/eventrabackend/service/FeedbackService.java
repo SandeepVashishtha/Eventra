@@ -76,7 +76,15 @@ public class FeedbackService {
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Object> getOrganizerScore(Long organizerId) {
+    public Map<String, Object> getOrganizerScore(Long organizerId, String callerEmail) {
+        User caller = userRepository.findByEmail(callerEmail)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + callerEmail));
+
+        boolean isAdmin = caller.getRole() == Role.ADMIN || caller.getRole() == Role.SUPER_ADMIN;
+        if (!isAdmin && !caller.getId().equals(organizerId)) {
+            throw new AccessDeniedException("You are not authorized to view score for this organizer.");
+        }
+
         Double averageRating = feedbackRepository.findAverageRatingByOrganizer(organizerId);
         long reviewCount = feedbackRepository.countByOrganizer(organizerId);
 
@@ -104,11 +112,17 @@ public class FeedbackService {
 
     @Transactional(readOnly = true)
     public List<PublicFeedbackResponse> getEventFeedback(Long eventId) {
-        if (!eventRepository.existsById(eventId)) {
-            throw new EventNotFoundException("Event not found with ID: " + eventId);
-        }
+        // Enforce the same visibility rule as the event detail API
+        // (EventService.requirePublicEvent): private events are hidden from the
+        // public read path, and cancelled events never expose their feedback.
+        // A missing, private, or cancelled event is reported as not-found so
+        // callers cannot distinguish it from a nonexistent id (issue #14615).
+        Event event = eventRepository.findById(eventId)
+                .filter(Event::isPublic)
+                .filter(e -> !"CANCELLED".equals(e.getStatus()))
+                .orElseThrow(() -> new EventNotFoundException("Event not found with ID: " + eventId));
 
-        return feedbackRepository.findByEvent_IdOrderBySubmittedAtDesc(eventId).stream()
+        return feedbackRepository.findByEvent_IdOrderBySubmittedAtDesc(event.getId()).stream()
                 .map(this::mapToPublicResponse)
                 .toList();
     }
@@ -129,8 +143,22 @@ public class FeedbackService {
                 .id(feedback.getId())
                 .eventId(feedback.getEvent().getId())
                 .rating(feedback.getRating())
-                .comment(feedback.getComment())
+                .comment(sanitizePublicComment(feedback.getComment()))
                 .submittedAt(feedback.getSubmittedAt())
                 .build();
+    }
+
+    /**
+     * Lightweight sanitization for the public feedback list: strips any HTML so
+     * comment text can never be rendered as markup, collapses whitespace, and
+     * caps the length. The organizer-facing view ({@link #mapToResponse}) keeps
+     * the raw comment. Issue #14615.
+     */
+    private static String sanitizePublicComment(String comment) {
+        if (comment == null || comment.isBlank()) {
+            return comment;
+        }
+        String stripped = comment.replaceAll("<[^>]*>", "").replaceAll("\\s+", " ").trim();
+        return stripped.length() > 1000 ? stripped.substring(0, 1000) : stripped;
     }
 }

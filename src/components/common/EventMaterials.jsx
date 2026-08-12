@@ -105,9 +105,10 @@ const EventMaterials = ({ materials }) => {
               delete copy[fileId];
               return copy;
             });
-          }, 3000);
+            }, 3000);
         }
-      }, 500);
+      }
+    }, 500);
     } else {
       // 4. Fallback to simulated Server Download if no peer found
       setActiveTransfer((prev) => ({

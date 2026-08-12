@@ -324,7 +324,7 @@ export const exportCheckInAsCSV = (stats, registrations, checkIns, eventName = '
  * @returns {boolean} True if this is a group registration
  */
 export const isGroupRegistration = (registration) => {
-  return registration && (registration.groupId || registration.isGroupPrimary);
+  return !!(registration && (registration.groupId || registration.isGroupPrimary));
 };
 
 /**

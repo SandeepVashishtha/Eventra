@@ -158,6 +158,8 @@ describe('useValidationState — status messages & custom i18n support', () => {
       result.current.statusMessage,
       'Username is being validated'
     );
+    assert.strictEqual(result.current.statusMessage, 'Username is valid');
+  });
 
   it('returns default success message', () => {
     const { result } = renderHook(() =>
@@ -192,7 +194,6 @@ describe('useValidationState — status messages & custom i18n support', () => {
       'Checking availability...'
     );
   });
-});
 
   it('uses custom function formatters for status messages (i18n support)', () => {
     const { result } = renderHook(() =>

@@ -116,4 +116,31 @@ public class AnalyticsSummaryTests {
         mockMvc.perform(get("/api/analytics/summary"))
                 .andExpect(status().isUnauthorized());
     }
+
+    @Test
+    @DisplayName("GET /api/analytics/summary - cancelled and private events are excluded from active/completed counts")
+    void testSummaryExcludesCancelledAndPrivateEvents() throws Exception {
+        Event cancelled = new Event();
+        cancelled.setTitle("Cancelled Tech Talk");
+        cancelled.setEventDate(LocalDateTime.now().plusDays(5));
+        cancelled.setStatus("CANCELLED");
+        eventRepository.save(cancelled);
+
+        Event privateEvent = new Event();
+        privateEvent.setTitle("Private Workshop");
+        privateEvent.setEventDate(LocalDateTime.now().plusDays(3));
+        privateEvent.setPublic(false);
+        eventRepository.save(privateEvent);
+
+        Event completed = new Event();
+        completed.setTitle("Past Conference");
+        completed.setEventDate(LocalDateTime.now().minusDays(2));
+        eventRepository.save(completed);
+
+        mockMvc.perform(get("/api/analytics/summary")
+                        .with(user("admin@example.com").authorities(() -> "SUPER_ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.stats.activeEvents").value(1))
+                .andExpect(jsonPath("$.stats.completedEvents").value(1));
+    }
 }

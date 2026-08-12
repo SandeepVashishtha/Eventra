@@ -19,3 +19,7 @@ app:
 google:
   client:
     id: ${GOOGLE_CLIENT_ID}
+
+eventra:
+  api-docs:
+    enabled: false

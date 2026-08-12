@@ -19,7 +19,7 @@ function loadQuestState() {
 }
 
 function saveQuestState(state) {
-  try { localStorage.setItem(QUEST_STORAGE_KEY, JSON.stringify(state)); } catch {}
+  try { localStorage.setItem(QUEST_STORAGE_KEY, JSON.stringify(state)); } catch { console.warn("[QuestCenter] Failed to save quest progress"); }
 }
 
 // ─── Time utilities ────────────────────────────────────────────────────────────

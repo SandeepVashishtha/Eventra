@@ -114,4 +114,14 @@ public class AuthLoginTests {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized());
     }
+
+    @Test
+    @DisplayName("POST /api/auth/google with an invalid token returns 400, not 500 (#12079)")
+    void testGoogleLoginInvalidTokenReturnsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/auth/google")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"token\":\"not-a-valid-google-token\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Invalid Google token"));
+    }
 }
