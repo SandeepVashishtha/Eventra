@@ -38,7 +38,10 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             new EndpointRule("contact", POST, "/api/contact/"),
             new EndpointRule("contact", POST, "/api/contacts"),
             new EndpointRule("contact", POST, "/api/contacts/"),
-            new EndpointRule("githubProxy", GET, "/api/github-proxy")
+            new EndpointRule("githubProxy", GET, "/api/github-proxy"),
+            new EndpointRule("validate", GET, "/api/validate/email"),
+            new EndpointRule("validate", GET, "/api/validate/username"),
+            new EndpointRule("validate", GET, "/api/validate/phone")
     );
 
     private final RateLimitProperties properties;
@@ -121,6 +124,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             case "forgotPassword" -> properties.getForgotPassword();
             case "contact" -> properties.getContact();
             case "githubProxy" -> properties.getGithubProxy();
+            case "validate" -> properties.getValidate();
             default -> throw new IllegalArgumentException("Unknown rate limit endpoint: " + endpointName);
         };
     }
