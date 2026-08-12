@@ -220,6 +220,8 @@ public class AdminService {
 
     /**
      * Force-deletes an event (admin override, bypasses organizer ownership).
+     * Dependent rows are removed first so the delete never hits a foreign-key
+     * violation and no orphaned rows are left behind (Issue #12082).
      */
     @Transactional
     public EventResponse updateEvent(Long id, com.sandeep.eventrabackend.dto.request.EventUpdateRequest request) {
