@@ -21,7 +21,24 @@ public final class EventSpecifications {
         return Specification
                 .where(isPublic())
                 .and(searchContains(search))
-                .and(timingOrLifecycleStatus(statuses));
+                .and(timingOrLifecycleStatus(statuses))
+                .and(notCancelledUnlessRequested(statuses));
+    }
+
+    /**
+     * Cancelled events are hidden from the public listing unless the caller
+     * explicitly filters for them via the {@code CANCELLED} status label
+     * (Issue #12081).
+     */
+    public static Specification<Event> notCancelledUnlessRequested(List<String> statuses) {
+        boolean requestsCancelled = statuses != null && statuses.stream()
+                .filter(StringUtils::hasText)
+                .map(raw -> raw.trim().toUpperCase(Locale.ROOT))
+                .anyMatch(status -> status.equals("CANCELLED") || status.equals("CANCELED"));
+        if (requestsCancelled) {
+            return null;
+        }
+        return (root, query, cb) -> cb.notEqual(cb.upper(root.get("status")), "CANCELLED");
     }
 
     public static Specification<Event> isPublic() {
