@@ -31,8 +31,10 @@ public class TeamWorkspaceSyncController {
     public SseEmitter stream(
             @RequestParam(required = false) String roomKey,
             @RequestParam(required = false) String hackathonId,
-            @RequestParam(required = false) String teamId) {
-        String resolved = teamWorkspaceSyncService.resolveRoomKey(roomKey, hackathonId, teamId);
+            @RequestParam(required = false) String teamId,
+            Authentication authentication) {
+        String resolved = teamWorkspaceSyncService.resolveRoomKeyForMember(
+                roomKey, hackathonId, teamId, authentication.getName());
         return teamWorkspaceSyncService.subscribe(resolved);
     }
 
@@ -41,8 +43,10 @@ public class TeamWorkspaceSyncController {
             @RequestParam(required = false) String roomKey,
             @RequestParam(required = false) String hackathonId,
             @RequestParam(required = false) String teamId,
-            @RequestBody(required = false) Map<String, Object> body) {
-        String resolved = teamWorkspaceSyncService.resolveRoomKey(roomKey, hackathonId, teamId);
+            @RequestBody(required = false) Map<String, Object> body,
+            Authentication authentication) {
+        String resolved = teamWorkspaceSyncService.resolveRoomKeyForMember(
+                roomKey, hackathonId, teamId, authentication.getName());
         if (body == null || body.isEmpty()) {
             return ResponseEntity.ok(teamWorkspaceSyncService.snapshot(resolved));
         }

@@ -1,6 +1,8 @@
 package com.sandeep.eventrabackend.service;
 
+import com.sandeep.eventrabackend.repository.HackathonRegistrationRepository;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -13,9 +15,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class TeamWorkspaceSyncService {
+
+    private static final Pattern HACKATHON_ROOM_KEY =
+            Pattern.compile("^hackathon:(\\d+)(?::team:.*)?$");
+
+    private final HackathonRegistrationRepository hackathonRegistrationRepository;
+
+    public TeamWorkspaceSyncService(HackathonRegistrationRepository hackathonRegistrationRepository) {
+        this.hackathonRegistrationRepository = hackathonRegistrationRepository;
+    }
 
     private static final class WorkspaceState {
         private final Object lock = new Object();
@@ -97,6 +110,46 @@ public class TeamWorkspaceSyncService {
             return "user:" + auth.getName().trim().toLowerCase();
         }
         return "default";
+    }
+
+    /**
+     * Resolves the room key exactly like {@link #resolveRoomKey(String, String, String)}
+     * but only after verifying that the caller is a registered member of the
+     * hackathon identified by the supplied {@code hackathonId} (or embedded in
+     * {@code roomKey}). This stops any authenticated user from guessing another
+     * team's enumerable {@code hackathonId}/{@code teamId} and reading or
+     * overwriting its workspace (#15367).
+     *
+     * @param userEmail the authenticated caller's email (never a client-supplied claim)
+     */
+    public String resolveRoomKeyForMember(String roomKey, String hackathonId, String teamId, String userEmail) {
+        String resolved = resolveRoomKey(roomKey, hackathonId, teamId);
+        Long hackathon = extractHackathonId(resolved);
+        if (hackathon == null) {
+            throw new AccessDeniedException(
+                    "A hackathon workspace room is required. Provide a valid hackathonId and teamId.");
+        }
+        if (userEmail == null || !hackathonRegistrationRepository
+                .existsByHackathon_IdAndUser_Email(hackathon, userEmail)) {
+            throw new AccessDeniedException(
+                    "You are not a member of this hackathon and cannot access its team workspace.");
+        }
+        return resolved;
+    }
+
+    private Long extractHackathonId(String roomKey) {
+        if (!StringUtils.hasText(roomKey)) {
+            return null;
+        }
+        Matcher matcher = HACKATHON_ROOM_KEY.matcher(roomKey.trim());
+        if (!matcher.matches()) {
+            return null;
+        }
+        try {
+            return Long.valueOf(matcher.group(1));
+        } catch (NumberFormatException ex) {
+            return null;
+        }
     }
 
     private WorkspaceState roomFor(String roomKey) {
