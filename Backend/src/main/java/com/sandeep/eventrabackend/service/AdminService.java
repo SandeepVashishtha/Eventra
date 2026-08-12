@@ -5,6 +5,7 @@ import com.sandeep.eventrabackend.dto.AdminStatsResponse;
 import com.sandeep.eventrabackend.dto.RegistrationTrendDTO;
 import com.sandeep.eventrabackend.dto.response.*;
 import com.sandeep.eventrabackend.exception.RegistrationConflictException;
+import com.sandeep.eventrabackend.model.Event;
 import com.sandeep.eventrabackend.model.Feedback;
 import com.sandeep.eventrabackend.model.Hackathon;
 import com.sandeep.eventrabackend.model.Role;
@@ -133,11 +134,13 @@ public class AdminService {
             targetUser.setUsername(username);
         }
         if (request.getEmail() != null) {
-            String email = request.getEmail().trim().toLowerCase();
-            if (!email.equalsIgnoreCase(targetUser.getEmail()) && userRepository.existsByEmail(email)) {
-                throw new IllegalArgumentException("Email is already taken");
+            String requestedEmail = request.getEmail().trim().toLowerCase();
+            if (!targetUser.getEmail().equalsIgnoreCase(requestedEmail)) {
+                throw new IllegalArgumentException(
+                        "Email changes are not allowed through the admin panel. "
+                                + "Changing an email would orphan the user's active JWT session and email-keyed data. "
+                                + "Email must be changed through a dedicated, verified self-service flow.");
             }
-            targetUser.setEmail(email);
         }
         if (request.getRole() != null && !request.getRole().isBlank()) {
             Role requestedRole = parseRole(request.getRole());
