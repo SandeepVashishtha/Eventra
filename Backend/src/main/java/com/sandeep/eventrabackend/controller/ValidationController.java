@@ -14,9 +14,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.time.LocalDateTime;
 import java.util.regex.Pattern;
+import java.util.Map;
 
 /**
  * Public availability-validation endpoints used by pre-submit form checks
@@ -94,5 +97,24 @@ public class ValidationController {
                 .path(path)
                 .timestamp(LocalDateTime.now())
                 .build();
+    }
+
+    private static final Pattern PHONE_PATTERN =
+            Pattern.compile("^[+]?[0-9\\s\\-()]{7,20}$");
+
+    public static class PhoneRequest {
+        private String phone;
+        public String getPhone() { return phone; }
+        public void setPhone(String phone) { this.phone = phone; }
+    }
+
+    @PostMapping("/phone")
+    @Operation(summary = "Validate phone number format")
+    public ResponseEntity<?> validatePhone(@RequestBody PhoneRequest request) {
+        String phone = request.getPhone();
+        if (phone == null || !PHONE_PATTERN.matcher(phone).matches()) {
+            return ResponseEntity.ok(Map.of("valid", false, "message", "Phone number is invalid"));
+        }
+        return ResponseEntity.ok(Map.of("valid", true));
     }
 }
