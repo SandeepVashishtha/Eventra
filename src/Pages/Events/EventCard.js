@@ -25,6 +25,7 @@ const EventCard = ({ event, position, isHighlighted = false }) => {
   const [imageFailed, setImageFailed] = useState(false);
   const titleId = useId();
   const { isRegistered } = useMyEvents();
+  const { success, info } = useToast();
 
   // Live, real-time seat availability for this event. Subscribes to the shared
   // SSE stream and falls back to polling so seat counters stay fresh without a

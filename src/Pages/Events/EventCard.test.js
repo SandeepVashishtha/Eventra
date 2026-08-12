@@ -53,7 +53,7 @@ jest.mock('components/common/SellingFastBadge', () => () => null);
 jest.mock('components/reminders/ReminderControls', () => () => null);
 
 jest.mock('react-toastify', () => ({
-  toast: { success: jest.fn(), error: jest.fn(), info: jest.fn() },
+  toast: { success: jest.fn(), error: jest.fn(), info: jest.fn(), dismiss: jest.fn() },
 }));
 
 const baseEvent = {
