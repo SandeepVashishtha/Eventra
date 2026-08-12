@@ -7,6 +7,7 @@ import {
   parseResumePDF,
   validateResumePdf,
   MAX_RESUME_BYTES,
+  extractUsername,
 } from "../src/utils/aiProfileParser.js";
 
 function buildMinimalPdf(textChunks) {
@@ -192,6 +193,35 @@ function pdfFile(name, pdfString, type = "application/pdf") {
   } catch (err) {
     assert.match(String(err.message || err), /cancel/i);
   }
+}
+// --- extractUsername tests ---
+{
+  assert.equal(extractUsername("ashroxy"), "ashroxy");
+  assert.equal(extractUsername("  ashroxy  "), "ashroxy");
+  assert.equal(extractUsername("https://github.com/ashroxy"), "ashroxy");
+  assert.equal(extractUsername("https://github.com/ashroxy/"), "ashroxy");
+  assert.equal(extractUsername("https://github.com/ashroxy/Eventra"), "ashroxy");
+  assert.equal(extractUsername("https://github.com/ashroxy/Eventra/issues/12"), "ashroxy");
+  assert.equal(extractUsername("https://github.com/ashroxy?tab=repositories"), "ashroxy");
+  assert.equal(extractUsername("github.com/ashroxy"), "ashroxy");
+
+  // Invalid inputs / other hosts
+  assert.equal(extractUsername("https://google.com/ashroxy"), null);
+  assert.equal(extractUsername("https://github.com/"), null);
+  assert.equal(extractUsername(""), null);
+  assert.equal(extractUsername("   "), null);
+  assert.equal(extractUsername(null), null);
+
+  // Invalid username characters or lengths
+  assert.equal(extractUsername("https://github.com/invalid_user"), null); // contains underscore
+  assert.equal(
+    extractUsername("https://github.com/this-username-is-longer-than-thirty-nine-characters"),
+    null
+  );
+
+  // Reserved keywords
+  assert.equal(extractUsername("https://github.com/features"), null);
+  assert.equal(extractUsername("https://github.com/copilot"), null);
 }
 
 console.log("aiProfileParser resume extraction tests passed");
