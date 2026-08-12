@@ -322,7 +322,7 @@ export const getCacheStorageUsage = async () => {
  * Unregisters the Service Worker and releases control.
  */
 export const unregisterServiceWorker = () => {
-  if ('serviceWorker' in navigator) {
+  if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
     navigator.serviceWorker.ready
       .then((registration) => {
         registration.unregister().then((success) => {

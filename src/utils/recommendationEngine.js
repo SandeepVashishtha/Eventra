@@ -20,11 +20,21 @@ const normalizeList = (value) => {
 
 const unique = (items) => Array.from(new Set(items.filter(Boolean)));
 
-const getEventId = (event) => String(event?.id ?? event?.eventId ?? event?.title ?? "");
+const getEventId = (event) => {
+  if (!event) return null;
+  const id = event.id ?? event.eventId;
+  if (id === undefined || id === null || id === "") return null;
+  return String(id);
+};
 
 const unwrapEvent = (entry) => entry?.event || entry?.eventSummary || entry || {};
 
-const getEventCategory = (event) => normalizeText(event?.category || event?.type);
+const getEventCategory = (event) => {
+  if (event?.categories && Array.isArray(event.categories) && event.categories.length > 0) {
+    return normalizeText(event.categories[0]);
+  }
+  return normalizeText(event?.category || event?.type);
+};
 
 const getEventType = (event) => normalizeText(event?.type);
 
@@ -41,12 +51,11 @@ const getLocationParts = (location) =>
     .split(/\s+/)
     .filter((part) => part.length > 1 && part !== "online");
 
-const eventMatchesArea = (event, preferredLocation) => {
-  const eventLocation = normalizeText(event?.location);
-  const preferredParts = getLocationParts(preferredLocation);
-
-  if (!eventLocation || preferredParts.length === 0) return false;
-  return preferredParts.some((part) => eventLocation.includes(part));
+const createLocationMatcher = (preferredLocation) => {
+  const parts = getLocationParts(preferredLocation);
+  if (parts.length === 0) return () => false;
+  return (eventLocation) =>
+    eventLocation && parts.some((part) => eventLocation.includes(part));
 };
 
 const getPopularityScore = (event) => {
@@ -55,6 +64,36 @@ const getPopularityScore = (event) => {
 
   if (capacity <= 0) return Math.min(attendees / 10, 10);
   return Math.min((attendees / capacity) * 10, 10);
+};
+
+const _tagCache = new Map();
+const _cacheOrder = [];
+const MAX_CACHE_SIZE = 100;
+
+const _getCachedTags = (event) => {
+  // 🔥 FIX: Skip the cache entirely when the event has no real id.
+  // Previously getEventId fell back to the event title, so two events with
+  // the same title would collide on the same cache key and the last write
+  // would win — silently corrupting similarity scores. Returning the tags
+  // directly is correct here; the cache only exists to amortise work for
+  // events we expect to be re-encountered, and id-less events are not.
+  const id = getEventId(event);
+  if (!id) return getEventTags(event);
+  if (_tagCache.has(id)) {
+    const tags = _tagCache.get(id);
+    const idx = _cacheOrder.indexOf(id);
+    if (idx > -1) _cacheOrder.splice(idx, 1);
+    _cacheOrder.push(id);
+    return tags;
+  }
+  if (_cacheOrder.length >= MAX_CACHE_SIZE) {
+    const oldest = _cacheOrder.shift();
+    _tagCache.delete(oldest);
+  }
+  const tags = getEventTags(event);
+  _tagCache.set(id, tags);
+  _cacheOrder.push(id);
+  return tags;
 };
 
 const getSimilarityScore = (candidate, interactedEvents) => {
@@ -76,7 +115,7 @@ const getSimilarityScore = (candidate, interactedEvents) => {
       score += 5;
     }
 
-    const overlap = getEventTags(event).filter((tag) => candidateTags.has(tag));
+    const overlap = _getCachedTags(event).filter((tag) => candidateTags.has(tag));
     score += Math.min(overlap.length * 3, 12);
 
     return Math.max(bestScore, score);
@@ -338,7 +377,8 @@ export const calculateRecommendationScore = (
     addScore("Preferred event type", 10, "Fits your preferred event format");
   }
 
-  const techOverlap = eventTags.filter((tag) => profileTech.includes(tag));
+  const profileTechSet = new Set(profileTech);
+  const techOverlap = eventTags.filter((tag) => profileTechSet.has(tag));
   addScore(
     "Tech stack overlap",
     Math.min(techOverlap.length * 5, 12),
@@ -379,7 +419,8 @@ export const calculateRecommendationScore = (
     "Similar to events in your activity history",
   );
 
-  const localTrending = eventMatchesArea(event, interactionProfile.location);
+  const matchesArea = createLocationMatcher(interactionProfile.location);
+  const localTrending = matchesArea(normalizeText(event?.location));
   if (localTrending) {
     addScore("Trending near you", Math.min(getPopularityScore(event) + 6, 15), "Popular in your area");
   } else if (event.trending || getPopularityScore(event) >= 8) {
@@ -406,6 +447,7 @@ export const getTrendingEventsForArea = (events = [], location = "", limit = 4) 
     }))
     .sort((a, b) => b.trendingScore - a.trendingScore)
     .slice(0, limit);
+};
 
 export const buildPersonalizedRecommendations = ({
   events = [],
