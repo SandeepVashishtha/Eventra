@@ -8,9 +8,13 @@ vi.mock("./AuthContext", () => ({
 }));
 
 let realtimeStatus = "idle";
+let notifyMessage = null;
 vi.mock("../hooks/useRealTimeConnection", () => ({
   __esModule: true,
-  default: () => ({ status: realtimeStatus }),
+  default: (_path, { onMessage }) => {
+    notifyMessage = onMessage;
+    return { status: realtimeStatus };
+  },
   SSE_STATUS: { IDLE: "idle", CONNECTED: "connected" },
 }));
 
@@ -68,6 +72,7 @@ describe("useBackgroundInterval - SSE idle polling (#12076)", () => {
     vi.useFakeTimers();
     fetchNotifications.mockClear();
     realtimeStatus = "idle";
+    notifyMessage = null;
   });
 
   afterEach(() => {
@@ -93,7 +98,7 @@ describe("useBackgroundInterval - SSE idle polling (#12076)", () => {
     expect(fetchNotifications).toHaveBeenCalledTimes(2);
   });
 
-  it("does not poll when the realtime status is connected", async () => {
+  it("polls when connected but the channel is silent (#15334)", async () => {
     realtimeStatus = "connected";
     render(
       <NotificationProvider>
@@ -104,31 +109,23 @@ describe("useBackgroundInterval - SSE idle polling (#12076)", () => {
     await act(async () => {
       vi.advanceTimersByTime(60_000);
     });
-    expect(fetchNotifications).not.toHaveBeenCalled();
+    expect(fetchNotifications).toHaveBeenCalledTimes(2);
   });
 
-  it("stops polling once the status leaves IDLE", async () => {
-    const { rerender } = render(
-      <NotificationProvider>
-        <Consumer />
-      </NotificationProvider>,
-    );
-
-    await act(async () => {
-      vi.advanceTimersByTime(30_000);
-    });
-    expect(fetchNotifications).toHaveBeenCalledTimes(1);
-
+  it("does not poll while realtime messages are being received", async () => {
     realtimeStatus = "connected";
-    rerender(
+    render(
       <NotificationProvider>
         <Consumer />
       </NotificationProvider>,
     );
 
     await act(async () => {
-      vi.advanceTimersByTime(60_000);
+      for (let i = 0; i < 3; i++) {
+        vi.advanceTimersByTime(20_000);
+        notifyMessage && notifyMessage({ id: `n${i}`, message: "hello" });
+      }
     });
-    expect(fetchNotifications).toHaveBeenCalledTimes(1);
+    expect(fetchNotifications).not.toHaveBeenCalled();
   });
 });

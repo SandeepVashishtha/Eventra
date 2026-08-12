@@ -23,10 +23,6 @@ const initialLeaderboardState = {
   status: SSE_STATUS.IDLE,
 };
 
-// Maximum number of checked-in attendee ids retained in the analytics reducer.
-// Bounded so long-lived, high-traffic sessions do not grow without limit.
-const CHECKED_IN_IDS_MAX = 500;
-
 const initialAnalyticsState = {
   recentCheckins: [],
   liveCount: 0,
@@ -37,163 +33,24 @@ const initialAnalyticsState = {
   checkedInIds: [],
 };
 
-// --- 3. Split the Reducers ---
-function leaderboardReducer(state, action) {
-  switch (action.type) {
-    case "UPDATE":
-      return {
-        ...state,
-        contributors: action.payload,
-        lastSynced: Date.now(),
-      };
-    case "STATUS":
-      return { ...state, status: action.payload };
-    default:
-      return state;
-  }
-}
-
-function analyticsReducer(state, action) {
-  switch (action.type) {
-    case "CHECKIN": {
-      const payload = action.payload || {};
-      const id =
-        payload.id ||
-        payload.eventId ||
-        (payload.name && payload.event ? `${payload.name}::${payload.event}` : null);
-
-      // A "checked-out / removed" broadcast (increment: -1, type CHECKOUT, or
-      // checkout flag) removes the attendee from the live set instead of adding.
-      if (payload.increment === -1 || payload.type === "CHECKOUT" || payload.checkout === true) {
-        if (id !== null && state.checkedInIds.includes(id)) {
-          const checkedInIds = state.checkedInIds.filter((existing) => existing !== id);
-          return { ...state, checkedInIds, liveCount: Math.max(0, checkedInIds.length) };
-        }
-        // Unknown attendee — nothing to remove; clamp so the count never goes below zero.
-        return { ...state, liveCount: Math.max(0, state.liveCount) };
-      }
-
-      // Duplicate delivery (e.g. SSE reconnect replay of the same check-in)
-      // must not inflate the count — an attendee already present is not counted twice.
-      if (id !== null && state.checkedInIds.includes(id)) {
-        return state;
-      }
-
-      const checkedInIds =
-        id === null
-          ? state.checkedInIds
-          : [...state.checkedInIds, id].slice(-CHECKED_IN_IDS_MAX);
-
-      return {
-        ...state,
-        checkedInIds,
-        recentCheckins: [payload, ...state.recentCheckins.slice(0, 49)],
-        // Derive the live count from the id set instead of summing deltas so a
-        // duplicate check-in can never inflate it.
-        liveCount: id === null ? state.liveCount + 1 : Math.max(0, checkedInIds.length),
-      };
-    }
-    case "UPDATE":
-      return { ...state, ...action.payload };
-    case "STATUS":
-      return { ...state, status: action.payload };
-    default:
-      return state;
-  }
-}
-
-// --- 4. Isolated Providers ---
-// FIX (#7855 Bug 3): STATUS_DEBOUNCE_MS throttles the STATUS dispatch so that
-// rapid connect/disconnect cycles (e.g. flaky connections) do not trigger a
-// re-render storm. 500 ms matches the suggested batch window in the issue.
-const STATUS_DEBOUNCE_MS = 500;
+// --- 3. Isolated Providers ---
+// The `leaderboard` and `analytics` SSE topics have no backend publisher
+// (issue #15334), so the subscriptions are dropped. Leaderboard.jsx hydrates
+// from its REST endpoint (`fetchLeaderboardData`) and AnalyticsDashboard.jsx
+// from `useAnalytics` plus local simulation, so the providers only hand out
+// their initial (IDLE) state.
 
 function LeaderboardProvider({ children }) {
-  const [state, dispatch] = useReducer(leaderboardReducer, initialLeaderboardState);
-
-  const onMessage = useCallback((data) => {
-    if (Array.isArray(data)) {
-      dispatch({ type: "UPDATE", payload: data });
-    } else if (Array.isArray(data?.contributors)) {
-      dispatch({ type: "UPDATE", payload: data.contributors });
-    }
-  }, []);
-
-  const { status } = useRealTimeConnection("/stream/leaderboard", {
-    onMessage,
-  });
-
-  // FIX (#7855 Bug 3): Debounce STATUS dispatches so rapid SSE reconnection
-  // cycles (CONNECTING → OPEN → CLOSED → RECONNECTING in quick succession)
-  // are collapsed into a single state update, preventing a re-render cascade
-  // in every consumer of LeaderboardContext.
-  const statusDebounceRef = useRef(null);
-  useEffect(() => {
-    clearTimeout(statusDebounceRef.current);
-    statusDebounceRef.current = setTimeout(() => {
-      dispatch({ type: "STATUS", payload: status });
-    }, STATUS_DEBOUNCE_MS);
-    return () => clearTimeout(statusDebounceRef.current);
-  }, [status]);
-
-  // FIX (#7855 Bug 3): Memoize the context value so that LeaderboardContext
-  // consumers wrapped in React.memo can bail out of re-renders when neither
-  // contributors nor lastSynced nor status has changed.
-  // Without this, `value={state}` creates a new object reference on every
-  // render of LeaderboardProvider, defeating all downstream memoization.
-  const contextValue = useMemo(
-    () => state,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [state.contributors, state.lastSynced, state.status]
-  );
-
   return (
-    <LeaderboardContext.Provider value={contextValue}>
+    <LeaderboardContext.Provider value={initialLeaderboardState}>
       {children}
     </LeaderboardContext.Provider>
   );
 }
 
 function AnalyticsProvider({ children }) {
-  const [state, dispatch] = useReducer(analyticsReducer, initialAnalyticsState);
-
-  const onMessage = useCallback((data) => {
-    if (data?.increment === -1 || data?.type === "CHECKOUT" || data?.checkout === true) {
-      dispatch({ type: "CHECKIN", payload: data });
-    } else if (data?.name && data?.event) {
-      dispatch({ type: "CHECKIN", payload: data });
-    } else if (data?.checkin) {
-      dispatch({ type: "CHECKIN", payload: data.checkin });
-    } else if (data?.liveCount !== undefined || data?.scanVelocity !== undefined) {
-      dispatch({ type: "UPDATE", payload: data });
-    }
-  }, []);
-
-  const { status } = useRealTimeConnection("/stream/analytics", {
-    onMessage,
-  });
-
-  // FIX (#7855 Bug 3): Same debounce pattern as LeaderboardProvider.
-  const statusDebounceRef = useRef(null);
-  useEffect(() => {
-    clearTimeout(statusDebounceRef.current);
-    statusDebounceRef.current = setTimeout(() => {
-      dispatch({ type: "STATUS", payload: status });
-    }, STATUS_DEBOUNCE_MS);
-    return () => clearTimeout(statusDebounceRef.current);
-  }, [status]);
-
-  // FIX (#7855 Bug 3): Memoize context value — AnalyticsContext consumers
-  // wrapped in React.memo can now bail out of re-renders when recentCheckins,
-  // liveCount, scanVelocity, checkedInIds, and status are all unchanged.
-  const contextValue = useMemo(
-    () => state,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [state.recentCheckins, state.liveCount, state.scanVelocity, state.checkedInIds, state.status]
-  );
-
   return (
-    <AnalyticsContext.Provider value={contextValue}>
+    <AnalyticsContext.Provider value={initialAnalyticsState}>
       {children}
     </AnalyticsContext.Provider>
   );
