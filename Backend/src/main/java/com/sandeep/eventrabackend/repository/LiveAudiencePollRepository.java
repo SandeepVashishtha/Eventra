@@ -14,6 +14,8 @@ public interface LiveAudiencePollRepository extends JpaRepository<LiveAudiencePo
 
     List<LiveAudiencePoll> findByEventIdOrderByCreatedAtDesc(Long eventId);
 
+    List<LiveAudiencePoll> findByEventIdAndStatusOrderByCreatedAtDesc(Long eventId, String status);
+
     Optional<LiveAudiencePoll> findByIdAndEventId(Long id, Long eventId);
 
     /**
