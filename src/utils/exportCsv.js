@@ -18,11 +18,11 @@
  * Escapes a single CSV field value so it is safe for use in a CSV file.
  *
  * Rules applied:
- *  1. CSV-injection guard: values starting with a formula trigger character
- *     (=, +, -, @, Tab \t, Carriage Return \r) are prefixed with a single
- *     quote so spreadsheets render them as plain text.
- *  2. Double-quote escaping: any " inside the value is doubled ("") per RFC 4180.
- *  3. The field is always wrapped in double quotes.
+ * 1. CSV-injection guard: values starting with a formula trigger character
+ * (=, +, -, @, Tab \t, Carriage Return \r) are prefixed with a single
+ * quote so spreadsheets render them as plain text.
+ * 2. Double-quote escaping: any " inside the value is doubled ("") per RFC 4180.
+ * 3. The field is always wrapped in double quotes.
  *
  * @param {*} field - Raw field value (will be coerced to string)
  * @returns {string} Quoted, escaped CSV field
@@ -43,31 +43,35 @@ const sanitizeCSVField = (field) => {
  * Bug fixes applied in this version
  * ──────────────────────────────────
  * 1. Blob URL never revoked (memory leak):
- *    The previous implementation used setTimeout(..., 100) to revoke the
- *    object URL. If the user navigated away or closed the tab before the
- *    100 ms timer fired, URL.revokeObjectURL() was never called, leaking
- *    the allocated Blob memory for the lifetime of the process.
+ * The previous implementation used setTimeout(..., 100) to revoke the
+ * object URL. If the user navigated away or closed the tab before the
+ * 100 ms timer fired, URL.revokeObjectURL() was never called, leaking
+ * the allocated Blob memory for the lifetime of the process.
  *
- *    Fix: revokeObjectURL() is now called synchronously in the finally block,
- *    immediately after link.click(). The download is already queued by the
- *    browser before this line runs — the URL does not need to remain alive
- *    after click() returns.
+ * Fix: revokeObjectURL() is now called synchronously in the finally block,
+ * immediately after link.click(). The download is already queued by the
+ * browser before this line runs — the URL does not need to remain alive
+ * after click() returns.
  *
  * 2. Unsafe filename:
- *    The previous implementation accepted the filename argument without
- *    sanitization. A caller passing a filename containing path separators
- *    or shell metacharacters (e.g. "../../../etc/passwd.csv") could produce
- *    unexpected download names across operating systems.
+ * The previous implementation accepted the filename argument without
+ * sanitization. A caller passing a filename containing path separators
+ * or shell metacharacters (e.g. "../../../etc/passwd.csv") could produce
+ * unexpected download names across operating systems.
  *
- *    Fix: The filename is sanitized by stripping all OS path-separator and
- *    reserved characters (/ \ : * ? " < > |) before it is used.
+ * Fix: The filename is sanitized by stripping all OS path-separator and
+ * reserved characters (/ \ : * ? " < > |) before it is used.
  *
  * @param {Array<object>} attendees - List of attendee objects to export
  * @param {string} [filename]       - Desired download filename (will be sanitized)
  */
 export const exportAttendeesToCSV = (attendees, filename = "event-attendees.csv") => {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
   if (!attendees || attendees.length === 0) {
-    return;
+    if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
+      window.dispatchEvent(new CustomEvent("eventra-toast", { detail: { message: "No attendees to export", type: "warning" } }));
+    }
+    return { success: false, reason: "empty" };
   }
 
   // Sanitize the filename: strip OS reserved characters and path separators.
@@ -87,7 +91,8 @@ export const exportAttendeesToCSV = (attendees, filename = "event-attendees.csv"
     .map((row) => row.map(sanitizeCSVField).join(","))
     .join("\n");
 
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const BOM = "\uFEFF";
+  const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement("a");
 
@@ -101,9 +106,16 @@ export const exportAttendeesToCSV = (attendees, filename = "event-attendees.csv"
     document.body.removeChild(link);
 
     // Revoke synchronously — the download has already been queued by the
-    // browser when click() returns. No setTimeout needed; the deferred
-    // approach used previously caused the URL to leak if the tab closed
-    // within the 100 ms window before the timer could fire.
+    // browser when click() returns. No setTimeout needed.
+    //
+    // revokeObjectURL removes the blob: URL mapping but does NOT free the
+    // underlying Blob memory while the browser's download manager still
+    // holds an internal reference to it. The "Firefox/Safari race condition"
+    // sometimes cited to justify setTimeout is a misconception: Blob URLs
+    // reference in-memory data (not file pointers), and the browser retains
+    // its own reference for the lifetime of the download regardless of when
+    // the URL is revoked. Deferring revocation only reintroduces the memory
+    // leak this code was written to fix.
     window.URL.revokeObjectURL(url);
   }
 };
@@ -119,6 +131,7 @@ export const exportAttendeesToCSV = (attendees, filename = "event-attendees.csv"
  * @param {string} surveyTitle       - Raw title of the survey (will be sanitized)
  */
 export const exportSurveyToCSV = (questions, responses, surveyTitle = "Survey") => {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
   if (!questions || questions.length === 0 || !responses || responses.length === 0) {
     return;
   }
@@ -134,14 +147,15 @@ export const exportSurveyToCSV = (questions, responses, surveyTitle = "Survey") 
   // Rows: Each anonymous attendee submission
   const rows = responses.map((resp) => [
     resp.timestamp || "",
-    ...questions.map((q) => resp.answers[q.id] ?? ""),
+    ...questions.map((q) => resp.answers?.[q.id] ?? ""),
   ]);
 
   const csvContent = [headers, ...rows]
     .map((row) => row.map(sanitizeCSVField).join(","))
     .join("\n");
 
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const BOM = "\uFEFF";
+  const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement("a");
 
@@ -167,6 +181,7 @@ export const exportSurveyToCSV = (questions, responses, surveyTitle = "Survey") 
  * @param {string} [filename]        - Desired download filename (will be sanitized)
  */
 export const exportEventsToCSV = (events, filename = "eventra-events.csv") => {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
   if (!events || events.length === 0) {
     return;
   }
@@ -206,7 +221,8 @@ export const exportEventsToCSV = (events, filename = "eventra-events.csv") => {
     .map((row) => row.map(sanitizeCSVField).join(","))
     .join("\n");
 
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const BOM = "\uFEFF";
+  const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement("a");
 

@@ -1,3 +1,7 @@
+import { ENV } from "../config/env.js";
+
+const DEFAULT_EVENT_SHARE_HOST = "sandeepvashishtha.tech";
+
 /**
  * Sharing utility functions for Eventra
  * These functions generate URLs for sharing content across various platforms
@@ -31,6 +35,15 @@ export const SUPPORTED_PLATFORMS = {
 // application domain are used in share payloads. This prevents an attacker
 // who can craft an event with a malicious URL from exploiting share dialogs.
 // ---------------------------------------------------------------------------
+const normalizeOrigin = (origin) => {
+  if (!origin) return "";
+  try {
+    return new URL(origin).origin;
+  } catch {
+    return origin.replace(/\/+$/, "");
+  }
+};
+
 export const isValidShareUrl = (url) => {
   if (!url || typeof url !== "string") return false;
   if (url.startsWith("/")) return true; // relative path — always same-origin
@@ -40,15 +53,14 @@ export const isValidShareUrl = (url) => {
     if (parsed.protocol === "javascript:" || parsed.protocol === "data:") return false;
 
     const allowedOrigins = new Set();
-    if (typeof window !== "undefined") allowedOrigins.add(window.location.origin);
+    if (typeof window !== "undefined") {
+      allowedOrigins.add(normalizeOrigin(window.location.origin));
+    }
 
-    const configuredPublicUrl = process.env.REACT_APP_PUBLIC_URL;
+    const configuredPublicUrl = ENV.PUBLIC_URL;
     if (configuredPublicUrl) {
-      try {
-        allowedOrigins.add(new URL(configuredPublicUrl).origin);
-      } catch {
-        /* ignore malformed env var */
-      }
+      const normalized = normalizeOrigin(configuredPublicUrl);
+      if (normalized) allowedOrigins.add(normalized);
     }
 
     return allowedOrigins.has(parsed.origin);
@@ -358,9 +370,14 @@ export const generateQRCodeUrl = (url, size = 250) => {
  * @returns {Promise<boolean>} Success status
  */
 export const copyToClipboard = async (text) => {
+  if (typeof document === "undefined") {
+    return false;
+  }
+
   try {
-    if (navigator.clipboard) {
-      await navigator.clipboard.writeText(text);
+    const clipboard = globalThis.navigator?.clipboard;
+    if (clipboard) {
+      await clipboard.writeText(text);
       return true;
     } else {
       const textArea = document.createElement("textarea");
@@ -374,7 +391,6 @@ export const copyToClipboard = async (text) => {
       return successful;
     }
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.error("Failed to copy text: ", err);
     return false;
   }
