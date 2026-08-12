@@ -68,23 +68,28 @@ function sendReport(report, blockedUri) {
     type: 'application/csp-report',
   });
 
-  let queued = false;
+  const hasSendBeacon =
+    typeof navigator !== 'undefined' &&
+    typeof navigator.sendBeacon === 'function';
 
-  try {
-    queued = Boolean(navigator.sendBeacon && navigator.sendBeacon(reportUri, blob));
-  } catch {
-    queued = false;
+  if (hasSendBeacon) {
+    try {
+      navigator.sendBeacon(reportUri, blob);
+      return;
+    } catch {
+      // Beacon API failed — fall back to fetch below.
+    }
   }
 
-  // Fall back to fetch if sendBeacon returned false or threw an exception
-  if (!queued) {
-    fetch(reportUri, {
-      method: 'POST',
-      body: payload,
-      headers: { 'Content-Type': 'application/csp-report' },
-      keepalive: true,
-    }).catch(() => {});
-  }
+  // Beacon API unavailable or threw error — fall back to a best-effort fetch.
+  fetch(reportUri, {
+    method: 'POST',
+    body: JSON.stringify(report),
+    headers: { 'Content-Type': 'application/csp-report' },
+    keepalive: true,
+  }).catch(() => {
+    // Swallow — reporting is best-effort and must never crash the app.
+  });
 }
 
 let _cspHandler = null;
