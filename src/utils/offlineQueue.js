@@ -627,6 +627,7 @@ export const processQueueItem = async (item, fetchFn, options = {}) => {
 
     let controller;
     let timeoutId;
+    let cleanupCombined = null;
 
     const clearPendingTimeout = () => {
       if (timeoutId !== undefined) {
@@ -641,7 +642,6 @@ export const processQueueItem = async (item, fetchFn, options = {}) => {
         if (controller) controller.abort();
       }, REQUEST_TIMEOUT_MS);
       let combinedSignal = controller.signal;
-      let cleanupCombined = null;
       if (signal) {
         const combined = combineAbortSignals(signal, controller.signal);
         combinedSignal = combined.signal;
@@ -671,6 +671,14 @@ export const processQueueItem = async (item, fetchFn, options = {}) => {
           clearPendingTimeout(); if (cleanupCombined) cleanupCombined(); return { status: "success", item };
         }
         clearPendingTimeout(); if (cleanupCombined) cleanupCombined(); return { status: "conflict", item, serverState };
+      }
+
+      if (response.status === 401 || response.status === 403) {
+        logger.warn(
+          `[OfflineQueue] Auth rejected item ${item.id} with ${response.status} — will retry after session refresh.`
+        );
+        clearPendingTimeout(); if (cleanupCombined) cleanupCombined();
+        return { status: "error", item, error: new Error(`Auth failed (${response.status})`) };
       }
 
       if (response.status >= 400 && response.status < 500) {
