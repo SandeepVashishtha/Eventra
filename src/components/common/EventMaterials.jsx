@@ -1,11 +1,20 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Download, Loader2, CheckCircle, Server, Zap, Sparkles, HelpCircle } from "lucide-react";
-import { isFileCached, getCachedFile, simulateServerDownload, P2PFileTransferCoordinator } from "../../utils/p2pFileTransfer";
+import { isFileCached, getCachedFile, simulateServerDownload, P2PFileTransferCoordinator } from "utils/p2pFileTransfer";
 
 const EventMaterials = ({ materials }) => {
   const [cachedStatus, setCachedStatus] = useState({});
   const [activeTransfer, setActiveTransfer] = useState({}); // Stores: { [fileId]: { state, progress, speed, peerCount, type } }
+  const p2pCheckIntervalRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (p2pCheckIntervalRef.current) {
+        clearInterval(p2pCheckIntervalRef.current);
+      }
+    };
+  }, []);
 
   // Check which files are already cached in IndexedDB on mount
   useEffect(() => {
@@ -80,11 +89,15 @@ const EventMaterials = ({ materials }) => {
       // P2P transfer is now running asynchronously via RTCPeerConnection DataChannel.
       // Once completed, the coordinator will trigger state change, write chunks, and clean up.
       // Let's hook a check to trigger local file download once completed
-      const checkCompletion = setInterval(async () => {
+      let attempts = 0;
+      const MAX_ATTEMPTS = 60; // 30 seconds
+      p2pCheckIntervalRef.current = setInterval(async () => {
+        attempts++;
         const completed = await isFileCached(fileId);
-        if (completed) {
-          clearInterval(checkCompletion);
-          triggerLocalDownload(fileId, fileName);
+        if (completed || attempts >= MAX_ATTEMPTS) {
+          clearInterval(p2pCheckIntervalRef.current);
+          if (completed) {
+            triggerLocalDownload(fileId, fileName);
           setCachedStatus((prev) => ({ ...prev, [fileId]: true }));
           setTimeout(() => {
             setActiveTransfer((prev) => {
@@ -124,7 +137,7 @@ const EventMaterials = ({ materials }) => {
       // Write complete and trigger download
       triggerLocalDownload(fileId, fileName);
       setCachedStatus((prev) => ({ ...prev, [fileId]: true }));
-      
+
       setTimeout(() => {
         setActiveTransfer((prev) => {
           const copy = { ...prev };
@@ -197,10 +210,10 @@ const EventMaterials = ({ materials }) => {
                   onClick={() => handleDownloadClick(material)}
                   disabled={transfer && transfer.state !== "completed" && transfer.state !== "failed"}
                   className={`px-4.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-[0.98] flex items-center gap-2 cursor-pointer ${
-                    isCached 
-                      ? "bg-emerald-600 hover:bg-emerald-700 text-white" 
-                      : transfer 
-                        ? "bg-zinc-800 text-zinc-400 cursor-not-allowed" 
+                    isCached
+                      ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                      : transfer
+                        ? "bg-zinc-800 text-zinc-400 cursor-not-allowed"
                         : "bg-indigo-600 hover:bg-indigo-700 text-white"
                   }`}
                   style={{ cursor: transfer ? "not-allowed" : "pointer" }}
@@ -252,7 +265,7 @@ const EventMaterials = ({ materials }) => {
                           </span>
                         )}
                       </div>
-                      
+
                       <div className="text-xs font-bold text-zinc-400">
                         {transfer.speed}
                       </div>
@@ -262,9 +275,9 @@ const EventMaterials = ({ materials }) => {
                     <div className="w-full h-2.5 bg-zinc-900 border border-zinc-850 rounded-full overflow-hidden flex">
                       <motion.div
                         className={`h-full rounded-full ${
-                          transfer.type === "p2p" 
-                            ? "bg-gradient-to-r from-emerald-500 to-teal-500" 
-                            : "bg-gradient-to-r from-indigo-500 to-purple-500"
+                          transfer.type === "p2p"
+                            ? "bg-linear-to-r from-emerald-500 to-teal-500"
+                            : "bg-linear-to-r from-indigo-500 to-purple-500"
                         }`}
                         initial={{ width: 0 }}
                         animate={{ width: `${transfer.progress}%` }}

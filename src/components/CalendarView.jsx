@@ -12,7 +12,7 @@ const CalendarView = ({ events }) => {
 
   if (!events || events.length === 0) {
     return (
-      <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+      <div className="p-4 text-center text-gray-500 dark:text-gray-200">
         No registered events to display.
       </div>
     );
@@ -25,28 +25,40 @@ const CalendarView = ({ events }) => {
       </h3>
       <ul className="space-y-3">
         {events.map((reg, index) => {
-          const ev = reg.event || reg;
+          // 🔥 FIX: Added optional chaining to prevent crashes if reg is undefined
+          const ev = reg?.event || reg;
+          if (!ev) return null;
+
+          // 🔥 FIX: Safe date parsing to prevent RangeError crashes
+          let formattedDate = "Date TBD";
+          if (ev.date) {
+            const parsedDate = new Date(ev.date);
+            if (!isNaN(parsedDate.getTime())) {
+              formattedDate = parsedDate.toLocaleDateString(undefined, {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+              });
+            }
+          }
+
           return (
             <li
               key={ev.id ?? `reg-${index}`}
               className="p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
             >
               <p className="font-medium text-gray-900 dark:text-gray-100">
-                {ev.title}
+                {ev.title || "Untitled Event"}
               </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {new Date(ev.date).toLocaleDateString(undefined, {
-                  weekday: 'short',
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}{' '}
-                {formatTimeRange(
+              <p className="text-sm text-gray-600 dark:text-gray-200">
+                {formattedDate}{' '}
+                {ev.time ? formatTimeRange(
                   ev.time,
                   ev.durationMinutes || 60,
                   ev.date,
                   userTz
-                )}
+                ) : ""}
               </p>
             </li>
           );
