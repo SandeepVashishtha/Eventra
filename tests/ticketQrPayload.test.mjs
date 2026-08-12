@@ -28,7 +28,8 @@ describe("Dynamic Ticket QR Payload & TOTP Rotating Protocol Tests", () => {
     assert.ok(payload.timeWindow);
 
     const jsonStr = buildTicketQrValue(payload);
-    assert.ok(jsonStr.includes("REG-101"));
+    assert.equal(jsonStr, JSON.stringify({ ticketId: "REG-101" }));
+    assert.equal(Object.keys(JSON.parse(jsonStr)).length, 1);
   });
 
   it("should validate current TOTP time window and reject expired windows", () => {

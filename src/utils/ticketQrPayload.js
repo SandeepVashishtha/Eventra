@@ -38,11 +38,19 @@ export const buildTicketQrPayload = ({ registration, serialNumber, stepSeconds =
   };
 };
 
+export const buildOpaqueTicketQrPayload = ({ registration, serialNumber }) => {
+  const ticketId = registration?.qrToken || registration?.registrationId || serialNumber || null;
+  if (!ticketId) return null;
+  return { ticketId };
+};
+
 export const buildTicketQrValue = (ticketData) => {
   if (!ticketData || typeof ticketData !== "object" || !ticketData.ticketId) {
     return "";
   }
-  return JSON.stringify(ticketData);
+  // Scanner (TicketScanner.jsx) only accepts opaque { ticketId }. Extra keys
+  // are treated as forgeable claims and rejected.
+  return JSON.stringify({ ticketId: ticketData.ticketId });
 };
 
 /**
