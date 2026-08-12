@@ -146,6 +146,7 @@ export const createAsyncValidator = (asyncValidatorFn, debounceMs = 300, options
     return new Promise((resolve) => {
       if (timeoutId) clearTimeout(timeoutId);
 
+    return new Promise((resolve, reject) => {
       timeoutId = setTimeout(async () => {
         const signal = globalDeduplicator.getSignal(fieldKey);
         try {
@@ -162,7 +163,7 @@ export const createAsyncValidator = (asyncValidatorFn, debounceMs = 300, options
             resolve(error.message || "Validation error occurred");
           }
         }
-      }, debounceMs);
+      }, delayMs);
     });
   };
 };
@@ -179,9 +180,9 @@ export const withRetry = (validatorFn, maxRetries = 3, initialDelay = 500) => {
   return async function retryValidator(value, ...args) {
     let lastError;
 
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
+    for (let attempt = 1; attempt <= attempts; attempt += 1) {
       try {
-        return await validatorFn(value, ...args);
+        return await validator(...args);
       } catch (error) {
         lastError = error;
 
