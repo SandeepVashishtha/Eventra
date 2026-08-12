@@ -17,6 +17,7 @@ import { filterHackathons } from "./hackathonFilterUtils.mjs";
 import { HackathonCardSkeleton } from "components/common/SkeletonLoaders";
 import useReducedMotion from "hooks/useReducedMotion.js";
 import useDebounce from "hooks/useDebounce";
+import useEventFilters from "hooks/useEventFilters";
 import ErrorBoundary from "components/common/ErrorBoundary";
 import { safeJsonParse } from "utils/safeJsonParse";
 
