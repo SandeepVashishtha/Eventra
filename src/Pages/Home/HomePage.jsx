@@ -8,6 +8,7 @@ import RecommendationBanner from "./components/RecommendationBanner";
 import TrendingEvents from "components/TrendingEvents/TrendingEvents";
 import CollaborationNetworkMap from "components/visual/CollaborationNetworkMap";
 import CollaborationMap from "components/CollaborationMap";
+import ContributorsCarousel from "./components/ContributorsCarousel";
 import useHomeEventsData from "./hooks/useHomeEventsData";
 import useDocumentTitle from "hooks/useDocumentTitle";
 
@@ -71,6 +72,7 @@ const HomePage = () => {
       <RecommendationBanner />
       <CollaborationNetworkMap />
       <CollaborationMap />
+      <ContributorsCarousel />
       <HomeCTA />
     </main>
   );
