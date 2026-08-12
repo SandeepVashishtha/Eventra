@@ -177,7 +177,7 @@ export function RealTimeSubtitleProvider({ children }) {
   
   // Service references
   const subtitleQueue = useRef([]);
-  const latency Measurements = useRef([]);
+  const latencyMeasurements = useRef([]);
   const startTimeRef = useRef(null);
   const lastActivityRef = useRef(Date.now());
   
@@ -692,6 +692,6 @@ export function useSubtitleStats() {
 }
 
 // Export components
-export { RealTimeSubtitleContext, SUBTITLE_CONFIG, SUBTITLE_STATE, Subtitle };
+export { RealTimeSubtitleContext };
 
 export default RealTimeSubtitleProvider;
