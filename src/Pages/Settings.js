@@ -1,5 +1,5 @@
 import useUserPreferences from "hooks/useUserPreferences";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Sun, MousePointer, Bell, ShieldCheck, ArrowRight, Key, Eye, EyeOff, Clipboard, Download, ShieldAlert, RefreshCw, SlidersHorizontal } from "lucide-react";
 import useDocumentTitle from "../hooks/useDocumentTitle";
