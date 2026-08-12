@@ -1201,9 +1201,44 @@ public class EventService {
                         return;
                 }
 
-                EventAvailabilityResponse availability = getEventAvailability(event.getId());
+                EventAvailabilityResponse availability = buildAvailability(event);
 
                 eventStreamService.broadcastAvailability(event.getId(), availability);
+        }
+
+        /**
+         * Builds the availability payload directly from the event aggregate so the
+         * broadcast path does not depend on {@link #requirePublicEvent(Long)}.
+         *
+         * <p>
+         * Cancelling a registration or promoting a waitlist entry for an event that
+         * was later made private must still commit the write; the availability
+         * broadcast is a side effect and must never throw for non-public events
+         * (Issue #14617).
+         * </p>
+         *
+         * @param event the event whose availability just changed (never null)
+         * @return availability response (no waitlist position — no user context)
+         */
+        private EventAvailabilityResponse buildAvailability(Event event) {
+                Integer capacity = event.getCapacity();
+                int registeredCount = event.getRegisteredCount();
+
+                Integer spotsLeft = (capacity == null)
+                                ? null
+                                : Math.max(0, capacity - registeredCount);
+
+                boolean isFull = (capacity != null) && (registeredCount >= capacity);
+
+                return EventAvailabilityResponse.builder()
+                                .capacity(capacity)
+                                .registeredCount(registeredCount)
+                                .spotsLeft(spotsLeft)
+                                .isFull(isFull)
+                                .eventPassed(event.isEventPast())
+                                .waitlistPosition(null)
+                                .waitlisted(false)
+                                .build();
         }
 
         private EventResponse toEventResponse(Event event) {

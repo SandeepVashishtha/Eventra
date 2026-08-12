@@ -38,7 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Integration tests covering Issues #2101, #2102, and #2104 at the HTTP layer.
+ * Integration tests covering Issues #2101, #2102, #2104, and #14617 at the HTTP layer.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -566,5 +566,55 @@ public class EventRegistrationTests {
         Event event = eventRepository.findById(eventId).orElseThrow();
         assertEquals(successCount.get(), event.getRegisteredCount(),
                 "Persisted registeredCount does not match successful HTTP responses");
+    }
+
+    // ── Issue #14617 — Maintenance writes succeed on private events ──────────
+
+    @Test
+    @DisplayName("#14617 - cancelling a registration on a private event succeeds")
+    void testCancelRegistrationOnPrivateEvent() throws Exception {
+        mockMvc.perform(post("/api/events/" + eventId + "/register")
+                        .with(user("user1@example.com")))
+                .andExpect(status().isOk());
+
+        Event event = eventRepository.findById(eventId).orElseThrow();
+        event.setPublic(false);
+        eventRepository.save(event);
+
+        mockMvc.perform(delete("/api/events/" + eventId + "/registration")
+                        .with(user("user1@example.com")))
+                .andExpect(status().isNoContent());
+
+        assertTrue(eventRegistrationRepository
+                .findByEvent_IdAndUser_Email(eventId, "user1@example.com").isEmpty(),
+                "registration should be deleted even though the event is private");
+    }
+
+    @Test
+    @DisplayName("#14617 - waitlist promotion commits on a private event")
+    void testWaitlistPromotionOnPrivateEvent() throws Exception {
+        for (int i = 1; i <= 5; i++) {
+            mockMvc.perform(post("/api/events/" + eventId + "/register")
+                            .with(user("user" + i + "@example.com")))
+                    .andExpect(status().isOk());
+        }
+
+        mockMvc.perform(post("/api/events/" + eventId + "/waitlist")
+                        .with(user("user6@example.com")))
+                .andExpect(status().isCreated());
+
+        Event event = eventRepository.findById(eventId).orElseThrow();
+        event.setPublic(false);
+        eventRepository.save(event);
+
+        mockMvc.perform(delete("/api/events/" + eventId + "/registration")
+                        .with(user("user1@example.com")))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/users/my-events")
+                        .with(user("user6@example.com")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].eventId").value(eventId))
+                .andExpect(jsonPath("$[0].status").value("CONFIRMED"));
     }
 }
