@@ -5,6 +5,7 @@ import CountdownTimer from "components/common/CountdownTimer";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Helmet } from "react-helmet-async";
 import { sanitizeMarkdown } from "utils/sanitizeHtml";
+import { sanitizeProfileUrl } from "utils/sanitizeProfileUrl";
 import { toast } from "react-toastify";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import useKeyboardShortcuts from "hooks/useKeyboardShortcuts";
@@ -141,13 +142,6 @@ const isRequestCanceled = (error, signal) =>
   error?.name === "AbortError" ||
   error?.name === "CanceledError" ||
   error?.code === "ERR_CANCELED";
-
-const sanitizeProfileUrl = (url) => {
-  if (!url) return "";
-  const trimmed = String(url).trim();
-  if (/^(javascript|data|vbscript):/i.test(trimmed)) return "";
-  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
-};
 
 const EventDetails = () => {
   const { eventId } = useParams();
@@ -943,8 +937,8 @@ ${window.location.href}
                         className="rounded-2xl border border-gray-200 p-4 dark:border-gray-800"
                       >
                         {(() => {
-                          const githubUrl = sanitizeProfileUrl(attendee.githubUrl);
-                          const linkedinUrl = sanitizeProfileUrl(attendee.linkedinUrl);
+                          const githubUrl = sanitizeProfileUrl(attendee.githubUrl, "github");
+                          const linkedinUrl = sanitizeProfileUrl(attendee.linkedinUrl, "linkedin");
                           return (
                             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                               <div>
