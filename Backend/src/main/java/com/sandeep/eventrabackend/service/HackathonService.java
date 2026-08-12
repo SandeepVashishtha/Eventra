@@ -75,6 +75,9 @@ public class HackathonService {
 
         // FIX (#14532): reject inverted date ranges on create, same as update.
         validateDateRanges(request.getStartDate(), request.getEndDate(), request.getRegistrationDeadline());
+        if (request.getDescription() != null && (request.getDescription().trim().length() < 10 || request.getDescription().trim().length() > 2000)) {
+            throw new IllegalArgumentException("Description must be between 10 and 2000 characters.");
+        }
 
         Hackathon hackathon = Hackathon.builder()
                 .title(request.getTitle())
@@ -114,11 +117,19 @@ public class HackathonService {
 
         // FIX (#14532): shared chronological validation, null-safe for partial updates.
         validateDateRanges(request.getStartDate(), request.getEndDate(), request.getRegistrationDeadline());
+        if (request.getDescription() != null && (request.getDescription().trim().length() < 10 || request.getDescription().trim().length() > 2000)) {
+            throw new IllegalArgumentException("Description must be between 10 and 2000 characters.");
+        }
 
         // FIX (#14532): partial update — only apply fields present in the request,
         // so a single-field payload cannot wipe the other columns.
         if (request.getTitle() != null) hackathon.setTitle(request.getTitle());
-        if (request.getDescription() != null) hackathon.setDescription(request.getDescription());
+        if (request.getDescription() != null) {
+            if (request.getDescription().trim().length() < 10 || request.getDescription().trim().length() > 2000) {
+                throw new IllegalArgumentException("Description must be between 10 and 2000 characters.");
+            }
+            hackathon.setDescription(request.getDescription());
+        }
         if (request.getOrganizer() != null) hackathon.setOrganizer(request.getOrganizer());
         if (request.getStartDate() != null) hackathon.setStartDate(request.getStartDate());
         if (request.getEndDate() != null) hackathon.setEndDate(request.getEndDate());
