@@ -81,13 +81,19 @@ const loadInitialHistory = () => {
 
 /**
  * Top-level helper to save the history array.
+ * Skips the write/dispatch when the serialized content is unchanged so the
+ * same-tab 'local-storage-recently-viewed-update' listener cannot trigger a
+ * re-render loop (fresh array reference from loadInitialHistory → save → dispatch → …).
  */
 const saveHistory = (items) => {
   try {
+    const serialized = JSON.stringify(items);
+    if (serialized === localStorage.getItem(STORAGE_KEY)) return;
+
     if (items.length === 0) {
       localStorage.removeItem(STORAGE_KEY);
     } else {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+      localStorage.setItem(STORAGE_KEY, serialized);
     }
     window.dispatchEvent(new Event('local-storage-recently-viewed-update'));
   } catch (err) {
