@@ -2,7 +2,7 @@ import { apiUtils } from "../config/api.js";
 
 const DEFAULT_TIMEOUT_MS = 8000;
 const DEFAULT_RETRIES = 1;
-// const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
+const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
 
 // In-memory response cache for validation results
 const validationCache = new Map();
