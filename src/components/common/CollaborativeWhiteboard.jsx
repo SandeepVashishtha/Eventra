@@ -29,7 +29,6 @@ const COLORS = [
 
 export default function CollaborativeWhiteboard() {
   const canvasRef = useRef(null);
-  const containerRef = useRef(null);
   const bcRef = useRef(null);
   const dbRef = useRef(null);
 
@@ -47,6 +46,7 @@ export default function CollaborativeWhiteboard() {
   const isDrawingRef = useRef(false);
   const currentStrokeIdRef = useRef(null);
   const currentPointsRef = useRef([]);
+  const currentStrokeRef = useRef(null);
 
   // Generate a random client peer identifier
   const peerId = useRef(`peer_${Math.random().toString(36).substring(2, 7)}`);
@@ -181,6 +181,8 @@ export default function CollaborativeWhiteboard() {
     // 1. Open Database & Load history
     initDB().then((db) => {
       loadHistory(db);
+    }).catch(() => {
+      console.warn("[Whiteboard] IndexedDB unavailable, starting with empty history");
     });
 
     // 2. Connect BroadcastChannel for real-time signaling P2P
@@ -189,6 +191,7 @@ export default function CollaborativeWhiteboard() {
     // Ping peers count check
     const interval = setInterval(() => {
       if (bcRef.current) {
+        setPeersCount(1); // reset to self before each ping cycle
         bcRef.current.postMessage({ type: "WHITEBOARD_PING", from: peerId.current });
       }
     }, 3000);
@@ -214,6 +217,20 @@ export default function CollaborativeWhiteboard() {
           }));
           break;
 
+        case "WHITEBOARD_SHAPE_PREVIEW":
+          setRemoteActiveStrokes((prev) => {
+            const active = prev[msg.id];
+            if (!active) return prev;
+            return {
+              ...prev,
+              [msg.id]: {
+                ...active,
+                end: msg.end,
+              },
+            };
+          });
+          break;
+
         case "WHITEBOARD_STROKE_DRAW":
           setRemoteActiveStrokes((prev) => {
             const active = prev[msg.id];
@@ -228,21 +245,22 @@ export default function CollaborativeWhiteboard() {
           });
           break;
 
-        case "WHITEBOARD_STROKE_END":
+        case "WHITEBOARD_STROKE_END": {
+          const finishedRemote = remoteActiveStrokes[msg.id];
+          if (finishedRemote) {
+            setLocalStrokes((l) => {
+              const updated = [...l, finishedRemote];
+              saveHistory(updated);
+              return updated;
+            });
+          }
           setRemoteActiveStrokes((prev) => {
-            const finished = prev[msg.id];
-            if (finished) {
-              setLocalStrokes((l) => {
-                const updated = [...l, finished];
-                saveHistory(updated);
-                return updated;
-              });
-            }
             const copy = { ...prev };
             delete copy[msg.id];
             return copy;
           });
           break;
+        }
 
         case "WHITEBOARD_COMPLETE_STROKE":
           setLocalStrokes((l) => {
@@ -250,6 +268,13 @@ export default function CollaborativeWhiteboard() {
             saveHistory(updated);
             return updated;
           });
+          if (msg.id) {
+            setRemoteActiveStrokes((prev) => {
+              const copy = { ...prev };
+              delete copy[msg.id];
+              return copy;
+            });
+          }
           break;
 
         case "WHITEBOARD_CLEAR":
@@ -304,8 +329,9 @@ export default function CollaborativeWhiteboard() {
         tool,
         color,
         lineWidth,
-        points: currentPointsRef.current,
+        points: [...currentPointsRef.current],  // ← copy, not the same reference
       };
+      currentStrokeRef.current = newStroke;
 
       bcRef.current.postMessage({
         type: "WHITEBOARD_STROKE_START",
@@ -321,6 +347,26 @@ export default function CollaborativeWhiteboard() {
     } else {
       // Shape tools (line, rect, circle)
       currentPointsRef.current = [coords.x, coords.y]; // Store starting coordinate anchor
+      const newStroke = {
+        tool,
+        color,
+        lineWidth,
+        start: [coords.x, coords.y],
+        end: [coords.x, coords.y],
+      };
+      currentStrokeRef.current = newStroke;
+
+      bcRef.current.postMessage({
+        type: "WHITEBOARD_STROKE_START",
+        id: currentStrokeIdRef.current,
+        stroke: newStroke,
+        from: peerId.current,
+      });
+
+      setRemoteActiveStrokes((prev) => ({
+        ...prev,
+        [currentStrokeIdRef.current]: newStroke,
+      }));
     }
   };
 
@@ -330,6 +376,9 @@ export default function CollaborativeWhiteboard() {
 
     if (tool === "pencil") {
       currentPointsRef.current.push([coords.x, coords.y]);
+      if (currentStrokeRef.current) {
+        currentStrokeRef.current.points = [...currentPointsRef.current];
+      }
 
       bcRef.current.postMessage({
         type: "WHITEBOARD_STROKE_DRAW",
@@ -361,6 +410,14 @@ export default function CollaborativeWhiteboard() {
         start: [startX, startY],
         end: [coords.x, coords.y]
       };
+      currentStrokeRef.current = previewStroke;
+
+      bcRef.current.postMessage({
+        type: "WHITEBOARD_SHAPE_PREVIEW",
+        id: currentStrokeIdRef.current,
+        end: [coords.x, coords.y],
+        from: peerId.current,
+      });
 
       setRemoteActiveStrokes(prev => ({
         ...prev,
@@ -380,40 +437,43 @@ export default function CollaborativeWhiteboard() {
         from: peerId.current,
       });
 
+      const finishedId = currentStrokeIdRef.current;
       setRemoteActiveStrokes(prev => {
-        const finished = prev[currentStrokeIdRef.current];
-        if (finished) {
-          setLocalStrokes(l => {
-            const updated = [...l, finished];
-            saveHistory(updated);
-            return updated;
-          });
-        }
         const copy = { ...prev };
-        delete copy[currentStrokeIdRef.current];
+        delete copy[finishedId];
         return copy;
       });
+      const finished = currentStrokeRef.current;
+      setLocalStrokes(prev => {
+        if (!finished) return prev;
+        const updated = [...prev, finished];
+        saveHistory(updated);
+        return updated;
+      });
+      currentStrokeRef.current = null;
     } else {
       // Shape drawing finished
+      const finishedId = currentStrokeIdRef.current;
+      const finished = currentStrokeRef.current;
+      if (finished) {
+        bcRef.current.postMessage({
+          type: "WHITEBOARD_COMPLETE_STROKE",
+          id: finishedId,
+          stroke: finished,
+          from: peerId.current
+        });
+        setLocalStrokes(l => {
+          const updated = [...l, finished];
+          saveHistory(updated);
+          return updated;
+        });
+      }
       setRemoteActiveStrokes(prev => {
-        const finished = prev[currentStrokeIdRef.current];
-        if (finished) {
-          bcRef.current.postMessage({
-            type: "WHITEBOARD_COMPLETE_STROKE",
-            stroke: finished,
-            from: peerId.current
-          });
-
-          setLocalStrokes(l => {
-            const updated = [...l, finished];
-            saveHistory(updated);
-            return updated;
-          });
-        }
         const copy = { ...prev };
-        delete copy[currentStrokeIdRef.current];
+        delete copy[finishedId];
         return copy;
       });
+      currentStrokeRef.current = null;
     }
   };
 
@@ -469,7 +529,7 @@ export default function CollaborativeWhiteboard() {
   };
 
   return (
-    <div className="flex flex-col gap-6" ref={containerRef}>
+    <>
       {/* HUD Whiteboard Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-slate-900 border border-slate-800 rounded-3xl shadow-lg">
         {/* Tools Select Group */}
@@ -622,7 +682,7 @@ export default function CollaborativeWhiteboard() {
                   </button>
                   <button
                     type="submit"
-                    className="px-2.5 py-1.5 rounded-lg bg-indigo-650 hover:bg-indigo-700 text-[10px] font-bold text-white shadow-sm"
+                    className="px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-[10px] font-bold text-white shadow-sm"
                   >
                     Place
                   </button>
@@ -632,6 +692,6 @@ export default function CollaborativeWhiteboard() {
           )}
         </AnimatePresence>
       </div>
-    </div>
+    </>
   );
 }
