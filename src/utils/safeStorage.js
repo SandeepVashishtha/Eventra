@@ -63,7 +63,7 @@ export const isBrowserStorageAvailable = (storage) => {
     storage.setItem(testKey, testKey);
     storage.removeItem(testKey);
     return true;
-  } catch (_) {
+  } catch {
     return false;
   }
 };
@@ -163,7 +163,7 @@ export const createSafeStorage = (getStorage, memoryFallback, prefix = "") => {
         getActiveStorage().removeItem(prefixedKey(key));
         memoryFallback.removeItem(prefixedKey(key));
         return true;
-      } catch (_) {
+      } catch {
         return false;
       }
     },
@@ -177,7 +177,7 @@ export const createSafeStorage = (getStorage, memoryFallback, prefix = "") => {
         getActiveStorage().clear();
         memoryFallback.clear();
         return true;
-      } catch (_) {
+      } catch {
         return false;
       }
     },
@@ -228,7 +228,7 @@ export const createSafeStorage = (getStorage, memoryFallback, prefix = "") => {
     setJson(key, value) {
       try {
         return this.setItem(key, JSON.stringify(value));
-      } catch (_) {
+      } catch {
         return false;
       }
     },

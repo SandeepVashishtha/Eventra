@@ -17,7 +17,7 @@ const ProgressStepper = ({ steps, currentStep }) => {
         
         {/* Progress Fill */}
         <motion.div
-          className="absolute top-1/2 left-0 h-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full -translate-y-1/2"
+          className="absolute top-1/2 left-0 h-1 bg-linear-to-r from-blue-600 to-indigo-600 rounded-full -translate-y-1/2"
           initial={{ width: "0%" }}
           animate={{ width: `${(currentStep / (steps.length - 1)) * 100}%` }}
           transition={{ duration: 0.3, ease: "easeOut" }}
@@ -64,7 +64,7 @@ const ProgressStepper = ({ steps, currentStep }) => {
                         ? "text-blue-600 dark:text-blue-400"
                         : status === "completed"
                         ? "text-green-600 dark:text-green-400"
-                        : "text-gray-500 dark:text-gray-400"
+                        : "text-gray-500 dark:text-gray-200"
                     }
                   `}
                 >
@@ -78,7 +78,7 @@ const ProgressStepper = ({ steps, currentStep }) => {
 
       {/* Progress Percentage */}
       <div className="text-center">
-        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+        <span className="text-sm font-medium text-gray-600 dark:text-gray-200">
           Step {currentStep + 1} of {steps.length} -{" "}
           {steps[currentStep]?.label}
         </span>

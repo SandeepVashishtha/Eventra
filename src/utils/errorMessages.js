@@ -197,6 +197,7 @@ export function extractRawErrorText(err) {
 export function extractStatusCode(err) {
   if (!err) return null;
 
+  // Extract HTTP status
   const status =
     err?.response?.status ||
     err?.status ||
@@ -277,7 +278,27 @@ export function getPublicErrorMessage(err, options = {}) {
     }
   }
 
-  return fallback;
+  // Fallback to HTTP Status code map
+  if (status && STATUS_MESSAGES[status]) {
+    return {
+      message: translate(`error.status.${status}`, STATUS_MESSAGES[status]),
+      status,
+      category: status >= 500 ? "SERVER_ERROR" : "CLIENT_ERROR",
+      action: status === 401 ? "REAUTH" : "RETRY",
+      retryAfterSeconds,
+      correlationId,
+    };
+  }
+
+  // Fallback for unhandled internal exceptions
+  return {
+    message: `${translate("error.fallback", fallback)} (${correlationId})`,
+    status: status || 500,
+    category: "UNHANDLED",
+    action: "CONTACT_SUPPORT",
+    retryAfterSeconds: null,
+    correlationId,
+  };
 }
 
 /**

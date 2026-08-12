@@ -28,11 +28,11 @@ const readSrc = (relPath) =>
 // Source files under test
 // ---------------------------------------------------------------------------
 
-const eventCreationRoot = readSrc('src/components/EventCreation.jsx');
+const eventCreationRoot = readSrc('src/hooks/useEventForm.js');
 const eventCreationNested = readSrc('src/components/common/EventCreation/EventCreation.jsx');
 
 const sources = [
-  { label: 'src/components/EventCreation.jsx', src: eventCreationRoot },
+  { label: 'src/hooks/useEventForm.js', src: eventCreationRoot },
   { label: 'src/components/common/EventCreation/EventCreation.jsx', src: eventCreationNested },
 ];
 
@@ -102,19 +102,19 @@ describe('EventCreation — apiUtils.post call shape', () => {
       // Match apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData)
       // without a third argument object containing Authorization
       const postCallMatch = src.match(
-        /apiUtils\.post\(API_ENDPOINTS\.EVENTS\.CREATE,\s*eventData([^)]*)\)/,
+        /apiUtils\.post\(API_ENDPOINTS\.EVENTS\.CREATE,\s*(eventData|sanitized)([^)]*)\)/,
       );
       assert.ok(
         postCallMatch !== null,
-        `${label} must call apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData)`,
+        `${label} must call apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData) or apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, sanitized)`,
       );
 
-      // Capture what follows eventData — should be empty or just whitespace/newline
-      const trailing = (postCallMatch[1] || '').trim();
+      // Capture what follows eventData/sanitized — should be empty or just whitespace/newline
+      const trailing = (postCallMatch[2] || '').trim();
       assert.strictEqual(
         trailing,
         '',
-        `${label}: apiUtils.post must not have extra arguments after eventData — got: "${trailing}"`,
+        `${label}: apiUtils.post must not have extra arguments after data — got: "${trailing}"`,
       );
     });
   }
