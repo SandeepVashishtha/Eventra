@@ -1,15 +1,24 @@
-
 import { useState, useEffect } from 'react';
+// Fix: useEventSource replaces bare EventSource with no reconnection or error handling
+import useEventSource from 'hooks/useEventSource';
 
 const LiveInventoryCounter = ({ eventId, initialCapacity }) => {
   const [capacity, setCapacity] = useState(initialCapacity);
 
+  const { lastMessage } = useEventSource(
+    eventId ? `/api/events/${eventId}/inventory/stream` : null,
+    {
+      maxRetries: 5,
+      baseRetryMs: 2000,
+    }
+  );
+
+  // Sync capacity from SSE messages
   useEffect(() => {
-    if (!eventId) return;
-    const evtSource = new EventSource(`/api/events/${eventId}/inventory/stream`);
-    evtSource.onmessage = (event) => setCapacity(JSON.parse(event.data).remaining);
-    return () => evtSource.close();
-  }, [eventId]);
+    if (lastMessage?.remaining !== undefined) {
+      setCapacity(lastMessage.remaining);
+    }
+  }, [lastMessage]);
 
   if (capacity === undefined || capacity === null) return null;
 

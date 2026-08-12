@@ -1,24 +1,22 @@
-
-import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+// Fix: useEventSource replaces bare EventSource with no reconnection or error handling
+import useEventSource from 'hooks/useEventSource';
 
 const RealtimePolling = ({ eventId }) => {
-  const [activePoll, setActivePoll] = useState(null);
-
-  useEffect(() => {
-    // Simulated SSE connection for active polls
-    const evtSource = new EventSource(`/api/events/${eventId}/polls/stream`);
-    evtSource.onmessage = (event) => {
-      setActivePoll(JSON.parse(event.data));
-    };
-    return () => evtSource.close();
-  }, [eventId]);
+  const { lastMessage: activePoll } = useEventSource(
+    eventId ? `/api/events/${eventId}/polls/stream` : null,
+    {
+      maxRetries: 5,
+      baseRetryMs: 1000,
+      onError: () => console.warn('[RealtimePolling] SSE error — will auto-reconnect'),
+    }
+  );
 
   if (!activePoll) return null;
 
   return (
     <AnimatePresence>
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 50 }}
@@ -33,7 +31,7 @@ const RealtimePolling = ({ eventId }) => {
         </div>
         <p className="text-sm text-gray-700 dark:text-gray-300 font-medium mb-4">{activePoll.question}</p>
         <div className="space-y-2">
-          {activePoll.options.map((opt, i) => (
+          {activePoll.options?.map((opt, i) => (
             <button key={i} className="w-full text-left px-4 py-2 rounded-xl bg-gray-50 hover:bg-indigo-50 dark:bg-gray-800 dark:hover:bg-indigo-900/40 border border-gray-200 dark:border-gray-700 transition-colors text-sm font-medium">
               {opt.text}
             </button>

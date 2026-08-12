@@ -1,3 +1,4 @@
+import useEventSource, { SSE_STATUS } from "hooks/useEventSource";
 import { useState, useEffect, useRef } from "react";
 import {
   Users,
@@ -55,137 +56,37 @@ const TeamWorkspace = () => {
   const [pollingLogs, setPollingLogs] = useState([]);
   const chatEndRef = useRef(null);
 
-  // SSE Simulator & Fallback Hook
-  useEffect(() => {
-    let sseSource = null;
-    let fallbackInterval = null;
-    let isMounted = true;
-    let idleTimeout = null;
-
-    setConnectionStatus("connecting");
-    const logPrefix = "[TeamSync]";
-
-    function triggerPollingFallback() {
-      setPollingLogs((prev) => [
-        ...prev,
-        "SSE connection error. Started HTTP short-polling fallback stream every 4s.",
-      ]);
-
-      const fetchState = async () => {
-        if (!isMounted) return;
-        try {
-          const response = await fetch("/api/hackathons/team/sync", {
-            method: "POST",
-          });
-          if (response.ok) {
-            const data = await response.json();
-            setTasks(data.tasks || []);
-            setPins(data.pins || []);
-            setChatHistory(data.chat || []);
-            setPollingLogs((prev) => [
-              ...prev,
-              `[HTTP-Poll] Checking for team changes... Status: 200 OK`,
-            ]);
-          } else {
-            setPollingLogs((prev) => [
-              ...prev,
-              `[HTTP-Poll] Fetch failed with status ${response.status}`,
-            ]);
-          }
-        } catch (err) {
-          setPollingLogs((prev) => [...prev, `[HTTP-Poll] Fetch network error: ${err.message}`]);
-        }
-      };
-
-      fetchState();
-      fallbackInterval = setInterval(fetchState, 4000);
+  // Fix: useEventSource replaces the 80-line manual SSE + polling fallback block.
+  // Adds exponential backoff, visibility pause, isMounted guard, and no more
+  // multiple parallel polling intervals on repeated SSE failures.
+  const { status: sseStatus, reconnect: reconnectSSE } = useEventSource(
+    "/api/hackathons/team/sync",
+    {
+      maxRetries: 5,
+      baseRetryMs: 1000,
+      pauseOnHidden: true,
+      eventTypes: {
+        init: (data) => {
+          setTasks(data.tasks || []);
+          setPins(data.pins || []);
+          setChatHistory(data.chat || []);
+        },
+        tasks: (data) => setTasks(data.tasks || []),
+        pins:  (data) => setPins(data.pins || []),
+        chat:  (data) => setChatHistory(data.chat || []),
+      },
+      onOpen:  () => setConnectionStatus("sse"),
+      onError: () => setConnectionStatus("polling_fallback"),
     }
+  );
 
-    const connectStream = () => {
-      setConnectionStatus("connecting");
-      try {
-        logger.info(`${logPrefix} Establishing real-time Server-Sent Events stream...`);
-        sseSource = new EventSource("/api/hackathons/team/sync");
-
-        sseSource.onopen = () => {
-          setConnectionStatus("sse");
-          logger.info(`${logPrefix} Connection opened. Realtime SSE stream active.`);
-        };
-
-        sseSource.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data);
-            if (data.type === "init") {
-              setTasks(data.tasks || []);
-              setPins(data.pins || []);
-              setChatHistory(data.chat || []);
-            } else if (data.type === "tasks") {
-              setTasks(data.tasks || []);
-            } else if (data.type === "pins") {
-              setPins(data.pins || []);
-            } else if (data.type === "chat") {
-              setChatHistory(data.chat || []);
-            }
-          } catch (e) {
-            logger.error("Failed to parse SSE payload", e);
-          }
-        };
-
-        sseSource.onerror = () => {
-          logger.warn(
-            `${logPrefix} Server-Sent Events stream interrupted. Fallback to short-polling activated.`
-          );
-          setConnectionStatus("polling_fallback");
-          if (sseSource) sseSource.close();
-          triggerPollingFallback();
-        };
-      } catch (e) {
-        logger.error(`${logPrefix} SSE not supported by browser. Falling back to HTTP polling.`, e);
-        setConnectionStatus("polling_fallback");
-        triggerPollingFallback();
-      }
-    };
-
-    const disconnectStream = () => {
-      if (sseSource) {
-        sseSource.close();
-        sseSource = null;
-      }
-      if (fallbackInterval) {
-        clearInterval(fallbackInterval);
-        fallbackInterval = null;
-      }
-      setConnectionStatus("idle");
-    };
-
-    connectStream();
-
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        idleTimeout = setTimeout(() => {
-          logger.info(`${logPrefix} Tab idle. Closing real-time connections.`);
-          disconnectStream();
-        }, 60000);
-      } else {
-        if (idleTimeout) {
-          clearTimeout(idleTimeout);
-          idleTimeout = null;
-        }
-        if (!sseSource && !fallbackInterval) {
-          logger.info(`${logPrefix} Tab active. Reconnecting real-time stream.`);
-          connectStream();
-        }
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      disconnectStream();
-      if (idleTimeout) clearTimeout(idleTimeout);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, []);
+  // Sync SSE status to connectionStatus for UI indicator
+  useEffect(() => {
+    if (sseStatus === SSE_STATUS.OPEN)         setConnectionStatus("sse");
+    else if (sseStatus === SSE_STATUS.RECONNECTING) setConnectionStatus("connecting");
+    else if (sseStatus === SSE_STATUS.ERROR)   setConnectionStatus("polling_fallback");
+    else if (sseStatus === SSE_STATUS.CLOSED)  setConnectionStatus("idle");
+  }, [sseStatus]);
 
   // Auto-scroll chat
   useEffect(() => {
