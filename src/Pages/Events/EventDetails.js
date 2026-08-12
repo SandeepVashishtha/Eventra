@@ -53,6 +53,13 @@ import CopyButton from "components/ui/CopyButton";
 import AddToCalendar from "components/common/AddToCalendar";
 import useClipboard from "hooks/useClipboard";
 import { calculateReadTime, formatReadTime } from "utils/readTimeUtils";
+import EventSessionNotes from "components/events/EventSessionNotes";
+import scheduleService from "services/scheduleService";
+import {
+  getSessionNotes,
+  saveSessionNote,
+  deleteSessionNote,
+} from "utils/sessionNotesUtils";
 
 const formatEventDate = (dateValue) => {
   if (!dateValue) return { short: "TBD", full: "Date TBD", relative: "" };
@@ -173,6 +180,43 @@ const EventDetails = () => {
   const { copy, isCopied } = useClipboard({ resetMs: 2000 });
   const abortControllerRef = useRef(null);
   const latestRequestIdRef = useRef(0);
+
+  // Personal session notes are scoped per attendee per event. Sessions come
+  // from the event schedule (empty when no schedule is published); notes are
+  // persisted locally since they are private to each attendee.
+  const [eventSessions, setEventSessions] = useState([]);
+  const [sessionNotes, setSessionNotes] = useState([]);
+  const userId = user?.id || user?.email || "guest";
+
+  useEffect(() => {
+    if (!eventId) return;
+
+    setSessionNotes(getSessionNotes(eventId, userId));
+
+    let active = true;
+    (async () => {
+      try {
+        const response = await scheduleService.getSessions(eventId);
+        if (!active) return;
+        const data = response.data?.data ?? response.data ?? [];
+        setEventSessions(Array.isArray(data) ? data : []);
+      } catch {
+        if (active) setEventSessions([]);
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [eventId, userId]);
+
+  const handleSaveSessionNote = (note) => {
+    setSessionNotes(saveSessionNote(eventId, userId, note));
+  };
+
+  const handleDeleteSessionNote = (note) => {
+    setSessionNotes(deleteSessionNote(eventId, userId, note.id));
+  };
 
   // Live, real-time seat availability for this event. Subscribes to the
   // per-event SSE stream so the backend only broadcasts availability for this
@@ -718,6 +762,15 @@ ${window.location.href}
           <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
             <ReminderControls event={event} canSetReminder={canSetReminder} />
           </section>
+
+          {user && isRegistered(event.id) && (
+            <EventSessionNotes
+              sessions={eventSessions}
+              initialNotes={sessionNotes}
+              onSave={handleSaveSessionNote}
+              onDelete={handleDeleteSessionNote}
+            />
+          )}
 
           {/* Live seat availability panel */}
           {event.capacity != null && event.capacity > 0 && (
