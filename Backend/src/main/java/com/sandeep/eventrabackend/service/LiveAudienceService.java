@@ -57,9 +57,12 @@ public class LiveAudienceService {
                 .map(this::toQuestionResponse)
                 .toList();
         LiveAudiencePollResponse activePoll = pollRepository
-                .findByEventIdOrderByCreatedAtDesc(eventId)
+                .findByEventIdAndStatusOrderByCreatedAtDesc(eventId, "active")
                 .stream()
                 .findFirst()
+                .or(() -> pollRepository.findByEventIdOrderByCreatedAtDesc(eventId).stream()
+                        .filter(poll -> !"closed".equals(poll.getStatus()))
+                        .findFirst())
                 .map(this::toPollResponse)
                 .orElse(null);
         return LiveAudienceDataResponse.builder()

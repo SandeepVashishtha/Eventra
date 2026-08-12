@@ -344,6 +344,43 @@ public class LiveAudienceControllerTests {
     }
 
     @Test
+    @DisplayName("GET initial data — closed poll not returned as active; reopened poll appears (#15299)")
+    void testGetInitialDataIgnoresClosedPoll() throws Exception {
+        MvcResult created = mockMvc.perform(post("/api/events/{id}/live-audience/polls", eventId)
+                        .with(user(organizerEmail))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                java.util.Map.of("question", "Closed poll", "options", List.of("A", "B")))))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        long pollId = objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asLong();
+
+        mockMvc.perform(post("/api/events/{id}/live-audience/polls/{pid}/status", eventId, pollId)
+                        .with(user(organizerEmail))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(java.util.Map.of("status", "closed"))))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/events/{id}/live-audience", eventId)
+                        .with(user(attendeeEmail)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.activePoll").doesNotExist());
+
+        mockMvc.perform(post("/api/events/{id}/live-audience/polls/{pid}/status", eventId, pollId)
+                        .with(user(organizerEmail))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(java.util.Map.of("status", "active"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("active"));
+
+        mockMvc.perform(get("/api/events/{id}/live-audience", eventId)
+                        .with(user(attendeeEmail)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.activePoll.id").value(pollId));
+    }
+
+    @Test
     @DisplayName("GET initial data — reflects persisted questions and latest poll")
     void testGetInitialDataPopulated() throws Exception {
         mockMvc.perform(post("/api/events/{id}/live-audience/questions", eventId)
