@@ -32,8 +32,8 @@ const EventRegistrationManagement = lazy(() => import("../../Pages/Events/EventR
 // 🔥 FIX: Added Suspense wrapper required for React.lazy() to prevent layout thrashing and crashes
 const withModuleBoundary = (children, boundaryName) => (
   <ErrorBoundary
-    variant="section"
-    boundaryName={boundaryName}
+    level="section"
+    label={boundaryName}
     title={`${boundaryName} needs a reset`}
   >
     <Suspense fallback={<div className="flex justify-center items-center min-h-[50vh] text-gray-500 animate-pulse">Loading {boundaryName}...</div>}>

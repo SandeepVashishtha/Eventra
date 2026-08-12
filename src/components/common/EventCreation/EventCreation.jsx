@@ -39,14 +39,12 @@ import { safeJsonParse } from "../../../utils/safeJsonParse";
 
 
 const EventCreation = () => {
-  // Fix: useFormDirty replaces manual hasUnsavedChanges + beforeunload
-  const { isDirty: hasUnsavedChanges } = useFormDirty(formData);
-
   const prefersReducedMotion = useReducedMotion();
   const location = useLocation();
 
   const [currentStep, setCurrentStep] = useState(CREATION_STEPS.FORM);
   const [formData, setFormData] = useState(initialFormData);
+  const { isDirty: hasUnsavedChanges } = useFormDirty(formData);
   const [errors, setErrors] = useState({});
   const [newTag, setNewTag] = useState("");
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
