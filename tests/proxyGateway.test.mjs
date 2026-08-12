@@ -161,10 +161,7 @@ errorHooks.onError(new Error("ECONNRESET"), { method: "GET", url: "/api/events" 
 assert.equal(errorRes.statusCode, 502);
 assert.equal(errorRes.body.error.code, "BAD_GATEWAY");
 assert.equal(errorRes.body.error.target, "http://localhost:8080");
-assert.equal(
-  errorRes.body.error.message,
-  "Unable to communicate with Eventra backend service."
-);
+assert.equal(errorRes.body.error.message, "Unable to communicate with Eventra backend service.");
 assert.ok(!Number.isNaN(Date.parse(errorRes.body.error.timestamp)));
 
 const sentRes = createRes();
