@@ -329,6 +329,12 @@ export class SseMultiplexer {
 
     msg.paths.forEach((p) => this.addGlobalSubscriber(p, msg.tabId));
 
+    if (msg.lastEventIds) {
+      Object.entries(msg.lastEventIds).forEach(([path, lastId]) => {
+        if (!this.lastEventIds.has(path)) this.lastEventIds.set(path, lastId);
+      });
+    }
+
     if (this.isLeader) {
       msg.paths.forEach((p) => {
         const currentStatus = this.pathStatuses.get(p);
@@ -342,36 +348,31 @@ export class SseMultiplexer {
             lastEventIds: Object.fromEntries(this.lastEventIds),
           });
         }
-        break;
+      });
+      this.reconcileConnections();
+    }
+  }
 
-      case "SUBSCRIBERS_RESPONSE":
-        if (msg.paths) {
-          msg.paths.forEach((p) => this.addGlobalSubscriber(p, msg.tabId));
-        }
-        if (msg.lastEventIds) {
-          Object.entries(msg.lastEventIds).forEach(([path, lastId]) => {
-            if (!this.lastEventIds.has(path)) this.lastEventIds.set(path, lastId);
-          });
-        }
-        if (this.isLeader) this.reconcileConnections();
-        break;
-
-      case "SSE_MESSAGE":
-        if (msg.lastEventId) {
-          this.lastEventIds.set(msg.path, msg.lastEventId);
-        }
-        this.dispatchLocalMessage(msg.path, msg.data, msg.eventType);
-        break;
+  handleSseMessage(msg) {
+    if (msg.lastEventId) {
+      this.lastEventIds.set(msg.path, msg.lastEventId);
+    }
+    this.dispatchLocalMessage(msg.path, msg.data, msg.eventType);
+  }
 
   handleSseStatus(msg) {
     this.updatePathStatus(msg.path, msg.status);
   }
 
-      case "RECONNECT_REQUEST":
-        if (this.isLeader) {
-          this.reconnect(msg.path);
-        }
-        break;
+  handleReconnectRequest(msg) {
+    if (this.isLeader) {
+      this.reconnect(msg.path);
+    }
+  }
+
+  handlePing() {
+    if (!this.isLeader) {
+      this.broadcastMessage({ type: "PONG", tabId: this.tabId });
     }
   }
 
