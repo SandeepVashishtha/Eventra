@@ -273,6 +273,9 @@ public class Event {
     }
 
     public void setCategories(Set<String> categories) {
+        if (categories != null && categories.size() > 3) {
+            throw new IllegalArgumentException("An event can have at most 3 categories.");
+        }
         this.categories = categories;
     }
 
