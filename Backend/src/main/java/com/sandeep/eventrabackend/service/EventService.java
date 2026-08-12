@@ -589,8 +589,7 @@ public class EventService {
 
         @Transactional(readOnly = true)
         public EventScheduleResponse getEventSchedule(Long id) {
-                Event event = eventRepository.findById(id)
-                                .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + id));
+                Event event = requirePublicEvent(id);
                 return toEventScheduleResponse(event);
         }
 
