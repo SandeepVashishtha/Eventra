@@ -1,3 +1,4 @@
+import useFileUpload from "hooks/useFileUpload";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactDOM from "react-dom"; // 🔥 FIX: Required for Modal Portal
 import { useAuth } from "context/AuthContext";
@@ -87,6 +88,20 @@ const allSkillSuggestions = [
 const urlRegex = /^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w-._~:/?#[\]@!$&'()*+,;=]*)?$/i;
 
 const EditProfile = () => {
+  // Fix: useFileUpload replaces raw FileReader + manual 1MB size check
+  // Adds MIME type validation, loading state, and auto-revokes object URLs.
+  const {
+    preview: avatarPreview,
+    error: uploadError,
+    isProcessing: isUploadingAvatar,
+    handleFileChange: handleAvatarFileChange,
+    reset: resetAvatar,
+  } = useFileUpload({
+    mode: "base64",
+    maxBytes: 1_048_576, // 1MB — matches previous alert() limit
+    accept: ["image/*"],
+  });
+
   const navigate = useNavigate();
   const { user, setUser } = useAuth();
 
