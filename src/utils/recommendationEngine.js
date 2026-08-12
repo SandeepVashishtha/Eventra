@@ -437,10 +437,11 @@ export const calculateRecommendationScore = (
   };
 };
 
-export const getTrendingEventsForArea = (events = [], location = "", limit = 4) =>
-  [...events]
+export const getTrendingEventsForArea = (events = [], location = "", limit = 4) => {
+  const matchesArea = createLocationMatcher(location);
+  return [...events]
     .filter((event) => !calculateTemporalUrgencyScore(event.date || event.startDate).isExpired)
-    .filter((event) => eventMatchesArea(event, location) || event.eventMode === "online")
+    .filter((event) => matchesArea(normalizeText(event?.location)) || event.eventMode === "online")
     .map((event) => ({
       ...event,
       trendingScore: Math.round(getPopularityScore(event) * 10),
