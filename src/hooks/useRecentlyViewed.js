@@ -132,7 +132,15 @@ const useRecentlyViewed = () => {
 
   useEffect(() => {
     const handleStorageChange = (event) => handleStorageUpdate(event, setRecentlyViewed);
-    const handleLocalUpdate = () => setRecentlyViewed(loadInitialHistory());
+    const handleLocalUpdate = () => {
+    const loaded = loadInitialHistory();
+    setRecentlyViewed((prev) => {
+      if (JSON.stringify(prev) === JSON.stringify(loaded)) {
+        return prev;
+      }
+      return loaded;
+    });
+  };
     
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('local-storage-recently-viewed-update', handleLocalUpdate);
