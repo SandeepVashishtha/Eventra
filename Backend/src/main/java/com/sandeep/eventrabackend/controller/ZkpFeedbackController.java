@@ -1,5 +1,7 @@
 package com.sandeep.eventrabackend.controller;
 
+import com.sandeep.eventrabackend.model.ZkpFeedback;
+import com.sandeep.eventrabackend.repository.ZkpFeedbackRepository;
 import com.sandeep.eventrabackend.service.ZkpVerifierService;
 import com.sandeep.eventrabackend.service.ZkpVerifierService.ZkpProofPayload;
 import jakarta.validation.Valid;
@@ -21,6 +23,9 @@ public class ZkpFeedbackController {
     @Autowired
     private ZkpVerifierService zkpVerifierService;
 
+    @Autowired
+    private ZkpFeedbackRepository zkpFeedbackRepository;
+
     @PostMapping("/submit")
     public ResponseEntity<Map<String, Object>> submitAnonymousFeedback(@Valid @RequestBody ZkpProofPayload payload) {
         Map<String, Object> response = new HashMap<>();
@@ -37,6 +42,19 @@ public class ZkpFeedbackController {
             response.put("success", false);
             response.put("message", "This proof has already been used. Each nullifier can only be submitted once.");
             return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+        }
+
+        try {
+            zkpFeedbackRepository.save(new ZkpFeedback(
+                    Long.valueOf(payload.getEventId()),
+                    payload.getNullifierHash(),
+                    payload.getFeedbackCategory(),
+                    payload.getFeedbackContent(),
+                    payload.getSeverity()));
+        } catch (RuntimeException e) {
+            response.put("success", false);
+            response.put("message", "Failed to persist anonymous feedback. Please try again.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
 
         response.put("success", true);
