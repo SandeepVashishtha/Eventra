@@ -44,6 +44,11 @@ google:
 spring:
   profiles:
     default: dev
+  flyway:
+    # Flyway is on the classpath for Postgres deployments, but must stay off
+    # for the H2-based dev/test profiles (the migration chain assumes the
+    # Hibernate-managed schema). Enable it explicitly on Postgres profiles.
+    enabled: ${FLYWAY_ENABLED:false}
   cache:
     type: redis
   data:
