@@ -52,7 +52,7 @@ function attemptStateRecovery() {
       sessionStorage.removeItem("eventra_component_state_backup");
       return true;
     }
-  } catch {}
+  } catch { console.warn("[ErrorBoundary] Recovery operation failed"); }
   return false;
 }
 
@@ -67,7 +67,7 @@ function saveAppStateSnapshot() {
         for (let i = 0; i < localStorage.length; i++) {
           const k = localStorage.key(i);
           if (k && ALLOWED.some((safe) => k.startsWith(safe))) {
-            try { snap[k] = localStorage.getItem(k)?.slice(0, 100); } catch {}
+            try { snap[k] = localStorage.getItem(k)?.slice(0, 100); } catch { console.warn("[ErrorBoundary] Recovery operation failed"); }
           }
         }
         return snap;
@@ -85,7 +85,7 @@ function saveAppStateSnapshot() {
       })(),
     };
     sessionStorage.setItem("eventra_state_snapshot", JSON.stringify(snapshot));
-  } catch {}
+  } catch { console.warn("[ErrorBoundary] Recovery operation failed"); }
 }
 
 function buildDiagnosticReport(errorId, error, errorInfo) {
