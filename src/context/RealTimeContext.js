@@ -199,7 +199,7 @@ function AnalyticsProvider({ children }) {
 }
 
 // --- 4.5 Live Audience Coordination Provider ---
-const LiveAudienceContext = createContext(null);
+export const LiveAudienceContext = createContext(null);
 
 // Maximum number of questions retained per event. The reducer keeps a rolling
 // window so long-running, high-traffic sessions (hackathon demo rooms, live
