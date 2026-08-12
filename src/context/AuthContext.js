@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useCallback, useRef, useState } from "react";
-import { setOnUnauthorizedHandler, setRequiresReauthHandler, setAuthToken, setRefreshToken, apiUtils } from "../config/api.js";
+import { setOnUnauthorizedHandler, setRequiresReauthHandler, setReauthRequired, setAuthToken, setRefreshToken, apiUtils } from "../config/api.js";
 import { getRefreshToken } from "../config/api/interceptors.js";
 import { authService } from "../services/authService.js";
 import { syncSecureStorage } from "../utils/secureStorage.js";
@@ -291,6 +291,7 @@ export const AuthProvider = ({ children }) => {
     // Intercept 401 errors globally at Axios layer to auto-logout user
     setOnUnauthorizedHandler(() => clearExpiredSessionRef.current());
     setRequiresReauthHandler(() => {
+      setReauthRequired(true);
       setRequiresReauth(true);
     });
     return () => {
@@ -502,7 +503,14 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider value={value}>
       {children}
-      {requiresReauth && <ReAuthModal onSuccess={() => setRequiresReauth(false)} />}
+      {requiresReauth && (
+        <ReAuthModal
+          onSuccess={() => {
+            setReauthRequired(false);
+            setRequiresReauth(false);
+          }}
+        />
+      )}
     </AuthContext.Provider>
   );
 };

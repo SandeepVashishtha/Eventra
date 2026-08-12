@@ -52,17 +52,34 @@ const signRequestConfig = async (config) => {
 
 let onUnauthorized = null;
 let _onRequiresReauth = null;
+let _reauthRequired = false;
 
 let _authToken = null;
 let _refreshToken = null;
 
 export const setOnUnauthorizedHandler = (handler) => { onUnauthorized = handler; };
 export const setOnRequiresReauthHandler = (handler) => { _onRequiresReauth = handler; };
+export const setReauthRequired = (value) => { _reauthRequired = Boolean(value); };
+export const isReauthRequired = () => _reauthRequired;
 export const setAuthToken = (token) => { _authToken = token; };
 export const setRefreshToken = (token) => { _refreshToken = token; };
 export const getRefreshToken = () => _refreshToken;
 
+const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+const isReauthUrl = (url) => typeof url === "string" && url.includes("/auth/reauth");
+
+const assertReauthAllowsRequest = (config) => {
+  const method = config.method?.toUpperCase();
+  if (_reauthRequired && MUTATING_METHODS.has(method) && !isReauthUrl(config.url)) {
+    throw new ApiError("Re-authentication required before this action can continue.", {
+      status: 401,
+      data: { code: "REQUIRES_REAUTH" },
+    });
+  }
+};
+
 export const createRequestInterceptor = (isDev) => async (config) => {
+  assertReauthAllowsRequest(config);
   if (isDev) {
     logger.info(`[API ${config.method?.toUpperCase()}]`, config.url || "");
   }
@@ -107,6 +124,7 @@ export const createResponseInterceptor = (API) => {
 
     if (status === 401) {
       if (errorCode === "REQUIRES_REAUTH" && _onRequiresReauth) {
+        _reauthRequired = true;
         _onRequiresReauth();
       } else if (onUnauthorized) {
         onUnauthorized();
@@ -183,6 +201,7 @@ const normalizeApiErrorWithTimeout = (error, timeoutMs) => {
 
 export function setupRequestInterceptor(api, { isDev, buildApiUrl, getAuthToken,   }) {
   api.interceptors.request.use(async (config) => {
+    assertReauthAllowsRequest(config);
     if (isDev) {
       logger.info(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
     }
@@ -253,6 +272,7 @@ export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthori
 
       if (status === 401) {
         if (errorCode === "REQUIRES_REAUTH") {
+          _reauthRequired = true;
           if (onRequiresReauth) onRequiresReauth();
           throw normalizeApiErrorWithTimeout(error, timeoutMs);
         }
