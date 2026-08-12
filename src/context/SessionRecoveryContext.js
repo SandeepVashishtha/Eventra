@@ -117,6 +117,9 @@ export const SessionRecoveryProvider = ({ children }) => {
   const isLoadingRef = useRef(true);
   const saveTimeoutRef = useRef(null);
   const activityTimeoutRef = useRef(null);
+  // Guard flag so a debounced save scheduled before clearSession is ignored
+  // instead of re-persisting cleared data (issue #14606).
+  const saveCancelledRef = useRef(false);
   const cloudRecovery = useCloudSessionRecovery({
     user,
     isAuthenticated: isAuthenticated?.() || false,
@@ -231,12 +234,15 @@ export const SessionRecoveryProvider = ({ children }) => {
 
   const saveSession = useCallback(
     (state) => {
+      // A fresh save supersedes any previously cancelled intent (issue #14606)
+      saveCancelledRef.current = false;
+
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
 
       saveTimeoutRef.current = setTimeout(async () => {
-        if (isLoadingRef.current) return;
+        if (isLoadingRef.current || saveCancelledRef.current) return;
         try {
           if (!isCryptoAvailable()) return;
 
@@ -265,6 +271,10 @@ export const SessionRecoveryProvider = ({ children }) => {
           };
 
           const ciphertext = await encryptSession(JSON.stringify(currentSession), key);
+
+          // Abort if the session was cleared while we were encrypting (issue #14606)
+          if (saveCancelledRef.current) return;
+
           localStorage.setItem(SESSION_KEY, ciphertext);
           setSessionData(currentSession);
           setHasSession(true);
@@ -292,6 +302,13 @@ export const SessionRecoveryProvider = ({ children }) => {
 
   const clearSession = useCallback(() => {
     try {
+      // Cancel any pending debounced save so cleared data cannot be
+      // re-persisted after sign-out / clear-session (issue #14606).
+      saveCancelledRef.current = true;
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
+      }
       localStorage.removeItem(SESSION_KEY);
       setSessionData(null);
       setHasSession(false);
