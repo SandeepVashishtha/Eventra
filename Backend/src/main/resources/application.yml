@@ -12,6 +12,9 @@ app:
   zkp:
     proof:
       verification-secret: ${ZKP_PROOF_VERIFICATION_SECRET:eventra-zkp-verification-secret}
+    range:
+      min: ${ZKP_RANGE_MIN:18}
+      max: ${ZKP_RANGE_MAX:120}
   rate-limit:
     enabled: ${RATE_LIMIT_ENABLED:true}
     trusted-proxy-hops: ${RATE_LIMIT_TRUSTED_PROXY_HOPS:1}
