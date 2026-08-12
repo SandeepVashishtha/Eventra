@@ -22,6 +22,10 @@ const optionalEnvVars = {
     keys: ["VITE_SENTRY_DSN", "REACT_APP_SENTRY_DSN"],
     fallback: "", // No fallback — absence means Sentry is intentionally disabled
   },
+  FB_APP_ID: {
+    keys: ["VITE_FB_APP_ID", "REACT_APP_FB_APP_ID"],
+    fallback: "", // No fallback — absence means Messenger sharing is disabled
+  },
 };
 
 const getFirstDefinedEnvValue = (keys = []) => {
@@ -93,11 +97,20 @@ export const ENV = {
     optionalEnvVars.PUBLIC_URL.keys,
     optionalEnvVars.PUBLIC_URL.fallback
   ),
+  FB_APP_ID: getEnvVar(
+    optionalEnvVars.FB_APP_ID.keys,
+    optionalEnvVars.FB_APP_ID.fallback
+  ),
 };
 
 export const SENTRY_DSN = getEnvVar(
   optionalEnvVars.SENTRY_DSN.keys,
   optionalEnvVars.SENTRY_DSN.fallback
+);
+
+export const FB_APP_ID = getEnvVar(
+  optionalEnvVars.FB_APP_ID.keys,
+  optionalEnvVars.FB_APP_ID.fallback
 );
 
 export const isSentryEnabled = Boolean(SENTRY_DSN && currentMode === "production");

@@ -31,7 +31,7 @@ assert.ok(fbUrl.startsWith("https://www.facebook.com/sharer/sharer.php"));
 assert.ok(fbUrl.includes(encodeURIComponent(shareData.url)));
 
 const messengerUrl = generateSharingUrl(shareData, "messenger");
-assert.equal(messengerUrl, "", "messenger sharing is intentionally disabled");
+assert.equal(messengerUrl, "", "messenger falls back to empty when REACT_APP_FB_APP_ID is not set");
 
 const liUrl = generateSharingUrl(shareData, "linkedin");
 assert.ok(liUrl.startsWith("https://www.linkedin.com/sharing/share-offsite/"));
