@@ -3,7 +3,7 @@
  */
 
 import { renderHook, act } from "@testing-library/react";
-import useCarouselKeyboardNav from "../useCarouselKeyboardNav";
+import useCarouselKeyboardNav from "./useCarouselKeyboardNav";
 
 function makeKeyEvent(key, target, currentTarget) {
   return {
