@@ -241,6 +241,10 @@ export const getTimezoneOffsetInfo = (date = new Date(), timezone = getUserTimez
   }
 };
 
+export const isDST = (date = new Date(), timezone = getUserTimezone()) => {
+  return getTimezoneOffsetInfo(date, timezone).isDST;
+};
+
 /**
  * Enhanced DST-Aware conversion from local date/time to UTC epoch ms.
  * Handles ambiguity in DST transitions:
