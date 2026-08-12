@@ -26,4 +26,10 @@ export {
   RESET_COOLDOWN_SECONDS,
   secondsUntilUnlock,
   STORAGE_KEY_RESET_LAST_SUBMIT,
+  getBackoffDelay,
+  STORAGE_KEY_ATTEMPTS,
+  STORAGE_KEY_LOCKOUT_UNTIL,
+  readPersistedRateLimit,
+  persistRateLimit,
+  clearPersistedRateLimit,
 } from "../components/utils/rateLimitUtils.js";
