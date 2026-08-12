@@ -105,9 +105,9 @@ export const parseEventToUTC = (dateStr, timeStr, timezone) => {
   const [year, month, day] = normalizedDate.split('-').map(Number);
   const { hours, minutes } = parsedTime;
 
-  try {
-    const utcCandidate = Date.UTC(year, month - 1, day, hours, minutes, 0, 0);
+  const targetLocalMs = Date.UTC(year, month - 1, day, hours, minutes, 0, 0);
 
+  try {
     const formatter = new Intl.DateTimeFormat('en-CA', {
       timeZone: tz,
       year: 'numeric',
@@ -125,15 +125,25 @@ export const parseEventToUTC = (dateStr, timeStr, timezone) => {
         formatter.formatToParts(utcCandidate).map((p) => [p.type, p.value])
       );
 
-    const tzYear = parseInt(parts.year, 10);
-    const tzMonth = parseInt(parts.month, 10) - 1;
-    const tzDay = parseInt(parts.day, 10);
-    const tzHour = parseInt(parts.hour, 10) % 24;
-    const tzMinute = parseInt(parts.minute, 10);
+      const tzYear = parseInt(parts.year, 10);
+      const tzMonth = parseInt(parts.month, 10) - 1;
+      const tzDay = parseInt(parts.day, 10);
+      const tzHour = parseInt(parts.hour, 10) % 24;
+      const tzMinute = parseInt(parts.minute, 10);
+      const formattedLocalMs = Date.UTC(
+        tzYear,
+        tzMonth,
+        tzDay,
+        tzHour,
+        tzMinute,
+        0,
+        0
+      );
+      const delta = targetLocalMs - formattedLocalMs;
 
-    const diff =
-      utcCandidate -
-      Date.UTC(tzYear, tzMonth, tzDay, tzHour, tzMinute, 0, 0);
+      if (delta === 0) return utcCandidate;
+      utcCandidate += delta;
+    }
 
     return utcCandidate;
   } catch {
