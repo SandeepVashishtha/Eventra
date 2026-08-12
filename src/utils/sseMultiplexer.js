@@ -5,6 +5,8 @@ import { SSE_BASE_URL } from "../config/backendConfig.js";
 const MULTIPLEX_CHANNEL_NAME = "eventra_sse_multiplexer";
 const LOCK_NAME = "eventra_sse_leader_lock";
 const HEARTBEAT_KEY = "eventra_sse_leader_heartbeat";
+const LOCAL_STORAGE_CONFIRM_MIN_MS = 25;
+const LOCAL_STORAGE_CONFIRM_JITTER_MS = 75;
 const TAB_ID = Math.random().toString(36).substring(2, 9);
 
 export class SseMultiplexer {
