@@ -175,7 +175,7 @@ const MeshNetworkChat = () => {
                    <div className="mt-2 space-y-1 text-emerald-400 font-bold">
                      <p>&gt; Routing payload via peer nodes...</p>
                      {messageHops.map((hop, i) => (
-                       <p key={i} className="animate-fade-in-up" style={{ animationDelay: \`\${hop.time}ms\` }}>
+                       <p key={i} className="animate-fade-in-up" style={{ animationDelay: `${hop.time}ms` }}>
                          &gt; Hop {i+1}: Handshake with {hop.id}... OK.
                        </p>
                      ))}
