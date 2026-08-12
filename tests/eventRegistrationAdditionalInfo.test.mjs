@@ -1,11 +1,14 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-const sourcePath = "src/Pages/Events/EventRegistration.js";
+const sourcePath = "src/Pages/Events/EventRegistration.jsx";
 const source = readFileSync(sourcePath, "utf8");
 
+// The label is now rendered via i18n key — match the translation call
+// instead of the English literal which was removed when the form migrated
+// to react-i18next.
 const additionalInfoLabelMatches =
-  source.match(/Additional Information \(Optional\)/g) || [];
+  source.match(/t\(["']eventRegistration\.formAdditionalInfo["']\)/g) || [];
 const additionalInfoTextareaMatches =
   source.match(/<textarea[\s\S]*?name="additionalInfo"[\s\S]*?>/g) || [];
 const additionalInfoIdMatches =
@@ -14,7 +17,7 @@ const additionalInfoIdMatches =
 assert.equal(
   additionalInfoLabelMatches.length,
   1,
-  `${sourcePath} must render exactly one Additional Information label`
+  `${sourcePath} must render exactly one Additional Information i18n label key`
 );
 
 assert.equal(
@@ -73,7 +76,7 @@ assert.match(
 );
 
 const offlinePayloadSection = source.slice(
-  source.indexOf("const payload = {"),
+  source.indexOf("const payload = isFreshlyFull"),
   source.indexOf("const success = await pushToQueue")
 );
 
@@ -85,7 +88,31 @@ assert.match(
 
 assert.match(
   source,
-  /addRegistration\(event, formData\)/,
+  /actionType: isFreshlyFull \? "JOIN_WAITLIST" : "REGISTER_EVENT"/,
+  "The offline queued item must switch to JOIN_WAITLIST when the event filled up"
+);
+
+assert.match(
+  offlinePayloadSection,
+  /userId: user\.id \|\| user\.email/,
+  "The offline queued JOIN_WAITLIST payload must carry the waitlist contract userId"
+);
+
+assert.match(
+  offlinePayloadSection,
+  /email: user\.email/,
+  "The offline queued JOIN_WAITLIST payload must carry the waitlist contract email"
+);
+
+assert.match(
+  offlinePayloadSection,
+  /eventTitle: event\?\.title \|\| "the event"/,
+  "The offline queued JOIN_WAITLIST payload must carry the waitlist contract eventTitle"
+);
+
+assert.match(
+  source,
+  /addRegistration\(event, formData(?:,|\))/,
   "Local registration state must continue receiving the submitted formData"
 );
 

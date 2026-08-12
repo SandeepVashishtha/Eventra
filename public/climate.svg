@@ -1,0 +1,16 @@
+<svg width="1200" height="700" xmlns="http://www.w3.org/2000/svg">
+<rect width="1200" height="700" fill="#052e2b"></rect>
+
+<text x="60" y="100" fill="#a7f3d0" font-size="48" font-weight="bold">
+Climate Data Visualizer
+</text>
+
+<!-- charts -->
+<rect x="120" y="420" width="120" height="160" fill="#22c55e"></rect>
+<rect x="300" y="360" width="120" height="220" fill="#16a34a"></rect>
+<rect x="480" y="300" width="120" height="280" fill="#4ade80"></rect>
+<rect x="660" y="340" width="120" height="240" fill="#22c55e"></rect>
+
+<!-- globe -->
+<circle cx="980" cy="340" r="120" fill="rgba(34,197,94,0.2)" stroke="#86efac"></circle>
+</svg>

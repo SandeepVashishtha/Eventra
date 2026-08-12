@@ -1,0 +1,16 @@
+title = "Eventra Secret Scanning Configuration"
+
+[allowlist]
+description = "Allow common documentation and test examples"
+
+paths = [
+  '''docs/''',
+  '''tests/'''
+]
+
+regexes = [
+  '''example[_-]?key''',
+  '''sample[_-]?token''',
+  '''dummy[_-]?secret''',
+  '''test[_-]?password'''
+]
