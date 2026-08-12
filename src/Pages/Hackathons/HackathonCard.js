@@ -8,6 +8,7 @@ import useReducedMotion from "hooks/useReducedMotion.js";
 import { getServerTime } from "utils/timeSync";
 import { useAuth } from "context/AuthContext";
 import { registerHackathon } from "services/hackathonService";
+import { getApiErrorStatus, getApiErrorMessage } from "config/api/errors.js";
 
 import ShareMenu from "components/common/ShareMenu";
 import { addHackathonToGoogleCalendar } from "utils/calendarUtils";
@@ -162,8 +163,8 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
       await registerHackathon(normalizedHackathon.id);
       toast.success(`Registered for ${normalizedHackathon.title}!`);
     } catch (error) {
-      const status = error?.response?.status;
-      const message = error?.response?.data?.message;
+      const status = getApiErrorStatus(error);
+      const message = getApiErrorMessage(error);
       if (status === 409) {
         toast.info(message || "You are already registered for this hackathon.");
       } else if (status === 401) {
