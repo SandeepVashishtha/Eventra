@@ -76,3 +76,22 @@ export const formatDraftAge = (isoTimestamp) => {
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
   return new Date(isoTimestamp).toLocaleDateString();
 };
+
+export const getDraftLastUpdated = (draft) => {
+  if (!draft?.updatedAt) return null;
+  const date = new Date(draft.updatedAt);
+  if (Number.isNaN(date.getTime())) return null;
+  return date;
+};
+
+export const formatDraftUpdatedAt = (draft) => {
+  const date = getDraftLastUpdated(draft);
+  if (!date) return "Not updated yet";
+  return date.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
