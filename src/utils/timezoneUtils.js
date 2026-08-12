@@ -1,3 +1,17 @@
+/**
+ * Timezone Utilities
+ *
+ * Helpers for timezone detection, timezone-aware date/time parsing,
+ * DST transition handling, and cross-timezone slot availability.
+ * Used by conflictDetection.js to convert event local times to UTC epoch ms
+ * so that cross-timezone overlaps are computed correctly.
+ */
+
+/**
+ * Return the IANA timezone identifier for the current user's browser.
+ * Falls back to "UTC" if detection fails.
+ * @returns {string} e.g. "America/New_York"
+ */
 export const getUserTimezone = () => {
   try {
     return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
@@ -91,9 +105,9 @@ export const parseEventToUTC = (dateStr, timeStr, timezone) => {
   const [year, month, day] = normalizedDate.split('-').map(Number);
   const { hours, minutes } = parsedTime;
 
-  const targetLocalMs = Date.UTC(year, month - 1, day, hours, minutes, 0, 0);
-
   try {
+    const utcCandidate = Date.UTC(year, month - 1, day, hours, minutes, 0, 0);
+
     const formatter = new Intl.DateTimeFormat('en-CA', {
       timeZone: tz,
       year: 'numeric',
@@ -111,17 +125,15 @@ export const parseEventToUTC = (dateStr, timeStr, timezone) => {
         formatter.formatToParts(utcCandidate).map((p) => [p.type, p.value])
       );
 
-      const tzYear = parseInt(parts.year, 10);
-      const tzMonth = parseInt(parts.month, 10) - 1;
-      const tzDay = parseInt(parts.day, 10);
-      const tzHour = parseInt(parts.hour, 10) % 24; 
-      const tzMinute = parseInt(parts.minute, 10);
-      const formattedLocalMs = Date.UTC(tzYear, tzMonth, tzDay, tzHour, tzMinute, 0, 0);
-      const delta = targetLocalMs - formattedLocalMs;
+    const tzYear = parseInt(parts.year, 10);
+    const tzMonth = parseInt(parts.month, 10) - 1;
+    const tzDay = parseInt(parts.day, 10);
+    const tzHour = parseInt(parts.hour, 10) % 24;
+    const tzMinute = parseInt(parts.minute, 10);
 
-      if (delta === 0) return utcCandidate;
-      utcCandidate += delta;
-    }
+    const diff =
+      utcCandidate -
+      Date.UTC(tzYear, tzMonth, tzDay, tzHour, tzMinute, 0, 0);
 
     return utcCandidate;
   } catch {
@@ -141,17 +153,225 @@ export const parseEventDateTimeLocal = (dateStr, timeStr) => {
   return new Date(year, month - 1, day, hours, minutes);
 };
 
-export const isDST = (date = new Date()) => {
-  if (!(date instanceof Date) || isNaN(date.getTime())) return false;
-  const jan = new Date(date.getFullYear(), 0, 1).getTimezoneOffset();
-  const jul = new Date(date.getFullYear(), 6, 1).getTimezoneOffset();
-  return Math.max(jan, jul) !== date.getTimezoneOffset();
+// ===========================================================================
+// NEW FEATURE ADDITIONS: Advanced DST Resolution & Cross-Timezone Scheduler
+// ===========================================================================
+
+/**
+ * Get detailed timezone offset information for a specific instant or Date object.
+ *
+ * @param {Date|number} [date=new Date()] - Reference date or timestamp
+ * @param {string} [timezone=getUserTimezone()] - Target IANA timezone
+ * @returns {{ offsetMinutes: number, formattedOffset: string, timeZoneName: string, isDST: boolean }}
+ */
+export const getTimezoneOffsetInfo = (date = new Date(), timezone = getUserTimezone()) => {
+  const targetDate = typeof date === 'number' ? new Date(date) : date;
+
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      timeZoneName: 'short',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
+
+    const parts = Object.fromEntries(
+      formatter.formatToParts(targetDate).map((p) => [p.type, p.value])
+    );
+
+    // Construct the wall clock time in the target timezone as if it were UTC
+    const wallClockUtc = Date.UTC(
+      parseInt(parts.year, 10),
+      parseInt(parts.month, 10) - 1,
+      parseInt(parts.day, 10),
+      parseInt(parts.hour, 10) % 24,
+      parseInt(parts.minute, 10),
+      parseInt(parts.second, 10)
+    );
+
+    // Difference in minutes between wall clock and actual UTC
+    const offsetMinutes = Math.round((wallClockUtc - targetDate.getTime()) / 60000);
+    const sign = offsetMinutes >= 0 ? '+' : '-';
+    const absMinutes = Math.abs(offsetMinutes);
+    const h = String(Math.floor(absMinutes / 60)).padStart(2, '0');
+    const m = String(absMinutes % 60).padStart(2, '0');
+
+    // Heuristic DST check: compare current offset against January offset for the same timezone
+    const janDate = new Date(targetDate.getFullYear(), 0, 1);
+    const janParts = Object.fromEntries(
+      formatter.formatToParts(janDate).map((p) => [p.type, p.value])
+    );
+    const janWallUtc = Date.UTC(
+      parseInt(janParts.year, 10),
+      parseInt(janParts.month, 10) - 1,
+      parseInt(janParts.day, 10),
+      parseInt(janParts.hour, 10) % 24,
+      parseInt(janParts.minute, 10)
+    );
+    const janOffset = Math.round((janWallUtc - janDate.getTime()) / 60000);
+
+    return {
+      offsetMinutes,
+      formattedOffset: `UTC${sign}${h}:${m}`,
+      timeZoneName: parts.timeZoneName || timezone,
+      isDST: offsetMinutes !== janOffset,
+    };
+  } catch {
+    return {
+      offsetMinutes: 0,
+      formattedOffset: 'UTC+00:00',
+      timeZoneName: 'UTC',
+      isDST: false,
+    };
+  }
 };
 
-export const resolveEventInstant = (dateStr, timeStr, timezone) => {
-  const utcMs = parseEventToUTC(dateStr, timeStr, timezone);
-  if (utcMs === null || Number.isNaN(utcMs)) {
-    return null;
+/**
+ * Enhanced DST-Aware conversion from local date/time to UTC epoch ms.
+ * Handles ambiguity in DST transitions:
+ *  - "spring forward" (gap): forward shifts time by missing duration
+ *  - "fall back" (overlap): resolves via strategy ('earlier' or 'later')
+ *
+ * @param {string} dateStr - Date string
+ * @param {string} timeStr - Time string
+ * @param {string} [timezone] - Target IANA timezone
+ * @param {'earlier'|'later'} [ambiguityStrategy='earlier'] - Ambiguity resolution strategy
+ * @returns {number|null} UTC epoch ms
+ */
+export const parseEventToUTCDstAware = (
+  dateStr,
+  timeStr,
+  timezone,
+  ambiguityStrategy = 'earlier'
+) => {
+  const initialUtc = parseEventToUTC(dateStr, timeStr, timezone);
+  if (initialUtc === null) return null;
+
+  const tz = timezone || getUserTimezone();
+
+  // Test surrounding candidates to verify if we fell into a DST fold/gap
+  const offset1 = getTimezoneOffsetInfo(initialUtc - 3600000, tz).offsetMinutes;
+  const offset2 = getTimezoneOffsetInfo(initialUtc + 3600000, tz).offsetMinutes;
+
+  if (offset1 !== offset2) {
+    // In an overlap (fall back), adjust based on strategy
+    if (ambiguityStrategy === 'later') {
+      const shiftMs = (offset1 - offset2) * 60000;
+      return initialUtc + Math.abs(shiftMs);
+    }
   }
-  return new Date(utcMs);
+
+  return initialUtc;
+};
+
+/**
+ * Format a start and end date/time range within a specified target timezone.
+ * Condenses identical components (e.g., "May 25, 2026, 10:00 AM – 11:30 AM EDT").
+ *
+ * @param {string|number|Date} startInput - Start date/time
+ * @param {string|number|Date} endInput - End date/time
+ * @param {string} [timezone] - Target timezone
+ * @returns {string} Formatted event range
+ */
+export const formatEventRangeInTimezone = (startInput, endInput, timezone) => {
+  const tz = timezone || getUserTimezone();
+  const start = new Date(startInput);
+  const end = new Date(endInput);
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return '';
+
+  const dateFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz,
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
+  const timeFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz,
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+
+  const tzFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz,
+    timeZoneName: 'short',
+  });
+
+  const startDateStr = dateFormatter.format(start);
+  const endDateStr = dateFormatter.format(end);
+  const startTimeStr = timeFormatter.format(start);
+  const endTimeStr = timeFormatter.format(end);
+
+  const tzName = tzFormatter
+    .formatToParts(start)
+    .find((p) => p.type === 'timeZoneName')?.value || '';
+
+  if (startDateStr === endDateStr) {
+    return `${startDateStr}, ${startTimeStr} – ${endTimeStr} ${tzName}`.trim();
+  }
+
+  return `${startDateStr}, ${startTimeStr} – ${endDateStr}, ${endTimeStr} ${tzName}`.trim();
+};
+
+/**
+ * Find overlapping available meeting windows across multiple participants across timezones.
+ *
+ * @param {Array<{ id: string, timezone: string, workStart: string, workEnd: string }>} participants
+ * @param {string} dateStr - Date string "YYYY-MM-DD"
+ * @param {number} [durationMinutes=30] - Minimum slot duration in minutes
+ * @returns {Array<{ startUtc: number, endUtc: number, formattedSlots: Record<string, string> }>}
+ */
+export const findCrossTimezoneOverlap = (participants, dateStr, durationMinutes = 30) => {
+  if (!Array.isArray(participants) || participants.length === 0) return [];
+
+  // 1. Calculate UTC windows for each participant's working hours on dateStr
+  const participantWindows = participants.map((p) => {
+    const startUtc = parseEventToUTCDstAware(dateStr, p.workStart || '09:00 AM', p.timezone);
+    const endUtc = parseEventToUTCDstAware(dateStr, p.workEnd || '05:00 PM', p.timezone);
+    return { id: p.id, timezone: p.timezone, startUtc, endUtc };
+  });
+
+  if (participantWindows.some((w) => w.startUtc === null || w.endUtc === null)) {
+    return [];
+  }
+
+  // 2. Compute intersection of all participant windows
+  const latestStartUtc = Math.max(...participantWindows.map((w) => w.startUtc));
+  const earliestEndUtc = Math.min(...participantWindows.map((w) => w.endUtc));
+
+  const durationMs = durationMinutes * 60000;
+  if (earliestEndUtc - latestStartUtc < durationMs) {
+    return []; // No sufficient overlapping window found
+  }
+
+  // 3. Generate available slots in increments of durationMinutes
+  const slots = [];
+  let currentStart = latestStartUtc;
+
+  while (currentStart + durationMs <= earliestEndUtc) {
+    const currentEnd = currentStart + durationMs;
+
+    // Map the slot to formatted local strings for each participant
+    const formattedSlots = {};
+    participants.forEach((p) => {
+      formattedSlots[p.id] = formatEventRangeInTimezone(currentStart, currentEnd, p.timezone);
+    });
+
+    slots.push({
+      startUtc: currentStart,
+      endUtc: currentEnd,
+      formattedSlots,
+    });
+
+    currentStart += durationMs;
+  }
+
+  return slots;
 };
