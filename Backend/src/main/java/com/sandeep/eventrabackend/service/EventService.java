@@ -461,8 +461,30 @@ public class EventService {
          * @return the saved event
          */
         @Transactional
+        private static final Set<String> ALLOWED_CATEGORIES = Set.of(
+                "Tech", "Art", "Music", "Sports", "Education", "Networking", "Other"
+        );
+
+        private void validateEventCategories(Set<String> categories) {
+                if (categories == null) return;
+                for (String category : categories) {
+                        if (!ALLOWED_CATEGORIES.contains(category)) {
+                                throw new IllegalArgumentException("Invalid event category: " + category);
+                        }
+                }
+        }
+
+        private void validateEventCategory(String category) {
+                if (category == null || category.isBlank()) return;
+                if (!ALLOWED_CATEGORIES.contains(category)) {
+                        throw new IllegalArgumentException("Invalid event category: " + category);
+                }
+        }
+
         public EventResponse createEvent(EventCreateRequest request, String userEmail) {
                 Event event = new Event();
+                validateEventCategory(request.getCategory());
+                validateEventCategories(request.getCategories());
                 event.setTitle(request.getTitle());
                 event.setDescription(request.getDescription());
                 event.setLocation(request.getLocation());
@@ -519,6 +541,8 @@ public class EventService {
                 }
 
                 Integer previousCapacity = event.getCapacity();
+                validateEventCategory(request.getCategory());
+                validateEventCategories(request.getCategories());
 
                 event.setTitle(request.getTitle());
                 event.setDescription(request.getDescription());
