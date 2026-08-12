@@ -5,6 +5,7 @@ import com.sandeep.eventrabackend.dto.request.LoginRequest;
 import com.sandeep.eventrabackend.dto.response.AuthResponse;
 import com.sandeep.eventrabackend.model.Role;
 import com.sandeep.eventrabackend.model.User;
+import com.sandeep.eventrabackend.repository.BlacklistedTokenRepository;
 import com.sandeep.eventrabackend.repository.HackathonRegistrationRepository;
 import com.sandeep.eventrabackend.repository.NotificationRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
@@ -33,6 +34,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -59,6 +61,9 @@ public class AuthLogoutTests {
 
     @Autowired
     private com.sandeep.eventrabackend.security.TokenBlacklistService tokenBlacklistService;
+
+    @Autowired
+    private BlacklistedTokenRepository blacklistedTokenRepository;
 
     private String jwtToken;
 
@@ -116,6 +121,24 @@ public class AuthLogoutTests {
         mockMvc.perform(get("/api/users/profile")
                         .header("Authorization", "Bearer " + jwtToken))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("Revoked token stays rejected after a restart (DB-backed blacklist)")
+    void testBlacklistPersistedInDatabase() throws Exception {
+        // 1. Logout -> token is revoked
+        mockMvc.perform(post("/api/auth/logout")
+                        .header("Authorization", "Bearer " + jwtToken))
+                .andExpect(status().isOk());
+
+        // 2. The revoked entry is persisted to the database
+        assertTrue(blacklistedTokenRepository.count() >= 1,
+                "blacklist row should be persisted to the database");
+
+        // 3. Simulate a restart: the store is read entirely from the database
+        // (no in-memory cache), so the revoked token must still be rejected.
+        assertTrue(tokenBlacklistService.isBlacklisted(jwtToken),
+                "revoked token must still be rejected after a restart");
     }
 
     @Test
