@@ -1,51 +1,37 @@
 import { useState } from "react";
 import { Link2, Check } from "lucide-react";
-import { toast } from "react-toastify";
+import useEventShare from "hooks/useEventShare";
 
-const CopyLinkButton = () => {
+const CopyLinkButton = ({ title = "Event", text = "Check out this event!", url }) => {
   const [copied, setCopied] = useState(false);
+  const { canNativeShare, shareEvent, copyInviteLink } = useEventShare({
+    fallbackMessage: "Event invite link copied to clipboard",
+  });
 
   const handleCopy = async () => {
-    const link = window.location.href;
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(link);
-      } else {
-        // Fallback for older browsers or non-HTTPS (Secure Context) environments
-        const textArea = document.createElement("textarea");
-        textArea.value = link;
-        textArea.style.position = "absolute";
-        textArea.style.left = "-999999px";
-        document.body.prepend(textArea);
-        textArea.select();
-        try {
-          document.execCommand("copy");
-        } finally {
-          textArea.remove();
-        }
-      }
+    const shareUrl = url || (typeof window !== "undefined" ? window.location.href : "");
+    const ok = canNativeShare
+      ? await shareEvent({ title, text, url: shareUrl })
+      : await copyInviteLink(shareUrl);
 
+    if (ok && !canNativeShare) {
       setCopied(true);
-      toast.success("Event link copied successfully!");
-
       setTimeout(() => {
         setCopied(false);
       }, 2000);
-    } catch (error) {
-      console.error("Failed to copy link:", error);
-      toast.error("Failed to copy link");
     }
   };
 
   return (
     <button
+      type="button"
       onClick={handleCopy}
       className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-300 shadow-md hover:shadow-lg ${
         copied
           ? "bg-green-600 text-white"
           : "bg-indigo-600 hover:bg-indigo-700 text-white"
       }`}
-      aria-label="Copy event link"
+      aria-label={canNativeShare ? "Share event invite" : "Copy event link"}
     >
       {copied ? (
         <>
@@ -55,7 +41,7 @@ const CopyLinkButton = () => {
       ) : (
         <>
           <Link2 size={18} />
-          Copy Link
+          {canNativeShare ? "Share Event" : "Copy Link"}
         </>
       )}
     </button>

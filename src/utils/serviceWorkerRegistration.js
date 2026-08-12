@@ -89,7 +89,7 @@ export const urlBase64ToUint8Array = (base64String) => {
  * Registers the service worker when the page finishes loading.
  */
 export const registerServiceWorker = () => {
-  if ('serviceWorker' in navigator) {
+  if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker
         .register(DEFAULT_CONFIG.swPath, { scope: DEFAULT_CONFIG.scope })
@@ -111,7 +111,7 @@ export const registerServiceWorker = () => {
  * Unregisters the currently active service worker once ready.
  */
 export const unregisterServiceWorker = () => {
-  if ('serviceWorker' in navigator) {
+  if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
     navigator.serviceWorker.ready
       .then((registration) => {
         registration.unregister().then((success) => {

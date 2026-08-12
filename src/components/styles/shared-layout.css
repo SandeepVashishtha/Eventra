@@ -651,9 +651,9 @@ footer.footer-dark {
 }
 
 .logout-link {
-  color: #ff6b6b !important;
-  background: none !important;
-  border: none !important;
+  color: #ff6b6b;
+  background: none;
+  border: none;
   text-align: left;
   font-size: 16px;
 }
