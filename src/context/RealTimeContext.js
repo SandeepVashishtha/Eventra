@@ -6,6 +6,7 @@ import {
   useMemo,
   useReducer,
   useRef,
+  useState,
 } from "react";
 import useRealTimeConnection, { SSE_STATUS } from "../hooks/useRealTimeConnection";
 
@@ -289,8 +290,27 @@ function LiveAudienceProvider({ children }) {
     status: SSE_STATUS.IDLE,
   });
 
+  // Only events the client is actively viewing are tracked. Live-audience
+  // traffic for any other event is ignored (issue #15333): a client must not
+  // receive the Q&A/poll activity of events it is not on.
+  const subscribedEventsRef = useRef(new Set());
+  const [subscribedCount, setSubscribedCount] = useState(0);
+
+  const subscribeToEvent = useCallback((eventId) => {
+    if (!eventId) return;
+    subscribedEventsRef.current.add(String(eventId));
+    setSubscribedCount(subscribedEventsRef.current.size);
+  }, []);
+
+  const unsubscribeFromEvent = useCallback((eventId) => {
+    if (!eventId) return;
+    subscribedEventsRef.current.delete(String(eventId));
+    setSubscribedCount(subscribedEventsRef.current.size);
+  }, []);
+
   const onMessage = useCallback((data) => {
-    if (!data || !data.eventId || !data.type) return;
+    if (!data || !data.eventId || !subscribedEventsRef.current.has(String(data.eventId))) return;
+    if (!data.type) return;
     const { eventId, type, payload } = data;
     switch (type) {
       case "NEW_QUESTION":
@@ -311,8 +331,11 @@ function LiveAudienceProvider({ children }) {
     }
   }, []);
 
+  // The global stream is only opened while at least one event is actively
+  // subscribed, so idle clients do not keep the live-audience connection open.
   const { status } = useRealTimeConnection("/stream/live-audience", {
     onMessage,
+    enabled: subscribedCount > 0,
   });
 
   useEffect(() => {
@@ -326,10 +349,10 @@ function LiveAudienceProvider({ children }) {
     });
   }, []);
 
-  const value = {
-    state,
-    loadInitialData
-  };
+  const value = useMemo(
+    () => ({ state, loadInitialData, subscribeToEvent, unsubscribeFromEvent }),
+    [state, loadInitialData, subscribeToEvent, unsubscribeFromEvent]
+  );
 
   return (
     <LiveAudienceContext.Provider value={value}>
