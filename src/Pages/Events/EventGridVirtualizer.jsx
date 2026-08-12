@@ -1,5 +1,5 @@
 import React from "react";
-import EventCard from "components/events/EventCard";
+import EventCard from "Pages/Events/EventCard";
 import { notifyLenisResize, getImageAspectRatioStyle } from "utils/lenisUtils";
 
 export default function EventGridVirtualizer({ events = [], viewMode = "grid" }) {
