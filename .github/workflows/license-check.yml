@@ -1,0 +1,38 @@
+name: License Check
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  license-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run License Checker
+        run: |
+          # Generate license summary and fail on explicitly denied licenses (e.g. GPL, AGPL)
+          npx license-checker-rseidelsohn --summary --failOn "GPL;AGPL;LGPL;SSPL" --json --out license-report.json
+        
+      - name: Upload License Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: license-report
+          path: license-report.json
+          retention-days: 30
