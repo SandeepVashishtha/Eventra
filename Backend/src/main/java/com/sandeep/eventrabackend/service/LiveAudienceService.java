@@ -28,8 +28,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -162,11 +165,16 @@ public class LiveAudienceService {
             throw new IllegalArgumentException("A poll can have at most 10 options");
         }
         List<String> options = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
         for (String option : request.getOptions()) {
             if (option == null || option.isBlank()) {
                 throw new IllegalArgumentException("Poll options cannot be blank");
             }
-            options.add(option.trim());
+            String normalized = option.trim();
+            if (!seen.add(normalized.toLowerCase(Locale.ROOT))) {
+                throw new IllegalArgumentException("Poll options must be unique");
+            }
+            options.add(normalized);
         }
         Map<String, Object> results = new HashMap<>();
         options.forEach(opt -> results.put(opt, 0));
