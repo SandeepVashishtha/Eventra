@@ -80,8 +80,14 @@ export const generateSharingUrl = (shareData, platform) => {
     case "facebook":
       return `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
 
-    case "messenger":
-      return "";
+    case "messenger": {
+      const fbAppId = process.env.REACT_APP_FB_APP_ID;
+      if (!fbAppId) {
+        console.warn("[shareUtils] Missing REACT_APP_FB_APP_ID environment variable for Messenger sharing.");
+        return "";
+      }
+      return `https://www.facebook.com/dialog/send?link=${encodedUrl}&app_id=${encodeURIComponent(fbAppId)}&redirect_uri=${encodedUrl}`;
+    }
 
     case "linkedin":
       return `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}&title=${encodedTitle}&summary=${encodedDescription}`;
