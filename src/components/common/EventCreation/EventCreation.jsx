@@ -1,3 +1,4 @@
+import useFormDirty from "hooks/useFormDirty";
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -38,6 +39,9 @@ import { safeJsonParse } from "../../../utils/safeJsonParse";
 
 
 const EventCreation = () => {
+  // Fix: useFormDirty replaces manual hasUnsavedChanges + beforeunload
+  const { isDirty: hasUnsavedChanges } = useFormDirty(formData);
+
   const prefersReducedMotion = useReducedMotion();
   const location = useLocation();
 
@@ -333,18 +337,7 @@ const EventCreation = () => {
       return Boolean(value);
     });
 
-    const handleBeforeUnload = (e) => {
-      if (hasUnsavedChanges) {
-        e.preventDefault();
-        e.returnValue = "";
-      }
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
+  // Fix: beforeunload handled by useFormDirty hook above
   }, [formData]);
 
   const resetForm = () => {

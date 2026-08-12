@@ -168,7 +168,7 @@ const FoodSpoilageTracker = () => {
                    <div className="absolute bottom-0 inset-x-0 h-1.5 bg-slate-100">
                      <div className={`h-full transition-all duration-1000 ${
                        platter.risk === 'critical' ? 'bg-rose-500' : platter.risk === 'warning' ? 'bg-amber-500' : 'bg-emerald-500'
-                     }`} style={{ width: \`\${(platter.remainingMinutes / platter.safetyMinutes) * 100}%\` }}></div>
+                     }`} style={{ width: `${(platter.remainingMinutes / platter.safetyMinutes) * 100}%` }}></div>
                    </div>
 
                  </div>

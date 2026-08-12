@@ -204,7 +204,7 @@ const CarbonFootprintGamification = () => {
                     <span>{tier === 'Green' ? '250 (Gold)' : '500 (VIP)'}</span>
                   </div>
                   <div className="w-full h-1.5 bg-black/20 rounded-full overflow-hidden">
-                    <div className="h-full bg-white transition-all duration-1000" style={{ width: \`\${Math.min(100, (ecoPoints / (tier === 'Green' ? 250 : 500)) * 100)}%\` }}></div>
+                    <div className="h-full bg-white transition-all duration-1000" style={{ width: `${Math.min(100, (ecoPoints / (tier === 'Green' ? 250 : 500)) * 100)}%` }}></div>
                   </div>
                 </div>
               )}

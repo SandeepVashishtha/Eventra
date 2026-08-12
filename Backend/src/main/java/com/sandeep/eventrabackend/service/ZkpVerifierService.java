@@ -1,5 +1,11 @@
 package com.sandeep.eventrabackend.service;
 
+import com.sandeep.eventrabackend.model.ZkpNullifier;
+import com.sandeep.eventrabackend.repository.ZkpNullifierRepository;
+import jakarta.validation.constraints.NotBlank;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -13,10 +19,19 @@ import java.util.HexFormat;
 @Service
 public class ZkpVerifierService {
 
+    @Value("${zkp.proof.verification-secret:eventra-zkp-verification-secret}")
+    private String verificationSecret;
+
+    @Autowired
+    private ZkpNullifierRepository zkpNullifierRepository;
+
     public static class ZkpProofPayload {
+        @NotBlank(message = "eventId is required")
         private String eventId;
+        @NotBlank(message = "proofHash is required")
         private String proofHash;
         private String merkleRoot;
+        @NotBlank(message = "nullifierHash is required")
         private String nullifierHash;
         private String feedbackCategory;
         private String feedbackContent;
@@ -46,22 +61,38 @@ public class ZkpVerifierService {
     }
 
     /**
-     * Mathematically verify ZKP proof integrity against Merkle root.
+     * Cryptographically verify a ZKP proof against the server-side
+     * verification secret and record the nullifier for one-time use.
      */
     public boolean verifyProof(ZkpProofPayload payload) {
-        if (payload == null || payload.getProofHash() == null || payload.getMerkleRoot() == null) {
+        if (payload == null || payload.getEventId() == null || payload.getProofHash() == null || payload.getNullifierHash() == null) {
             return false;
         }
 
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            String rawInput = payload.getEventId() + ":" + payload.getNullifierHash() + ":" + payload.getMerkleRoot();
+            String rawInput = verificationSecret + ":" + payload.getEventId() + ":" + payload.getNullifierHash();
             byte[] hash = digest.digest(rawInput.getBytes(StandardCharsets.UTF_8));
             String expectedProofHash = HexFormat.of().formatHex(hash);
 
-            // Accept valid proof hashes matching zero-knowledge commitment
-            return payload.getProofHash().equalsIgnoreCase(expectedProofHash) || payload.getProofHash().length() >= 16;
+            return payload.getProofHash().equalsIgnoreCase(expectedProofHash);
         } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Atomically persist a used nullifier so the same proof can never be
+     * accepted twice. Returns false when the nullifier was already recorded.
+     */
+    public boolean markNullifierUsed(String eventId, String nullifierHash) {
+        if (nullifierHash == null) {
+            return false;
+        }
+        try {
+            zkpNullifierRepository.save(new ZkpNullifier(eventId, nullifierHash));
+            return true;
+        } catch (DataIntegrityViolationException e) {
             return false;
         }
     }

@@ -19,7 +19,6 @@ import './ShareMenu.css';
  * @param {string} props.className - Additional classNames for the container
  */
 const ShareMenu = ({
-  const { success, error } = useToast();
   shareData,
   children,
   position = 'bottom',
@@ -27,6 +26,7 @@ const ShareMenu = ({
   buttonClassName = '',
   className = '',
 }) => {
+  const { success, error } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [calculatedPosition, setCalculatedPosition] = useState('bottom');

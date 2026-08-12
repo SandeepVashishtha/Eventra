@@ -37,6 +37,9 @@ public interface EventRegistrationRepository extends JpaRepository<EventRegistra
     @Query("SELECT DISTINCT r.event.id FROM EventRegistration r WHERE r.user.id = :userId")
     List<Long> findEventIdsByUser_Id(@Param("userId") Long userId);
 
+    @Query("SELECT r.seatId FROM EventRegistration r WHERE r.event.id = :eventId AND r.seatId IS NOT NULL AND r.seatId <> ''")
+    List<String> findSeatIdsByEvent_Id(@Param("eventId") Long eventId);
+
     void deleteByEventId(Long eventId);
 
     void deleteByUser_Id(Long userId);

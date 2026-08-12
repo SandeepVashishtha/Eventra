@@ -19,7 +19,6 @@ const useWaitlist = ({ eventId, isFullyBooked, waitlistEnabled, isAuthenticated,
       .then(data => {
         if (!cancelled) setWaitlistCount(data.count ?? null);
       })
-      .catch(() => console.warn("[WaitlistButton] API call failed"));
       .catch((err) => {
         console.warn('Failed to fetch waitlist data:', err);
       });

@@ -17,28 +17,32 @@ export default function LoginForm() {
   const [errors, setErrors] = useState({});
 
   const validateEmailOrUsername = (value) => {
-    if (!value.trim()) {
+    // Trim once at the top — all checks operate on the clean value,
+    // consistent with handleSubmit which sends emailOrUsername.trim() to the API.
+    const trimmed = value.trim();
+
+    if (!trimmed) {
       return "Username or Email is required.";
     }
 
-    const isEmail = value.includes('@');
+    const isEmail = trimmed.includes('@');
 
     // Handle Email Validation
     if (isEmail) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(value)) {
+      if (!emailRegex.test(trimmed)) {
         return "Please enter a valid email address.";
       }
       return ""; // Valid email
     }
 
     // Handle Username Validation
-    if (value.trim().length < 3) {
+    if (trimmed.length < 3) {
       return "Username must be at least 3 characters long.";
     }
 
     const validChars = /^[a-zA-Z0-9._-]+$/;
-    if (!validChars.test(value)) {
+    if (!validChars.test(trimmed)) {
       return "Only letters, numbers, ., _, - are allowed in usernames.";
     }
 

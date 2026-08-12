@@ -2,6 +2,7 @@ import { defineConfig, loadEnv, transformWithOxc } from "vite";
 import react from "@vitejs/plugin-react";
 
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 
@@ -63,6 +64,50 @@ export default defineConfig(({ mode }) => {
             );
           }
           return html;
+        },
+      },
+      // Emit a CRA-format asset-manifest.json after the production build.
+      //
+      // public/service-worker.js precaches the hashed /assets/* bundles by
+      // reading `manifest.files` from /asset-manifest.json. Vite never emits
+      // that artifact — with `build.manifest: true` it writes `.vite/manifest.json`
+      // instead — so without this plugin the install handler always hit the
+      // catch branch and only the static ASSETS_TO_CACHE list was cached,
+      // leaving the app chunks out of the precache (Issue #14664).
+      {
+        name: "emit-asset-manifest",
+        enforce: "post",
+        closeBundle() {
+          const outDir = "build";
+          const viteManifestPath = path.resolve(__dirname, outDir, ".vite/manifest.json");
+          if (!fs.existsSync(viteManifestPath)) {
+            // Dev server close — no manifest was produced; the service worker
+            // falls back to its static asset list in development.
+            return;
+          }
+
+          let viteManifest;
+          try {
+            viteManifest = JSON.parse(fs.readFileSync(viteManifestPath, "utf8"));
+          } catch (err) {
+            this.warn(`[emit-asset-manifest] Could not read ${viteManifestPath}: ${err.message}`);
+            return;
+          }
+
+          const files = {};
+          for (const [key, entry] of Object.entries(viteManifest)) {
+            files[key] = `/${entry.file}`;
+            if (Array.isArray(entry.css)) {
+              entry.css.forEach((cssFile, index) => {
+                files[`${key}:css:${index}`] = `/${cssFile}`;
+              });
+            }
+          }
+
+          fs.writeFileSync(
+            path.resolve(__dirname, outDir, "asset-manifest.json"),
+            JSON.stringify({ files }, null, 2),
+          );
         },
       },
     ],

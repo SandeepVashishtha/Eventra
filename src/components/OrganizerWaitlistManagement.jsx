@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { useAuth } from 'context/AuthContext';
 import { API_ENDPOINTS, apiUtils } from '../config/api';
@@ -8,6 +8,7 @@ import {
   promoteNextUser,
   handleCapacityIncrease,
   getWaitlistAnalytics,
+  importCsvWaitlist,
 } from '../utils/waitlistUtils.js';
 
 /**
@@ -22,6 +23,14 @@ const OrganizerWaitlistManagement = ({ eventId, eventName, currentAttendees = 0,
   const [showCapacityForm, setShowCapacityForm] = useState(false);
   const [newCapacity, setNewCapacity] = useState(maxAttendees);
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // CSV Import state
+  const [showCsvImport, setShowCsvImport] = useState(false);
+  const [csvText, setCsvText] = useState('');
+  const [isImporting, setIsImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
+  const [importErrors, setImportErrors] = useState([]);
+  const fileInputRef = useRef(null);
 
 
   const loadWaitlistData = useCallback(async () => {
@@ -145,6 +154,95 @@ const OrganizerWaitlistManagement = ({ eventId, eventName, currentAttendees = 0,
     }
   };
 
+  // CSV Import handlers
+  const handleCsvFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target.result;
+      setCsvText(text);
+      
+      // Preview first few lines to validate format
+      const lines = text.split('\n');
+      if (lines.length > 0) {
+        const header = lines[0].toLowerCase();
+        if (!header.includes('name') || !header.includes('email') || !header.includes('timestamp')) {
+          toast.warning('CSV should contain Name, Email, and Timestamp columns');
+        }
+      }
+    };
+    reader.onerror = () => {
+      toast.error('Failed to read CSV file');
+    };
+    reader.readAsText(file);
+  };
+
+  const handleCsvTextChange = (e) => {
+    setCsvText(e.target.value);
+  };
+
+  const handleClearCsv = () => {
+    setCsvText('');
+    setImportErrors([]);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleCsvImport = async () => {
+    if (!csvText.trim()) {
+      toast.error('Please paste CSV data or upload a CSV file');
+      return;
+    }
+
+    setIsImporting(true);
+    setImportErrors([]);
+    setImportProgress({ current: 0, total: 0 });
+
+    try {
+      const result = await importCsvWaitlist(eventId, csvText, user?.id);
+      
+      if (result.success) {
+        toast.success(result.message);
+        loadWaitlistData(); // Refresh the waitlist
+        setShowCsvImport(false);
+        handleClearCsv();
+      } else {
+        toast.error(result.message);
+        if (result.errors && result.errors.length > 0) {
+          setImportErrors(result.errors);
+        }
+      }
+    } catch (error) {
+      console.error('CSV import error:', error);
+      toast.error(error.message || 'Failed to import CSV data');
+      if (error.errors) {
+        setImportErrors(error.errors);
+      }
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const handleDownloadCsvTemplate = () => {
+    const template = `Name,Email,Timestamp
+John Doe,john@example.com,2024-01-15T10:30:00Z
+Jane Smith,jane@example.com,2024-01-16T14:45:00Z
+Bob Johnson,bob@example.com,2024-01-17T09:15:00Z`;
+    
+    const blob = new Blob([template], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'waitlist_import_template.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   if (isLoading) {
     return <div className="flex items-center justify-center p-8">Loading waitlist data...</div>;
   }
@@ -239,6 +337,14 @@ const OrganizerWaitlistManagement = ({ eventId, eventName, currentAttendees = 0,
           >
             Increase Capacity
           </button>
+
+          <button
+            onClick={() => setShowCsvImport(true)}
+            disabled={isProcessing}
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
+          >
+            Import CSV Waitlist
+          </button>
         </div>
 
         {/* Capacity Increase Form */}
@@ -295,6 +401,142 @@ const OrganizerWaitlistManagement = ({ eventId, eventName, currentAttendees = 0,
               >
                 Cancel
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* CSV Import Modal */}
+        {showCsvImport && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-xl">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Import Legacy Waitlist Data
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowCsvImport(false);
+                    handleClearCsv();
+                  }}
+                  className="text-gray-400 hover:text-gray-600 dark:text-gray-200 dark:hover:text-gray-400 text-2xl"
+                >
+                  &times;
+                </button>
+              </div>
+
+              <div className="mb-4">
+                <p className="text-gray-600 dark:text-gray-200">
+                  Import existing waitlist data from legacy systems (like Eventbrite) into Eventra. 
+                  The CSV file should contain <strong>Name, Email, Timestamp</strong> columns.
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-300 mt-2">
+                  Users will be mapped to existing Eventra accounts by email. Entries will be sorted by timestamp to maintain fair queuing.
+                </p>
+              </div>
+
+              {/* CSV Upload Options */}
+              <div className="mb-4">
+                <div className="flex gap-3 mb-3">
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors flex items-center gap-2"
+                  >
+                    <span>📁 Upload CSV File</span>
+                  </button>
+                  <button
+                    onClick={handleDownloadCsvTemplate}
+                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 font-medium transition-colors flex items-center gap-2"
+                  >
+                    <span>📄 Download Template</span>
+                  </button>
+                  <button
+                    onClick={handleClearCsv}
+                    disabled={!csvText}
+                    className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-medium transition-colors disabled:opacity-50"
+                  >
+                    Clear
+                  </button>
+                </div>
+
+                {/* File input (hidden) */}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleCsvFileChange}
+                  accept=".csv,text/csv"
+                  className="hidden"
+                />
+              </div>
+
+              {/* CSV Text Area */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  CSV Data
+                </label>
+                <textarea
+                  value={csvText}
+                  onChange={handleCsvTextChange}
+                  placeholder="Name,Email,Timestamp&#10;John Doe,john@example.com,2024-01-15T10:30:00Z&#10;Jane Smith,jane@example.com,2024-01-16T14:45:00Z"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-200 font-mono text-sm min-h-[150px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={8}
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-300 mt-1">
+                  Format: CSV with Name, Email, Timestamp columns. Timestamps should be in ISO format (e.g., 2024-01-15T10:30:00Z)
+                </p>
+              </div>
+
+              {/* Import Errors */}
+              {importErrors.length > 0 && (
+                <div className="mb-4 p-3 bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-lg">
+                  <h4 className="text-sm font-medium text-red-800 dark:text-red-200 mb-2">
+                    Errors found:
+                  </h4>
+                  <ul className="text-sm text-red-700 dark:text-red-300 space-y-1">
+                    {importErrors.slice(0, 10).map((error, index) => (
+                      <li key={index}>{error}</li>
+                    ))}
+                    {importErrors.length > 10 && (
+                      <li>... and {importErrors.length - 10} more errors</li>
+                    )}
+                  </ul>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={handleCsvImport}
+                  disabled={isImporting || !csvText.trim()}
+                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
+                >
+                  {isImporting ? 'Importing...' : 'Import CSV Data'}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowCsvImport(false);
+                    handleClearCsv();
+                  }}
+                  disabled={isImporting}
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+
+              {/* Progress indicator */}
+              {isImporting && importProgress.total > 0 && (
+                <div className="mt-4">
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div 
+                      className="bg-green-600 h-2 rounded-full"
+                      style={{ width: `${(importProgress.current / importProgress.total) * 100}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-200 mt-1">
+                    {importProgress.current} of {importProgress.total} entries processed
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         )}

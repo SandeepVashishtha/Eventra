@@ -187,7 +187,7 @@ const AudienceSentimentAnalytics = () => {
                 {/* Playhead indicator */}
                 <div 
                   className="absolute left-[-5px] w-2.5 h-2.5 rounded-full bg-white shadow-[0_0_10px_white] transition-all duration-300 z-20"
-                  style={{ top: \`\${(currentTime / duration) * 100}%\` }}
+                  style={{ top: `${(currentTime / duration) * 100}%` }}
                 ></div>
 
                 {timelineData.map((node, i) => (

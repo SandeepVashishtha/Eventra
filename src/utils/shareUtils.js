@@ -22,6 +22,15 @@ const DEFAULT_EVENT_SHARE_HOST = "sandeepvashishtha.tech";
 //
 // Rejects: external URLs, javascript: URIs, data: URIs
 // ---------------------------------------------------------------------------
+const normalizeOrigin = (origin) => {
+  if (!origin) return "";
+  try {
+    return new URL(origin).origin;
+  } catch {
+    return origin.replace(/\/+$/, "");
+  }
+};
+
 export const isValidShareUrl = (url) => {
   if (!url || typeof url !== "string") return false;
   if (url.startsWith("/")) return true; // relative path — always same-origin
@@ -31,15 +40,14 @@ export const isValidShareUrl = (url) => {
     if (parsed.protocol === "javascript:" || parsed.protocol === "data:") return false;
 
     const allowedOrigins = new Set();
-    if (typeof window !== "undefined") allowedOrigins.add(window.location.origin);
+    if (typeof window !== "undefined") {
+      allowedOrigins.add(normalizeOrigin(window.location.origin));
+    }
 
     const configuredPublicUrl = ENV.PUBLIC_URL;
     if (configuredPublicUrl) {
-      try {
-        allowedOrigins.add(new URL(configuredPublicUrl).origin);
-      } catch {
-        /* ignore malformed env var */
-      }
+      const normalized = normalizeOrigin(configuredPublicUrl);
+      if (normalized) allowedOrigins.add(normalized);
     }
 
     return allowedOrigins.has(parsed.origin);
@@ -84,12 +92,14 @@ export const generateSharingUrl = (shareData, platform) => {
     case "facebook":
       return `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
 
-    case "messenger":
-      // Messenger sharing requires a Facebook App ID (app_id parameter) which
-      // is not available in this client-side configuration.
-      // Callers should hide or disable the Messenger share button.
-      console.warn("[shareUtils] Messenger sharing is not supported — no Facebook App ID configured.");
-      return "";
+    case "messenger": {
+      const fbAppId = process.env.REACT_APP_FB_APP_ID;
+      if (!fbAppId) {
+        console.warn("[shareUtils] Missing REACT_APP_FB_APP_ID environment variable for Messenger sharing.");
+        return "";
+      }
+      return `https://www.facebook.com/dialog/send?link=${encodedUrl}&app_id=${encodeURIComponent(fbAppId)}&redirect_uri=${encodedUrl}`;
+    }
 
     case "linkedin":
       return `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}&title=${encodedTitle}&summary=${encodedDescription}`;

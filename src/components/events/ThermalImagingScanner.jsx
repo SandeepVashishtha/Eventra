@@ -189,8 +189,8 @@ const ThermalImagingScanner = () => {
                         p.isFever ? 'border-rose-500 w-16 h-16 shadow-[0_0_15px_rgba(225,29,72,0.8)] z-20' : 'border-emerald-500/50 w-12 h-12 z-10'
                       }`}
                       style={{ 
-                        left: \`\${p.x}%\`, 
-                        top: \`\${p.y}%\`,
+                        left: `${p.x}%`, 
+                        top: `${p.y}%`,
                         transform: 'translate(-50%, -50%)',
                         opacity: p.age > 2 ? 0 : 1 // fade out
                       }}

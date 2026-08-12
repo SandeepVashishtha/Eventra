@@ -30,6 +30,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     private static final List<EndpointRule> ENDPOINT_RULES = List.of(
             new EndpointRule("login", POST, "/api/auth/login"),
             new EndpointRule("signup", POST, "/api/auth/signup"),
+            new EndpointRule("google", POST, "/api/auth/google"),
+            new EndpointRule("refresh", POST, "/api/auth/refresh"),
             new EndpointRule("forgotPassword", POST, "/api/auth/forgot-password"),
             new EndpointRule("forgotPassword", POST, "/api/auth/forgot-password/"),
             new EndpointRule("contact", POST, "/api/contact"),
@@ -114,6 +116,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         return switch (endpointName) {
             case "login" -> properties.getLogin();
             case "signup" -> properties.getSignup();
+            case "google" -> properties.getGoogle();
+            case "refresh" -> properties.getRefresh();
             case "forgotPassword" -> properties.getForgotPassword();
             case "contact" -> properties.getContact();
             case "githubProxy" -> properties.getGithubProxy();

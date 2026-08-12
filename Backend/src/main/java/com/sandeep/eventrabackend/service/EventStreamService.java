@@ -29,12 +29,24 @@ public class EventStreamService {
 
     private final Map<String, CopyOnWriteArrayList<SseEmitter>> emittersByTopic = new ConcurrentHashMap<>();
     private final Map<String, AtomicInteger> emitterCounts = new ConcurrentHashMap<>();
+    private final Map<SseEmitter, Long> emitterEventFilters = new ConcurrentHashMap<>();
 
     public SseEmitter createEmitter() {
         return createEmitter("events");
     }
 
     public SseEmitter createEmitter(String topic) {
+        return createEmitter(topic, null);
+    }
+
+    /**
+     * Creates a topic emitter, optionally scoped to a single {@code eventId}.
+     * Scoped emitters only receive availability broadcasts for that event;
+     * unscoped emitters keep receiving every event's availability (legacy
+     * behavior for the shared {@code /api/events/stream} and {@code /stream/events}
+     * connections).
+     */
+    public SseEmitter createEmitter(String topic, Long eventId) {
         String normalized = normalizeTopic(topic);
         CopyOnWriteArrayList<SseEmitter> emitters =
                 emittersByTopic.computeIfAbsent(normalized, key -> new CopyOnWriteArrayList<>());
@@ -48,6 +60,9 @@ public class EventStreamService {
         }
 
         SseEmitter emitter = new SseEmitter(DEFAULT_TIMEOUT);
+        if (eventId != null) {
+            emitterEventFilters.put(emitter, eventId);
+        }
         Runnable cleanup = () -> removeEmitter(normalized, emitter);
         emitter.onCompletion(cleanup);
         emitter.onTimeout(cleanup);
@@ -88,10 +103,37 @@ public class EventStreamService {
 
     public void broadcastAvailability(Long eventId, EventAvailabilityResponse availability) {
         if (eventId == null || availability == null) return;
-        publish("events", "availability", Map.of("eventId", eventId, "availability", availability));
+        publishAvailability(eventId, Map.of("eventId", eventId, "availability", availability));
+    }
+
+    /**
+     * Fans out an availability broadcast only to {@code events}-topic emitters
+     * that either have no {@code eventId} filter (shared stream) or whose filter
+     * matches the broadcast {@code eventId}. Scoped subscribers never observe the
+     * registration churn of events they did not subscribe to.
+     */
+    private void publishAvailability(Long eventId, Map<String, Object> payload) {
+        CopyOnWriteArrayList<SseEmitter> emitters = emittersByTopic.get("events");
+        if (emitters == null || emitters.isEmpty()) {
+            return;
+        }
+
+        for (SseEmitter emitter : emitters) {
+            Long filter = emitterEventFilters.get(emitter);
+            if (filter != null && !filter.equals(eventId)) {
+                continue;
+            }
+            try {
+                emitter.send(SseEmitter.event().name("availability").data(payload));
+            } catch (IOException ex) {
+                removeEmitter("events", emitter);
+                emitter.completeWithError(ex);
+            }
+        }
     }
 
     private void removeEmitter(String topic, SseEmitter emitter) {
+        emitterEventFilters.remove(emitter);
         CopyOnWriteArrayList<SseEmitter> emitters = emittersByTopic.get(topic);
         if (emitters != null && emitters.remove(emitter)) {
             AtomicInteger count = emitterCounts.get(topic);

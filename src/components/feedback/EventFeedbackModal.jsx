@@ -99,7 +99,12 @@ const EventFeedbackModal = ({ isOpen, onClose, event }) => {
       }
     } catch (error) {
       console.error('Error submitting feedback:', error);
-      toast.error('An error occurred. Please try again.');
+      // Show specific error message for validation errors
+      if (error.message === 'Rating must be a number between 1 and 5.') {
+        toast.error('Rating must be between 1 and 5 stars.');
+      } else {
+        toast.error('An error occurred. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
