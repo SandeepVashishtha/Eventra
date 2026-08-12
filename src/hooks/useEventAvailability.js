@@ -20,6 +20,60 @@ const MAX_POLL_EVENTS = 50;
 // Polling fallback interval (ms) used only when SSE is unavailable or fails.
 const POLL_INTERVAL_MS = 15_000;
 
+// ── Shared fallback poller ───────────────────────────────────────────────────
+// A grid of event cards would otherwise create one `setInterval` per card,
+// each firing `GET /api/events/{id}/availability` every 15s (a 50-card listing
+// = 200 req/min from a single client, tripping the backend rate limiter). We
+// keep a single module-level interval that iterates the tracked event ids and
+// notify every subscriber instance, capped at MAX_POLL_EVENTS (issue #15337).
+const pollSubscribers = new Map(); // eventId (String) -> Set<callback>
+let sharedPollTimer = null;
+
+const runSharedPoll = () => {
+  const ids = [...pollSubscribers.keys()].slice(0, MAX_POLL_EVENTS);
+  ids.forEach((eventId) => {
+    eventService
+      .getAvailability(eventId)
+      .then((res) => res.json())
+      .then((body) => {
+        const availability = normalizeEventAvailability(body);
+        const listeners = pollSubscribers.get(String(eventId));
+        if (listeners) {
+          listeners.forEach((cb) => cb(availability));
+        }
+      })
+      .catch(() => {
+        // Keep whatever the UI already has; the next tick / SSE event retries.
+      });
+  });
+};
+
+const subscribeAvailabilityPoll = (eventId, callback) => {
+  const key = String(eventId);
+  let listeners = pollSubscribers.get(key);
+  if (!listeners) {
+    listeners = new Set();
+    pollSubscribers.set(key, listeners);
+  }
+  listeners.add(callback);
+  if (!sharedPollTimer) {
+    sharedPollTimer = setInterval(runSharedPoll, POLL_INTERVAL_MS);
+  }
+  return () => {
+    const set = pollSubscribers.get(key);
+    if (set) {
+      set.delete(callback);
+      if (set.size === 0) {
+        pollSubscribers.delete(key);
+      }
+    }
+    if (pollSubscribers.size === 0 && sharedPollTimer) {
+      clearInterval(sharedPollTimer);
+      sharedPollTimer = null;
+    }
+  };
+};
+
 /**
  * React hook that provides live, real-time event seat availability with a
  * graceful degradation strategy:
@@ -83,7 +137,8 @@ export default function useEventAvailability(eventId, { enabled = true } = {}) {
     setStatus(sseStatus);
   }, [sseStatus]);
 
-  // Initial + SSE fallback polling fetch.
+  // Initial fetch + SSE fallback polling. The recurring poll is shared across
+  // hook instances and only runs while the SSE stream is not connected.
   useEffect(() => {
     if (!enabled || eventId == null) {
       return undefined;
@@ -91,7 +146,6 @@ export default function useEventAvailability(eventId, { enabled = true } = {}) {
 
     const normalizedEventId = String(eventId);
     let isMounted = true;
-    let pollTimer = null;
 
     const fetchAvailability = async () => {
       try {
@@ -111,20 +165,21 @@ export default function useEventAvailability(eventId, { enabled = true } = {}) {
     // Fetch immediately so the UI shows a value before the first SSE event.
     fetchAvailability();
 
-    // Polling fallback: only useful when SSE is not connected. We check the
-    // connection status through the cache-safe path (state update is async),
-    // so we poll unconditionally but at a low frequency.
-    const startPolling = () => {
-      pollTimer = setInterval(fetchAvailability, POLL_INTERVAL_MS);
-    };
-    startPolling();
+    // Polling fallback: only useful while SSE is not connected, and shared so
+    // a grid of N cards produces one interval, not N.
+    const unsubscribePoll =
+      sseStatus === SSE_STATUS.CONNECTED
+        ? () => {}
+        : subscribeAvailabilityPoll(normalizedEventId, (availability) => {
+            setCache((prev) => ({ ...prev, [normalizedEventId]: availability }));
+          });
 
     return () => {
       isMounted = false;
-      if (pollTimer) clearInterval(pollTimer);
+      unsubscribePoll();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventId, enabled]);
+  }, [eventId, enabled, sseStatus]);
 
   // Memoised derived value for the tracked event.
   const availability = useMemo(
