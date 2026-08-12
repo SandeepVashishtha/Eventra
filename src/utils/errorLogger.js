@@ -1,4 +1,19 @@
+/**
+ * @fileoverview errorLogger.js
+ * @module utils/errorLogger
+ *
+ * Centrally manages error logging, local storage error persistence, and optional
+ * Sentry integration for real-time remote monitoring. 
+ *
+ * Implements defensive checks for restricted environments (e.g. environments where
+ * localStorage or Sentry SDK might be unavailable or blocked due to security policies).
+ * 
+ * Strict ES Module (ESM) paths must always include explicit file extensions (.js).
+ */
+
 import { SENTRY_DSN, isSentryEnabled } from "../config/env.js";
+import { safeParseJson } from "./jsonUtils.js";
+import { logger, isDevelopment } from "./logger.js";
 
 /**
  * Eventra Telemetry, Error Logging & Remote Diagnostics Engine
@@ -38,10 +53,13 @@ const MAX_BREADCRUMBS = 20;
 // 2. Sentry Initialization & SDK Loader
 // ============================================================================
 
+// Initialize Sentry asynchronously to avoid blocking initial application load
 if (isSentryEnabled && typeof window !== "undefined") {
-  try {
-    const SentryModule = require("@sentry/browser");
-    Sentry = SentryModule;
+  (async () => {
+    try {
+      // Dynamically import @sentry/browser to minimize bundle size on initial load
+      const SentryModule = await import("@sentry/browser");
+      Sentry = SentryModule.default || SentryModule;
 
     Sentry.init({
       dsn: SENTRY_DSN,
@@ -320,7 +338,6 @@ export const logError = (error, errorInfo = null, extra = {}, severity = "error"
     if (Object.keys(extra).length) {
       console.info("[Extra Context]", extra);
     }
-    console.groupEnd?.();
 
     // Sentry SDK Dispatch
     if (Sentry) {

@@ -1,0 +1,20 @@
+<svg width="1200" height="700" xmlns="http://www.w3.org/2000/svg">
+<rect width="1200" height="700" fill="#052e16"></rect>
+
+<text x="60" y="100" fill="#86efac" font-size="48" font-weight="bold">
+IoT Smart Garden Monitor
+</text>
+
+<!-- plants -->
+<circle cx="300" cy="360" r="90" fill="#16a34a"></circle>
+<circle cx="550" cy="360" r="90" fill="#22c55e"></circle>
+<circle cx="800" cy="360" r="90" fill="#4ade80"></circle>
+
+<!-- sensors -->
+<line x1="300" y1="460" x2="300" y2="580" stroke="#86efac"></line>
+<line x1="550" y1="460" x2="550" y2="580" stroke="#86efac"></line>
+<line x1="800" y1="460" x2="800" y2="580" stroke="#86efac"></line>
+
+<!-- glow effect -->
+<circle cx="550" cy="360" r="140" fill="rgba(34,197,94,0.1)"></circle>
+</svg>
