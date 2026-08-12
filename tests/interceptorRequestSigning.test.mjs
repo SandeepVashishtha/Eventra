@@ -59,11 +59,16 @@ describe("request signing wiring", () => {
     );
   });
 
-  it("keys the secret off VITE_REQUEST_SIGNING_SECRET", () => {
+  it("does not read a VITE_ signing secret (those are public in the bundle)", () => {
+    assert.doesNotMatch(
+      interceptorCode,
+      /VITE_REQUEST_SIGNING_SECRET/,
+      "interceptor must not read VITE_REQUEST_SIGNING_SECRET",
+    );
     assert.match(
       interceptorCode,
-      /["']VITE_REQUEST_SIGNING_SECRET["']/,
-      "interceptor must read VITE_REQUEST_SIGNING_SECRET",
+      /["']REQUEST_SIGNING_SECRET["']/,
+      "interceptor may only read a non-VITE REQUEST_SIGNING_SECRET",
     );
   });
 
