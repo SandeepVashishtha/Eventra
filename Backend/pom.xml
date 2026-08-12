@@ -137,7 +137,13 @@
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-        
+        </dependency>
+
+        <!-- Stripe Java library for payment processing -->
+        <dependency>
+            <groupId>com.stripe</groupId>
+            <artifactId>stripe-java</artifactId>
+            <version>25.0.0</version>
         </dependency>
     </dependencies>
 
