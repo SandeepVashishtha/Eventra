@@ -1,3 +1,8 @@
+/**
+ * Event Status Utility Module
+ * Handles status normalization, full-day date boundary calculations, and registration guards.
+ */
+
 const mapStatusKey = (status = "") => {
   if (!status || typeof status !== "string") return null;
 
@@ -13,11 +18,6 @@ const mapStatusKey = (status = "") => {
     done: "past",
     ended: "ended",
     "event ended": "ended",
-    "event ended ": "ended",
-    cancelled: "cancelled",
-    canceled: "cancelled",
-    "event cancelled": "cancelled",
-    "event canceled": "cancelled",
   };
 
   // 🔥 FIX: Return null for unmapped values instead of echoing the input.
@@ -39,9 +39,19 @@ const parseEventDate = (dateValue) => {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
 
-export const computeDateStatus = (event) => {
-  const startDate = parseEventDate(event.startDate || event.date || event.eventDate);
-  const now = getServerTime();
+const asEndOfDay = (date) => {
+  if (!date) return null;
+  const clone = new Date(date.valueOf());
+  clone.setHours(23, 59, 59, 999);
+  return clone;
+};
+
+export const computeDateStatus = (event = {}) => {
+  if (!event) return "upcoming";
+
+  const startDate = parseEventDate(event.startDate || event.date);
+  const endDate = asEndOfDay(parseEventDate(event.endDate || event.date));
+  const now = new Date();
 
   if (!startDate) return "upcoming";
   if (now < startDate) return "upcoming";
@@ -56,6 +66,7 @@ export const computeDateStatus = (event) => {
 
 export const getEventStatus = (event) => {
   if (!event) return "upcoming";
+
   const explicitStatus = mapStatusKey(event.status);
   const dateStatus = computeDateStatus(event);
 
@@ -80,10 +91,8 @@ export const getEventStatus = (event) => {
 };
 
 export const isEventRegistrationClosed = (eventOrStatus) => {
-  // 🔥 FIX: When given a string, route it through mapStatusKey so unknown
-  // values resolve to null. Then if we still have a status, return its
-  // closed-check. This prevents the caller from accidentally treating
-  // "scheduled" or any other unknown backend value as "open" by default.
+  if (!eventOrStatus) return true;
+
   const status =
     typeof eventOrStatus === "string"
       ? mapStatusKey(eventOrStatus)
@@ -92,46 +101,11 @@ export const isEventRegistrationClosed = (eventOrStatus) => {
   return status === "past" || status === "ended" || status === "cancelled";
 };
 
-/**
- * Check if an event has low inventory and should show FOMO badge.
- * FOMO (Fear Of Missing Out) is triggered when remaining tickets drop below 10% 
- * of capacity OR below 20 absolute tickets.
- * 
- * @param {number} capacity - Total event capacity
- * @param {number} registeredCount - Number of registered participants
- * @returns {Object} Object containing isLowInventory boolean and message string
- */
-export const getFomoStatus = (capacity, registeredCount) => {
-  if (capacity == null || capacity <= 0) return { isLowInventory: false, message: null };
-  
-  const remaining = capacity - (registeredCount ?? 0);
-  if (remaining <= 0) return { isLowInventory: false, message: null }; // Event is full, not "selling fast"
-  
-  const lowThreshold = Math.max(20, Math.ceil(capacity * 0.1));
-  const isLowInventory = remaining <= lowThreshold;
-  
-  if (!isLowInventory) return { isLowInventory: false, message: null };
-  
-  // Generate appropriate FOMO message
-  if (remaining <= 5) {
-    return { isLowInventory: true, message: `Only ${remaining} Tickets Left!` };
-  } else {
-    return { isLowInventory: true, message: "Selling Fast!" };
-  }
-};
-
 export const normalizeEvent = (event) => {
-  if (!event) return event;
-  const mapped = {
-    ...event,
-    date: event.date || event.startDate || event.eventDate || null,
-    startDate: event.startDate || event.date || event.eventDate || null,
-    image: event.image || event.imageUrl || event.banner || null,
-    maxAttendees: event.maxAttendees ?? event.capacity ?? null,
-    attendees: event.attendees ?? event.registeredCount ?? event.participants ?? 0,
-  };
+  if (!event) return null;
+
   return {
-    ...mapped,
-    status: getEventStatus(mapped),
+    ...event,
+    status: getEventStatus(event),
   };
 };
