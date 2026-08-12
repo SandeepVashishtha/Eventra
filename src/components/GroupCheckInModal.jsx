@@ -196,6 +196,9 @@ const GroupCheckInModal = ({
               <p className="text-gray-600 dark:text-gray-200">
                 {groupName}
               </p>
+              <p className="text-xs text-gray-500 dark:text-gray-300">
+                Toggle members below, then use the master button to check in
+              </p>
             </div>
           </div>
           <button
@@ -385,7 +388,10 @@ const GroupCheckInModal = ({
               ) : (
                 <>
                   <CheckCircle className="w-5 h-5" />
-                  Check In Selected ({selectedCount})
+                  {allSelected && checkableMembers.length > 0
+                    ? 'Check In Entire Group'
+                    : `Check In Selected (${selectedCount})`
+                  }
                 </>
               )}
             </button>
