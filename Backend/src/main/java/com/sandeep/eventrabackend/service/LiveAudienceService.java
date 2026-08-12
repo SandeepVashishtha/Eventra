@@ -51,11 +51,7 @@ public class LiveAudienceService {
     @Transactional(readOnly = true)
     public LiveAudienceDataResponse getInitialData(Long eventId) {
         requireEvent(eventId);
-        List<LiveAudienceQuestionResponse> questions = questionRepository
-                .findByEventIdOrderByUpvotesDescCreatedAtDesc(eventId)
-                .stream()
-                .map(this::toQuestionResponse)
-                .toList();
+        List<LiveAudienceQuestionResponse> questions = getQuestions(eventId);
         LiveAudiencePollResponse activePoll = pollRepository
                 .findByEventIdOrderByCreatedAtDesc(eventId)
                 .stream()
@@ -68,6 +64,15 @@ public class LiveAudienceService {
                 .build();
     }
 
+    @Transactional(readOnly = true)
+    public List<LiveAudienceQuestionResponse> getQuestions(Long eventId) {
+        requireEvent(eventId);
+        return questionRepository
+                .findByEventIdOrderByUpvotesDescCreatedAtDesc(eventId)
+                .stream()
+                .map(this::toQuestionResponse)
+                .toList();
+    }
     @Transactional
     public LiveAudienceQuestionResponse createQuestion(Long eventId, String text, String email) {
         requireEvent(eventId);
