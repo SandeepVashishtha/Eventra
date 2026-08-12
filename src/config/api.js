@@ -284,6 +284,7 @@ export const API_ENDPOINTS = {
     JOIN: buildApiUrl("/waitlist/join"),
     LEAVE: (id) => buildApiUrl(`/waitlist/${id}/leave`),
     STATUS: (id) => buildApiUrl(`/waitlist/${id}/status`),
+    IMPORT_CSV: (id) => buildApiUrl(`/events/${id}/waitlist/import`),
   },
   FEEDBACK: {
     BASE: buildApiUrl("/feedback"),

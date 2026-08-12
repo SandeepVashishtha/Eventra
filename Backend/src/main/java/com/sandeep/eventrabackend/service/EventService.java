@@ -4,9 +4,11 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 
 import com.sandeep.eventrabackend.dto.request.CancelEventRequest;
+import com.sandeep.eventrabackend.dto.request.CsvWaitlistImportRequest;
 import com.sandeep.eventrabackend.dto.request.EventCreateRequest;
 import com.sandeep.eventrabackend.dto.request.EventScheduleRequest;
 import com.sandeep.eventrabackend.dto.request.EventUpdateRequest;
+import com.sandeep.eventrabackend.dto.response.CsvWaitlistImportResponse;
 import com.sandeep.eventrabackend.dto.response.EventAvailabilityResponse;
 import com.sandeep.eventrabackend.dto.response.AttendeeDirectoryResponse;
 import com.sandeep.eventrabackend.dto.response.EventResponse;
@@ -869,6 +871,142 @@ public class EventService {
                                 .stream()
                                 .map(this::toWaitlistResponse)
                                 .toList();
+        }
+
+        /**
+         * Bulk imports legacy waitlist data from CSV for organizers migrating from other systems.
+         * 
+         * <p>This method processes CSV entries containing Name, Email, and Timestamp, maps them to
+         * existing users in the system, sorts by the legacy timestamp to maintain fair queuing,
+         * and bulk-inserts them into the database as WAITING entries.</p>
+         * 
+         * <p>Each entry must have a corresponding user with the email address in the system.
+         * If a user doesn't exist, that entry is skipped and added to the failure list.</p>
+         * 
+         * @param request The CSV import request containing eventId and list of entries
+         * @param organizerEmail The email of the organizer performing the import
+         * @return Response containing import statistics and failure details
+         */
+        /**
+         * Parse timestamp string with various format support.
+         */
+        private LocalDateTime parseTimestamp(String timestampStr) {
+                if (timestampStr == null || timestampStr.trim().isEmpty()) {
+                    return LocalDateTime.now();
+                }
+                
+                String timestamp = timestampStr.trim();
+                
+                // Try ISO date-time format first (e.g., 2024-01-15T10:30:00Z)
+                try {
+                    return LocalDateTime.parse(timestamp.replace("Z", ""));
+                } catch (Exception e) {
+                    // Ignored, try next format
+                }
+                
+                // Try with space separator (e.g., 2024-01-15 10:30:00)
+                try {
+                    return LocalDateTime.parse(timestamp.replace(" ", "T"));
+                } catch (Exception e) {
+                    // Ignored, try next format
+                }
+                
+                // Try date only (e.g., 2024-01-15)
+                try {
+                    return LocalDateTime.parse(timestamp + "T00:00:00");
+                } catch (Exception e) {
+                    // Ignored, try next format
+                }
+                
+                // Fall back to current time
+                return LocalDateTime.now();
+        }
+
+        @Transactional
+        public CsvWaitlistImportResponse importLegacyWaitlist(CsvWaitlistImportRequest request, String organizerEmail) {
+                Long eventId = request.getEventId();
+                List<CsvWaitlistImportRequest.CsvWaitlistEntry> entries = request.getEntries();
+                
+                // Validate event exists and organizer has permission
+                Event event = eventRepository.findById(eventId)
+                                .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + eventId));
+                
+                eventRoleService.requireRole(eventId, organizerEmail, EventRole.ORGANIZER);
+                
+                CsvWaitlistImportResponse response = new CsvWaitlistImportResponse();
+                response.setTotalProcessed(entries.size());
+                
+                int successfulImports = 0;
+                int failedImports = 0;
+                
+                // Sort entries by timestamp to maintain fair queuing (oldest first)
+                List<CsvWaitlistImportRequest.CsvWaitlistEntry> sortedEntries = entries.stream()
+                        .sorted((a, b) -> a.getTimestamp().compareTo(b.getTimestamp()))
+                        .toList();
+                
+                // Get current max position for this event
+                int currentMaxPosition = eventWaitlistRepository.findMaxPositionByEventId(eventId);
+                
+                for (int i = 0; i < sortedEntries.size(); i++) {
+                        CsvWaitlistImportRequest.CsvWaitlistEntry entry = sortedEntries.get(i);
+                        
+                        try {
+                                // Parse the timestamp
+                                LocalDateTime joinedAt = parseTimestamp(entry.getTimestamp());
+                                
+                                // Find user by email
+                                User user = userRepository.findByEmail(entry.getEmail())
+                                                .orElse(null);
+                                
+                                if (user == null) {
+                                        // User not found - add to failures
+                                        response.addFailure(new CsvWaitlistImportResponse.ImportFailure(
+                                                        i, entry.getEmail(), "User with email " + entry.getEmail() + " not found"));
+                                        failedImports++;
+                                        continue;
+                                }
+                                
+                                // Check if user is already registered for this event
+                                if (eventRegistrationRepository.existsByEvent_IdAndUser_Email(eventId, user.getEmail())) {
+                                        response.addFailure(new CsvWaitlistImportResponse.ImportFailure(
+                                                        i, entry.getEmail(), "User already registered for this event"));
+                                        failedImports++;
+                                        continue;
+                                }
+                                
+                                // Check if user is already on the waitlist for this event
+                                if (eventWaitlistRepository.existsByEvent_IdAndUser_EmailAndStatus(eventId, user.getEmail(), "WAITING")) {
+                                        response.addFailure(new CsvWaitlistImportResponse.ImportFailure(
+                                                        i, entry.getEmail(), "User already on waitlist for this event"));
+                                        failedImports++;
+                                        continue;
+                                }
+                                
+                                // Create and save the waitlist entry
+                                EventWaitlist waitlistEntry = new EventWaitlist();
+                                waitlistEntry.setEvent(event);
+                                waitlistEntry.setUser(user);
+                                waitlistEntry.setPosition(currentMaxPosition + successfulImports + 1);
+                                waitlistEntry.setStatus("WAITING");
+                                // Use parsed timestamp or current time
+                                waitlistEntry.setJoinedAt(joinedAt);
+                                
+                                eventWaitlistRepository.save(waitlistEntry);
+                                successfulImports++;
+                                
+                        } catch (Exception e) {
+                                // Handle parsing errors and other exceptions
+                                response.addFailure(new CsvWaitlistImportResponse.ImportFailure(
+                                                i, entry.getEmail(), "Error processing entry: " + e.getMessage()));
+                                failedImports++;
+                        }
+                }
+                
+                response.setSuccessfulImports(successfulImports);
+                response.setFailedImports(failedImports);
+                response.setMessage("Successfully imported " + successfulImports + " of " + entries.size() + " entries");
+                
+                return response;
         }
 
         /**

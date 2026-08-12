@@ -8,6 +8,8 @@ import {
   handleCapacityIncrease,
   getGlobalWaitlist,
   getWaitlistStorageKey,
+  parseCsvWaitlistData,
+  validateCsvWaitlistEntries,
 } from "./waitlistUtils";
 
 // idb-keyval is async; stub it so the test environment doesn't need IndexedDB
@@ -256,5 +258,144 @@ describe("PII protection & per-user scoping", () => {
     const records = await getGlobalWaitlist("u1");
     expect(records).toHaveLength(1);
     expect(localStorage.getItem(GLOBAL_KEY)).toBeNull();
+  });
+});
+
+// CSV Import Tests
+describe("CSV Waitlist Import", () => {
+  describe("parseCsvWaitlistData", () => {
+    it("should parse valid CSV with correct headers", () => {
+      const csv = `Name,Email,Timestamp
+John Doe,john@example.com,2024-01-15T10:30:00Z
+Jane Smith,jane@example.com,2024-01-16T14:45:00Z`;
+
+      const result = parseCsvWaitlistData(csv);
+      
+      expect(result).toHaveLength(2);
+      expect(result[0].name).toBe("John Doe");
+      expect(result[0].email).toBe("john@example.com");
+      expect(result[0].timestamp).toBe("2024-01-15T10:30:00Z");
+      expect(result[1].name).toBe("Jane Smith");
+      expect(result[1].email).toBe("jane@example.com");
+    });
+
+    it("should handle CSV with different header casing", () => {
+      const csv = `name,email,timestamp
+John Doe,john@example.com,2024-01-15T10:30:00Z`;
+
+      const result = parseCsvWaitlistData(csv);
+      
+      expect(result).toHaveLength(1);
+      expect(result[0].name).toBe("John Doe");
+      expect(result[0].email).toBe("john@example.com");
+    });
+
+    it("should handle CSV with spaces around commas", () => {
+      const csv = `Name, Email, Timestamp
+John Doe, john@example.com, 2024-01-15T10:30:00Z`;
+
+      const result = parseCsvWaitlistData(csv);
+      
+      expect(result).toHaveLength(1);
+      expect(result[0].name).toBe("John Doe");
+      expect(result[0].email).toBe("john@example.com");
+    });
+
+    it("should skip empty lines", () => {
+      const csv = `Name,Email,Timestamp
+John Doe,john@example.com,2024-01-15T10:30:00Z
+
+Jane Smith,jane@example.com,2024-01-16T14:45:00Z`;
+
+      const result = parseCsvWaitlistData(csv);
+      
+      expect(result).toHaveLength(2);
+    });
+
+    it("should throw error for missing required columns", () => {
+      const csv = `Name,Email
+John Doe,john@example.com`;
+
+      expect(() => parseCsvWaitlistData(csv)).toThrow("Missing required columns");
+    });
+
+    it("should throw error for CSV with no data rows", () => {
+      const csv = `Name,Email,Timestamp`;
+
+      expect(() => parseCsvWaitlistData(csv)).toThrow("CSV must have at least one data row");
+    });
+  });
+
+  describe("validateCsvWaitlistEntries", () => {
+    it("should validate valid entries", () => {
+      const entries = [
+        { name: "John Doe", email: "john@example.com", timestamp: "2024-01-15T10:30:00Z" },
+        { name: "Jane Smith", email: "jane@example.com", timestamp: "2024-01-16T14:45:00Z" }
+      ];
+
+      const result = validateCsvWaitlistEntries(entries);
+      
+      expect(result.hasErrors).toBe(false);
+      expect(result.validEntries).toHaveLength(2);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it("should catch missing name", () => {
+      const entries = [
+        { name: "", email: "john@example.com", timestamp: "2024-01-15T10:30:00Z" }
+      ];
+
+      const result = validateCsvWaitlistEntries(entries);
+      
+      expect(result.hasErrors).toBe(true);
+      expect(result.errors).toHaveLength(1);
+      expect(result.errors[0].field).toBe("Name");
+    });
+
+    it("should catch invalid email format", () => {
+      const entries = [
+        { name: "John Doe", email: "invalid-email", timestamp: "2024-01-15T10:30:00Z" }
+      ];
+
+      const result = validateCsvWaitlistEntries(entries);
+      
+      expect(result.hasErrors).toBe(true);
+      expect(result.errors).toHaveLength(1);
+      expect(result.errors[0].field).toBe("Email");
+      expect(result.errors[0].error).toBe("Invalid email format");
+    });
+
+    it("should catch invalid timestamp format", () => {
+      const entries = [
+        { name: "John Doe", email: "john@example.com", timestamp: "invalid-date" }
+      ];
+
+      const result = validateCsvWaitlistEntries(entries);
+      
+      expect(result.hasErrors).toBe(true);
+      expect(result.errors).toHaveLength(1);
+      expect(result.errors[0].field).toBe("Timestamp");
+    });
+
+    it("should accept various date formats", () => {
+      const entries = [
+        { name: "John Doe", email: "john@example.com", timestamp: "2024-01-15T10:30:00Z" },
+        { name: "Jane Smith", email: "jane@example.com", timestamp: "2024-01-16 14:45:00" },
+        { name: "Bob Johnson", email: "bob@example.com", timestamp: "2024-01-17" }
+      ];
+
+      const result = validateCsvWaitlistEntries(entries);
+      
+      expect(result.hasErrors).toBe(false);
+      expect(result.validEntries).toHaveLength(3);
+    });
+
+    it("should throw error for empty array", () => {
+      expect(() => validateCsvWaitlistEntries([])).toThrow("No valid entries found in CSV");
+    });
+
+    it("should throw error for non-array input", () => {
+      expect(() => validateCsvWaitlistEntries("not an array")).toThrow("Invalid entries format: expected array");
+    });
   });
 });

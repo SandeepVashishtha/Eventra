@@ -1,10 +1,12 @@
 package com.sandeep.eventrabackend.controller;
 
 import com.sandeep.eventrabackend.dto.request.CancelEventRequest;
+import com.sandeep.eventrabackend.dto.request.CsvWaitlistImportRequest;
 import com.sandeep.eventrabackend.dto.request.EventCreateRequest;
 import com.sandeep.eventrabackend.dto.request.EventScheduleRequest;
 import com.sandeep.eventrabackend.dto.request.EventUpdateRequest;
 import com.sandeep.eventrabackend.dto.request.RegistrationRequest;
+import com.sandeep.eventrabackend.dto.response.CsvWaitlistImportResponse;
 import com.sandeep.eventrabackend.dto.response.ErrorResponse;
 import com.sandeep.eventrabackend.dto.response.AttendeeDirectoryResponse;
 import com.sandeep.eventrabackend.dto.response.EventAvailabilityResponse;
@@ -304,6 +306,24 @@ public class EventController {
                         Authentication authentication) {
 
                 return ResponseEntity.ok(eventService.promoteWaitlistedUser(id, waitlistId, authentication.getName()));
+        }
+
+        @PostMapping("/{id}/waitlist/import")
+        @PreAuthorize("isAuthenticated()")
+        @Operation(summary = "Bulk import legacy waitlist data from CSV", description = "Allows organizers to import existing waitlists from legacy systems like Eventbrite. The CSV should contain Name, Email, Timestamp columns. Users are mapped to existing accounts and sorted by timestamp to maintain fair queuing.", security = @SecurityRequirement(name = "bearerAuth"))
+        @ApiResponses({
+                        @ApiResponse(responseCode = "200", description = "CSV import completed successfully", content = @Content(schema = @Schema(implementation = CsvWaitlistImportResponse.class))),
+                        @ApiResponse(responseCode = "400", description = "Invalid CSV format or missing required fields", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                        @ApiResponse(responseCode = "401", description = "Unauthorized - JWT token missing or invalid", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                        @ApiResponse(responseCode = "403", description = "Forbidden - User does not have organizer permissions for this event", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                        @ApiResponse(responseCode = "404", description = "Event not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+        })
+        public ResponseEntity<CsvWaitlistImportResponse> importLegacyWaitlist(
+                        @Parameter(description = "ID of the event") @PathVariable Long id,
+                        @Valid @RequestBody CsvWaitlistImportRequest request,
+                        Authentication authentication) {
+
+                return ResponseEntity.ok(eventService.importLegacyWaitlist(request, authentication.getName()));
         }
 
         // ── Issue #2102 — POST /api/events/{id}/register ─────────────────────────
