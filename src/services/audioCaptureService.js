@@ -59,7 +59,7 @@ class AudioCaptureService {
     this.audioContext = null;
     this.processor = null;
     this.analyser = null;
-    this audioChunks = [];
+    this.audioChunks = [];
     this.isProcessing = false;
     this.deviceId = null;
     this.onAudioDataCallback = null;
