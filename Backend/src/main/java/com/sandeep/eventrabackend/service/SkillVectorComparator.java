@@ -62,4 +62,27 @@ public class SkillVectorComparator {
 
         return categories > 0 ? Math.min(99.0, Math.max(20.0, (totalGapFilled / categories))) : 50.0;
     }
+
+    /**
+     * Identify the applicant skill that fills the largest gap in the team's
+     * current skill set. Returns "N/A" when no meaningful gap-filling skill
+     * can be determined (#15295).
+     */
+    public String computePrimaryComplementarySkill(Map<String, Integer> teamCurrentSkills, Map<String, Integer> applicantSkills) {
+        if (teamCurrentSkills == null || applicantSkills == null || applicantSkills.isEmpty()) {
+            return "N/A";
+        }
+
+        String primarySkill = null;
+        double bestFill = -1.0;
+        for (Map.Entry<String, Integer> entry : applicantSkills.entrySet()) {
+            int gap = Math.max(0, 100 - teamCurrentSkills.getOrDefault(entry.getKey(), 0));
+            double fill = (gap / 100.0) * entry.getValue();
+            if (fill > bestFill) {
+                bestFill = fill;
+                primarySkill = entry.getKey();
+            }
+        }
+        return primarySkill != null ? primarySkill : "N/A";
+    }
 }
