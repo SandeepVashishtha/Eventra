@@ -449,6 +449,7 @@ public class EventService {
 
                 return events.stream()
                                 .filter(Event::isPublic)
+                                .filter(event -> !"CANCELLED".equals(event.getStatus()))
                                 .map(this::toPublicEventResponse)
                                 .collect(Collectors.toList());
         }
