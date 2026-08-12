@@ -58,7 +58,7 @@ public class ValidationController {
         if (email == null || !EMAIL_PATTERN.matcher(email).matches()) {
             return ResponseEntity.badRequest().body(buildError("Invalid email format", "/api/validate/email/" + email));
         }
-        boolean available = !userRepository.existsByEmail(email);
+        boolean available = !userRepository.existsByEmailIgnoreCase(email);
         return ResponseEntity.ok(ValidationResponse.builder()
                 .available(available)
                 .build());
@@ -80,7 +80,7 @@ public class ValidationController {
         if (username == null || !USERNAME_PATTERN.matcher(username).matches()) {
             return ResponseEntity.badRequest().body(buildError("Invalid username format", "/api/validate/username/" + username));
         }
-        boolean available = !userRepository.existsByUsername(username);
+        boolean available = !userRepository.existsByUsernameIgnoreCase(username);
         return ResponseEntity.ok(ValidationResponse.builder()
                 .available(available)
                 .build());
