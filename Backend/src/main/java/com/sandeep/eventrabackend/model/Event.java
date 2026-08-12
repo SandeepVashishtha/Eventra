@@ -291,6 +291,9 @@ public class Event {
     }
 
     public void setTags(Set<String> tags) {
+        if (tags != null && tags.size() > 10) {
+            throw new IllegalArgumentException("An event can have at most 10 tags.");
+        }
         this.tags = tags;
     }
 
