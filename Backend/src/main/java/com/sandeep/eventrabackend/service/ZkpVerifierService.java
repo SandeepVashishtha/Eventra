@@ -34,6 +34,7 @@ public class ZkpVerifierService {
         @NotBlank(message = "nullifierHash is required")
         private String nullifierHash;
         private String feedbackCategory;
+        @NotBlank(message = "feedbackContent is required")
         private String feedbackContent;
         private String severity; // LOW, MEDIUM, CRITICAL
 
