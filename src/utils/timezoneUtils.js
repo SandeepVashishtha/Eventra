@@ -151,6 +151,24 @@ export const parseEventToUTC = (dateStr, timeStr, timezone) => {
   }
 };
 
+/**
+ * Resolve an event's local wall-clock date/time to a Date instant anchored to
+ * the event's own timezone.
+ *
+ * Uses parseEventToUTC so the returned instant is identical regardless of the
+ * viewer's location. Returns null when either input is invalid.
+ *
+ * @param {string} dateStr - Date string
+ * @param {string} timeStr - Time string
+ * @param {string} [timezone] - IANA timezone the event time is expressed in
+ * @returns {Date|null}
+ */
+export const resolveEventInstant = (dateStr, timeStr, timezone) => {
+  const utcMs = parseEventToUTC(dateStr, timeStr, timezone);
+  if (utcMs === null) return null;
+  return new Date(utcMs);
+};
+
 export const parseEventDateTimeLocal = (dateStr, timeStr) => {
   const normalizedDate = normalizeDateString(dateStr);
   const parsedTime = parseTimeString(timeStr || "12:00 AM");
