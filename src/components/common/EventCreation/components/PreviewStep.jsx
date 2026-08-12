@@ -27,7 +27,7 @@ const PreviewStep = ({
           Preview Your Event
         </h1>
 
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-gray-600 dark:text-gray-200">
           Review all details before publishing
         </p>
       </div>
@@ -62,7 +62,7 @@ const PreviewStep = ({
                   Category
                 </p>
 
-                <p className="text-gray-600 dark:text-gray-400">
+                <p className="text-gray-600 dark:text-gray-200">
                   {
                     categories.find(
                       (cat) => cat.value === formData.category
@@ -80,7 +80,7 @@ const PreviewStep = ({
                   Date & Time
                 </p>
 
-                <p className="text-gray-600 dark:text-gray-400">
+                <p className="text-gray-600 dark:text-gray-200">
                   {formData.isMultiDay
                     ? `${formatDate(formData.startDate)} - ${formatDate(
                         formData.endDate
@@ -88,7 +88,7 @@ const PreviewStep = ({
                     : formatDate(formData.date)}
                 </p>
 
-                <p className="text-gray-600 dark:text-gray-400">
+                <p className="text-gray-600 dark:text-gray-200">
                   {formatTime(formData.startTime)} -{" "}
                   {formatTime(formData.endTime)}
                 </p>
@@ -103,14 +103,14 @@ const PreviewStep = ({
                   Location
                 </p>
 
-                <p className="text-gray-600 dark:text-gray-400">
+                <p className="text-gray-600 dark:text-gray-200">
                   {formData.isVirtual
                     ? "Virtual Event"
                     : formData.location.name}
                 </p>
 
                 {formData.location.address && !formData.isVirtual && (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-sm text-gray-500 dark:text-gray-200">
                     {formData.location.address}
                   </p>
                 )}
@@ -125,13 +125,13 @@ const PreviewStep = ({
                   Capacity
                 </p>
 
-                <p className="text-gray-600 dark:text-gray-400">
+                <p className="text-gray-600 dark:text-gray-200">
                   {formData.capacity === ""
                     ? "Unlimited"
                     : `${formData.capacity} attendees`}
                 </p>
 
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-sm text-gray-500 dark:text-gray-200">
                   {formData.isPublic ? "Public" : "Private"} Event
                 </p>
               </div>
@@ -161,7 +161,7 @@ const PreviewStep = ({
                         </p>
 
                         {tier.description && (
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                          <p className="text-sm text-gray-600 dark:text-gray-200">
                             {tier.description}
                           </p>
                         )}
@@ -173,7 +173,7 @@ const PreviewStep = ({
                         </p>
 
                         {tier.capacity && (
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                          <p className="text-sm text-gray-500 dark:text-gray-200">
                             {tier.capacity} available
                           </p>
                         )}
