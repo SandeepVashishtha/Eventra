@@ -151,6 +151,11 @@ export const parseEventToUTC = (dateStr, timeStr, timezone) => {
   }
 };
 
+export const resolveEventInstant = (dateStr, timeStr, timezone) => {
+  const utcMs = parseEventToUTC(dateStr, timeStr, timezone);
+  return utcMs !== null ? new Date(utcMs) : null;
+};
+
 export const parseEventDateTimeLocal = (dateStr, timeStr) => {
   const normalizedDate = normalizeDateString(dateStr);
   const parsedTime = parseTimeString(timeStr || "12:00 AM");
