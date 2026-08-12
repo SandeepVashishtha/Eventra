@@ -17,6 +17,12 @@ public class Event {
     private String description;
     private String location;
     private LocalDateTime eventDate;
+
+    /**
+     * Optional end date/time for the event schedule. Persisted so the end time
+     * chosen by the organizer survives reload (issue #14603).
+     */
+    private LocalDateTime endDate;
     private boolean isPublic = true;
 
     /**
@@ -156,6 +162,14 @@ public class Event {
 
     public void setEventDate(LocalDateTime eventDate) {
         this.eventDate = eventDate;
+    }
+
+    public LocalDateTime getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(LocalDateTime endDate) {
+        this.endDate = endDate;
     }
 
     public boolean isPublic() {
