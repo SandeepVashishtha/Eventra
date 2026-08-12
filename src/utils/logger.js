@@ -1,7 +1,7 @@
 import { redactSensitiveData } from "./security/redactSensitiveData.js";
 
 // Cross-environment development check (Vite, Webpack, Node.js)
-const isDevelopment = (() => {
+export const isDevelopment = (() => {
   if (typeof import.meta !== "undefined" && import.meta?.env) {
     return import.meta.env.DEV ?? import.meta.env.MODE !== "production";
   }
