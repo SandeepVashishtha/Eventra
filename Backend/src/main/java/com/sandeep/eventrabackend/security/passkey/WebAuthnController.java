@@ -1,11 +1,14 @@
 package com.sandeep.eventrabackend.security.passkey;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 @RestController
 @RequestMapping("/api/auth/webauthn")
@@ -14,14 +17,24 @@ public class WebAuthnController {
 
     private final PasskeyCredentialRepository credentialRepository;
 
+    /**
+     * Server-side challenge store keyed by user email. Each challenge is
+     * single-use and is removed once a matching registration is verified,
+     * so a client cannot replay a stale challenge against another email.
+     */
+    private final ConcurrentHashMap<String, String> pendingChallenges = new ConcurrentHashMap<>();
+
     public WebAuthnController(PasskeyCredentialRepository credentialRepository) {
         this.credentialRepository = credentialRepository;
     }
 
     @PostMapping("/register-challenge")
     public ResponseEntity<Map<String, Object>> generateRegisterChallenge(@RequestParam String userEmail) {
+        String challenge = UUID.randomUUID().toString();
+        pendingChallenges.put(normalize(userEmail), challenge);
+
         Map<String, Object> response = new HashMap<>();
-        response.put("challenge", UUID.randomUUID().toString());
+        response.put("challenge", challenge);
         response.put("rpName", "Eventra Platform");
         response.put("userEmail", userEmail);
         response.put("timeout", 60000);
@@ -29,18 +42,53 @@ public class WebAuthnController {
     }
 
     @PostMapping("/verify-registration")
-    public ResponseEntity<Map<String, Object>> verifyRegistration(@RequestBody Map<String, String> payload) {
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, Object>> verifyRegistration(
+            @RequestBody Map<String, String> payload,
+            Authentication authentication) {
         String credentialId = payload.get("credentialId");
         String userEmail = payload.get("userEmail");
         String publicKeyPem = payload.get("publicKey");
+        String clientChallenge = payload.get("challenge");
+
+        // The caller must be verifying for their own account — never a victim
+        // email supplied in the body (#15366).
+        if (authentication == null || !normalize(authentication.getName()).equals(normalize(userEmail))) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "You can only register passkeys for your own account.");
+        }
+
+        // The credential must be bound to the challenge we issued for this
+        // email. A client-supplied challenge that was never stored is rejected.
+        String issuedChallenge = pendingChallenges.get(normalize(userEmail));
+        if (issuedChallenge == null || !issuedChallenge.equals(clientChallenge)) {
+            throw new IllegalArgumentException(
+                    "Registration challenge is missing, expired or was not issued for this account. Please request a new challenge.");
+        }
+
+        // Reject empty / malformed credentials before they are persisted.
+        if (credentialId == null || credentialId.isBlank()) {
+            throw new IllegalArgumentException("credentialId is required.");
+        }
+        if (publicKeyPem == null || publicKeyPem.isBlank()
+                || !publicKeyPem.contains("-----BEGIN") || !publicKeyPem.contains("PUBLIC KEY-----")) {
+            throw new IllegalArgumentException("A valid PEM public key is required.");
+        }
 
         PasskeyCredentialRepository.PasskeyCredential cred =
-                new PasskeyCredentialRepository.PasskeyCredential(credentialId, userEmail, publicKeyPem);
+                new PasskeyCredentialRepository.PasskeyCredential(credentialId.trim(), userEmail, publicKeyPem.trim());
         credentialRepository.save(cred);
+
+        // Single-use challenge — consume it so it cannot be replayed.
+        pendingChallenges.remove(normalize(userEmail));
 
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
         response.put("message", "WebAuthn Passkey registered successfully.");
         return ResponseEntity.ok(response);
+    }
+
+    private String normalize(String value) {
+        return value == null ? "" : value.trim().toLowerCase();
     }
 }
