@@ -11,7 +11,6 @@ import {
   getWebcalSubscriptionUrl,
 } from "utils/calendarUrlUtils";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
-import hackathonsData from "../Hackathons/hackathonMockData.json";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import {
@@ -177,26 +176,6 @@ const EventRegistration = () => {
     const loadEvent = async () => {
       setLoading(true);
 
-      const isHackathonPath = location.pathname.startsWith("/register");
-      if (isHackathonPath) {
-        const foundMock = hackathonsData.find((item) => String(item.id) === String(eventId));
-        if (foundMock) {
-          applyLoadedEvent({
-            ...foundMock,
-            date: foundMock.startDate,
-            time: "10:00 AM",
-            image:
-              "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=800",
-            attendees: foundMock.participants,
-            maxAttendees: 1500,
-            status: foundMock.status,
-          });
-          if (!isCancelled) setLoading(false);
-          prefillAuthenticatedUser();
-          return;
-        }
-      }
-
       try {
         const response = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
 
@@ -232,20 +211,6 @@ const EventRegistration = () => {
             t("eventRegistration.toastShowingCached", { label: getCacheAgeLabel(cached.cachedAt) })
           );
           return;
-        }
-
-        const foundMock = hackathonsData.find((item) => String(item.id) === String(eventId));
-        if (foundMock) {
-          applyLoadedEvent({
-            ...foundMock,
-            date: foundMock.startDate,
-            time: "10:00 AM",
-            image:
-              "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=800",
-            attendees: foundMock.participants,
-            maxAttendees: 1500,
-            status: foundMock.status,
-          });
         }
       } finally {
         if (!isCancelled) setLoading(false);
