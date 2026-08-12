@@ -12,6 +12,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -35,6 +37,8 @@ public class ValidationController {
             Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
     private static final Pattern USERNAME_PATTERN =
             Pattern.compile("^[a-zA-Z0-9_-]{3,50}$");
+    private static final Pattern PHONE_PATTERN =
+            Pattern.compile("^\\+?[\\d\\s\\-()]+$");
 
     private final UserRepository userRepository;
 
@@ -86,6 +90,27 @@ public class ValidationController {
                 .build());
     }
 
+    @PostMapping("/phone")
+    @Operation(
+            summary = "Validate phone number format",
+            description = "Validates phone number format. Returns 400 for malformed numbers."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Phone format is valid",
+                    content = @Content(schema = @Schema(implementation = ValidationResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid phone format",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<?> validatePhone(@RequestBody PhoneRequest request) {
+        String phone = request != null ? request.phone() : null;
+        if (phone == null || !PHONE_PATTERN.matcher(phone).matches()) {
+            return ResponseEntity.badRequest().body(buildError("Invalid phone format", "/api/validate/phone"));
+        }
+        return ResponseEntity.ok(ValidationResponse.builder()
+                .available(true)
+                .build());
+    }
+
     private ErrorResponse buildError(String message, String path) {
         return ErrorResponse.builder()
                 .status(400)
@@ -95,4 +120,6 @@ public class ValidationController {
                 .timestamp(LocalDateTime.now())
                 .build();
     }
+
+    public record PhoneRequest(String phone) {}
 }
