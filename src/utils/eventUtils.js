@@ -50,17 +50,19 @@ export const computeDateStatus = (event = {}) => {
   if (!event) return "upcoming";
 
   const startDate = parseEventDate(event.startDate || event.date);
-  const endDate = asEndOfDay(parseEventDate(event.endDate || event.date));
+  const endDate = asEndOfDay(
+    parseEventDate(event.endDate || event.date || event.startDate)
+  );
   const now = new Date();
 
   if (!startDate) return "upcoming";
   if (now < startDate) return "upcoming";
 
-  // Moment-based, matching the backend's Event.isEventPast(): once the
-  // event's start time has passed it is no longer "live" — even when it is
-  // still the same calendar day. The old day-granular "live until midnight"
-  // kept the registration form enabled for hours after the event started
-  // while the server rejected every submission. (#12462)
+  // Day-granular "live" window, matching the backend LIVE timing filter
+  // (EventSpecifications: eventDate between today 00:00 and now). An event
+  // that started today is "live"; once its end-of-day boundary passes it
+  // becomes "past". (#15450)
+  if (endDate && now <= endDate) return "live";
   return "past";
 };
 
@@ -92,6 +94,18 @@ export const getEventStatus = (event) => {
 
 export const isEventRegistrationClosed = (eventOrStatus) => {
   if (!eventOrStatus) return true;
+
+  // Moment-based, matching the backend's Event.isEventPast(): registration
+  // closes the moment the event's start time passes — even while the event is
+  // still classified "live" for display/filtering. This preserves #12462 while
+  // allowing #15450's "live" status. Event objects carry a date; raw status
+  // strings (e.g. "live") have none and fall through to the status mapping.
+  if (typeof eventOrStatus === "object") {
+    const startDate = parseEventDate(
+      eventOrStatus.startDate || eventOrStatus.eventDate || eventOrStatus.date
+    );
+    if (startDate && new Date() >= startDate) return true;
+  }
 
   const status =
     typeof eventOrStatus === "string"
