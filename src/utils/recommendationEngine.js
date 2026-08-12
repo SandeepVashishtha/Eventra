@@ -1,4 +1,5 @@
 const MAX_SCORE = 100;
+const DEFAULT_HALF_LIFE_DAYS = 14;
 
 const normalizeText = (value) =>
   String(value || "")
@@ -13,7 +14,7 @@ const toTokens = (value) =>
 const normalizeList = (value) => {
   if (!value) return [];
   return (Array.isArray(value) ? value : [value])
-    .flatMap((item) => toTokens(item).length ? [normalizeText(item)] : [])
+    .flatMap((item) => (toTokens(item).length ? [normalizeText(item)] : []))
     .filter(Boolean);
 };
 
@@ -84,6 +85,143 @@ const getSimilarityScore = (candidate, interactedEvents) => {
   return Math.min(best, 25);
 };
 
+// ===========================================================================
+// ADVANCED ENGINE ADDITIONS: Time Decay, Temporal Urgency & MMR Diversity
+// ===========================================================================
+
+/**
+ * Calculates exponential time decay factor: e^(-lambda * delta_t)
+ * @param {string|number|Date} timestamp - Time of interaction
+ * @param {number} [halfLifeDays=14] - Days after which weight halves
+ * @returns {number} Multiplier between 0.0 and 1.0
+ */
+export const applyTimeDecay = (timestamp, halfLifeDays = DEFAULT_HALF_LIFE_DAYS) => {
+  if (!timestamp) return 1.0;
+  const timeMs = new Date(timestamp).getTime();
+  if (Number.isNaN(timeMs)) return 1.0;
+
+  const ageInDays = Math.max(0, (Date.now() - timeMs) / (1000 * 60 * 60 * 24));
+  const lambda = Math.LN2 / halfLifeDays;
+  return Math.exp(-lambda * ageInDays);
+};
+
+/**
+ * Computes urgency score based on event start proximity.
+ * Filters expired events and rewards upcoming events within 1-14 days.
+ * @param {string|Date} eventDate - Event start date/time
+ * @returns {{ score: number, isExpired: boolean, reason: string }}
+ */
+export const calculateTemporalUrgencyScore = (eventDate) => {
+  if (!eventDate) return { score: 0, isExpired: false, reason: "" };
+
+  const startMs = new Date(eventDate).getTime();
+  if (Number.isNaN(startMs)) return { score: 0, isExpired: false, reason: "" };
+
+  const nowMs = Date.now();
+  const diffDays = (startMs - nowMs) / (1000 * 60 * 60 * 24);
+
+  // Expired event
+  if (diffDays < -0.25) {
+    return { score: 0, isExpired: true, reason: "Event has already passed" };
+  }
+
+  // Happening today / within 24h
+  if (diffDays >= -0.25 && diffDays <= 1) {
+    return { score: 10, isExpired: false, reason: "Starting within 24 hours" };
+  }
+
+  // Happening within 2 weeks
+  if (diffDays <= 14) {
+    const proximityScore = Math.round(10 * (1 - diffDays / 14));
+    return { score: proximityScore, isExpired: false, reason: "Happening soon" };
+  }
+
+  return { score: 2, isExpired: false, reason: "Upcoming event" };
+};
+
+/**
+ * Jaccard similarity distance between two events based on tags, categories, and locations.
+ * Used for MMR diversity re-ranking.
+ * @param {Object} eventA
+ * @param {Object} eventB
+ * @returns {number} Similarity score between 0.0 and 1.0
+ */
+export const calculateDiversitySimilarity = (eventA, eventB) => {
+  const tagsA = new Set(getEventTags(eventA));
+  const tagsB = new Set(getEventTags(eventB));
+
+  if (tagsA.size === 0 || tagsB.size === 0) return 0;
+
+  let intersection = 0;
+  tagsA.forEach((tag) => {
+    if (tagsB.has(tag)) intersection++;
+  });
+
+  const union = new Set([...tagsA, ...tagsB]).size;
+  const jaccardTagSim = union > 0 ? intersection / union : 0;
+
+  const categoryMatch = getEventCategory(eventA) === getEventCategory(eventB) ? 0.3 : 0;
+  return Math.min(jaccardTagSim * 0.7 + categoryMatch, 1.0);
+};
+
+/**
+ * Maximal Marginal Relevance (MMR) re-ranking algorithm.
+ * Balances recommendation relevance with catalog diversity.
+ * @param {Array} scoredEvents - List of pre-scored candidate events
+ * @param {number} [lambda=0.7] - Balance parameter (1.0 = pure relevance, 0.0 = pure diversity)
+ * @param {number} [limit=8] - Target count
+ * @returns {Array} Re-ranked diverse event list
+ */
+export const applyMaximalMarginalRelevance = (scoredEvents = [], lambda = 0.7, limit = 8) => {
+  if (scoredEvents.length <= 1) return scoredEvents.slice(0, limit);
+
+  const selected = [];
+  const unselected = [...scoredEvents];
+
+  // Normalize initial recommendation scores to range [0, 1]
+  const maxScore = Math.max(...scoredEvents.map((e) => e.recommendationScore), 1);
+
+  while (selected.length < limit && unselected.length > 0) {
+    let bestIndex = -1;
+    let maxMMR = -Infinity;
+
+    for (let i = 0; i < unselected.length; i++) {
+      const candidate = unselected[i];
+      const normScore = candidate.recommendationScore / maxScore;
+
+      // Compute maximum similarity to already selected items
+      let maxSimToSelected = 0;
+      for (const sel of selected) {
+        const sim = calculateDiversitySimilarity(candidate, sel);
+        if (sim > maxSimToSelected) {
+          maxSimToSelected = sim;
+        }
+      }
+
+      // MMR equation: lambda * Relevance - (1 - lambda) * Redundancy
+      const mmrScore = lambda * normScore - (1 - lambda) * maxSimToSelected;
+
+      if (mmrScore > maxMMR) {
+        maxMMR = mmrScore;
+        bestIndex = i;
+      }
+    }
+
+    if (bestIndex !== -1) {
+      selected.push(unselected[bestIndex]);
+      unselected.splice(bestIndex, 1);
+    } else {
+      break;
+    }
+  }
+
+  return selected;
+};
+
+// ===========================================================================
+// CORE UTILITIES WITH TIME-DECAY & COLD-START SUPPORT
+// ===========================================================================
+
 export const buildInteractionProfile = ({
   registeredEvents = [],
   bookmarkedEvents = [],
@@ -91,9 +229,9 @@ export const buildInteractionProfile = ({
   location = "",
 } = {}) => {
   const weightedEvents = [
-    ...registeredEvents.map((entry) => ({ entry, weight: 4 })),
-    ...bookmarkedEvents.map((entry) => ({ entry, weight: 3 })),
-    ...viewedEvents.map((entry) => ({ entry, weight: 1 })),
+    ...registeredEvents.map((entry) => ({ entry, baseWeight: 4 })),
+    ...bookmarkedEvents.map((entry) => ({ entry, baseWeight: 3 })),
+    ...viewedEvents.map((entry) => ({ entry, baseWeight: 1 })),
   ];
 
   const categoryWeights = {};
@@ -103,12 +241,16 @@ export const buildInteractionProfile = ({
   const interactedIds = new Set();
   const registeredIds = new Set();
 
-  weightedEvents.forEach(({ entry, weight }) => {
+  weightedEvents.forEach(({ entry, baseWeight }) => {
     const event = unwrapEvent(entry);
     const id = getEventId(event);
     const category = getEventCategory(event);
     const type = getEventType(event);
     const eventLocation = normalizeText(event.location);
+
+    // Apply time-decay multiplier based on interaction timestamp
+    const decayFactor = applyTimeDecay(entry.createdAt || entry.timestamp || event.date);
+    const weight = baseWeight * decayFactor;
 
     if (id) interactedIds.add(id);
     if (category) categoryWeights[category] = (categoryWeights[category] || 0) + weight;
@@ -140,6 +282,7 @@ export const buildInteractionProfile = ({
     interactedIds,
     registeredIds,
     location: topLocation,
+    hasInteractions: weightedEvents.length > 0,
   };
 };
 
@@ -149,7 +292,13 @@ export const calculateRecommendationScore = (
   interactions = {},
 ) => {
   if (!event || typeof event !== "object") {
-    return { score: 0, reasons: [], breakdown: [] };
+    return { score: 0, reasons: [], breakdown: [], isExpired: false };
+  }
+
+  // 1. Check Temporal Urgency & Expiration
+  const temporal = calculateTemporalUrgencyScore(event.date || event.startDate);
+  if (temporal.isExpired) {
+    return { score: 0, reasons: ["Event has already passed"], breakdown: [], isExpired: true };
   }
 
   const interactionProfile = interactions.categories
@@ -166,6 +315,11 @@ export const calculateRecommendationScore = (
     breakdown.push({ label, score: Math.round(points) });
     if (reason) reasons.push(reason);
   };
+
+  // Add Temporal Proximity Boost
+  if (temporal.score > 0) {
+    addScore("Upcoming proximity boost", temporal.score, temporal.reason);
+  }
 
   const category = getEventCategory(event);
   const type = getEventType(event);
@@ -238,11 +392,13 @@ export const calculateRecommendationScore = (
     score: cappedScore,
     reasons: unique(reasons).slice(0, 5),
     breakdown,
+    isExpired: false,
   };
 };
 
 export const getTrendingEventsForArea = (events = [], location = "", limit = 4) =>
   [...events]
+    .filter((event) => !calculateTemporalUrgencyScore(event.date || event.startDate).isExpired)
     .filter((event) => eventMatchesArea(event, location) || event.eventMode === "online")
     .map((event) => ({
       ...event,
@@ -259,6 +415,7 @@ export const buildPersonalizedRecommendations = ({
   viewedEvents = [],
   location = "",
   includeInteracted = false,
+  diversityLambda = 0.75,
   limit = 8,
 } = {}) => {
   const interactionProfile = buildInteractionProfile({
@@ -268,7 +425,7 @@ export const buildPersonalizedRecommendations = ({
     location,
   });
 
-  return events
+  const scoredCandidates = events
     .filter((event) => includeInteracted || !interactionProfile.registeredIds.has(getEventId(event)))
     .map((event) => {
       const result = calculateRecommendationScore(event, userProfile, interactionProfile);
@@ -278,9 +435,12 @@ export const buildPersonalizedRecommendations = ({
         recommendationScore: result.score,
         recommendationReasons: result.reasons,
         breakdown: result.breakdown,
+        isExpired: result.isExpired,
       };
     })
-    .filter((event) => event.recommendationScore > 0)
-    .sort((a, b) => b.recommendationScore - a.recommendationScore)
-    .slice(0, limit);
+    .filter((event) => !event.isExpired && event.recommendationScore > 0)
+    .sort((a, b) => b.recommendationScore - a.recommendationScore);
+
+  // Apply MMR diversity re-ranking to candidate pool
+  return applyMaximalMarginalRelevance(scoredCandidates, diversityLambda, limit);
 };
