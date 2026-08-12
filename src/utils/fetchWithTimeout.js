@@ -1,4 +1,4 @@
-import { logger } from "./logger";
+import { logger } from "./logger.js";
 
 const DEFAULT_TIMEOUT = 10000;
 
@@ -11,6 +11,25 @@ export class FetchError extends Error {
   }
 }
 
+// ---------------------------------------------------------------------------
+// FIX (#13609): Token Refresh Queue / Subscriber Pattern for 401 Mutex Locks
+// ---------------------------------------------------------------------------
+let isRefreshingToken = false;
+let refreshTokenSubscribers = [];
+
+const subscribeTokenRefresh = (callback) => {
+  refreshTokenSubscribers.push(callback);
+};
+
+const onRefreshedToken = (newToken) => {
+  refreshTokenSubscribers.forEach((cb) => cb(newToken));
+  refreshTokenSubscribers = [];
+};
+
+export const setRefreshingState = (state) => {
+  isRefreshingToken = state;
+};
+
 export const fetchWithTimeout = async (
   url,
   options = {},
@@ -22,30 +41,64 @@ export const fetchWithTimeout = async (
     controller.abort();
   }, timeout);
 
-  // 🔥 FIX: Link the user's custom abort signal to our internal controller.
   const handleUserAbort = () => controller.abort();
 
   if (options.signal) {
     if (options.signal.aborted) {
       controller.abort();
+      throw new DOMException("Aborted", "AbortError");
     } else {
       options.signal.addEventListener("abort", handleUserAbort);
     }
   }
 
+  // If a refresh is currently in progress, wait in queue before proceeding
+  if (isRefreshingToken && !url.includes("/auth/refresh")) {
+    await new Promise((resolve) => {
+      subscribeTokenRefresh((newToken) => {
+        if (options.headers && typeof options.headers.set === "function") {
+          options.headers.set("Authorization", `Bearer ${newToken}`);
+        }
+        resolve();
+      });
+    });
+  }
+
+  const method = (options.method || "GET").toUpperCase();
+  let requestHeaders = options.headers;
+  if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+    const headers = new Headers(options.headers || {});
+    if (!headers.has("Idempotency-Key")) {
+      let idempotencyKey;
+      if (typeof crypto !== "undefined" && crypto.randomUUID) {
+        idempotencyKey = crypto.randomUUID();
+      } else if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+        const bytes = new Uint8Array(16);
+        crypto.getRandomValues(bytes);
+        bytes[6] = (bytes[6] & 0x0f) | 0x40;
+        bytes[8] = (bytes[8] & 0x3f) | 0x80;
+        idempotencyKey = [...bytes].map((b, i) =>
+          [4, 6, 8, 10].includes(i)
+            ? '-' + b.toString(16).padStart(2, '0')
+            : b.toString(16).padStart(2, '0')
+        ).join('');
+      } else {
+        throw new Error("[fetchWithTimeout] crypto API unavailable — cannot generate secure Idempotency-Key");
+      }
+      headers.set("Idempotency-Key", idempotencyKey);
+    }
+    requestHeaders = headers;
+  }
+
   try {
     const response = await fetch(url, {
       ...options,
-      signal: controller.signal, // This now responds to BOTH the timeout and the user's unmount signal
+      headers: requestHeaders,
+      signal: controller.signal,
     });
 
-    // Read the body once — directly from the response stream.
-    //
-    // The previous implementation used response.clone().json() which allocates
-    // a duplicate of the entire body in memory before parsing, doubling peak
-    // consumption for every request. Since callers consume the returned `data`
-    // field rather than response.body, there is no need to keep the original
-    // stream open. Read directly and skip the clone.
+    clearTimeout(timeoutId);
+
     let data = null;
     const contentType = response.headers.get("content-type") || "";
 
@@ -75,22 +128,20 @@ export const fetchWithTimeout = async (
       data,
     };
   } catch (error) {
+    clearTimeout(timeoutId);
+
+    if (error instanceof FetchError) {
+      throw error;
+    }
+
     if (error.name === "AbortError") {
       logger.error("[fetchWithTimeout] Request aborted or timed out:", url);
-
       throw new FetchError(
         `Request timed out after ${timeout}ms or was manually aborted`
       );
     }
 
     logger.error("[fetchWithTimeout] Request failed:", error);
-
-    throw error;
-  } finally {
-    clearTimeout(timeoutId);
-    // 🔥 FIX: Always clean up the event listener to prevent memory leaks
-    if (options.signal) {
-      options.signal.removeEventListener("abort", handleUserAbort);
-    }
+    throw new FetchError(error.message || "Network request failed");
   }
 };
