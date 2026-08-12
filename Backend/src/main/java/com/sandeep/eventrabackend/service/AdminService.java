@@ -291,7 +291,7 @@ public class AdminService {
     public PagedResponse<HackathonResponse> getHackathons(int page, int size) {
         int safePage = Math.max(page, 0);
         Pageable pageable = PageRequest.of(safePage, size, Sort.by("startDate").descending());
-        return PagedResponse.from(hackathonRepository.findAll(pageable).map(this::toHackathonResponse));
+        return PagedResponse.from(hackathonRepository.findByIsDeletedFalse(pageable).map(this::toHackathonResponse));
     }
 
     /**
@@ -337,7 +337,7 @@ public class AdminService {
                 .averageCapacityUtilization(
                         Optional.ofNullable(eventAnalyticsRepo.findAverageCapacityUtilization()).orElse(0.0))
                 // Hackathons
-                .totalHackathons(hackathonRepository.count())
+                .totalHackathons(hackathonRepository.countByIsDeletedFalse())
                 // Feedback
                 .totalFeedbackSubmissions(feedbackRepository.countTotalFeedback())
                 .overallAverageRating(

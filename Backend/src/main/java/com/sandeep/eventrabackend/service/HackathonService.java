@@ -55,7 +55,7 @@ public class HackathonService {
     }
 
     public List<HackathonResponse> getAllHackathons() {
-        return hackathonRepository.findAll().stream()
+        return hackathonRepository.findByIsDeletedFalse().stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
