@@ -757,6 +757,11 @@ public class EventService {
                         throw new RegistrationConflictException("This event has been cancelled.");
                 }
 
+                // A past event will never reopen seats, so joining its waitlist would strand the user (#15283).
+                if (event.isEventPast()) {
+                        throw new RegistrationClosedException("Registration is closed for this event.");
+                }
+
                 User user = userRepository.findByEmail(userEmail)
                                 .orElseThrow(() -> new UsernameNotFoundException(
                                                 "User not found with email: " + userEmail));
