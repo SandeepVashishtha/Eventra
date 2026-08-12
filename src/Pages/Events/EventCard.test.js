@@ -3,53 +3,57 @@ import { BrowserRouter } from 'react-router-dom';
 
 import EventCard from './EventCard';
 import userEvent from '@testing-library/user-event';
-import { getEventStatus } from '../../utils/eventUtils';
+import { getEventStatus } from 'utils/eventUtils';
 
-jest.mock('../../utils/timezoneUtils', () => ({
+jest.mock('utils/timezoneUtils', () => ({
   getUserTimezone: jest.fn().mockReturnValue('UTC'),
 }));
 
-jest.mock('../../utils/relativeTime', () => ({
+jest.mock('utils/relativeTime', () => ({
   getSmartDateLabel: jest.fn().mockReturnValue('Jun 15, 2027'),
 }));
 
-jest.mock('../../utils/calendarUtils', () => ({
+jest.mock('utils/calendarUtils', () => ({
   addEventToGoogleCalendar: jest.fn().mockReturnValue('https://calendar.google.com/'),
 }));
 
-jest.mock('../../utils/shareUtils', () => ({
+jest.mock('utils/shareUtils', () => ({
   generateEventSharingData: jest.fn().mockReturnValue({}),
 }));
 
-jest.mock('../../utils/bookmarkUtils', () => ({
-  isEventBookmarked: jest.fn().mockReturnValue(false),
-  addBookmarkedEvent: jest.fn(),
-  removeBookmarkedEvent: jest.fn(),
-  subscribeToBookmarkChanges: jest.fn().mockReturnValue(() => {}),
+jest.mock('context/AuthContext', () => ({
+  useAuth: jest.fn().mockReturnValue({ user: null }),
 }));
 
-jest.mock('../../utils/conflictDetection', () => ({
+jest.mock('hooks/useBookmarks', () => ({
+  __esModule: true,
+  default: jest.fn(),
+}));
+
+jest.mock('utils/conflictDetection', () => ({
   checkRegistrationConflict: jest.fn().mockReturnValue({ hasConflict: false }),
 }));
 
-jest.mock('../../utils/eventUtils', () => ({
+jest.mock('utils/eventUtils', () => ({
   getEventStatus: jest.fn().mockReturnValue('upcoming'),
+  getFomoStatus: jest.fn().mockReturnValue({ isLowInventory: false, message: null }),
 }));
 
-jest.mock('../../context/MyEventsContext', () => ({
+jest.mock('context/MyEventsContext', () => ({
   useMyEvents: jest.fn(),
 }));
 
-jest.mock('../../components/common/ShareMenu', () =>
+jest.mock('components/common/ShareMenu', () =>
   function ShareMenu({ children }) { return children || null; }
 );
 
-jest.mock('../../components/common/StatusBadge', () => () => null);
+jest.mock('components/common/StatusBadge', () => () => null);
+jest.mock('components/common/SellingFastBadge', () => () => null);
 
-jest.mock('../../components/reminders/ReminderControls', () => () => null);
+jest.mock('components/reminders/ReminderControls', () => () => null);
 
 jest.mock('react-toastify', () => ({
-  toast: { success: jest.fn(), error: jest.fn(), info: jest.fn() },
+  toast: { success: jest.fn(), error: jest.fn(), info: jest.fn(), dismiss: jest.fn() },
 }));
 
 const baseEvent = {
@@ -70,9 +74,14 @@ const renderCard = (eventOverrides = {}) =>
     </BrowserRouter>
   );
 
-const { checkRegistrationConflict } = require('../../utils/conflictDetection');
-const { isEventBookmarked, subscribeToBookmarkChanges } = require('../../utils/bookmarkUtils');
-const { useMyEvents } = require('../../context/MyEventsContext');
+const { checkRegistrationConflict } = require('utils/conflictDetection');
+const useBookmarks = require('hooks/useBookmarks').default;
+const { useMyEvents } = require('context/MyEventsContext');
+
+const defaultBookmarks = () => ({
+  isBookmarked: jest.fn().mockReturnValue(false),
+  toggleBookmark: jest.fn(),
+});
 
 const defaultMyEvents = () => ({ myEvents: [], isRegistered: () => false });
 
@@ -81,8 +90,7 @@ describe('EventCard', () => {
     jest.clearAllMocks();
     getEventStatus.mockReturnValue('upcoming');
     checkRegistrationConflict.mockReturnValue({ hasConflict: false });
-    isEventBookmarked.mockReturnValue(false);
-    subscribeToBookmarkChanges.mockReturnValue(() => {});
+    useBookmarks.mockReturnValue(defaultBookmarks());
     useMyEvents.mockReturnValue(defaultMyEvents());
   });
 
@@ -161,24 +169,31 @@ describe('EventCard', () => {
   });
 
   describe('bookmark interaction', () => {
-    const { addBookmarkedEvent, removeBookmarkedEvent } = require('../../utils/bookmarkUtils');
     const { toast } = require('react-toastify');
 
-    it('calls addBookmarkedEvent and shows toast when bookmarking an unbookmarked event', async () => {
-      isEventBookmarked.mockReturnValue(false);
+    it('calls toggleBookmark and shows toast when bookmarking an unbookmarked event', async () => {
+      const toggleBookmark = jest.fn();
+      useBookmarks.mockReturnValue({
+        isBookmarked: jest.fn().mockReturnValue(false),
+        toggleBookmark,
+      });
       renderCard();
       const user = userEvent.setup();
       await user.click(screen.getByRole('button', { name: /bookmark event/i }));
-      expect(addBookmarkedEvent).toHaveBeenCalledTimes(1);
+      expect(toggleBookmark).toHaveBeenCalledTimes(1);
       expect(toast.success).toHaveBeenCalled();
     });
 
-    it('calls removeBookmarkedEvent and shows info toast when removing a bookmark', async () => {
-      isEventBookmarked.mockReturnValue(true);
+    it('calls toggleBookmark and shows info toast when removing a bookmark', async () => {
+      const toggleBookmark = jest.fn();
+      useBookmarks.mockReturnValue({
+        isBookmarked: jest.fn().mockReturnValue(true),
+        toggleBookmark,
+      });
       renderCard();
       const user = userEvent.setup();
       await user.click(screen.getByRole('button', { name: /remove event bookmark/i }));
-      expect(removeBookmarkedEvent).toHaveBeenCalledWith(42);
+      expect(toggleBookmark).toHaveBeenCalledWith(expect.objectContaining({ id: 42 }));
       expect(toast.info).toHaveBeenCalled();
     });
 
@@ -195,6 +210,37 @@ describe('EventCard', () => {
       expect(
         screen.getByRole('button', { name: /copy link for GSSoC Hackathon 2027/i })
       ).toBeInTheDocument();
+    });
+  });
+
+  describe('FOMO badge', () => {
+    const SellingFastBadge = require('components/common/SellingFastBadge').default;
+
+    beforeEach(() => {
+      // Mock the SellingFastBadge to render its message
+      SellingFastBadge.mockImplementation(({ message }) => (
+        <span data-testid="fomo-badge">{message}</span>
+      ));
+    });
+
+    it('shows "Selling Fast!" badge when inventory is low', () => {
+      getFomoStatus.mockReturnValue({ isLowInventory: true, message: "Selling Fast!" });
+      renderCard({ capacity: 100, registeredCount: 85 }); // 15 remaining (< 10% of 100 = 10, so should be low)
+      expect(screen.getByTestId('fomo-badge')).toBeInTheDocument();
+      expect(screen.getByText('Selling Fast!')).toBeInTheDocument();
+    });
+
+    it('shows "Only X Tickets Left!" badge when very few tickets remain', () => {
+      getFomoStatus.mockReturnValue({ isLowInventory: true, message: "Only 3 Tickets Left!" });
+      renderCard({ capacity: 50, registeredCount: 47 }); // 3 remaining
+      expect(screen.getByTestId('fomo-badge')).toBeInTheDocument();
+      expect(screen.getByText('Only 3 Tickets Left!')).toBeInTheDocument();
+    });
+
+    it('does not show FOMO badge when inventory is sufficient', () => {
+      getFomoStatus.mockReturnValue({ isLowInventory: false, message: null });
+      renderCard({ capacity: 100, registeredCount: 50 }); // 50 remaining (> 10% of 100)
+      expect(screen.queryByTestId('fomo-badge')).not.toBeInTheDocument();
     });
   });
 });

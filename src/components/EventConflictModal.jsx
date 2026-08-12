@@ -1,7 +1,9 @@
+import useDateFormatter from "hooks/useDateFormatter";
 import { useRef, useEffect } from 'react';
 import { AlertTriangle, Clock, Calendar, X, ArrowRight, Globe } from 'lucide-react';
 import { formatTimeRange } from '../utils/conflictDetection';
 import { getUserTimezone } from '../utils/timezoneUtils';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 /**
  * EventConflictModal
@@ -19,6 +21,8 @@ import { getUserTimezone } from '../utils/timezoneUtils';
  * @param {Function} props.onSelectAlternative - Callback when user selects an alternative event
  * @param {boolean} props.strictMode - If true, blocks registration (no proceed option)
  */
+import ErrorBoundary from "./common/ErrorBoundary";
+
 const EventConflictModal = ({
   isOpen,
   newEvent,
@@ -32,6 +36,9 @@ const EventConflictModal = ({
   const modalRef = useRef(null);
   const previousFocusRef = useRef(null);
   const userTimezone = getUserTimezone();
+  const { containerRef: focusTrapRef } = useFocusTrap(isOpen, onCancel);
+
+useScrollLock(isOpen);
 
   useEffect(() => {
     if (isOpen) {
@@ -50,70 +57,32 @@ const EventConflictModal = ({
     };
   }, [isOpen]);
 
+  const onCancelRef = useRef(onCancel);
+  onCancelRef.current = onCancel;
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
-        onCancel();
+        onCancelRef.current();
       }
     };
-    if (isOpen) {
-      window.addEventListener('keydown', handleKeyDown);
-    }
+    window.addEventListener('keydown', handleKeyDown);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onCancel]);
-
-  useEffect(() => {
-    if (!isOpen || !modalRef.current) return;
-
-    const getFocusableElements = () => {
-      return modalRef.current.querySelectorAll(
-        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex="0"]'
-      );
-    };
-
-    const focusableElements = getFocusableElements();
-    const firstElement = focusableElements[0];
-
-    // Focus the first element when modal opens, with a tiny timeout to ensure rendering is complete
-    const timeoutId = setTimeout(() => {
-      if (firstElement) {
-        firstElement.focus();
-      } else {
-        modalRef.current?.focus();
-      }
-    }, 50);
-
-    const handleTabKey = (e) => {
-      if (e.key !== 'Tab') return;
-
-      const currentFocusable = getFocusableElements();
-      if (currentFocusable.length === 0) return;
-
-      const first = currentFocusable[0];
-      const last = currentFocusable[currentFocusable.length - 1];
-
-      if (e.shiftKey) {
-        if (document.activeElement === first) {
-          last?.focus();
-          e.preventDefault();
-        }
-      } else {
-        if (document.activeElement === last) {
-          first?.focus();
-          e.preventDefault();
-        }
-      }
-    };
-
-    const modalNode = modalRef.current;
-    modalNode.addEventListener('keydown', handleTabKey);
-    return () => {
-      clearTimeout(timeoutId);
-      modalNode.removeEventListener('keydown', handleTabKey);
-    };
   }, [isOpen]);
+
+
+  // 🔥 FIX: Safe date formatter to prevent RangeError crashes if event data is malformed
+  const safeFormatDate = (dateStr) => {
+    if (!dateStr) return "TBD";
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? "TBD" : d.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
 
   if (!isOpen) return null;
 
@@ -127,7 +96,12 @@ const EventConflictModal = ({
 
       {/* Modal Content */}
       <div 
-        ref={modalRef}
+        ref={(node) => {
+          modalRef.current = node;
+          // Merge refs so useFocusTrap can also track the container
+          if (typeof focusTrapRef === 'function') focusTrapRef(node);
+          else if (focusTrapRef) focusTrapRef.current = node;
+        }}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
@@ -137,9 +111,9 @@ const EventConflictModal = ({
         <button
           onClick={onCancel}
           aria-label="Close conflict dialog"
-          className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
         >
-          <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+          <X className="w-5 h-5 text-gray-500 dark:text-gray-200" />
         </button>
 
         {/* Header */}
@@ -152,10 +126,10 @@ const EventConflictModal = ({
               <h2 id="modal-title" className="text-2xl font-bold text-gray-900 dark:text-white">
                 Scheduling Conflict Detected
               </h2>
-              <p className="mt-1 text-gray-600 dark:text-gray-400">
+              <p className="mt-1 text-gray-600 dark:text-gray-200">
                 This event overlaps with one or more events you&apos;ve already registered for.
               </p>
-              <span className="mt-2 inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+              <span className="mt-2 inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-200">
                 <Globe className="w-3 h-3" />
                 Times shown in: <strong>{userTimezone}</strong>
               </span>
@@ -175,11 +149,8 @@ const EventConflictModal = ({
               <div className="flex flex-wrap gap-4 mt-2 text-sm">
                 <span className="flex items-center gap-1">
                   <Calendar className="w-4 h-4" />
-                  {new Date(newEvent?.date).toLocaleDateString('en-US', {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric',
-                  })}
+                  {/* 🔥 FIX: Safely parse date */}
+                  {safeFormatDate(newEvent?.date)}
                 </span>
                 <span className="flex items-center gap-1">
                   <Clock className="w-4 h-4" />
@@ -209,11 +180,8 @@ const EventConflictModal = ({
                   <div className="flex flex-wrap gap-4 mt-2 text-sm text-red-700 dark:text-red-300">
                     <span className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
-                      {new Date(event.date).toLocaleDateString('en-US', {
-                        weekday: 'short',
-                        month: 'short',
-                        day: 'numeric',
-                      })}
+                      {/* 🔥 FIX: Safely parse date */}
+                      {safeFormatDate(event.date)}
                     </span>
                     <span className="flex items-center gap-1">
                       <Clock className="w-4 h-4" />
@@ -252,11 +220,8 @@ const EventConflictModal = ({
                         <div className="flex flex-wrap gap-4 mt-2 text-sm text-green-700 dark:text-green-300">
                           <span className="flex items-center gap-1">
                             <Calendar className="w-4 h-4" />
-                            {new Date(event.date).toLocaleDateString('en-US', {
-                              weekday: 'short',
-                              month: 'short',
-                              day: 'numeric',
-                            })}
+                            {/* 🔥 FIX: Safely parse date */}
+                            {safeFormatDate(event.date)}
                           </span>
                           <span className="flex items-center gap-1">
                             <Clock className="w-4 h-4" />
@@ -282,15 +247,15 @@ const EventConflictModal = ({
         <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex gap-3">
           <button
             onClick={onCancel}
-            className="flex-1 px-6 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
-           aria-label="button">
+            className="flex-1 px-6 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors font-medium"
+           aria-label="Cancel registration">
             Cancel Registration
           </button>
           {!strictMode && (
             <button
               onClick={onProceed}
               className="flex-1 px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-medium"
-             aria-label="button">
+             aria-label="Proceed with registration despite conflict">
               Proceed Anyway
             </button>
           )}
@@ -300,4 +265,10 @@ const EventConflictModal = ({
   );
 };
 
-export default EventConflictModal;
+export default function SafeEventConflictModal(props) {
+  return (
+    <ErrorBoundary level="feature" label="Event Conflict Modal">
+      <EventConflictModal {...props} />
+    </ErrorBoundary>
+  );
+}

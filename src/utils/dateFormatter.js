@@ -229,7 +229,8 @@ export function getRelativeTime(date, options = {}) {
     if (Math.abs(diffMin) >= 1) return rtf.format(diffMin, "minute");
     return rtf.format(diffSec, "second");
   } catch {
-    return "";
+    const d = date instanceof Date ? date : new Date(date);
+    return isNaN(d.getTime()) ? "" : d.toLocaleString();
   }
 }
 
