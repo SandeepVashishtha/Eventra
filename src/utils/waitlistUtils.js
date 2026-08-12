@@ -6,6 +6,234 @@ import { getOrMigrateKey } from "./storageKeyManager.js";
 import { syncSecureStorage } from "./secureStorage.js";
 import { pushToQueue } from "./offlineQueue.js";
 
+// CSV parsing utility for legacy waitlist import
+export const parseCsvWaitlistData = (csvText) => {
+  try {
+    const lines = csvText.split('\n');
+    if (lines.length < 2) {
+      throw new Error('CSV must have at least one data row');
+    }
+
+    // Parse header line
+    const headers = lines[0].split(',').map(header => header.trim());
+    
+    // Validate required columns
+    const requiredColumns = ['Name', 'Email', 'Timestamp'];
+    const missingColumns = requiredColumns.filter(col => 
+      !headers.some(header => header.toLowerCase() === col.toLowerCase())
+    );
+    
+    if (missingColumns.length > 0) {
+      throw new Error(`Missing required columns: ${missingColumns.join(', ')}`);
+    }
+
+    // Map headers to standard names (case-insensitive)
+    const headerMap = {};
+    headers.forEach((header, index) => {
+      const lowerHeader = header.toLowerCase();
+      if (lowerHeader === 'name') headerMap.name = index;
+      else if (lowerHeader === 'email') headerMap.email = index;
+      else if (lowerHeader === 'timestamp') headerMap.timestamp = index;
+    });
+
+    const entries = [];
+    
+    // Process data rows (skip header)
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue; // Skip empty lines
+
+      const values = line.split(',').map(value => value.trim());
+      
+      // Handle CSV values that might contain commas (simple quoted string support)
+      const parsedValues = [];
+      let currentValue = '';
+      let inQuotes = false;
+      
+      for (const char of line) {
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          parsedValues.push(currentValue);
+          currentValue = '';
+        } else {
+          currentValue += char;
+        }
+      }
+      parsedValues.push(currentValue); // Add last value
+
+      if (parsedValues.length < 3) {
+        throw new Error(`Invalid CSV format in line ${i + 1}: expected at least 3 columns`);
+      }
+
+      const entry = {
+        name: parsedValues[headerMap.name] || '',
+        email: parsedValues[headerMap.email] || '',
+        timestamp: parsedValues[headerMap.timestamp] || ''
+      };
+
+      // Validate required fields
+      if (!entry.name || !entry.email || !entry.timestamp) {
+        throw new Error(`Missing required data in line ${i + 1}`);
+      }
+
+      entries.push(entry);
+    }
+
+    return entries;
+  } catch (error) {
+    logger.error('[WaitlistUtils] Failed to parse CSV waitlist data:', error);
+    throw new Error(`Failed to parse CSV: ${error.message}`);
+  }
+};
+
+// Validate parsed CSV entries before import
+export const validateCsvWaitlistEntries = (entries) => {
+  if (!Array.isArray(entries)) {
+    throw new Error('Invalid entries format: expected array');
+  }
+
+  if (entries.length === 0) {
+    throw new Error('No valid entries found in CSV');
+  }
+
+  const errors = [];
+  const validEntries = [];
+
+  entries.forEach((entry, index) => {
+    try {
+      // Validate required fields
+      if (!entry.name || typeof entry.name !== 'string' || entry.name.trim() === '') {
+        errors.push({ line: index + 2, field: 'Name', error: 'Name is required' });
+        return;
+      }
+
+      if (!entry.email || typeof entry.email !== 'string' || entry.email.trim() === '') {
+        errors.push({ line: index + 2, field: 'Email', error: 'Email is required' });
+        return;
+      }
+
+      // Basic email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(entry.email)) {
+        errors.push({ line: index + 2, field: 'Email', error: 'Invalid email format' });
+        return;
+      }
+
+      if (!entry.timestamp || typeof entry.timestamp !== 'string' || entry.timestamp.trim() === '') {
+        errors.push({ line: index + 2, field: 'Timestamp', error: 'Timestamp is required' });
+        return;
+      }
+
+      // Try to parse timestamp (ISO format expected)
+      const timestamp = entry.timestamp.trim();
+      const date = new Date(timestamp);
+      if (isNaN(date.getTime())) {
+        // Try additional formats
+        const formats = [
+          timestamp, // ISO
+          timestamp.replace(' ', 'T'), // Date with space
+          `${timestamp}T00:00:00Z`, // Date only
+        ];
+        
+        let parsedSuccessfully = false;
+        for (const format of formats) {
+          const testDate = new Date(format);
+          if (!isNaN(testDate.getTime())) {
+            parsedSuccessfully = true;
+            break;
+          }
+        }
+        
+        if (!parsedSuccessfully) {
+          errors.push({ line: index + 2, field: 'Timestamp', error: 'Invalid timestamp format. Expected ISO format (YYYY-MM-DDTHH:MM:SSZ)' });
+          return;
+        }
+      }
+
+      validEntries.push({
+        name: entry.name.trim(),
+        email: entry.email.trim().toLowerCase(),
+        timestamp: timestamp
+      });
+
+    } catch (error) {
+      errors.push({ line: index + 2, field: 'All', error: error.message });
+    }
+  });
+
+  return {
+    validEntries,
+    errors,
+    hasErrors: errors.length > 0
+  };
+};
+
+// Bulk import CSV waitlist data
+export const importCsvWaitlist = async (eventId, csvText, userId) => {
+  try {
+    // Parse CSV text
+    const parsedEntries = parseCsvWaitlistData(csvText);
+    
+    // Validate entries
+    const { validEntries, errors, hasErrors } = validateCsvWaitlistEntries(parsedEntries);
+    
+    if (hasErrors) {
+      return {
+        success: false,
+        message: `CSV validation failed with ${errors.length} errors`,
+        errors: errors.map(error => `${error.field} error at line ${error.line}: ${error.error}`),
+        importedCount: 0,
+        failedCount: parsedEntries.length
+      };
+    }
+
+    // Prepare payload for backend
+    const payload = {
+      eventId: parseInt(eventId, 10),
+      entries: validEntries.map(entry => ({
+        name: entry.name,
+        email: entry.email,
+        timestamp: entry.timestamp
+      }))
+    };
+
+    // Send to backend
+    const response = await apiUtils.post(
+      API_ENDPOINTS.WAITLIST.IMPORT_CSV(eventId),
+      payload
+    );
+
+    if (!response.ok) {
+      const errorData = response.data || {};
+      throw new Error(errorData.message || 'Failed to import CSV waitlist data');
+    }
+
+    return {
+      success: true,
+      message: 'CSV waitlist data imported successfully',
+      data: response.data,
+      importedCount: response.data?.successfulImports || validEntries.length,
+      failedCount: response.data?.failedImports || 0
+    };
+
+  } catch (error) {
+    logger.error('[WaitlistUtils] Failed to import CSV waitlist:', error);
+    
+    if (error?.response?.status === 401 || error?.response?.status === 403) {
+      throw error; // Re-throw auth errors
+    }
+
+    return {
+      success: false,
+      message: error.message || 'Failed to import CSV waitlist data',
+      errors: [error.message],
+      importedCount: 0,
+      failedCount: 0
+    };
+  }
+};
+
 const GLOBAL_WAITLIST_KEY = "eventra_global_waitlists";
 const NOTIFICATION_INBOX_PREFIX = "eventra_notification_inbox";
 const CANONICAL_NOTIFICATION_INBOX_KEY = NOTIFICATION_INBOX_PREFIX;
