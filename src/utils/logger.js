@@ -1,4 +1,4 @@
-/* eslint-disable-next-line no-console */
+import { redactSensitiveData } from "./security/redactSensitiveData.js";
 
 // Cross-environment development check (Vite, Webpack, Node.js)
 const isDevelopment = (() => {
@@ -32,7 +32,7 @@ export const logger = {
    */
   log: (...args) => {
     if (isDevelopment) {
-      console.log(getPrefix("log"), ...args);
+      console.log(getPrefix("log"), ...redactLogArgs(args));
     }
   },
 
@@ -43,7 +43,7 @@ export const logger = {
    */
   info: (...args) => {
     if (isDevelopment) {
-      console.info(getPrefix("info"), ...args);
+      console.info(getPrefix("info"), ...redactLogArgs(args));
     }
   },
 
@@ -53,9 +53,7 @@ export const logger = {
    * @param {...*} args - Additional arguments to pass to console.warn.
    */
   warn: (...args) => {
-    if (isDevelopment) {
-      console.warn(getPrefix("warn"), ...args);
-    }
+    console.warn(getPrefix("warn"), ...redactLogArgs(args));
   },
 
   /**
@@ -64,6 +62,22 @@ export const logger = {
    * @param {...*} args - Additional arguments to pass to console.error.
    */
   error: (...args) => {
-    console.error(getPrefix("error"), ...args);
+    console.error(getPrefix("error"), ...redactLogArgs(args));
+  },
+
+  /**
+   * Logs a security event with redacted metadata.
+   * @param {string} event - Machine-readable security event name.
+   * @param {Object} [data] - Event metadata; sensitive fields are redacted.
+   */
+  security: (event, data = {}) => {
+    const timestamp = new Date().toISOString();
+    const logEntry = redactSensitiveData({ timestamp, event, ...data });
+
+    if (isDevelopment) {
+      console.warn(getPrefix("security"), redactSensitiveData(data));
+    } else {
+      console.warn(JSON.stringify(logEntry));
+    }
   },
 };
