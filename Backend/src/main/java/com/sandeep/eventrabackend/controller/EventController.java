@@ -122,6 +122,16 @@ public class EventController {
                 return eventStreamService.createEmitter();
         }
 
+        @GetMapping(value = "/{id}/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+        @Operation(summary = "Stream availability updates for a single event", description = "Establishes a Server-Sent Events (SSE) connection scoped to one event, so the subscriber only receives availability broadcasts for that event.")
+        @ApiResponses({
+                        @ApiResponse(responseCode = "200", description = "SSE connection established")
+        })
+        public SseEmitter streamEventAvailability(
+                        @Parameter(description = "ID of the event to scope the stream to") @PathVariable Long id) {
+                return eventStreamService.createEmitter("events", id);
+        }
+
         @GetMapping
         @Operation(summary = "Get public events (paginated)", description = "Returns a page of public events. Supports page/size/search/status/sort query params.")
         @ApiResponses({

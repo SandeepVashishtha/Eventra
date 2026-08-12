@@ -93,6 +93,10 @@ const subscribeAvailabilityPoll = (eventId, callback) => {
  * @param {number|string} eventId - The event id to track, or `null` to disable.
  * @param {Object} [options={}]
  * @param {boolean} [options.enabled=true] - Toggles the connection on/off.
+ * @param {boolean} [options.scoped=false] - Subscribe to the per-event stream
+ *   (`/api/events/{id}/stream`) so the backend only broadcasts availability for
+ *   this event. Use on single-event pages; keep the shared multiplexed stream
+ *   for grids so all cards share one connection.
  * @returns {Object}
  * @returns {Object|null} Object.availability - Normalised availability
  *   `{ capacity, registeredCount, spotsLeft, isFull }` or `null` before the
@@ -101,7 +105,7 @@ const subscribeAvailabilityPoll = (eventId, callback) => {
  * @returns {number} Object.remaining - Number of seats left (0 when full/unlimited-safe).
  * @returns {string} Object.status - SSE connection status.
  */
-export default function useEventAvailability(eventId, { enabled = true } = {}) {
+export default function useEventAvailability(eventId, { enabled = true, scoped = false } = {}) {
   // Cache of availability keyed by event id. Stored in a single state object so
   // multiple consumers (cards on a grid) share one source of truth.
   const [cache, setCache] = useState({});
@@ -114,8 +118,11 @@ export default function useEventAvailability(eventId, { enabled = true } = {}) {
     cacheRef.current = cache;
   }, [cache]);
 
-  // Reflect the multiplexer's connection status.
-  const { status: sseStatus } = useRealTimeConnection(EVENT_STREAM_PATH, {
+  // Reflect the multiplexer's connection status. When `scoped` is set, connect
+  // to the per-event stream so the backend only pushes availability for this
+  // event instead of every event in the system.
+  const streamPath = scoped && eventId != null ? `/api/events/${eventId}/stream` : EVENT_STREAM_PATH;
+  const { status: sseStatus } = useRealTimeConnection(streamPath, {
     enabled: Boolean(eventId) && enabled,
     onMessage: (data, eventType) => {
       // Only handle availability broadcasts for the event we care about.
