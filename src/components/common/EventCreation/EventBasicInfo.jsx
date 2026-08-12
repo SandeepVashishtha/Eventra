@@ -1,7 +1,7 @@
 
 import { motion } from "framer-motion";
 import { FileText, Tag, Users } from "lucide-react";
-import { categories } from "../../constants/eventDefaults";
+import { categories } from "../../../constants/eventDefaults";
 import CharacterCounter from "../CharacterCounter";
 
 const FormField = ({ label, icon: Icon, error, children, required, hint }) => (
