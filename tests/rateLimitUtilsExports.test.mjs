@@ -15,6 +15,12 @@ const required = [
   "RESET_COOLDOWN_SECONDS",
   "secondsUntilUnlock",
   "STORAGE_KEY_RESET_LAST_SUBMIT",
+  "getBackoffDelay",
+  "STORAGE_KEY_ATTEMPTS",
+  "STORAGE_KEY_LOCKOUT_UNTIL",
+  "readPersistedRateLimit",
+  "persistRateLimit",
+  "clearPersistedRateLimit",
   // pre-existing exports must still be present
   "calculateJitteredBackoff",
   "isRateLimitError",
@@ -33,6 +39,12 @@ assert.equal(typeof mod.RESET_COOLDOWN_SECONDS, "number");
 assert.equal(typeof mod.parseRetryAfterMs, "function");
 assert.equal(typeof mod.secondsUntilUnlock, "function");
 assert.equal(typeof mod.STORAGE_KEY_RESET_LAST_SUBMIT, "string");
+assert.equal(typeof mod.getBackoffDelay, "function");
+assert.equal(typeof mod.STORAGE_KEY_ATTEMPTS, "string");
+assert.equal(typeof mod.STORAGE_KEY_LOCKOUT_UNTIL, "string");
+assert.equal(typeof mod.readPersistedRateLimit, "function");
+assert.equal(typeof mod.persistRateLimit, "function");
+assert.equal(typeof mod.clearPersistedRateLimit, "function");
 
 // Original exports still work as before.
 assert.equal(typeof mod.calculateJitteredBackoff, "function");
@@ -40,13 +52,20 @@ assert.equal(typeof mod.isRateLimitError, "function");
 assert.equal(mod.isRateLimitError({ status: 429 }), true);
 assert.equal(mod.isRateLimitError({ status: 500 }), false);
 
-// Mirror the exact import shape used by the auth pages.
+// Mirror the exact import shape used by the auth pages and the
+// useLoginRateLimit hook.
 const {
   MAX_LOGIN_ATTEMPTS,
   parseRetryAfterMs,
   RESET_COOLDOWN_SECONDS,
   secondsUntilUnlock,
   STORAGE_KEY_RESET_LAST_SUBMIT,
+  getBackoffDelay,
+  STORAGE_KEY_ATTEMPTS,
+  STORAGE_KEY_LOCKOUT_UNTIL,
+  readPersistedRateLimit,
+  persistRateLimit,
+  clearPersistedRateLimit,
 } = mod;
 assert.ok(MAX_LOGIN_ATTEMPTS > 0, "MAX_LOGIN_ATTEMPTS is a positive number");
 assert.ok(
@@ -54,5 +73,16 @@ assert.ok(
   "RESET_COOLDOWN_SECONDS is a positive number",
 );
 assert.ok(STORAGE_KEY_RESET_LAST_SUBMIT.length > 0, "reset storage key set");
+assert.ok(getBackoffDelay(5) > 0, "getBackoffDelay applies backoff at limit");
+assert.equal(
+  getBackoffDelay(2),
+  0,
+  "getBackoffDelay stays zero below MAX_LOGIN_ATTEMPTS",
+);
+assert.ok(STORAGE_KEY_ATTEMPTS.length > 0, "attempts storage key set");
+assert.ok(STORAGE_KEY_LOCKOUT_UNTIL.length > 0, "lockout storage key set");
+assert.equal(typeof readPersistedRateLimit, "function");
+assert.equal(typeof persistRateLimit, "function");
+assert.equal(typeof clearPersistedRateLimit, "function");
 
 console.log("rateLimitUtils login-lockout re-export tests passed");
