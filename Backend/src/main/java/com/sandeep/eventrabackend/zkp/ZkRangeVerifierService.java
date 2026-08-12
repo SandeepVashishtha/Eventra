@@ -1,5 +1,6 @@
 package com.sandeep.eventrabackend.zkp;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.math.BigInteger;
@@ -13,8 +14,15 @@ import java.security.MessageDigest;
 @Service
 public class ZkRangeVerifierService {
 
+    @Value("${zkp.range.min:18}")
+    private int minBound;
+
+    @Value("${zkp.range.max:120}")
+    private int maxBound;
+
     /**
-     * Verify range proof: H(Age + Salt) matches the committed value.
+     * Verify range proof: H(Age + Salt) matches the committed value AND the
+     * plaintext value satisfies the configured eligibility range.
      */
     public boolean verifyRangeProof(String commitment, String proofValue, String salt) {
         if (commitment == null || proofValue == null || salt == null) {
@@ -33,7 +41,13 @@ public class ZkRangeVerifierService {
                 hexString.append(hex);
             }
 
-            return commitment.equalsIgnoreCase(hexString.toString());
+            if (!commitment.equalsIgnoreCase(hexString.toString())) {
+                return false;
+            }
+
+            BigInteger value = new BigInteger(proofValue.trim());
+            return value.compareTo(BigInteger.valueOf(minBound)) >= 0
+                    && value.compareTo(BigInteger.valueOf(maxBound)) <= 0;
         } catch (Exception e) {
             return false;
         }
