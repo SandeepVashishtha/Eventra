@@ -244,26 +244,19 @@ export const AuthProvider = ({ children }) => {
         if (err?.status === 401 || err?.status === 403) {
           clearSession();
         } else {
-          // If network is offline, attempt to fall back to securely cached user details
+          // Network/server errors are not proof the session is still valid.
+          // Restore a display-only cached profile without roles so Gate cannot
+          // treat a stale ADMIN/ORGANIZER cache as an authenticated session.
           try {
             const cachedUser = await syncSecureStorage.getItemAsync("user");
             if (cachedUser) {
               const parsed = JSON.parse(cachedUser);
-              const resolvedRoles = normalizeRoles(
-                parsed.roles ?? (parsed.role ? [parsed.role] : [])
-              );
-              const rolePermissions = resolvedRoles.flatMap(
-                (role) => ROLE_PERMISSIONS[role] || []
-              );
               setUser({
                 ...parsed,
-                roles: resolvedRoles,
-                permissions: rolePermissions,
+                roles: [],
+                permissions: [],
+                profileValidated: false,
               });
-              // Never read a JS-readable token cookie (httpOnlyStorage policy).
-              // The active token is held in JS memory by setAuthToken or by
-              // the backend's HttpOnly Set-Cookie flow.
-              setToken("cookie-managed");
             } else {
               clearSession();
             }
