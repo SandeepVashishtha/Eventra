@@ -1168,6 +1168,14 @@ public class EventService {
                                                 eventId,
                                                 attempt,
                                                 MAX_REGISTRATION_RETRIES);
+                        } catch (org.springframework.dao.PessimisticLockingFailureException ex) {
+                                lastConflict = ex;
+
+                                log.warn(
+                                                "Pessimistic lock conflict on event {} (attempt {}/{})",
+                                                eventId,
+                                                attempt,
+                                                MAX_REGISTRATION_RETRIES);
                         }
                 }
 
@@ -1227,12 +1235,12 @@ public class EventService {
                         }
                 }
 
-                // FIX (#13914): atomic capacity guard. The single UPDATE
-                // increments registeredCount only while a seat is free (row
-                // count 1), so two concurrent registrations cannot both pass an
-                // in-memory check and overshoot capacity. Row count 0 => full.
+                // Capacity guard. The event row is held under a pessimistic write
+                // lock (findByIdWithLock) for the whole transaction, so this
+                // in-memory check is safe against concurrent registrations and
+                // keeps the increment atomic with the registration save below.
                 if (event.getCapacity() != null
-                                && eventRepository.incrementRegisteredCountAtomically(eventId) == 0) {
+                                && event.getRegisteredCount() >= event.getCapacity()) {
 
                         throw new EventFullException(
                                         "Event is already full. Capacity: " + event.getCapacity());
@@ -1252,8 +1260,10 @@ public class EventService {
                         throw mapRegistrationIntegrityViolation(ex, seatId);
                 }
 
-                event.setRegisteredCount((int) eventRegistrationRepository
-                                .countByEvent_IdAndStatus(eventId, "CONFIRMED"));
+                // Increment in memory and persist within the same transaction as
+                // the registration so the two either both commit or both roll
+                // back (no orphaned capacity increment, #16175).
+                event.setRegisteredCount(event.getRegisteredCount() + 1);
                 Event saved = eventRepository.save(event);
 
                 broadcastAvailability(saved);
