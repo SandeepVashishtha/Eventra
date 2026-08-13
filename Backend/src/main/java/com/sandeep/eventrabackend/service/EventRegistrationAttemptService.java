@@ -87,12 +87,12 @@ public class EventRegistrationAttemptService {
             }
         }
 
-        // FIX (#13914): atomic capacity guard. The single UPDATE increments
-        // registeredCount only while a seat is free (row count 1), so two
-        // concurrent registrations cannot both pass an in-memory check and
-        // overshoot capacity. Row count 0 => full.
+        // Capacity guard. The event row is held under a pessimistic write
+        // lock (findByIdWithLock) for the whole REQUIRES_NEW transaction, so this
+        // in-memory check is safe against concurrent registrations and
+        // keeps the increment atomic with the registration save below (#16175).
         if (event.getCapacity() != null
-                && eventRepository.incrementRegisteredCountAtomically(eventId) == 0) {
+                && event.getRegisteredCount() >= event.getCapacity()) {
             throw new EventFullException(
                     "Event is already full. Capacity: " + event.getCapacity());
         }
@@ -111,8 +111,7 @@ public class EventRegistrationAttemptService {
             throw mapRegistrationIntegrityViolation(ex, seatId);
         }
 
-        event.setRegisteredCount((int) eventRegistrationRepository
-                .countByEvent_IdAndStatus(eventId, "CONFIRMED"));
+        event.setRegisteredCount(event.getRegisteredCount() + 1);
         Event saved = eventRepository.save(event);
 
         Integer spotsRemaining =

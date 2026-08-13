@@ -11,6 +11,7 @@ const validData = {
   organizerName: "My Org",
   email: "me@example.com",
   location: "Online",
+  mode: "Online",
   startDate: TOMORROW,
   endDate: DAY_AFTER,
   description: "A description that is long enough to pass validation.",
@@ -83,6 +84,14 @@ assert.equal(
   validateHostHackathonForm({ ...validData, startDate: TOMORROW, endDate: TOMORROW }, TODAY).endDate,
   undefined
 );
+
+// Mode is required and must be one of Online / Offline / Hybrid
+assert.equal(
+  validateHostHackathonForm({ ...validData, mode: "Invalid" }, TODAY).mode,
+  "Mode must be Online, Offline, or Hybrid!"
+);
+assert.equal(validateHostHackathonForm({ ...validData, mode: "Offline" }, TODAY).mode, undefined);
+assert.equal(validateHostHackathonForm({ ...validData, mode: "Hybrid" }, TODAY).mode, undefined);
 
 // Participant limit is optional but must be >= 1 when present
 assert.equal(validateHostHackathonForm({ ...validData, participantLimit: "" }, TODAY).participantLimit, undefined);

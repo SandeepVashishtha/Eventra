@@ -18,6 +18,9 @@ const mapStatusKey = (status = "") => {
     done: "past",
     ended: "ended",
     "event ended": "ended",
+    cancelled: "cancelled",
+    canceled: "cancelled",
+    archived: "archived",
   };
 
   // 🔥 FIX: Return null for unmapped values instead of echoing the input.
@@ -86,6 +89,10 @@ export const getEventStatus = (event) => {
     return "cancelled";
   }
 
+  if (explicitStatus === "archived") {
+    return "archived";
+  }
+
   if (explicitStatus && explicitStatus !== dateStatus) {
     return explicitStatus;
   }
@@ -112,7 +119,7 @@ export const isEventRegistrationClosed = (eventOrStatus) => {
       ? mapStatusKey(eventOrStatus)
       : getEventStatus(eventOrStatus);
 
-  return status === "past" || status === "ended" || status === "cancelled";
+  return status === "past" || status === "ended" || status === "cancelled" || status === "archived";
 };
 
 /**

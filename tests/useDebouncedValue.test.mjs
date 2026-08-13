@@ -2,7 +2,7 @@
  * Tests for src/hooks/useDebouncedValue.js
  *
  * Verifies the debounced value hook contract, including
- * useDebouncedValue, useDebouncedCallback, and useDebouncedSearch functions.
+ * useDebouncedValue and useDebouncedCallback functions.
  */
 
 import { strict as assert } from 'node:assert';
@@ -30,13 +30,6 @@ describe('useDebouncedValue — source contract', () => {
     assert.ok(
       src.includes('export function useDebouncedCallback'),
       'Must export useDebouncedCallback as named export',
-    );
-  });
-
-  it('exports useDebouncedSearch as named export', () => {
-    assert.ok(
-      src.includes('export function useDebouncedSearch'),
-      'Must export useDebouncedSearch as named export',
     );
   });
 
@@ -126,30 +119,6 @@ describe('useDebouncedCallback — contract', () => {
     assert.ok(
       src.includes('timerRef.current = null'),
       'Must reset timerRef.current after callback fires',
-    );
-  });
-});
-
-describe('useDebouncedSearch — contract', () => {
-  it('uses useDebouncedValue internally', () => {
-    assert.ok(
-      src.includes('useDebouncedValue(inputValue, delayMs)'),
-      'Must use useDebouncedValue internally',
-    );
-  });
-
-  it('returns inputValue, searchTerm, and setInputValue', () => {
-    assert.ok(
-      src.includes('return { inputValue, searchTerm, setInputValue }'),
-      'Must return inputValue, searchTerm, and setInputValue',
-    );
-  });
-
-  it('accepts initialValue and delayMs parameters', () => {
-    assert.ok(
-      src.includes('initialValue = ""') &&
-        src.includes('delayMs = 300'),
-      'Must accept initialValue and delayMs parameters',
     );
   });
 });

@@ -112,25 +112,14 @@ let _memoizedFastFingerprint = null;
  * @returns {string} SHA-256 hex string representing the basic device fingerprint.
  */
 export const getFastFingerprint = () => {
-  if (_memoizedFastFingerprint !== null) {
-    return _memoizedFastFingerprint;
-  }
-
-  if (typeof window === "undefined" || typeof document === "undefined") {
-    _memoizedFastFingerprint = CryptoJS.SHA256("eventra-fast-fingerprint-fallback").toString();
-    return _memoizedFastFingerprint;
-  }
-
-  try {
-    const screenInfo = `${window.screen?.width || 0}x${window.screen?.height || 0}x${window.screen?.colorDepth || 0}`;
-    const navInfo = `${window.navigator?.userAgent || ""}_${window.navigator?.language || ""}_${window.navigator?.hardwareConcurrency || 0}`;
-    const salt = `eventra:fast-fingerprint:${window.location.origin}`;
-    _memoizedFastFingerprint = CryptoJS.SHA256(`${screenInfo}_${navInfo}_${salt}`).toString();
-    return _memoizedFastFingerprint;
-  } catch {
-    _memoizedFastFingerprint = CryptoJS.SHA256("eventra-fast-fingerprint-ultimate-fallback").toString();
-    return _memoizedFastFingerprint;
-  }
+  // Both functions must identify the same device with the identical digest.
+  // Previously they used different salts and attribute compositions (and the
+  // fast variant omitted the canvas hash), so two callers could observe
+  // different "fingerprints" for the same device. To eliminate that divergence
+  // the fast variant reuses the canonical fingerprint. The result is memoized
+  // inside getDeviceFingerprint, so there is no meaningful performance penalty
+  // for repeated calls.
+  return getDeviceFingerprint();
 };
 
 /**

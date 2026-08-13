@@ -4,7 +4,9 @@ import com.sandeep.eventrabackend.model.*;
 import com.sandeep.eventrabackend.repository.EventRegistrationRepository;
 import com.sandeep.eventrabackend.repository.PaymentPlanRepository;
 import com.sandeep.eventrabackend.repository.PaymentRepository;
+import com.sandeep.eventrabackend.repository.UserRepository;
 import com.stripe.exception.StripeException;
+import org.springframework.security.access.AccessDeniedException;
 import com.stripe.model.Customer;
 import com.stripe.model.PaymentIntent;
 import com.stripe.model.PaymentMethod;
@@ -23,15 +25,18 @@ public class PaymentPlanService {
     private final PaymentRepository paymentRepository;
     private final EventRegistrationRepository eventRegistrationRepository;
     private final StripeService stripeService;
+    private final UserRepository userRepository;
 
     public PaymentPlanService(PaymentPlanRepository paymentPlanRepository,
                               PaymentRepository paymentRepository,
                               EventRegistrationRepository eventRegistrationRepository,
-                              StripeService stripeService) {
+                              StripeService stripeService,
+                              UserRepository userRepository) {
         this.paymentPlanRepository = paymentPlanRepository;
         this.paymentRepository = paymentRepository;
         this.eventRegistrationRepository = eventRegistrationRepository;
         this.stripeService = stripeService;
+        this.userRepository = userRepository;
     }
 
     // Create a new payment plan for installment payments
@@ -46,7 +51,15 @@ public class PaymentPlanService {
         // Get registration
         EventRegistration registration = eventRegistrationRepository.findById(registrationId)
                 .orElseThrow(() -> new IllegalArgumentException("Registration not found"));
-        
+
+        // Idempotency: return the existing active plan for this registration if present
+        // to prevent duplicate Payment records and potential double-charging.
+        Optional<PaymentPlan> existingActivePlan =
+                paymentPlanRepository.findActivePaymentPlanByRegistrationId(registrationId);
+        if (existingActivePlan.isPresent()) {
+            return existingActivePlan.get();
+        }
+
         // Validate input
         if (ticketPrice == null || ticketPrice.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Ticket price must be greater than zero");
@@ -84,7 +97,7 @@ public class PaymentPlanService {
         
         if (eventDate != null && now.isBefore(eventDate)) {
             long totalDays = java.time.temporal.ChronoUnit.DAYS.between(now.toLocalDate(), eventDate.toLocalDate());
-            long daysUntilFirstInstallment = totalDays / totalInstallments;
+            long daysUntilFirstInstallment = totalDays / (totalInstallments - 1);
             paymentPlan.setNextPaymentDate(now.plusDays(daysUntilFirstInstallment));
         }
         
@@ -127,26 +140,34 @@ public class PaymentPlanService {
         
         // Remaining installments
         long totalDays = java.time.temporal.ChronoUnit.DAYS.between(now.toLocalDate(), eventDate.toLocalDate());
-        long intervalDays = totalDays / (paymentPlan.getTotalInstallments() - 1);
-        
+        int numInstallments = paymentPlan.getTotalInstallments() - 1;
+
+        // Ensure installments + upfront sum exactly to ticketPrice: the last
+        // installment absorbs the rounding difference from the base amount.
+        BigDecimal remainingAmount = paymentPlan.getTotalAmount().subtract(upfrontAmount);
+        BigDecimal lastInstallmentAmount = remainingAmount.subtract(
+                installmentAmount.multiply(new BigDecimal(numInstallments - 1)));
+
         for (int i = 2; i <= paymentPlan.getTotalInstallments(); i++) {
             Payment payment = new Payment();
             payment.setRegistration(registration);
-            payment.setAmount(installmentAmount);
+            payment.setAmount(i == paymentPlan.getTotalInstallments() ? lastInstallmentAmount : installmentAmount);
             payment.setCurrency(paymentPlan.getCurrency());
             payment.setPaymentMethod("CARD");
             payment.setPaymentProvider("STRIPE");
             payment.setStatus("PENDING");
             payment.setInstallmentNumber(i);
             payment.setTotalInstallments(paymentPlan.getTotalInstallments());
-            
-            // Calculate due date
-            LocalDateTime dueDate = now.plusDays(intervalDays * (i - 1));
+
+            // Calculate due date: spread total days evenly so the schedule spans
+            // the full period without dropping remainder days (proportional spacing).
+            long dueDayOffset = (totalDays * (i - 1)) / numInstallments;
+            LocalDateTime dueDate = now.plusDays(dueDayOffset);
             if (dueDate.isAfter(eventDate)) {
                 dueDate = eventDate;
             }
             payment.setDueDate(dueDate);
-            
+
             paymentRepository.save(payment);
         }
     }
@@ -155,24 +176,40 @@ public class PaymentPlanService {
     @Transactional
     public Map<String, String> initializeStripePayment(
             Long registrationId,
+            String authenticatedEmail,
             String email,
             String name,
             String phone) throws StripeException {
-        
+
+        User currentUser = userRepository.findByEmail(authenticatedEmail)
+                .orElseThrow(() -> new AccessDeniedException("Authenticated user not found"));
+
         PaymentPlan paymentPlan = paymentPlanRepository.findByRegistration_Id(registrationId)
                 .orElseThrow(() -> new IllegalArgumentException("Payment plan not found"));
-        
+
         EventRegistration registration = paymentPlan.getRegistration();
-        
+
+        // Enforce object-level authorization: the authenticated user must own the registration
+        if (!registration.getUser().getId().equals(currentUser.getId())) {
+            throw new AccessDeniedException(
+                    "You are not authorized to initialize payment for this registration");
+        }
+
+        // Override request-controlled values with the authenticated user's verified details
+        String customerEmail = currentUser.getEmail();
+        String customerName = ((currentUser.getFirstName() != null ? currentUser.getFirstName() : "") + " "
+                + (currentUser.getLastName() != null ? currentUser.getLastName() : "")).trim();
+        String customerPhone = phone;
+
         // Create metadata
         Map<String, String> metadata = new HashMap<>();
         metadata.put("registration_id", String.valueOf(registrationId));
         metadata.put("event_id", String.valueOf(registration.getEvent().getId()));
         metadata.put("user_id", String.valueOf(registration.getUser().getId()));
         metadata.put("payment_plan_id", String.valueOf(paymentPlan.getId()));
-        
+
         // Create Stripe customer
-        Customer customer = stripeService.createCustomer(email, name, phone, metadata);
+        Customer customer = stripeService.createCustomer(customerEmail, customerName, customerPhone, metadata);
         
         // Update payment plan with Stripe customer ID
         paymentPlan.setStripeCustomerId(customer.getId());
@@ -307,6 +344,22 @@ public class PaymentPlanService {
             List<String> installmentIntentIds = stripeService.scheduleInstallmentPayments(
                     paymentPlan, paymentPlan.getStripeCustomerId(), paymentMethodId);
             
+            // Persist installment PaymentIntent IDs onto the Payment records so webhooks
+            // for installments 2+ can locate them. installmentIntentIds contains only
+            // the intents for installments 2..N (the upfront intent is already persisted
+            // above), so entry i-1 maps to the Payment row at index i.
+            List<Payment> installmentPayments = paymentRepository.findByRegistration_IdOrderByInstallmentNumberAsc(
+                    registration.getId());
+            String stripeCustomerId = paymentPlan.getStripeCustomerId();
+            for (int i = 0; i < installmentPayments.size(); i++) {
+                Payment p = installmentPayments.get(i);
+                if (i > 0 && (i - 1) < installmentIntentIds.size()) {
+                    p.setStripePaymentIntentId(installmentIntentIds.get(i - 1));
+                }
+                p.setStripeCustomerId(stripeCustomerId);
+                paymentRepository.save(p);
+            }
+            
             // Update payment plan status
             paymentPlan.setStatus("ACTIVE");
             paymentPlanRepository.save(paymentPlan);
@@ -434,6 +487,7 @@ public class PaymentPlanService {
         
         // Update registration
         registration.setPaymentStatus("COMPLETED");
+        registration.setStatus("CONFIRMED");
         registration.setQrActivated(true);
         registration.setQrActivationDate(LocalDateTime.now());
         eventRegistrationRepository.save(registration);
@@ -499,6 +553,7 @@ public class PaymentPlanService {
         
         // Update registration
         registration.setPaymentStatus("CANCELLED");
+        registration.setStatus("CANCELLED");
         registration.setQrActivated(false);
         eventRegistrationRepository.save(registration);
         

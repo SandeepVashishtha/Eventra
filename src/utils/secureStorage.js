@@ -619,12 +619,24 @@ export const rotateKey = async () => {
   }
 };
 
+/**
+ * Get the current key metadata.
+ *
+ * @returns {Object|null} Key metadata object or null if unavailable
+ */
 export const getKeyMetadata = () => {
   return getOrInitKeyMetadata();
 };
+
+/**
+ * Get the current crypto configuration.
+ *
+ * @returns {Object} Crypto configuration object
+ */
 export const getCryptoConfig = () => {
   return { ...CRYPTO_CONFIG };
 };
+
 
 export const deriveKey = async (password, salt) => {
   const encoder = new TextEncoder();
@@ -699,6 +711,41 @@ const removedKeys = new Set();
 // though the disk wipe is serialized behind earlier queued writes.
 let pendingClear = false;
 
+// Registry of keys this module has actually written, so clear() can remove
+// only secureStorage-managed data instead of wiping the entire same-origin
+// localStorage (which would destroy unrelated keys owned by other apps/SDKs).
+const secureStorageKeys = new Set();
+
+// Keys internal to the crypto layer that must be removed on clear().
+const SECURE_INTERNAL_KEYS = [MATERIAL_STORAGE_KEY, SALT_STORAGE_KEY, KEY_METADATA_KEY];
+
+/**
+ * Remove only the data owned by secureStorage: the per-key ciphertext entries
+ * we have written, the internal crypto-layer keys, and any legacy plaintext
+ * fallback entries. Unrelated same-origin keys are left untouched.
+ * @private
+ */
+const clearSecureStorageData = () => {
+  try {
+    const toRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k) continue;
+      if (
+        secureStorageKeys.has(k) ||
+        SECURE_INTERNAL_KEYS.includes(k) ||
+        k.endsWith(PLAINTEXT_SUFFIX)
+      ) {
+        toRemove.push(k);
+      }
+    }
+    toRemove.forEach((k) => localStorage.removeItem(k));
+    secureStorageKeys.clear();
+  } catch {
+    // localStorage unavailable — nothing to clean up
+  }
+};
+
 /**
  * Encrypts `value` and writes the ciphertext to localStorage under `key`.
  *
@@ -718,10 +765,12 @@ let pendingClear = false;
 const writeWithEncryption = async (key, value) => {
   if (!cryptoSupported) {
     localStorage.setItem(key, value);
+    secureStorageKeys.add(key);
     return;
   }
   const encrypted = await encryptValue(key, value);
   localStorage.setItem(key, encrypted);
+  secureStorageKeys.add(key);
 };
 
 export const syncSecureStorage = {
@@ -762,7 +811,7 @@ export const syncSecureStorage = {
         const { key, type, value, resolve, reject } = this._opQueue.shift();
         try {
           if (type === "clear") {
-            localStorage.clear();
+            clearSecureStorageData();
             pendingClear = false;
           } else if (type === "remove") {
             localStorage.removeItem(key);
@@ -859,8 +908,9 @@ export const syncSecureStorage = {
    *    a `setItem` for this key is still running.
    * 2. localStorage ciphertext — decrypted with the derived AES-GCM key.
    *    If decryption fails (e.g. key material was lost between sessions) the
-   *    raw stored string is returned as a best-effort fallback so callers
-   *    can surface an error rather than silently returning `null`.
+   *    value is treated as unreadable and `null` is returned rather than
+   *    handing back raw ciphertext, so callers are not misled into treating
+   *    encrypted bytes as the intended plaintext (issue #16248).
    * 3. When Web Crypto is unavailable the raw stored value is returned
    *    directly (plaintext was written by `setItem` in degraded mode).
    *
@@ -887,7 +937,12 @@ export const syncSecureStorage = {
         try {
           return await decryptValue(key, stored);
         } catch {
-          return stored;
+          // Decryption failed: `stored` is ciphertext (or corrupt data), not the
+          // intended plaintext. Returning it would mask data loss and silently
+          // hand ciphertext to callers, so we surface the failure as `null`
+          // instead (issue #16248).
+          console.error("[secureStorage] getItemAsync decryption failed for", key);
+          return null;
         }
       }
 
@@ -907,10 +962,11 @@ export const syncSecureStorage = {
    *
    * @param {string} key
    */
-  removeItem: function (key) {
+   removeItem: function (key) {
     try {
       /* Removed destructive cleanup to prevent queued writes from being dropped silently */
       pendingWrites.delete(key);
+      secureStorageKeys.delete(key);
       removedKeys.add(key);
       // Enqueued after any prior setItem for this key, so the disk removal is
       // guaranteed to happen after that write (issue #14613). Reads already
@@ -923,8 +979,9 @@ export const syncSecureStorage = {
   },
 
   /**
-   * Clears all localStorage data for the current origin.
-   * Use with caution: this removes ALL keys, not just Eventra's.
+   * Clears only the data owned by secureStorage (per-key ciphertext, the
+   * internal crypto-layer keys, and legacy plaintext fallbacks). Unrelated
+   * same-origin localStorage keys belonging to other apps/SDKs are preserved.
    */
   clear: function () {
     try {
