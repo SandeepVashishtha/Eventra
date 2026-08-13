@@ -37,15 +37,11 @@ public class ZkpFeedbackController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
 
-        boolean nullifierRecorded = zkpVerifierService.markNullifierUsed(payload.getEventId(), payload.getNullifierHash());
-        if (!nullifierRecorded) {
-            response.put("success", false);
-            response.put("message", "This proof has already been used. Each nullifier can only be submitted once.");
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
-        }
-
+        // Save feedback first, then mark nullifier as used to prevent nullifier
+        // consumption on failed feedback persistence.
+        ZkpFeedback savedFeedback = null;
         try {
-            zkpFeedbackRepository.save(new ZkpFeedback(
+            savedFeedback = zkpFeedbackRepository.save(new ZkpFeedback(
                     Long.valueOf(payload.getEventId()),
                     payload.getNullifierHash(),
                     payload.getFeedbackCategory(),
@@ -55,6 +51,17 @@ public class ZkpFeedbackController {
             response.put("success", false);
             response.put("message", "Failed to persist anonymous feedback. Please try again.");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+
+        boolean nullifierRecorded = zkpVerifierService.markNullifierUsed(payload.getEventId(), payload.getNullifierHash());
+        if (!nullifierRecorded) {
+            // Nullifier was already consumed (race condition) - roll back the saved feedback
+            if (savedFeedback != null) {
+                zkpFeedbackRepository.delete(savedFeedback);
+            }
+            response.put("success", false);
+            response.put("message", "This proof has already been used. Each nullifier can only be submitted once.");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
         }
 
         response.put("success", true);
