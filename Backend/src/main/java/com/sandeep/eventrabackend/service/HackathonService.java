@@ -93,6 +93,9 @@ public class HackathonService {
                 .ownerId(creator.getId())
                 .build();
 
+        if (request.getOrganizer() != null && (request.getOrganizer().trim().length() < 2 || request.getOrganizer().trim().length() > 100)) {
+            throw new IllegalArgumentException("Organizer name must be between 2 and 100 characters.");
+        }
         Hackathon saved = hackathonRepository.save(hackathon);
         log.info("[AUDIT LOG] Administrative Action: HACKATHON_CREATE | HackathonID: {} | Title: {}", saved.getId(), saved.getTitle());
         return mapToResponse(saved);
@@ -130,7 +133,12 @@ public class HackathonService {
             }
             hackathon.setDescription(request.getDescription());
         }
-        if (request.getOrganizer() != null) hackathon.setOrganizer(request.getOrganizer());
+        if (request.getOrganizer() != null) {
+            if (request.getOrganizer().trim().length() < 2 || request.getOrganizer().trim().length() > 100) {
+                throw new IllegalArgumentException("Organizer name must be between 2 and 100 characters.");
+            }
+            hackathon.setOrganizer(request.getOrganizer());
+        }
         if (request.getStartDate() != null) hackathon.setStartDate(request.getStartDate());
         if (request.getEndDate() != null) hackathon.setEndDate(request.getEndDate());
         if (request.getLocation() != null) hackathon.setLocation(request.getLocation());
