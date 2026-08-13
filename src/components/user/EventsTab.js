@@ -571,7 +571,6 @@ const EventsEmptyState = () => (
 const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const prefersReducedMotion = useReducedMotion();
   const staggerVariants = stagger(prefersReducedMotion);
-  const { formatDate, formatShort } = useDateFormatter();
   const {
     myEvents,
     removeRegistration,
