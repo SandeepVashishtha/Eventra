@@ -17,10 +17,14 @@ export const getDiscussions = () => {
  * Save discussions
  */
 export const saveDiscussions = (discussions) => {
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify(discussions)
-  );
+  try {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(discussions)
+    );
+  } catch (error) {
+    console.error("Failed to save discussions:", error);
+  }
 };
 
 /**
@@ -30,7 +34,7 @@ export const addDiscussion = (discussion) => {
   const discussions = getDiscussions();
 
   const newDiscussion = {
-    id: Date.now(),
+    id: Date.now() + "-" + Math.random().toString(36).slice(2, 9),
     author: discussion.author || "Anonymous",
     content: discussion.content || "",
     eventId: discussion.eventId,
@@ -134,7 +138,7 @@ export const addReply = (
       replies: [
         ...discussion.replies,
         {
-          id: Date.now(),
+          id: Date.now() + "-" + Math.random().toString(36).slice(2, 9),
           author: reply.author || "Anonymous",
           content: reply.content,
           isOrganizer:
@@ -206,8 +210,10 @@ export const sortDiscussions = (
 export const formatPostedTime = (
   dateString
 ) => {
-  const diff =
-    Date.now() - new Date(dateString).getTime();
+  if (!dateString) return "Date not available";
+  const timeParsed = new Date(dateString).getTime();
+  if (isNaN(timeParsed)) return "Date not available";
+  const diff = Date.now() - timeParsed;
 
   const minutes = Math.floor(
     diff / (1000 * 60)
