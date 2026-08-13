@@ -528,17 +528,10 @@ export class SseMultiplexer {
     let url = `${sseBaseUrl}${path}`;
     const urlParams = new URLSearchParams();
 
-    // 1. Dynamic Auth Token Injection
-    if (typeof this.getAuthToken === "function") {
-      try {
-        const token = await this.getAuthToken();
-        if (token) urlParams.append("token", token);
-      } catch (err) {
-        logger.error("[SSE Multiplexer] Failed to retrieve auth token:", err);
-      }
-    }
+    // Auth is the HttpOnly session cookie (EventSource withCredentials).
+    // Do not put JWTs on the query string — they leak via logs, Referer, and history.
 
-    // 2. Last-Event-ID Failover Recovery
+    // Last-Event-ID Failover Recovery
     const lastEventId = this.lastEventIds.get(path);
     if (lastEventId) {
       urlParams.append("lastEventId", lastEventId);
