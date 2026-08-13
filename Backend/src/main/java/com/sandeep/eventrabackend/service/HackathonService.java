@@ -103,6 +103,9 @@ public class HackathonService {
         if (request.getOrganizer() != null && (request.getOrganizer().trim().length() < 2 || request.getOrganizer().trim().length() > 100)) {
             throw new IllegalArgumentException("Organizer name must be between 2 and 100 characters.");
         }
+        if (request.getLocation() != null && (request.getLocation().trim().length() < 3 || request.getLocation().trim().length() > 150)) {
+            throw new IllegalArgumentException("Location must be between 3 and 150 characters.");
+        }
         Hackathon saved = hackathonRepository.save(hackathon);
         log.info("[AUDIT LOG] Administrative Action: HACKATHON_CREATE | HackathonID: {} | Title: {}", saved.getId(), saved.getTitle());
         return mapToResponse(saved);
@@ -159,7 +162,12 @@ public class HackathonService {
         }
         if (request.getStartDate() != null) hackathon.setStartDate(request.getStartDate());
         if (request.getEndDate() != null) hackathon.setEndDate(request.getEndDate());
-        if (request.getLocation() != null) hackathon.setLocation(request.getLocation());
+        if (request.getLocation() != null) {
+            if (request.getLocation().trim().length() < 3 || request.getLocation().trim().length() > 150) {
+                throw new IllegalArgumentException("Location must be between 3 and 150 characters.");
+            }
+            hackathon.setLocation(request.getLocation());
+        }
         if (request.getMode() != null) hackathon.setMode(request.getMode());
         if (request.getPrizePool() != null) hackathon.setPrizePool(request.getPrizePool());
         if (request.getRegistrationDeadline() != null) hackathon.setRegistrationDeadline(request.getRegistrationDeadline());
