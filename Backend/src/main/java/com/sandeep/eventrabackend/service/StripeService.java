@@ -377,7 +377,7 @@ public class StripeService {
         List<LocalDateTime> schedule = new ArrayList<>();
         
         long totalDays = ChronoUnit.DAYS.between(startDate.toLocalDate(), eventDate.toLocalDate());
-        long intervalDays = totalDays / (totalInstallments - 1);
+        long intervalDays = totalDays / Math.max(1, totalInstallments - 1);
         
         for (int i = 0; i < totalInstallments; i++) {
             LocalDateTime dueDate = startDate.plusDays(i * intervalDays);
