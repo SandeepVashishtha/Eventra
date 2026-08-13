@@ -1,107 +1,92 @@
 import {
-  AlertTriangle,
+  BarChart3,
   CalendarDays,
   CircleAlert,
-  ClipboardList,
   TrendingDown,
   Users,
+  XCircle,
 } from "lucide-react";
-import { useMemo } from "react";
 
-const DEFAULT_CANCELLATIONS = [
-  {
-    id: 1,
-    date: "2026-08-01",
-    reason: "Schedule Conflict",
-    category: "Student",
+const DEFAULT_DATA = {
+  totalRegistrations: 500,
+  totalCancellations: 42,
+
+  cancellationsOverTime: [
+    { label: "Aug 1", count: 3 },
+    { label: "Aug 2", count: 5 },
+    { label: "Aug 3", count: 7 },
+    { label: "Aug 4", count: 4 },
+    { label: "Aug 5", count: 9 },
+    { label: "Aug 6", count: 6 },
+    { label: "Aug 7", count: 8 },
+  ],
+
+  cancellationReasons: [
+    { reason: "Schedule Conflict", count: 18 },
+    { reason: "Personal Reason", count: 10 },
+    { reason: "Travel Issue", count: 7 },
+    { reason: "Health Issue", count: 4 },
+    { reason: "Other", count: 3 },
+  ],
+
+  participantCategories: [
+    { category: "Students", registrations: 250, cancellations: 15 },
+    { category: "Professionals", registrations: 150, cancellations: 18 },
+    { category: "Researchers", registrations: 70, cancellations: 6 },
+    { category: "Others", registrations: 30, cancellations: 3 },
+  ],
+
+  deadlineAnalysis: {
+    beforeDeadline: {
+      registrations: 320,
+      cancellations: 18,
+    },
+    afterDeadline: {
+      registrations: 180,
+      cancellations: 24,
+    },
   },
-  {
-    id: 2,
-    date: "2026-08-02",
-    reason: "Personal Reason",
-    category: "Professional",
-  },
-  {
-    id: 3,
-    date: "2026-08-02",
-    reason: "Schedule Conflict",
-    category: "Student",
-  },
-  {
-    id: 4,
-    date: "2026-08-04",
-    reason: "Travel Issue",
-    category: "Professional",
-  },
-  {
-    id: 5,
-    date: "2026-08-05",
-    reason: "Personal Reason",
-    category: "Student",
-  },
-  {
-    id: 6,
-    date: "2026-08-06",
-    reason: "Other",
-    category: "Student",
-  },
-];
+};
 
 const EventRegistrationCancellationAnalytics = ({
-  cancellations = DEFAULT_CANCELLATIONS,
-  totalRegistrations = 100,
+  data = DEFAULT_DATA,
 }) => {
-  const analytics = useMemo(() => {
-    const totalCancellations = cancellations.length;
+  const totalRegistrations = data.totalRegistrations || 0;
+  const totalCancellations = data.totalCancellations || 0;
 
-    const cancellationPercentage =
-      totalRegistrations > 0
-        ? (totalCancellations / totalRegistrations) * 100
-        : 0;
+  const cancellationPercentage =
+    totalRegistrations > 0
+      ? (totalCancellations / totalRegistrations) * 100
+      : 0;
 
-    const byDate = cancellations.reduce((result, item) => {
-      result[item.date] = (result[item.date] || 0) + 1;
-      return result;
-    }, {});
+  const mostCommonReason =
+    [...data.cancellationReasons].sort(
+      (a, b) => b.count - a.count
+    )[0]?.reason || "No data";
 
-    const byReason = cancellations.reduce((result, item) => {
-      result[item.reason] = (result[item.reason] || 0) + 1;
-      return result;
-    }, {});
+  const beforeDeadlineRate =
+    data.deadlineAnalysis.beforeDeadline.registrations > 0
+      ? (data.deadlineAnalysis.beforeDeadline.cancellations /
+          data.deadlineAnalysis.beforeDeadline.registrations) *
+        100
+      : 0;
 
-    const byCategory = cancellations.reduce((result, item) => {
-      result[item.category] = (result[item.category] || 0) + 1;
-      return result;
-    }, {});
+  const afterDeadlineRate =
+    data.deadlineAnalysis.afterDeadline.registrations > 0
+      ? (data.deadlineAnalysis.afterDeadline.cancellations /
+          data.deadlineAnalysis.afterDeadline.registrations) *
+        100
+      : 0;
 
-    const reasonEntries = Object.entries(byReason).sort(
-      (a, b) => b[1] - a[1]
-    );
-
-    const categoryEntries = Object.entries(byCategory).sort(
-      (a, b) => b[1] - a[1]
-    );
-
-    const dateEntries = Object.entries(byDate).sort(
-      (a, b) => a[0].localeCompare(b[0])
-    );
-
-    return {
-      totalCancellations,
-      cancellationPercentage,
-      reasonEntries,
-      categoryEntries,
-      dateEntries,
-    };
-  }, [cancellations, totalRegistrations]);
-
-  const highestReason = analytics.reasonEntries[0];
-  const highestCategory = analytics.categoryEntries[0];
+  const peakCancellationDay =
+    [...data.cancellationsOverTime].sort(
+      (a, b) => b.count - a.count
+    )[0] || { label: "-", count: 0 };
 
   return (
     <section className="rounded-3xl border border-slate-200 bg-slate-50 p-4 shadow-sm sm:p-6 dark:border-slate-800 dark:bg-slate-950">
       {/* Header */}
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div className="flex items-start gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400">
             <TrendingDown size={21} />
@@ -117,139 +102,193 @@ const EventRegistrationCancellationAnalytics = ({
             </h2>
 
             <p className="mt-1 max-w-2xl text-xs text-slate-500 dark:text-slate-400">
-              Understand cancellation volume, timing, reasons,
-              and participant-category patterns.
+              Understand cancellation patterns, reasons, timing,
+              and participant categories.
             </p>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white px-5 py-3 dark:border-slate-700 dark:bg-slate-900">
+        <div className="rounded-2xl border border-red-100 bg-white px-5 py-3 dark:border-red-900/30 dark:bg-slate-900">
           <p className="text-[6px] font-bold uppercase tracking-wide text-slate-400">
-            Total Registrations
+            Cancellation Rate
           </p>
 
-          <p className="mt-1 text-lg font-black text-slate-800 dark:text-white">
-            {totalRegistrations}
+          <p className="mt-1 text-lg font-black text-red-600 dark:text-red-400">
+            {cancellationPercentage.toFixed(1)}%
           </p>
         </div>
       </div>
 
-      {/* Summary */}
+      {/* Summary Cards */}
       <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricCard
-          icon={TrendingDown}
-          label="Total Cancellations"
-          value={analytics.totalCancellations}
-        />
-
-        <MetricCard
-          icon={CircleAlert}
-          label="Cancellation Rate"
-          value={`${analytics.cancellationPercentage.toFixed(1)}%`}
-        />
-
-        <MetricCard
-          icon={ClipboardList}
-          label="Cancellation Reasons"
-          value={analytics.reasonEntries.length}
-        />
-
-        <MetricCard
+        <SummaryCard
           icon={Users}
-          label="Categories Affected"
-          value={analytics.categoryEntries.length}
+          label="Total Registrations"
+          value={totalRegistrations.toLocaleString()}
+        />
+
+        <SummaryCard
+          icon={XCircle}
+          label="Total Cancellations"
+          value={totalCancellations.toLocaleString()}
+        />
+
+        <SummaryCard
+          icon={TrendingDown}
+          label="Cancellation Rate"
+          value={`${cancellationPercentage.toFixed(1)}%`}
+        />
+
+        <SummaryCard
+          icon={CircleAlert}
+          label="Common Reason"
+          value={mostCommonReason}
+          compact
         />
       </div>
 
-      {/* Cancellation Rate */}
+      {/* Cancellation Rate Progress */}
       <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="text-[10px] font-bold text-slate-800 dark:text-white">
               Overall Cancellation Rate
             </h3>
 
             <p className="mt-1 text-[7px] text-slate-400">
-              Cancellations compared with total registrations.
+              {totalCancellations} cancellations from{" "}
+              {totalRegistrations} total registrations.
             </p>
           </div>
 
-          <p className="text-lg font-black text-red-600 dark:text-red-400">
-            {analytics.cancellationPercentage.toFixed(1)}%
-          </p>
+          <span className="text-[10px] font-black text-red-600 dark:text-red-400">
+            {cancellationPercentage.toFixed(1)}%
+          </span>
         </div>
 
-        <div className="mt-5 h-3 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+        <div className="mt-5 h-4 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
           <div
             className="h-full rounded-full bg-red-500 transition-all duration-500"
             style={{
-              width: `${Math.min(
-                analytics.cancellationPercentage,
-                100
-              )}%`,
+              width: `${Math.min(cancellationPercentage, 100)}%`,
             }}
           />
         </div>
+      </div>
 
-        <div className="mt-3 flex justify-between text-[6px] font-bold text-slate-400">
-          <span>
-            {analytics.totalCancellations} cancelled
-          </span>
+      {/* Cancellations Over Time */}
+      <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <CalendarDays
+              size={16}
+              className="text-red-600 dark:text-red-400"
+            />
 
-          <span>
-            {Math.max(
-              totalRegistrations -
-                analytics.totalCancellations,
-              0
-            )}{" "}
-            retained
-          </span>
+            <div>
+              <h3 className="text-[10px] font-bold text-slate-800 dark:text-white">
+                Cancellations Over Time
+              </h3>
+
+              <p className="mt-1 text-[7px] text-slate-400">
+                Track when registration cancellations are occurring.
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-xl bg-red-50 px-3 py-2 dark:bg-red-900/20">
+            <p className="text-[5px] font-bold uppercase text-red-500">
+              Peak Day
+            </p>
+
+            <p className="mt-1 text-[8px] font-black text-red-600 dark:text-red-400">
+              {peakCancellationDay.label} ·{" "}
+              {peakCancellationDay.count}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-6 flex h-52 items-end gap-2 overflow-x-auto">
+          {data.cancellationsOverTime.map((item) => {
+            const maxCount = Math.max(
+              ...data.cancellationsOverTime.map(
+                (entry) => entry.count
+              ),
+              1
+            );
+
+            const height = (item.count / maxCount) * 100;
+
+            return (
+              <div
+                key={item.label}
+                className="flex min-w-[45px] flex-1 flex-col items-center justify-end gap-2"
+              >
+                <span className="text-[6px] font-bold text-slate-500 dark:text-slate-400">
+                  {item.count}
+                </span>
+
+                <div className="flex h-36 w-full items-end rounded-lg bg-slate-100 dark:bg-slate-800">
+                  <div
+                    className="w-full rounded-lg bg-red-500 transition-all duration-500"
+                    style={{
+                      height: `${height}%`,
+                    }}
+                  />
+                </div>
+
+                <span className="text-[6px] font-bold text-slate-400">
+                  {item.label}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      {/* Cancellations by Date */}
+      {/* Cancellation Reasons */}
       <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
         <div className="flex items-center gap-3">
-          <CalendarDays
+          <CircleAlert
             size={16}
-            className="text-indigo-600 dark:text-indigo-400"
+            className="text-red-600 dark:text-red-400"
           />
 
           <div>
             <h3 className="text-[10px] font-bold text-slate-800 dark:text-white">
-              Cancellations by Date
+              Cancellation Reasons
             </h3>
 
             <p className="mt-1 text-[7px] text-slate-400">
-              Identify when cancellation activity is highest.
+              Identify the most common reasons participants cancel.
             </p>
           </div>
         </div>
 
-        <div className="mt-5 space-y-4">
-          {analytics.dateEntries.map(([date, count]) => {
+        <div className="mt-6 space-y-4">
+          {data.cancellationReasons.map((item) => {
             const percentage =
-              analytics.totalCancellations > 0
-                ? (count / analytics.totalCancellations) * 100
+              totalCancellations > 0
+                ? (item.count / totalCancellations) * 100
                 : 0;
 
             return (
-              <div key={date}>
-                <div className="mb-2 flex items-center justify-between">
+              <div key={item.reason}>
+                <div className="mb-2 flex items-center justify-between gap-3">
                   <span className="text-[7px] font-bold text-slate-600 dark:text-slate-300">
-                    {formatDate(date)}
+                    {item.reason}
                   </span>
 
-                  <span className="text-[7px] font-black text-indigo-600 dark:text-indigo-400">
-                    {count}
+                  <span className="text-[7px] font-black text-red-600 dark:text-red-400">
+                    {item.count} ({percentage.toFixed(1)}%)
                   </span>
                 </div>
 
-                <div className="h-2.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                <div className="h-3 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                   <div
-                    className="h-full rounded-full bg-indigo-600 transition-all duration-500"
+                    className="h-full rounded-full bg-red-500 transition-all duration-500"
                     style={{
-                      width: `${percentage}%`,
+                      width: `${Math.min(percentage, 100)}%`,
                     }}
                   />
                 </div>
@@ -259,165 +298,129 @@ const EventRegistrationCancellationAnalytics = ({
         </div>
       </div>
 
-      {/* Reasons + Categories */}
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        {/* Reasons */}
-        <AnalyticsPanel
-          icon={ClipboardList}
-          title="Cancellation Reasons"
-          description="Most common reasons provided by participants."
-        >
-          {analytics.reasonEntries.map(
-            ([reason, count]) => {
-              const percentage =
-                analytics.totalCancellations > 0
-                  ? (count /
-                      analytics.totalCancellations) *
-                    100
-                  : 0;
-
-              return (
-                <div key={reason}>
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="text-[7px] font-bold text-slate-600 dark:text-slate-300">
-                      {reason}
-                    </span>
-
-                    <span className="text-[7px] font-black text-red-600 dark:text-red-400">
-                      {count}
-                    </span>
-                  </div>
-
-                  <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                    <div
-                      className="h-full rounded-full bg-red-500"
-                      style={{
-                        width: `${percentage}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              );
-            }
-          )}
-        </AnalyticsPanel>
-
-        {/* Categories */}
-        <AnalyticsPanel
-          icon={Users}
-          title="Cancellation by Category"
-          description="Compare cancellation volume across participant groups."
-        >
-          {analytics.categoryEntries.map(
-            ([category, count]) => {
-              const percentage =
-                analytics.totalCancellations > 0
-                  ? (count /
-                      analytics.totalCancellations) *
-                    100
-                  : 0;
-
-              return (
-                <div key={category}>
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="text-[7px] font-bold text-slate-600 dark:text-slate-300">
-                      {category}
-                    </span>
-
-                    <span className="text-[7px] font-black text-indigo-600 dark:text-indigo-400">
-                      {count}
-                    </span>
-                  </div>
-
-                  <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                    <div
-                      className="h-full rounded-full bg-indigo-600"
-                      style={{
-                        width: `${percentage}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              );
-            }
-          )}
-        </AnalyticsPanel>
-      </div>
-
-      {/* Insights */}
-      <div className="mt-6 grid gap-4 md:grid-cols-2">
-        {highestReason && (
-          <InsightCard
-            icon={AlertTriangle}
-            title="Most Common Cancellation Reason"
-            value={highestReason[0]}
-            description={`${highestReason[1]} participant${
-              highestReason[1] === 1 ? "" : "s"
-            } cancelled for this reason.`}
-          />
-        )}
-
-        {highestCategory && (
-          <InsightCard
-            icon={Users}
-            title="Most Affected Category"
-            value={highestCategory[0]}
-            description={`${highestCategory[1]} cancellation${
-              highestCategory[1] === 1 ? "" : "s"
-            } came from this participant category.`}
-          />
-        )}
-      </div>
-
-      {/* Cancellation Records */}
+      {/* Participant Category */}
       <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
         <div className="border-b border-slate-100 p-5 dark:border-slate-800">
-          <h3 className="text-[10px] font-bold text-slate-800 dark:text-white">
-            Cancellation Records
-          </h3>
+          <div className="flex items-center gap-3">
+            <Users
+              size={16}
+              className="text-red-600 dark:text-red-400"
+            />
 
-          <p className="mt-1 text-[7px] text-slate-400">
-            Detailed cancellation activity for the event.
-          </p>
+            <div>
+              <h3 className="text-[10px] font-bold text-slate-800 dark:text-white">
+                Cancellation Rate by Participant Category
+              </h3>
+
+              <p className="mt-1 text-[7px] text-slate-400">
+                Compare cancellation behavior across participant
+                groups.
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="divide-y divide-slate-100 dark:divide-slate-800">
-          {cancellations.map((cancellation) => (
-            <div
-              key={cancellation.id}
-              className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div className="flex items-center gap-3">
-                <div className="rounded-xl bg-red-50 p-2 text-red-600 dark:bg-red-900/20 dark:text-red-400">
-                  <TrendingDown size={13} />
+          {data.participantCategories.map((item) => {
+            const rate =
+              item.registrations > 0
+                ? (item.cancellations / item.registrations) * 100
+                : 0;
+
+            return (
+              <div key={item.category} className="p-5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h4 className="text-[8px] font-bold text-slate-800 dark:text-white">
+                      {item.category}
+                    </h4>
+
+                    <p className="mt-1 text-[6px] text-slate-400">
+                      {item.cancellations} cancellations /{" "}
+                      {item.registrations} registrations
+                    </p>
+                  </div>
+
+                  <span
+                    className={`w-fit rounded-full px-2.5 py-1 text-[5px] font-bold ${
+                      rate >= 10
+                        ? "bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400"
+                        : rate >= 5
+                          ? "bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400"
+                          : "bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400"
+                    }`}
+                  >
+                    {rate.toFixed(1)}% Cancellation
+                  </span>
                 </div>
 
-                <div>
-                  <p className="text-[7px] font-bold text-slate-700 dark:text-slate-300">
-                    {cancellation.reason}
-                  </p>
-
-                  <p className="mt-1 text-[6px] text-slate-400">
-                    {formatDate(cancellation.date)}
-                  </p>
+                <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                  <div
+                    className="h-full rounded-full bg-red-500 transition-all duration-500"
+                    style={{
+                      width: `${Math.min(rate * 5, 100)}%`,
+                    }}
+                  />
                 </div>
               </div>
+            );
+          })}
+        </div>
+      </div>
 
-              <span className="w-fit rounded-full bg-slate-100 px-3 py-1.5 text-[6px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                {cancellation.category}
-              </span>
-            </div>
-          ))}
+      {/* Deadline Analysis */}
+      <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex items-center gap-3">
+          <BarChart3
+            size={16}
+            className="text-red-600 dark:text-red-400"
+          />
+
+          <div>
+            <h3 className="text-[10px] font-bold text-slate-800 dark:text-white">
+              Cancellation Before vs After Deadline
+            </h3>
+
+            <p className="mt-1 text-[7px] text-slate-400">
+              Compare cancellation activity around important
+              registration deadlines.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          <DeadlineCard
+            title="Before Deadline"
+            registrations={
+              data.deadlineAnalysis.beforeDeadline.registrations
+            }
+            cancellations={
+              data.deadlineAnalysis.beforeDeadline.cancellations
+            }
+            rate={beforeDeadlineRate}
+          />
+
+          <DeadlineCard
+            title="After Deadline"
+            registrations={
+              data.deadlineAnalysis.afterDeadline.registrations
+            }
+            cancellations={
+              data.deadlineAnalysis.afterDeadline.cancellations
+            }
+            rate={afterDeadlineRate}
+          />
         </div>
       </div>
     </section>
   );
 };
 
-const MetricCard = ({
+const SummaryCard = ({
   icon: Icon,
   label,
   value,
+  compact = false,
 }) => (
   <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
     <div className="flex items-center gap-3">
@@ -425,91 +428,77 @@ const MetricCard = ({
         <Icon size={15} />
       </div>
 
-      <div>
+      <div className="min-w-0">
         <p className="text-[6px] font-bold uppercase tracking-wide text-slate-400">
           {label}
         </p>
 
+        <p
+          className={`mt-1 font-black text-slate-800 dark:text-white ${
+            compact
+              ? "truncate text-[8px]"
+              : "text-lg"
+          }`}
+        >
+          {value}
+        </p>
+      </div>
+    </div>
+  </div>
+);
+
+const DeadlineCard = ({
+  title,
+  registrations,
+  cancellations,
+  rate,
+}) => (
+  <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-800/40">
+    <h4 className="text-[9px] font-bold text-slate-800 dark:text-white">
+      {title}
+    </h4>
+
+    <div className="mt-4 grid grid-cols-2 gap-3">
+      <div>
+        <p className="text-[6px] font-bold uppercase text-slate-400">
+          Registrations
+        </p>
+
         <p className="mt-1 text-lg font-black text-slate-800 dark:text-white">
-          {value}
+          {registrations}
         </p>
       </div>
-    </div>
-  </div>
-);
-
-const AnalyticsPanel = ({
-  icon: Icon,
-  title,
-  description,
-  children,
-}) => (
-  <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
-    <div className="flex items-center gap-3">
-      <Icon
-        size={16}
-        className="text-indigo-600 dark:text-indigo-400"
-      />
 
       <div>
-        <h3 className="text-[10px] font-bold text-slate-800 dark:text-white">
-          {title}
-        </h3>
+        <p className="text-[6px] font-bold uppercase text-slate-400">
+          Cancellations
+        </p>
 
-        <p className="mt-1 text-[7px] text-slate-400">
-          {description}
+        <p className="mt-1 text-lg font-black text-red-600 dark:text-red-400">
+          {cancellations}
         </p>
       </div>
     </div>
 
-    <div className="mt-5 space-y-5">
-      {children}
-    </div>
-  </div>
-);
+    <div className="mt-4 flex items-center justify-between">
+      <span className="text-[7px] font-bold text-slate-400">
+        Cancellation Rate
+      </span>
 
-const InsightCard = ({
-  icon: Icon,
-  title,
-  value,
-  description,
-}) => (
-  <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 dark:border-amber-900/30 dark:bg-amber-900/10">
-    <div className="flex items-start gap-3">
-      <Icon
-        size={16}
-        className="mt-0.5 text-amber-600 dark:text-amber-400"
+      <span className="text-[8px] font-black text-red-600 dark:text-red-400">
+        {rate.toFixed(1)}%
+      </span>
+    </div>
+
+    <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-white dark:bg-slate-700">
+      <div
+        className="h-full rounded-full bg-red-500"
+        style={{
+          width: `${Math.min(rate * 5, 100)}%`,
+        }}
       />
-
-      <div>
-        <p className="text-[6px] font-bold uppercase tracking-wide text-amber-600 dark:text-amber-400">
-          {title}
-        </p>
-
-        <h3 className="mt-1 text-[10px] font-black text-amber-800 dark:text-amber-300">
-          {value}
-        </h3>
-
-        <p className="mt-1 text-[7px] text-amber-700 dark:text-amber-400">
-          {description}
-        </p>
-      </div>
     </div>
   </div>
 );
-
-const formatDate = (date) => {
-  const parsed = new Date(`${date}T00:00:00`);
-
-  if (Number.isNaN(parsed.getTime())) {
-    return date;
-  }
-
-  return parsed.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-};
 
 export default EventRegistrationCancellationAnalytics;
