@@ -135,12 +135,16 @@ const useEventListing = () => {
 
       const responseData = response?.data || {};
 
-      const isPaged = Array.isArray(responseData.content);
-      const apiEvents = isPaged
+      const rawEvents = Array.isArray(responseData.content)
         ? responseData.content
         : Array.isArray(responseData)
           ? responseData
           : [];
+
+      // Guard against a malformed API payload where `content` (or the whole
+      // response body) is present but not an array — otherwise the `.map()`
+      // below would throw and crash the listing on a bad response.
+      const apiEvents = Array.isArray(rawEvents) ? rawEvents : [];
 
       const normalizedEvents = apiEvents.map(normalizeEventItem);
       setEvents(normalizedEvents);
