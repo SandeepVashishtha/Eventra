@@ -7,6 +7,8 @@ import com.sandeep.eventrabackend.repository.EventRegistrationRepository;
 import com.sandeep.eventrabackend.service.PaymentPlanService;
 import com.sandeep.eventrabackend.service.StripeService;
 import com.stripe.exception.StripeException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,6 +22,8 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/payments")
 public class PaymentController {
+
+    private static final Logger log = LoggerFactory.getLogger(PaymentController.class);
 
     @Autowired
     private PaymentPlanService paymentPlanService;
@@ -403,58 +407,69 @@ public class PaymentController {
             @RequestHeader("Stripe-Signature") String signatureHeader) {
         
         try {
-            // Verify webhook signature
-            if (!stripeService.verifyWebhookSignature(payload, signatureHeader)) {
-                return ResponseEntity.status(401).body(Map.of(
-                        "success", false,
-                        "error", "Invalid webhook signature"
+            // Verify signature and construct the event ONCE (fails closed on
+            // invalid/missing signature by throwing rather than returning false).
+            com.stripe.model.Event event = stripeService.verifyWebhookSignature(payload, signatureHeader);
+
+            String eventId = event.getId();
+
+            // Idempotency: ignore retries of an already-processed Stripe event id
+            // so duplicate records are not created.
+            if (eventId != null && stripeService.isEventProcessed(eventId)) {
+                return ResponseEntity.ok(Map.of(
+                        "success", true,
+                        "message", "Event already processed (idempotent ignore)"
                 ));
             }
-            
-            // Parse the event
-            com.stripe.model.Event event = stripeService.parseWebhookEvent(payload, signatureHeader);
-            
+
             // Handle different event types
             switch (event.getType()) {
                 case "payment_intent.succeeded":
                     com.stripe.model.PaymentIntent paymentIntent = (com.stripe.model.PaymentIntent) event.getData().getObject();
                     stripeService.handlePaymentIntentSucceeded(paymentIntent);
                     break;
-                    
+
                 case "payment_intent.payment_failed":
                     com.stripe.model.PaymentIntent failedIntent = (com.stripe.model.PaymentIntent) event.getData().getObject();
                     stripeService.handlePaymentIntentFailed(failedIntent);
                     break;
-                    
+
                 case "charge.succeeded":
                     // Handle successful charge
                     break;
-                    
+
                 case "charge.failed":
                     // Handle failed charge
                     break;
-                    
+
                 case "customer.subscription.created":
                     // Handle subscription created
                     break;
-                    
+
                 case "invoice.payment_succeeded":
                     // Handle successful invoice payment
                     break;
-                    
+
                 case "invoice.payment_failed":
                     // Handle failed invoice payment
                     break;
-                    
+
                 default:
-                    System.out.println("Unhandled event type: " + event.getType());
+                    log.warn("Unhandled Stripe event type: {} (event id: {}) - acknowledged to avoid silent data loss on retry",
+                            event.getType(), eventId);
             }
-            
+
+            // Record the event id as processed for idempotency (including
+            // unhandled event types, which are acknowledged with 200).
+            if (eventId != null) {
+                stripeService.markEventProcessed(eventId);
+            }
+
             return ResponseEntity.ok(Map.of(
                     "success", true,
                     "message", "Webhook processed successfully"
             ));
-            
+
         } catch (StripeException e) {
             return ResponseEntity.status(400).body(Map.of(
                     "success", false,
