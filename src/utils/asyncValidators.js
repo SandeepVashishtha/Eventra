@@ -180,9 +180,9 @@ export const withRetry = (validatorFn, maxRetries = 3, initialDelay = 500) => {
   return async function retryValidator(value, ...args) {
     let lastError;
 
-    for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    for (let attempt = 1; attempt <= maxRetries; attempt += 1) {
       try {
-        return await validator(...args);
+        return await validatorFn(value, ...args);
       } catch (error) {
         lastError = error;
 
@@ -192,7 +192,7 @@ export const withRetry = (validatorFn, maxRetries = 3, initialDelay = 500) => {
         }
 
         if (attempt < maxRetries - 1) {
-          const backoff = initialDelay * Math.pow(2, attempt);
+          const backoff = initialDelay * Math.pow(2, attempt - 1);
           const jitter = Math.random() * 200;
           await new Promise((resolve) => setTimeout(resolve, backoff + jitter));
         }
