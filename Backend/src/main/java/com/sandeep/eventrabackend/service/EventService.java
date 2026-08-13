@@ -467,13 +467,6 @@ public class EventService {
                 return categoryCounts;
         }
 
-        /**
-         * Creates a new event.
-         *
-         * @param request event creation details
-         * @return the saved event
-         */
-        @Transactional
         private static final Set<String> ALLOWED_CATEGORIES = Set.of(
                 "Tech", "Art", "Music", "Sports", "Education", "Networking", "Other"
         );
@@ -494,6 +487,13 @@ public class EventService {
                 }
         }
 
+        /**
+         * Creates a new event.
+         *
+         * @param request event creation details
+         * @return the saved event
+         */
+        @Transactional
         public EventResponse createEvent(EventCreateRequest request, String userEmail) {
                 Event event = new Event();
                 validateEventCategory(request.getCategory());
