@@ -1,7 +1,7 @@
 import axios from "axios";
-import { ENV } from "./env";
-import { syncServerTimeFromHeader } from "../utils/timeSync";
-import { createIntegrityHeader } from "../utils/security/requestIntegrity";
+import { ENV } from "./env.js";
+import { syncServerTimeFromHeader } from "../utils/timeSync.js";
+import { createIntegrityHeader } from "../utils/security/requestIntegrity.js";
 import { ApiError, RateLimitError } from "./api/errors.js";
 import { setupRequestInterceptor, setupResponseInterceptor, setOnRequiresReauthHandler, setReauthRequired, setAuthToken as setInterceptorAuthToken, setRefreshToken as setInterceptorRefreshToken } from "./api/interceptors.js";
 import { API_BASE_URL, validateBackendConfig } from "./backendConfig.js";
