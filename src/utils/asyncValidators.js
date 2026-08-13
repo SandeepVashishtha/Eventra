@@ -140,13 +140,12 @@ export const globalDeduplicator = new RequestDeduplicator();
  */
 export const createAsyncValidator = (asyncValidatorFn, debounceMs = 300, options = {}) => {
   let timeoutId = null;
-  const fieldKey = options.fieldKey || Symbol("asyncField");
+  const fieldKey = options.fieldKey || `async-field-${Math.random().toString(36).slice(2)}`;
 
   return function debouncedAsyncValidator(value, ...args) {
     return new Promise((resolve) => {
       if (timeoutId) clearTimeout(timeoutId);
 
-    return new Promise((resolve, reject) => {
       timeoutId = setTimeout(async () => {
         const signal = globalDeduplicator.getSignal(fieldKey);
         try {
@@ -163,7 +162,7 @@ export const createAsyncValidator = (asyncValidatorFn, debounceMs = 300, options
             resolve(error.message || "Validation error occurred");
           }
         }
-      }, delayMs);
+      }, debounceMs);
     });
   };
 };
