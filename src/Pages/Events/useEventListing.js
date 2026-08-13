@@ -133,7 +133,16 @@ const useEventListing = () => {
       // Discard stale responses from earlier requests
       if (requestId !== latestRequestRef.current) return;
 
-      const responseData = response?.data || {};
+      // Guard against a null/undefined response so an unexpected or empty API
+      // reply degrades gracefully instead of silently rendering an empty list.
+      if (!response || typeof response !== "object") {
+        setEvents([]);
+        setServerPaged(false);
+        setLoadError("Failed to load events. Please try again later.");
+        return;
+      }
+
+      const responseData = response.data || {};
 
       const isPaged = Array.isArray(responseData.content);
       const apiEvents = isPaged
