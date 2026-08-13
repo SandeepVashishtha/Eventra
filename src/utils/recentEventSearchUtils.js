@@ -838,8 +838,10 @@ export const buildSearchUrl = (
     normalizedQuery
   );
 
+  const safeAdditionalParams = additionalParams && typeof additionalParams === "object" ? additionalParams : {};
+
   Object.entries(
-    additionalParams
+    safeAdditionalParams
   ).forEach(
     ([key, value]) => {
       if (
