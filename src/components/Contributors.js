@@ -1,29 +1,35 @@
-import { Github, ExternalLink, GitBranch, MapPin, Building, Users, Medal } from "lucide-react";
+import { ExternalLink, GitBranch, MapPin, Building, Users, Medal } from "lucide-react";
+import { FaGithub as Github } from "react-icons/fa";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { ContributorCardSkeleton } from "./common/SkeletonLoaders";
-import FeatureErrorBoundary from "./common/FeatureErrorBoundary";
+import ErrorBoundary from "./common/ErrorBoundary";
 import SEOHead from "../components/SEOHead";
 import { storageManager } from "../utils/storage/storageManager";
 import { STORAGE_KEYS } from "../utils/storage/storageKeys";
 import { validators } from "../utils/storage/storageValidators";
 import { fetchWithTimeout } from "../utils/fetchWithTimeout";
-
+import EmptyState from "./common/EmptyState";
 // GitHub repo
 const GITHUB_REPO = "sandeepvashishtha/Eventra";
 const CACHE_DURATION = 60 * 60 * 1000; // 1 hr
+// Fix (Issue #10500): Keep stale cache for up to 24h as fallback on 429
+const STALE_CACHE_DURATION = 24 * 60 * 60 * 1000;
+
+const getStaleCachedContributors = () => {
+  const cachedData = storageManager.get(
+    STORAGE_KEYS.GITHUB_CONTRIBUTORS,
+    validators.isObject,
+  );
+  if (!cachedData?.data || !cachedData?.timestamp) return null;
+  return Date.now() - cachedData.timestamp > STALE_CACHE_DURATION ? null : cachedData.data;
+};
 const REQUEST_TIMEOUT = 10000;
 const MAX_CONTRIBUTOR_PAGES = 10;
 const PROFILE_FETCH_DELAY_MS = 100; // Throttle profile API calls to avoid rate limiting
 
-let profileFetchCounter = 0;
-export const throttleProfileFetch = async () => {
-  profileFetchCounter++;
-  if (profileFetchCounter % 5 === 0) {
-    await new Promise(resolve => setTimeout(resolve, PROFILE_FETCH_DELAY_MS));
-  }
-};
+const buildDirectGitHubUrl = (url) => url;
 
 const fetchJsonWithTimeout = async (url) => {
   const proxyUrl = url.startsWith("https://api.github.com")
@@ -32,13 +38,33 @@ const fetchJsonWithTimeout = async (url) => {
       )}`
     : url;
 
-  const { data } = await fetchWithTimeout(
-    proxyUrl,
-    {},
-    REQUEST_TIMEOUT
-  );
+  try {
+    const { data } = await fetchWithTimeout(proxyUrl, {}, REQUEST_TIMEOUT);
+    return data;
+  } catch (error) {
+    // Fix (Issue #10500): Handle 429 rate limit — respect Retry-After header
+    if (error?.status === 429) {
+      const retryAfter = parseInt(error?.headers?.get?.("Retry-After") || "60", 10);
+      throw Object.assign(new Error("GitHub API rate limit exceeded"), {
+        status: 429,
+        retryAfter,
+      });
+    }
+    if (url.startsWith("https://api.github.com") && (error?.status === 401 || error?.status === 403)) {
+      const { data } = await fetchWithTimeout(
+        buildDirectGitHubUrl(url),
+        {
+          headers: {
+            Accept: "application/vnd.github+json",
+          },
+        },
+        REQUEST_TIMEOUT,
+      );
+      return data;
+    }
 
-  return data;
+    throw error;
+  }
 };
 
 // Role assignment
@@ -91,7 +117,6 @@ const ContributorsInner = () => {
 
   // Fetch GitHub profile details
   const fetchGitHubProfile = useCallback(async (username) => {
-    await throttleProfileFetch();
     if (!username) {
       return {
         followers: 0,
@@ -180,8 +205,9 @@ const ContributorsInner = () => {
         return;
       }
 
-      const enhanced = await Promise.all(
-        allContributors.map(async (c) => {
+      const results = await Promise.allSettled(
+        allContributors.map(async (c, idx) => {
+          await new Promise((resolve) => setTimeout(resolve, idx * PROFILE_FETCH_DELAY_MS));
           const profile = await fetchGitHubProfile(c.login);
           return {
             ...c,
@@ -191,17 +217,41 @@ const ContributorsInner = () => {
         }),
       );
 
+      const enhanced = results
+        .filter((r) => r.status === "fulfilled")
+        .map((r) => r.value);
+
+      if (results.some((r) => r.status === "rejected")) {
+        const failCount = results.filter((r) => r.status === "rejected").length;
+        console.warn(`[Contributors] ${failCount} profile(s) failed to load, using partial data`);
+      }
+
       enhanced.sort((a, b) => b.contributions - a.contributions);
       setContributors(enhanced);
       cacheContributors(enhanced);
     } catch (err) {
       if (err.name === "AbortError") return;
-      setError(
-        err?.name === "AbortError"
-          ? "GitHub took too long to respond. Please try again."
-          : "Unable to load contributors from GitHub right now. Please try again.",
-      );
-      setContributors([]);
+
+      // Fix (Issue #10500): On 429, show stale cached data if available
+      // instead of an empty list, and show a helpful rate-limit message.
+      if (err?.status === 429) {
+        const stale = getStaleCachedContributors();
+        if (stale && stale.length > 0) {
+          setContributors(stale);
+          setError(
+            `GitHub API rate limit reached. Showing cached data. ` +
+            `Retry after ${err.retryAfter ?? 60}s.`
+          );
+        } else {
+          setError(
+            "GitHub API rate limit reached. Please wait a minute and try again."
+          );
+          setContributors([]);
+        }
+      } else {
+        setError("Unable to load contributors from GitHub right now. Please try again.");
+        setContributors([]);
+      }
     } finally {
       setLoading(false);
       isFetchingRef.current = false;
@@ -211,6 +261,7 @@ const ContributorsInner = () => {
   useEffect(() => {
     fetchContributors();
   }, [fetchContributors]);
+
 
   // Filter contributors based on search term
   const filteredContributors = contributors.filter(
@@ -225,8 +276,8 @@ const ContributorsInner = () => {
   // UPDATED: Loading skeleton grid
   if (loading) {
     return (
-      <FeatureErrorBoundary>
-        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-Linear-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
+      <ErrorBoundary level="feature">
+        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-linear-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12 mt-16">
             {[...Array(8)].map((_, i) => (
@@ -235,19 +286,19 @@ const ContributorsInner = () => {
           </div>
         </div>
       </section>
-      </FeatureErrorBoundary>
+      </ErrorBoundary>
     );
   }
 
   if (error)
     return (
-      <FeatureErrorBoundary>
-        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-Linear-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
+      <ErrorBoundary level="feature">
+        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-linear-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
         <div className="max-w-3xl mx-auto px-6 text-center">
           <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-4">
             Contributors are unavailable
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">{error}</p>
+          <p className="text-gray-600 dark:text-gray-200 mb-6">{error}</p>
           <button
             type="button"
             onClick={fetchContributors}
@@ -257,12 +308,12 @@ const ContributorsInner = () => {
           </button>
         </div>
       </section>
-      </FeatureErrorBoundary>
+      </ErrorBoundary>
     );
   return (
     // UPDATED: Section background
-    <FeatureErrorBoundary>
-      <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-Linear-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
+      <ErrorBoundary level="feature">
+        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-linear-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
         <div className="max-w-7xl mx-auto px-6">
           {/* Added The Search Bar */}
           <div className="flex justify-center mb-8">
@@ -270,7 +321,14 @@ const ContributorsInner = () => {
               type="text"
             placeholder="Search contributors by name, username, role, location, or company..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+         onChange={(e) => {
+  setSearchTerm(e.target.value);
+
+  localStorage.setItem(
+    "lastSearch",
+    e.target.value
+  );
+}}
             aria-label="Search contributors"
             className="px-4 py-2 rounded-lg w-full max-w-2xl border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-black text-gray-900 dark:text-white bg-white dark:bg-gray-800"
           />
@@ -291,12 +349,15 @@ const ContributorsInner = () => {
         </motion.h2>
 
         {filteredContributors.length === 0 ? (
-          <div className="text-center text-gray-600 dark:text-gray-400 text-lg">
-            <p>
-              {searchTerm
-                ? `No contributors found matching "${searchTerm}"`
-                : "No contributors are available yet."}
-            </p>
+          <div className="text-center text-gray-600 dark:text-gray-200 text-lg">
+          <EmptyState
+  title="No Contributors Found"
+  description={
+    searchTerm
+      ? `No contributors found matching "${searchTerm}"`
+      : "No contributors are available yet."
+  }
+/>
             {!searchTerm && (
               <button
                 type="button"
@@ -371,14 +432,14 @@ const ContributorsInner = () => {
                   <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
                     <GitBranch className="text-black dark:text-white mb-1" />
                     <span className="font-semibold">{c.public_repos}</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                    <span className="text-xs text-gray-500 dark:text-gray-200">
                       Repos
                     </span>
                   </div>
                   <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
                     <Users className="text-black dark:text-white mb-1" />
                     <span className="font-semibold">{c.followers}</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                    <span className="text-xs text-gray-500 dark:text-gray-200">
                       Followers
                     </span>
                   </div>
@@ -387,7 +448,7 @@ const ContributorsInner = () => {
                       🔥
                     </span>
                     <span className="font-semibold">{c.contributions}</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                    <span className="text-xs text-gray-500 dark:text-gray-200">
                       Contribs
                     </span>
                   </div>
@@ -406,7 +467,7 @@ const ContributorsInner = () => {
                 </div>
 
                 {/* Extra Info */}
-                <div className="flex flex-col gap-1 text-xs text-gray-500 dark:text-gray-400 mb-4">
+                <div className="flex flex-col gap-1 text-xs text-gray-500 dark:text-gray-200 mb-4">
                   {c.company && (
                     <span className="flex items-center gap-1 justify-center">
                       <Building /> {c.company}
@@ -444,7 +505,7 @@ const ContributorsInner = () => {
         )}
       </div>
     </section>
-    </FeatureErrorBoundary>
+    </ErrorBoundary>
   );
 };
 
@@ -454,6 +515,30 @@ const Contributors = () => (
       title="Contributors"
       description="Meet the amazing contributors building the Eventra open-source community. Join us and make an impact."
       url={window.location.href}
+  // Fix: useInfiniteScroll replaces eager while-loop fetching with scroll-triggered
+  // pagination. Page 1 loads immediately; subsequent pages load when the sentinel
+  // element enters the viewport. Adds AbortController cleanup on unmount.
+  const {
+    data: paginatedContributors,
+    isLoading: isScrollLoading,
+    isLoadingMore,
+    hasMore: hasMoreContributors,
+    error: scrollError,
+    sentinelRef,
+    reset: resetScroll,
+  } = useInfiniteScroll(
+    async (page, signal) => {
+      const data = await fetchJsonWithTimeout(
+        `https://api.github.com/repos/${GITHUB_REPO}/contributors?per_page=100&page=${page}&anon=true`,
+        { signal }
+      );
+      if (!Array.isArray(data)) throw new Error("GitHub returned an unexpected contributors response");
+      const validContributors = data.filter((c) => c && (c.login || c.name));
+      return { items: validContributors, hasMore: data.length === 100 && page < MAX_CONTRIBUTOR_PAGES };
+    },
+    { threshold: 0.5, enabled: !getCachedContributors() }
+  );
+
     />
     <ContributorsInner />
   </>

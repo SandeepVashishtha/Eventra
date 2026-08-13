@@ -1,3 +1,7 @@
+/**
+ * @fileoverview useArrowKeyNavigation - Arrow key grid navigation hook
+ * @module hooks/useArrowKeyNavigation
+ */
 import { useCallback, useRef } from "react";
 
 /**
@@ -26,6 +30,9 @@ export default function useArrowKeyNavigation({
 
   const onKeyDown = useCallback(
     (e) => {
+      const navigationKeys = ["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp", "Home", "End"];
+      if (!navigationKeys.includes(e.key)) return;
+
       const container = containerRef.current;
       if (!container) return;
 

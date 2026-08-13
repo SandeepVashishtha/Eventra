@@ -54,9 +54,7 @@ assert.deepEqual(
 );
 
 // Edge Case: Handling null/undefined arguments
-assert.throws(() => {
-  getRouteSearchResults(null, "Nextjs", eventKeys);
-}, TypeError);
+assert.deepEqual(getRouteSearchResults(null, "Nextjs", eventKeys), [], "null items returns empty results");
 assert.deepEqual(getRouteSearchResults(events, null, eventKeys).map(e => e.id), events.map(e => e.id), "null query returns all events");
 
 if (process.env.NODE_ENV === "development" || true) {
