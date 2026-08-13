@@ -84,7 +84,7 @@ public class PaymentPlanService {
         
         if (eventDate != null && now.isBefore(eventDate)) {
             long totalDays = java.time.temporal.ChronoUnit.DAYS.between(now.toLocalDate(), eventDate.toLocalDate());
-            long daysUntilFirstInstallment = totalDays / totalInstallments;
+            long daysUntilFirstInstallment = totalDays / (totalInstallments - 1);
             paymentPlan.setNextPaymentDate(now.plusDays(daysUntilFirstInstallment));
         }
         
@@ -127,26 +127,34 @@ public class PaymentPlanService {
         
         // Remaining installments
         long totalDays = java.time.temporal.ChronoUnit.DAYS.between(now.toLocalDate(), eventDate.toLocalDate());
-        long intervalDays = totalDays / (paymentPlan.getTotalInstallments() - 1);
-        
+        int numInstallments = paymentPlan.getTotalInstallments() - 1;
+
+        // Ensure installments + upfront sum exactly to ticketPrice: the last
+        // installment absorbs the rounding difference from the base amount.
+        BigDecimal remainingAmount = paymentPlan.getTotalAmount().subtract(upfrontAmount);
+        BigDecimal lastInstallmentAmount = remainingAmount.subtract(
+                installmentAmount.multiply(new BigDecimal(numInstallments - 1)));
+
         for (int i = 2; i <= paymentPlan.getTotalInstallments(); i++) {
             Payment payment = new Payment();
             payment.setRegistration(registration);
-            payment.setAmount(installmentAmount);
+            payment.setAmount(i == paymentPlan.getTotalInstallments() ? lastInstallmentAmount : installmentAmount);
             payment.setCurrency(paymentPlan.getCurrency());
             payment.setPaymentMethod("CARD");
             payment.setPaymentProvider("STRIPE");
             payment.setStatus("PENDING");
             payment.setInstallmentNumber(i);
             payment.setTotalInstallments(paymentPlan.getTotalInstallments());
-            
-            // Calculate due date
-            LocalDateTime dueDate = now.plusDays(intervalDays * (i - 1));
+
+            // Calculate due date: spread total days evenly so the schedule spans
+            // the full period without dropping remainder days (proportional spacing).
+            long dueDayOffset = (totalDays * (i - 1)) / numInstallments;
+            LocalDateTime dueDate = now.plusDays(dueDayOffset);
             if (dueDate.isAfter(eventDate)) {
                 dueDate = eventDate;
             }
             payment.setDueDate(dueDate);
-            
+
             paymentRepository.save(payment);
         }
     }
