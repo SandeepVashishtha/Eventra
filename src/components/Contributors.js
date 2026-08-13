@@ -515,6 +515,30 @@ const Contributors = () => (
       title="Contributors"
       description="Meet the amazing contributors building the Eventra open-source community. Join us and make an impact."
       url={window.location.href}
+  // Fix: useInfiniteScroll replaces eager while-loop fetching with scroll-triggered
+  // pagination. Page 1 loads immediately; subsequent pages load when the sentinel
+  // element enters the viewport. Adds AbortController cleanup on unmount.
+  const {
+    data: paginatedContributors,
+    isLoading: isScrollLoading,
+    isLoadingMore,
+    hasMore: hasMoreContributors,
+    error: scrollError,
+    sentinelRef,
+    reset: resetScroll,
+  } = useInfiniteScroll(
+    async (page, signal) => {
+      const data = await fetchJsonWithTimeout(
+        `https://api.github.com/repos/${GITHUB_REPO}/contributors?per_page=100&page=${page}&anon=true`,
+        { signal }
+      );
+      if (!Array.isArray(data)) throw new Error("GitHub returned an unexpected contributors response");
+      const validContributors = data.filter((c) => c && (c.login || c.name));
+      return { items: validContributors, hasMore: data.length === 100 && page < MAX_CONTRIBUTOR_PAGES };
+    },
+    { threshold: 0.5, enabled: !getCachedContributors() }
+  );
+
     />
     <ContributorsInner />
   </>
