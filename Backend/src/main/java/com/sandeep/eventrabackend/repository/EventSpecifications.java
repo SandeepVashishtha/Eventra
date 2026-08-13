@@ -38,6 +38,7 @@ public final class EventSpecifications {
                         .collect(java.util.stream.Collectors.toSet());
         boolean requestsCancelled = requested.contains("CANCELLED") || requested.contains("CANCELED");
         boolean requestsArchived = requested.contains("ARCHIVED");
+        boolean requestsDraft = requested.contains("DRAFT");
 
         return (root, query, cb) -> {
             java.util.List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
@@ -46,6 +47,9 @@ public final class EventSpecifications {
             }
             if (!requestsArchived) {
                 predicates.add(cb.notEqual(cb.upper(root.get("status")), "ARCHIVED"));
+            }
+            if (!requestsDraft) {
+                predicates.add(cb.notEqual(cb.upper(root.get("status")), "DRAFT"));
             }
             if (predicates.isEmpty()) {
                 return cb.conjunction();
