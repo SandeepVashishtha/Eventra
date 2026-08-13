@@ -269,6 +269,7 @@ public class AdminService {
         return toEventResponse(saved);
     }
 
+    @Transactional
     public void deleteEvent(Long id) {
         if (!eventRepository.existsById(id)) {
             throw new EntityNotFoundException("Event not found with id: " + id);
