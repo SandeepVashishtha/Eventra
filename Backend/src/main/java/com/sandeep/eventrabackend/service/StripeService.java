@@ -3,6 +3,7 @@ package com.sandeep.eventrabackend.service;
 import com.sandeep.eventrabackend.model.EventRegistration;
 import com.sandeep.eventrabackend.model.Payment;
 import com.sandeep.eventrabackend.model.PaymentPlan;
+import com.sandeep.eventrabackend.repository.EventRegistrationRepository;
 import com.sandeep.eventrabackend.repository.PaymentPlanRepository;
 import com.sandeep.eventrabackend.repository.PaymentRepository;
 import com.stripe.Stripe;
@@ -13,6 +14,7 @@ import com.stripe.param.*;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -32,11 +34,14 @@ public class StripeService {
 
     private final PaymentRepository paymentRepository;
     private final PaymentPlanRepository paymentPlanRepository;
+    private final EventRegistrationRepository eventRegistrationRepository;
 
-    public StripeService(PaymentRepository paymentRepository, 
-                         PaymentPlanRepository paymentPlanRepository) {
+    public StripeService(PaymentRepository paymentRepository,
+                         PaymentPlanRepository paymentPlanRepository,
+                         EventRegistrationRepository eventRegistrationRepository) {
         this.paymentRepository = paymentRepository;
         this.paymentPlanRepository = paymentPlanRepository;
+        this.eventRegistrationRepository = eventRegistrationRepository;
     }
 
     @PostConstruct
@@ -258,6 +263,7 @@ public class StripeService {
     }
 
     // Handle payment intent succeeded event
+    @Transactional
     public void handlePaymentIntentSucceeded(PaymentIntent paymentIntent) {
         String paymentIntentId = paymentIntent.getId();
         String registrationId = paymentIntent.getMetadata().get("registration_id");
@@ -275,6 +281,11 @@ public class StripeService {
             
             // Find the payment in database
             Optional<Payment> paymentOptional = paymentRepository.findByStripePaymentIntentId(paymentIntentId);
+
+            // Idempotency: skip if this payment intent was already completed
+            if (paymentOptional.isPresent() && "COMPLETED".equals(paymentOptional.get().getStatus())) {
+                return;
+            }
             
             Payment payment;
             if (paymentOptional.isPresent()) {
@@ -291,10 +302,11 @@ public class StripeService {
                 payment.setPaymentProvider("STRIPE");
                 payment.setInstallmentNumber(installmentNumber);
                 payment.setTotalInstallments(totalInstallments);
-                
-                // Find registration
-                EventRegistration registration = new EventRegistration();
-                registration.setId(regId);
+
+                // Load the MANAGED EventRegistration to avoid a detached entity / broken FK
+                EventRegistration registration = eventRegistrationRepository.findById(regId)
+                        .orElseThrow(() -> new IllegalArgumentException(
+                                "EventRegistration not found for id: " + regId));
                 payment.setRegistration(registration);
             }
             
@@ -313,12 +325,12 @@ public class StripeService {
                     paymentPlan.setCompletedAt(LocalDateTime.now());
                     paymentPlanRepository.save(paymentPlan);
                     
-                    // Update registration payment status
+                    // Update registration payment status and persist it within the same transaction
                     EventRegistration registration = paymentPlan.getRegistration();
                     registration.setPaymentStatus("COMPLETED");
                     registration.setQrActivated(true);
                     registration.setQrActivationDate(LocalDateTime.now());
-                    // Note: We would need to update registration through its repository
+                    eventRegistrationRepository.save(registration);
                 }
             }
             
@@ -328,6 +340,7 @@ public class StripeService {
     }
 
     // Handle payment intent failed event
+    @Transactional
     public void handlePaymentIntentFailed(PaymentIntent paymentIntent) {
         String paymentIntentId = paymentIntent.getId();
         String registrationId = paymentIntent.getMetadata().get("registration_id");
@@ -340,15 +353,31 @@ public class StripeService {
             Long regId = Long.parseLong(registrationId);
             
             Optional<Payment> paymentOptional = paymentRepository.findByStripePaymentIntentId(paymentIntentId);
-            
-            if (paymentOptional.isPresent()) {
-                Payment payment = paymentOptional.get();
-                payment.setStatus("FAILED");
-                payment.setFailedAt(LocalDateTime.now());
-                payment.setFailureReason(paymentIntent.getLastPaymentError() != null ? 
-                        paymentIntent.getLastPaymentError().getMessage() : "Payment failed");
-                paymentRepository.save(payment);
+
+            // Idempotency: skip if this payment intent was already marked failed
+            if (paymentOptional.isPresent() && "FAILED".equals(paymentOptional.get().getStatus())) {
+                return;
             }
+            
+            Payment payment;
+            if (paymentOptional.isPresent()) {
+                payment = paymentOptional.get();
+            } else {
+                // Create a failed payment record linked to the MANAGED registration
+                payment = new Payment();
+                payment.setStripePaymentIntentId(paymentIntentId);
+                payment.setPaymentProvider("STRIPE");
+                EventRegistration registration = eventRegistrationRepository.findById(regId)
+                        .orElseThrow(() -> new IllegalArgumentException(
+                                "EventRegistration not found for id: " + regId));
+                payment.setRegistration(registration);
+            }
+            
+            payment.setStatus("FAILED");
+            payment.setFailedAt(LocalDateTime.now());
+            payment.setFailureReason(paymentIntent.getLastPaymentError() != null ? 
+                    paymentIntent.getLastPaymentError().getMessage() : "Payment failed");
+            paymentRepository.save(payment);
             
         } catch (Exception e) {
             System.err.println("Error handling payment intent failed: " + e.getMessage());
