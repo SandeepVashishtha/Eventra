@@ -62,6 +62,7 @@ export const debounceAsync = (asyncFn, delay = 500, options = {}) => {
   let pendingResolve = null;
   let activeAbortController = null;
   let lastCallTime = null;
+  let latestArgs = null;
 
   const cancelPending = () => {
     if (timeoutId) {
@@ -123,6 +124,7 @@ export const debounceAsync = (asyncFn, delay = 500, options = {}) => {
   const debounced = (...args) => {
     const isFirstCall = timeoutId === null;
     cancelPending();
+    latestArgs = args;
 
     return new Promise((resolve, reject) => {
       pendingResolve = resolve;
@@ -130,13 +132,13 @@ export const debounceAsync = (asyncFn, delay = 500, options = {}) => {
       lastCallTime = Date.now();
 
       if (leading && isFirstCall) {
-        execute(args, resolve, reject);
+        execute(latestArgs, resolve, reject);
         return;
       }
 
       timeoutId = setTimeout(() => {
         timeoutId = null;
-        execute(args, resolve, reject);
+        execute(latestArgs, resolve, reject);
       }, delay);
 
       if (maxWait && !maxWaitTimeoutId) {
@@ -145,7 +147,7 @@ export const debounceAsync = (asyncFn, delay = 500, options = {}) => {
           if (timeoutId) {
             clearTimeout(timeoutId);
             timeoutId = null;
-            execute(args, pendingResolve, pendingReject);
+            execute(latestArgs, pendingResolve, pendingReject);
           }
         }, maxWait);
       }
