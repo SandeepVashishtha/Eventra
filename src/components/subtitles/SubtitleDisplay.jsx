@@ -27,6 +27,7 @@ import {
   SUBTITLE_CONFIG,
 } from "../../context/RealTimeSubtitleContext.jsx";
 import { SUBTITLE_STATE } from "../../context/RealTimeSubtitleContext.jsx";
+import { translationService } from "../../services/translationService.js";
 
 /**
  * Subtitle display animation presets
