@@ -27,6 +27,9 @@ public class PurchaseService {
      */
     @Transactional
     public boolean purchaseTicket(String tier, int quantity) {
+        if (quantity <= 0) {
+            return false;
+        }
         eventLock.lock();
         try {
             int tierCapacity = ticketTiers.getOrDefault(tier, 0);
