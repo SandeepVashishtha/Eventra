@@ -500,6 +500,7 @@ public class EventService {
                 validateEventCategories(request.getCategories());
                 validateTitle(request.getTitle());
                 event.setTitle(request.getTitle());
+                validateDescription(request.getDescription());
                 event.setDescription(request.getDescription());
                 event.setLocation(request.getLocation());
                 event.setEventDate(request.getEventDate());
@@ -561,9 +562,12 @@ public class EventService {
 
                 validateTitle(request.getTitle());
                 event.setTitle(request.getTitle());
-                event.setDescription(request.getDescription());
                 event.setLocation(request.getLocation());
                 event.setEventDate(request.getEventDate());
+                if (request.getDescription() != null) {
+                        validateDescription(request.getDescription());
+                        event.setDescription(request.getDescription());
+                }
                 if (request.getCapacity() != null) {
                         event.setCapacity(request.getCapacity());
                 }
@@ -1570,6 +1574,12 @@ public class EventService {
                 response.setOwnerId(null);
                 response.setCancellationReason(null);
                 return response;
+        }
+
+        private void validateDescription(String desc) {
+                if (desc == null || desc.trim().length() < 10 || desc.trim().length() > 2000) {
+                        throw new IllegalArgumentException("Description must be between 10 and 2000 characters.");
+                }
         }
 
         private WaitlistResponse toWaitlistResponse(EventWaitlist entry) {
