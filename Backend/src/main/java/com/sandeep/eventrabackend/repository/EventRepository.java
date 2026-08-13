@@ -41,4 +41,11 @@ public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecific
      */
     List<Event> findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
             String title, String description);
+
+    /**
+     * Grouped aggregate query for category statistics (Issue #16693).
+     * Calculates event count per category directly in the database to avoid loading all entities into JVM heap.
+     */
+    @Query("SELECT e.category, COUNT(e) FROM Event e WHERE e.category IS NOT NULL AND e.category <> '' GROUP BY e.category")
+    List<Object[]> countEventsByCategory();
 }

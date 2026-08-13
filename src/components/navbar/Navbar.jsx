@@ -17,10 +17,9 @@ import { motion, useScroll, useSpring } from "framer-motion";
 const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const navRef = useRef(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [scrollProgress, setScrollProgress] = useState(0);
   const [scrolled, setScrolled] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
-  const { isDarkMode, toggleTheme, isCustomizerOpen, setIsCustomizerOpen } = useTheme();
+  const { isDarkMode, toggleTheme, setIsCustomizerOpen } = useTheme();
   const authenticated = isAuthenticated();
   useBodyScrollLock(isMobileMenuOpen);
 
@@ -57,9 +56,6 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
       ticking = true;
       window.requestAnimationFrame(() => {
         const scrollTop = window.scrollY;
-        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-        const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-        setScrollProgress(progress);
         setScrolled(scrollTop > 12);
         ticking = false;
       });
@@ -152,7 +148,6 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
                 isOpen={isMobileMenuOpen}
                 setIsOpen={setIsMobileMenuOpen}
                 isAuthenticated={authenticated}
-                user={user}
                 logout={logout}
                 cursorEnabled={cursorEnabled}
                 toggleCursor={toggleCursor}

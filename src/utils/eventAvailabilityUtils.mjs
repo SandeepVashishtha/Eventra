@@ -63,13 +63,18 @@ export const mergeAvailabilityIntoEvent = (event = {}, availability = {}) => {
   };
 };
 
+// Status codes that the backend uses to signal a capacity / availability
+// conflict. Both isCapacityConflictError and getRegistrationFailureMessage
+// must agree on this set so capacity rejections are classified consistently.
+export const CAPACITY_CONFLICT_STATUSES = [409, 423];
+
 export const isCapacityConflictError = (error = {}) => {
   const message = String(
     error?.data?.message || error?.data?.error || error?.message || ""
   ).toLowerCase();
 
   return (
-    error?.status === 409 &&
+    CAPACITY_CONFLICT_STATUSES.includes(error?.status) &&
     /capacity|full|sold out|not enough|insufficient|no spots|unavailable/.test(
       message
     )

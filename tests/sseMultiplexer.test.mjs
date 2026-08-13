@@ -72,6 +72,7 @@ class MockEventSource {
     this.url = url;
     this.options = options;
     this.closed = false;
+    this._listeners = new Map();
     eventSources.push(this);
     // Simulate connection open immediately to keep test simple and fast
     setTimeout(() => {
@@ -81,11 +82,19 @@ class MockEventSource {
   close() {
     this.closed = true;
   }
+  addEventListener(type, handler) {
+    this._listeners.set(type, handler);
+  }
+  removeEventListener(type) {
+    this._listeners.delete(type);
+  }
   emitMessage(data, type = "message") {
-    this.onmessage?.({
+    const event = {
       data: typeof data === "string" ? data : JSON.stringify(data),
       type,
-    });
+    };
+    const handler = this._listeners.get(type) || this.onmessage;
+    handler?.(event);
   }
 }
 globalThis.EventSource = MockEventSource;
@@ -218,11 +227,16 @@ const runTests = async () => {
   await new Promise((resolve) => setTimeout(resolve, 15));
 
   // Emit a mock message
-  eventSources[0].emitMessage({ contributors: [{ name: "Alice" }] }, "update");
+  eventSources[0].emitMessage({ contributors: [{ name: "Alice" }] }, "message");
 
   // Validate message propagation
   assert.deepEqual(receivedData, { contributors: [{ name: "Alice" }] });
-  assert.equal(receivedType, "update");
+  assert.equal(receivedType, "message");
+
+  // Named SSE event dispatch through addEventListener (e.g. "leaderboard")
+  eventSources[0].emitMessage({ contributors: [{ name: "Bob" }] }, "leaderboard");
+  assert.deepEqual(receivedData, { contributors: [{ name: "Bob" }] });
+  assert.equal(receivedType, "leaderboard", "Named event type must propagate");
 
   // Test 2: Status reporting
   let currentStatus = null;

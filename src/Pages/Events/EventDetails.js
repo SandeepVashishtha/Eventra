@@ -162,6 +162,7 @@ const EventDetails = () => {
   const [fetchLoading, setFetchLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
 
   // Issue #11021 — organizer actions (cancel/archive/export) must be gated by
   // event ownership, not role alone. Without this, any ORGANIZER/ADMIN could
@@ -315,6 +316,29 @@ const EventDetails = () => {
       isActive = false;
     };
   }, [eventId, user]);
+
+  const handleArchive = useCallback(async () => {
+    if (!eventId || isArchiving) return;
+    setIsArchiving(true);
+    try {
+      const response = await apiUtils.post(API_ENDPOINTS.EVENTS.ARCHIVE(eventId));
+      const updated = response.data?.data ?? response.data ?? {};
+      setEvent((current) => ({
+        ...(current || {}),
+        ...updated,
+        status: "archived",
+      }));
+      toast.success("Event archived.");
+    } catch (error) {
+      const message =
+        error?.data?.message ||
+        error?.message ||
+        "Could not archive this event. Please try again.";
+      toast.error(message);
+    } finally {
+      setIsArchiving(false);
+    }
+  }, [eventId, isArchiving]);
 
   const handlePrint = () => {
     setIsPrinting(true);
@@ -594,13 +618,12 @@ ${window.location.href}
               )}
               {canManageEvent && event.status !== "cancelled" && event.status !== "archived" && (
                 <button
-                  onClick={() => {
-                    setEvent({ ...event, status: "archived" });
-                    toast.success("Event Archived!");
-                  }}
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-orange-500 px-6 py-3 text-sm font-semibold text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition"
+                  type="button"
+                  onClick={handleArchive}
+                  disabled={isArchiving}
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-orange-500 px-6 py-3 text-sm font-semibold text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition disabled:opacity-60"
                 >
-                  <Archive size={16} /> Archive Event
+                  <Archive size={16} /> {isArchiving ? "Archiving..." : "Archive Event"}
                 </button>
               )}
 

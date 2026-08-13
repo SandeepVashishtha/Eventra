@@ -1,3 +1,5 @@
+import { getRuntimeEnv } from "../../config/backendConfig/envDetector.js";
+
 const SECURITY_CONFIG_KEYS = {
   API_ENDPOINT: "REACT_APP_API_URL",
   JWT_CONFIGURATION: "REACT_APP_JWT_ENABLED",
