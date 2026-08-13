@@ -17,6 +17,14 @@ import CryptoJS from "crypto-js";
 
 let _memoizedFingerprint = null;
 
+const simpleHash = (str) => {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash * 33) ^ str.charCodeAt(i);
+  }
+  return (hash >>> 0).toString(16);
+};
+
 /**
  * Helper to retrieve a safe, origin-scoped salt string.
  *
@@ -46,7 +54,11 @@ export const getDeviceFingerprint = () => {
   // 2. SSR / Node.js runtime fallback
   if (typeof window === "undefined" || typeof document === "undefined") {
     const fallbackData = "eventra-node-test-environment-fingerprint-fallback";
-    _memoizedFingerprint = CryptoJS.SHA256(fallbackData).toString();
+    try {
+      _memoizedFingerprint = CryptoJS.SHA256(fallbackData).toString();
+    } catch {
+      _memoizedFingerprint = simpleHash(fallbackData);
+    }
     return _memoizedFingerprint;
   }
 
@@ -95,10 +107,18 @@ export const getDeviceFingerprint = () => {
     return _memoizedFingerprint;
   } catch {
     // 7. Resilient error fallback using origin salt
-    const fallbackSalt = resolveSalt();
-    _memoizedFingerprint = CryptoJS.SHA256(
-      `eventra-fingerprint-fallback:${fallbackSalt}`
-    ).toString();
+    try {
+      const fallbackSalt = resolveSalt();
+      if (CryptoJS && CryptoJS.SHA256) {
+        _memoizedFingerprint = CryptoJS.SHA256(
+          `eventra-fingerprint-fallback:${fallbackSalt}`
+        ).toString();
+      } else {
+        _memoizedFingerprint = simpleHash(`eventra-fingerprint-fallback:${fallbackSalt}`);
+      }
+    } catch {
+      _memoizedFingerprint = "eventra-resilient-fallback-hash-djb2";
+    }
     return _memoizedFingerprint;
   }
 };
