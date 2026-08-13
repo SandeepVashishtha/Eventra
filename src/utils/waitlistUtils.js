@@ -45,14 +45,21 @@ export const parseCsvWaitlistData = (csvText) => {
 
       const values = line.split(',').map(value => value.trim());
       
-      // Handle CSV values that might contain commas (simple quoted string support)
+      // Handle CSV values that might contain commas (quote-aware parsing with escaped double-quote support)
       const parsedValues = [];
       let currentValue = '';
       let inQuotes = false;
       
-      for (const char of line) {
+      for (let ci = 0; ci < line.length; ci++) {
+        const char = line[ci];
         if (char === '"') {
-          inQuotes = !inQuotes;
+          if (inQuotes && ci + 1 < line.length && line[ci + 1] === '"') {
+            // Escaped double-quote ("") inside a quoted field
+            currentValue += '"';
+            ci++; // skip the next quote
+          } else {
+            inQuotes = !inQuotes;
+          }
         } else if (char === ',' && !inQuotes) {
           parsedValues.push(currentValue.trim());
           currentValue = '';
