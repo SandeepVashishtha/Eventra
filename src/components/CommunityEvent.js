@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { useReducedMotion } from '../hooks/useReducedMotion';
+import useScrollLock from '../hooks/useScrollLock';
 import {
   CalendarDays,
   Users,
@@ -94,11 +95,9 @@ const events = [
 const CommunityEvent = () => {
   const prefersReducedMotion = useReducedMotion();
   const [selectedEvent, setSelectedEvent] = useState(null);
-  
+
   // 🔥 FIX: Safe scroll locking that caches and restores the original CSS value
-  useEffect(() => {
-    useScrollLock(!!selectedEvent);
-  }, [selectedEvent]);
+  useScrollLock(!!selectedEvent);
 
   // 🔥 FIX: Added Escape key listener to satisfy A11y dialog closing requirements
   useEffect(() => {
