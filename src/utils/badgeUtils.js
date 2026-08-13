@@ -82,10 +82,14 @@ export const getAllBadges = () => {
  * Save badges
  */
 export const saveBadges = (badges) => {
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify(badges)
-  );
+  try {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(badges)
+    );
+  } catch (error) {
+    console.error("Error saving badges:", error);
+  }
 };
 
 /**
@@ -170,8 +174,12 @@ export const sortBadges = () => {
  * Reset badges
  */
 export const resetBadges = () => {
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify(DEFAULT_BADGES)
-  );
+  try {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(DEFAULT_BADGES)
+    );
+  } catch (error) {
+    console.error("Error resetting badges:", error);
+  }
 };
