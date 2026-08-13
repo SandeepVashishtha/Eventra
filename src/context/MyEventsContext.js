@@ -134,14 +134,20 @@ export const MyEventsProvider = ({ children }) => {
     
     setLoading(true);
     loadFromIDB(userId).then(data => {
-      if (mounted) {
-        setMyEvents(data);
-        setLoading(false);
-        // Important: allow saves *after* initial load resolves
-        setTimeout(() => {
-          isInitialLoad.current = false;
-        }, 50);
-      }
+      if (!mounted) return;
+      setMyEvents(prev => {
+        const byId = new Map();
+        [...(data || []), ...prev].forEach(r => {
+          const key = String(r.eventId);
+          if (!byId.has(key)) byId.set(key, r);
+        });
+        return Array.from(byId.values());
+      });
+      setLoading(false);
+      // Important: allow saves *after* initial load resolves
+      setTimeout(() => {
+        isInitialLoad.current = false;
+      }, 50);
     });
 
     return () => { mounted = false; };
