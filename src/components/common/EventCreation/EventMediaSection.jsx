@@ -1,3 +1,4 @@
+import useDragAndDrop from "hooks/useDragAndDrop";
 
 import { motion, AnimatePresence } from "framer-motion";
 import { ImageIcon, Upload, X, Plus } from "lucide-react";
@@ -67,6 +68,15 @@ const TagInput = ({ tags, onAdd, onRemove, newTag, setNewTag, placeholder = "Add
 };
 
 const EventMediaSection = ({ 
+  // Fix: useDragAndDrop adds proper drag counter + accessibility to the banner dropzone
+  const { getRootProps: getBannerRootProps, getInputProps: getBannerInputProps, isDragOver: isBannerDragOver } = useDragAndDrop({
+    onDrop: async (files) => {
+      await handleBannerChange({ target: { files } });
+    },
+    accept: ["image/*"],
+    maxBytes: 5_242_880,
+  });
+
   formData, 
   setFormData, 
   newTag, 
