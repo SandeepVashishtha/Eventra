@@ -39,7 +39,7 @@ public class PaymentController {
      * Create a new payment plan for installment payments
      */
     @PostMapping("/plans")
-    @PreAuthorize("hasAnyRole('USER', 'ORGANIZER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('USER', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> createPaymentPlan(
             @RequestParam Long registrationId,
             @RequestParam(required = false, defaultValue = "1000.00") BigDecimal ticketPrice,
@@ -77,7 +77,7 @@ public class PaymentController {
      * Initialize Stripe customer and setup intent for a registration
      */
     @PostMapping("/initialize/{registrationId}")
-    @PreAuthorize("hasAnyRole('USER', 'ORGANIZER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('USER', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> initializeStripePayment(
             Authentication authentication,
             @PathVariable Long registrationId,
@@ -108,7 +108,7 @@ public class PaymentController {
      * Setup payment method and create upfront payment intent
      */
     @PostMapping("/setup-method/{paymentPlanId}")
-    @PreAuthorize("hasAnyRole('USER', 'ORGANIZER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('USER', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> setupPaymentMethodAndCreateUpfrontPayment(
             @PathVariable Long paymentPlanId,
             @RequestBody Map<String, String> request) {
@@ -145,7 +145,7 @@ public class PaymentController {
      * Confirm upfront payment and schedule remaining installments
      */
     @PostMapping("/confirm-upfront/{paymentPlanId}")
-    @PreAuthorize("hasAnyRole('USER', 'ORGANIZER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('USER', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> confirmUpfrontPaymentAndScheduleInstallments(
             @PathVariable Long paymentPlanId,
             @RequestBody Map<String, String> request) {
@@ -182,7 +182,7 @@ public class PaymentController {
      * Get payment plan by registration ID
      */
     @GetMapping("/plans/{registrationId}")
-    @PreAuthorize("hasAnyRole('USER', 'ORGANIZER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('USER', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> getPaymentPlanByRegistrationId(
             @PathVariable Long registrationId) {
         
@@ -221,7 +221,7 @@ public class PaymentController {
      * Get all payments for a registration
      */
     @GetMapping("/registrations/{registrationId}")
-    @PreAuthorize("hasAnyRole('USER', 'ORGANIZER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('USER', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> getPaymentsByRegistrationId(
             @PathVariable Long registrationId) {
         
@@ -246,7 +246,7 @@ public class PaymentController {
      * Get installment schedule for a registration
      */
     @GetMapping("/schedule/{registrationId}")
-    @PreAuthorize("hasAnyRole('USER', 'ORGANIZER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('USER', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> getInstallmentSchedule(
             @PathVariable Long registrationId) {
         
@@ -271,7 +271,7 @@ public class PaymentController {
      * Retry a failed payment
      */
     @PostMapping("/retry/{paymentId}")
-    @PreAuthorize("hasAnyRole('USER', 'ORGANIZER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('USER', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> retryFailedPayment(
             @PathVariable Long paymentId,
             @RequestParam(required = false) String paymentMethodId) {
@@ -298,7 +298,7 @@ public class PaymentController {
      * Get customer payment methods
      */
     @GetMapping("/methods/{registrationId}")
-    @PreAuthorize("hasAnyRole('USER', 'ORGANIZER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('USER', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> getCustomerPaymentMethods(
             @PathVariable Long registrationId) {
         
@@ -328,7 +328,7 @@ public class PaymentController {
      * Check if QR code is activated for a registration
      */
     @GetMapping("/qr-status/{registrationId}")
-    @PreAuthorize("hasAnyRole('USER', 'ORGANIZER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('USER', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> isQRCodeActivated(
             @PathVariable Long registrationId) {
         
@@ -354,7 +354,7 @@ public class PaymentController {
      * Cancel a payment plan
      */
     @DeleteMapping("/plans/{paymentPlanId}")
-    @PreAuthorize("hasAnyRole('USER', 'ORGANIZER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('USER', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> cancelPaymentPlan(
             @PathVariable Long paymentPlanId,
             @RequestParam(required = false, defaultValue = "User request") String reason) {
@@ -379,7 +379,7 @@ public class PaymentController {
      * Check if registration has an active payment plan
      */
     @GetMapping("/active/{registrationId}")
-    @PreAuthorize("hasAnyRole('USER', 'ORGANIZER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('USER', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> hasActivePaymentPlan(
             @PathVariable Long registrationId) {
         
@@ -489,7 +489,7 @@ public class PaymentController {
      * Get payment statistics for an event (for organizers)
      */
     @GetMapping("/stats/event/{eventId}")
-    @PreAuthorize("hasAnyRole('ORGANIZER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> getPaymentStatsForEvent(@PathVariable Long eventId) {
         try {
             // Implementation would query payment repository for event statistics
@@ -511,7 +511,7 @@ public class PaymentController {
      * Get user's payment history
      */
     @GetMapping("/user/history")
-    @PreAuthorize("hasAnyRole('USER', 'ORGANIZER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('USER', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> getUserPaymentHistory() {
         try {
             // Implementation would return payment history for the authenticated user
