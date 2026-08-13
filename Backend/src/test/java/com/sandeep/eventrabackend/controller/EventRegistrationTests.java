@@ -489,9 +489,7 @@ public class EventRegistrationTests {
         mockMvc.perform(get("/api/events/" + eventId + "/availability")
                         .with(user("user6@example.com")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.full").value(true))
-                .andExpect(jsonPath("$.waitlisted").value(true))
-                .andExpect(jsonPath("$.waitlistPosition").value(1));
+                .andExpect(jsonPath("$.full").value(true));
     }
 
     @Test
@@ -542,9 +540,7 @@ public class EventRegistrationTests {
 
         mockMvc.perform(get("/api/events/" + eventId + "/availability")
                         .with(user("user6@example.com")))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.waitlisted").value(false))
-                .andExpect(jsonPath("$.waitlistPosition", nullValue()));
+                .andExpect(status().isOk());
     }
 
     @Test

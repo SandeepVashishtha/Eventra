@@ -213,12 +213,9 @@ public class EventController {
                         @ApiResponse(responseCode = "404", description = "Event not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
         })
         public ResponseEntity<EventAvailabilityResponse> getEventAvailability(
-                        @Parameter(description = "ID of the event") @PathVariable Long id,
-                        Authentication authentication) {
+                        @Parameter(description = "ID of the event") @PathVariable Long id) {
 
-                EventAvailabilityResponse response = eventService.getEventAvailability(
-                                id,
-                                authentication == null ? null : authentication.getName());
+                EventAvailabilityResponse response = eventService.getEventAvailability(id);
 
                 return ResponseEntity.ok(response);
         }
