@@ -16,10 +16,16 @@ import java.util.concurrent.locks.ReentrantLock;
 public class TransactionLockSyncAdapter {
 
     public void registerReleaseOnCompletion(ReentrantLock lock) {
+        if (lock == null) {
+            return;
+        }
         registerReleaseOnCompletion(lock, null);
     }
 
     public void registerReleaseOnCompletion(ReentrantLock lock, Runnable afterRelease) {
+        if (lock == null) {
+            return;
+        }
         Runnable cleanup = () -> {
             // Releases on STATUS_COMMITTED, STATUS_ROLLED_BACK and STATUS_UNKNOWN.
             if (lock.isHeldByCurrentThread()) {
