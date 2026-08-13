@@ -5,30 +5,29 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Audit Log Manager retaining historical actions securely (#16268).
+ * Service managing user transaction log sequences and audit verification (#17665).
  */
 @Service
 public class AuditLogManager {
 
     private final MerkleTreeHasher hasher;
-    private final List<String> currentBlockLogs = new CopyOnWriteArrayList<>();
-    private final Map<String, String> blockRoots = new HashMap<>();
+    private final List<String> systemLogs = new CopyOnWriteArrayList<>();
 
     public AuditLogManager(MerkleTreeHasher hasher) {
         this.hasher = hasher;
+        systemLogs.add("User Registration 01");
+        systemLogs.add("Ticket Purchased VIP");
     }
 
-    public synchronized void recordAction(String action) {
-        currentBlockLogs.add(action);
-        if (currentBlockLogs.size() >= 4) {
-            String blockId = "block_" + System.currentTimeMillis();
-            String rootHash = hasher.computeRootHash(new ArrayList<>(currentBlockLogs));
-            blockRoots.put(blockId, rootHash);
-            currentBlockLogs.clear();
-        }
+    public synchronized void appendLog(String logEntry) {
+        systemLogs.add(logEntry);
     }
 
-    public Map<String, String> getBlockRoots() {
-        return blockRoots;
+    public String getMerkleRoot() {
+        return hasher.computeMerkleRoot(systemLogs);
+    }
+
+    public List<String> getSystemLogs() {
+        return systemLogs;
     }
 }
