@@ -241,8 +241,11 @@ export const checkEmailAvailability = (email, options = {}) => {
     },
   );
 
-export const checkUsernameAvailability = (username, options = {}) =>
-  requestValidation(
+export const checkUsernameAvailability = (username, options = {}) => {
+  if (!username || typeof username !== "string" || !username.trim()) {
+    return Promise.resolve(createValidationResponse(false, "Username is required"));
+  }
+  return requestValidation(
     options.endpoint ||
       `/api/validate/username/${encodeURIComponent(username)}`,
     {
