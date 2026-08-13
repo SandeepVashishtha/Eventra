@@ -73,7 +73,8 @@ public class SvgSanitizationService {
             Document doc = parseSvg(rawSvgBytes);
 
             Element root = doc.getDocumentElement();
-            if (root == null || !"svg".equals(root.getLocalName())) {
+            String rootName = root != null ? (root.getLocalName() != null ? root.getLocalName() : root.getNodeName()) : null;
+            if (root == null || !"svg".equals(rootName)) {
                 throw new IllegalArgumentException("Not a valid SVG document");
             }
 
