@@ -79,6 +79,19 @@ const generateSecureUUID = () => {
   throw new Error("Secure random number generation is not supported in this browser.");
 };
 
+// Build a STABLE idempotency key for the same event+user+payload so that
+// repeated submits (online or offline) collapse into a single action. This is
+// what lets the offline queue dedupe REGISTER_EVENT / JOIN_WAITLIST per
+// event+user instead of enqueuing duplicates when the user taps submit twice.
+const makeRegistrationIdempotencyKey = (actionType, eventId, userId, payload) => {
+  const payloadString = JSON.stringify(payload || {});
+  let hash = 0;
+  for (let i = 0; i < payloadString.length; i += 1) {
+    hash = (hash * 31 + payloadString.charCodeAt(i)) | 0;
+  }
+  return `${String(actionType).toLowerCase()}-${eventId}-${userId}-${(hash >>> 0)}`;
+};
+
 const getRegistrationFailureMessage = (error) => {
   const message = error?.data?.message || error?.data?.error || error?.message || "";
   const normalizedMessage = message.toLowerCase();
@@ -334,7 +347,11 @@ const EventRegistration = () => {
 
     setShowConflictModal(false);
 
-    // Re-check capacity immediately before the POST (TOCTOU)
+    // Re-check capacity immediately before the POST (TOCTOU) using a SINGLE
+    // source of truth: the fresh capacity-check response. refreshEventAvailability
+    // already merges that response into the local `event` state, so `isEventFull`
+    // (derived from `event`) stays consistent with this check and the user is
+    // routed to the correct endpoint (waitlist when freshly full, register otherwise).
     let isFreshlyFull = false;
     try {
       const latestAvailability = await refreshEventAvailability(eventId);
@@ -366,7 +383,14 @@ const EventRegistration = () => {
       ? API_ENDPOINTS.EVENTS.REGISTER(eventId)
       : `/api/events/${eventId}/register`;
 
-    const idempotencyKey = generateSecureUUID();
+    // Stable idempotency key for the same event+user+payload so repeated
+    // submits (online or offline) collapse into a single registration.
+    const idempotencyKey = makeRegistrationIdempotencyKey(
+      "REGISTER_EVENT",
+      eventId,
+      user.id,
+      formData
+    );
 
     // The selected seat travels with the registration so the server can
     // persist and atomically reserve it (format elementId:seatIndex).
@@ -407,6 +431,7 @@ const EventRegistration = () => {
       const isAlreadyRegistered = failureMessage === "You are already registered for this event.";
 
       if (isOfflineFailure) {
+        const actionType = isFreshlyFull ? "JOIN_WAITLIST" : "REGISTER_EVENT";
         const payload = isFreshlyFull
           ? {
               userId: user.id || user.email,
@@ -427,12 +452,21 @@ const EventRegistration = () => {
               showProfileInAttendeeDirectory: Boolean(formData.showProfileInAttendeeDirectory),
             };
 
+        // Stable idempotency key scoped to event+user+payload so repeated
+        // offline taps collapse into a single queued action.
+        const queueIdempotencyKey = makeRegistrationIdempotencyKey(
+          actionType,
+          eventId,
+          user.id,
+          payload
+        );
+
         const success = await pushToQueue(
           {
-            actionType: isFreshlyFull ? "JOIN_WAITLIST" : "REGISTER_EVENT",
+            actionType,
             endpoint,
             eventId: parseInt(eventId, 10),
-            idempotencyKey,
+            idempotencyKey: queueIdempotencyKey,
             payload,
           },
           user.id
