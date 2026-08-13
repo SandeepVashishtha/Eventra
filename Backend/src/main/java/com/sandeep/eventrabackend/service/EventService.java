@@ -683,6 +683,25 @@ public class EventService {
         }
 
         @Transactional
+        public EventResponse archiveEvent(Long id, String userEmail) {
+                Event event = eventRepository.findById(id)
+                                .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + id));
+
+                eventRoleService.requireRole(id, userEmail, EventRole.ORGANIZER);
+
+                if ("CANCELLED".equals(event.getStatus())) {
+                        throw new RegistrationConflictException("Cancelled events cannot be archived.");
+                }
+                if ("ARCHIVED".equals(event.getStatus())) {
+                        throw new RegistrationConflictException("Event is already archived.");
+                }
+
+                event.setStatus("ARCHIVED");
+                Event saved = eventRepository.save(event);
+                return toEventResponse(saved);
+        }
+
+        @Transactional
         public void resendCancellationNotice(Long eventId, String actorEmail, String attendeeEmail) {
                 Event event = eventRepository.findById(eventId)
                                 .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + eventId));

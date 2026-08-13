@@ -26,19 +26,32 @@ public final class EventSpecifications {
     }
 
     /**
-     * Cancelled events are hidden from the public listing unless the caller
-     * explicitly filters for them via the {@code CANCELLED} status label
-     * (Issue #12081).
+     * Cancelled and archived events are hidden from the public listing unless
+     * the caller explicitly filters for those lifecycle labels.
      */
     public static Specification<Event> notCancelledUnlessRequested(List<String> statuses) {
-        boolean requestsCancelled = statuses != null && statuses.stream()
-                .filter(StringUtils::hasText)
-                .map(raw -> raw.trim().toUpperCase(Locale.ROOT))
-                .anyMatch(status -> status.equals("CANCELLED") || status.equals("CANCELED"));
-        if (requestsCancelled) {
-            return null;
-        }
-        return (root, query, cb) -> cb.notEqual(cb.upper(root.get("status")), "CANCELLED");
+        java.util.Set<String> requested = statuses == null
+                ? java.util.Set.of()
+                : statuses.stream()
+                        .filter(StringUtils::hasText)
+                        .map(raw -> raw.trim().toUpperCase(Locale.ROOT))
+                        .collect(java.util.stream.Collectors.toSet());
+        boolean requestsCancelled = requested.contains("CANCELLED") || requested.contains("CANCELED");
+        boolean requestsArchived = requested.contains("ARCHIVED");
+
+        return (root, query, cb) -> {
+            java.util.List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
+            if (!requestsCancelled) {
+                predicates.add(cb.notEqual(cb.upper(root.get("status")), "CANCELLED"));
+            }
+            if (!requestsArchived) {
+                predicates.add(cb.notEqual(cb.upper(root.get("status")), "ARCHIVED"));
+            }
+            if (predicates.isEmpty()) {
+                return cb.conjunction();
+            }
+            return cb.and(predicates.toArray(jakarta.persistence.criteria.Predicate[]::new));
+        };
     }
 
     public static Specification<Event> isPublic() {
