@@ -3,7 +3,8 @@ import {
   getTimelineEvents,
   getChartDataPoints,
   sliderToHours,
-  getFormattedSimTime
+  getFormattedSimTime,
+  calculateMilestoneProgress
 } from "../src/utils/eventTimelineUtils.js";
 
 // Test sliderToHours conversion
@@ -51,4 +52,36 @@ assert.ok(formattedStr1.includes("Mar 14") && (formattedStr1.includes("10:00 AM"
 assert.ok(formattedStr2.includes("Mar 15") && (formattedStr2.includes("10:00 AM") || formattedStr2.includes("10:00")), "formats event start properly");
 assert.ok(formattedStr3.includes("Mar 15") && (formattedStr3.includes("06:00 PM") || formattedStr3.includes("6:00 PM") || formattedStr3.includes("18:00")), "formats 8 hours after event start properly");
 
+// Test calculateMilestoneProgress with valid dates
+const milestoneValid = {
+  startDate: new Date("2026-08-01T00:00:00Z"),
+  endDate: new Date("2026-08-11T00:00:00Z")
+};
+assert.equal(calculateMilestoneProgress(milestoneValid, new Date("2026-08-01T00:00:00Z")), 0, "0% at start date");
+assert.equal(calculateMilestoneProgress(milestoneValid, new Date("2026-08-06T00:00:00Z")), 50, "50% at midpoint");
+assert.equal(calculateMilestoneProgress(milestoneValid, new Date("2026-08-11T00:00:00Z")), 100, "100% at end date");
+assert.equal(calculateMilestoneProgress(milestoneValid, new Date("2026-07-31T00:00:00Z")), 0, "0% before start date");
+assert.equal(calculateMilestoneProgress(milestoneValid, new Date("2026-08-15T00:00:00Z")), 100, "100% after end date");
+
+// Test calculateMilestoneProgress with string dates and numbers
+const milestoneStrings = {
+  startDate: "2026-08-01T00:00:00Z",
+  endDate: "2026-08-11T00:00:00Z"
+};
+assert.equal(calculateMilestoneProgress(milestoneStrings, "2026-08-06T00:00:00Z"), 50, "handles ISO string dates correctly");
+
+// Test calculateMilestoneProgress with invalid/missing milestone data
+assert.equal(calculateMilestoneProgress(null), 0, "returns 0 for null milestone");
+assert.equal(calculateMilestoneProgress(undefined), 0, "returns 0 for undefined milestone");
+assert.equal(calculateMilestoneProgress("invalid"), 0, "returns 0 for non-object milestone");
+assert.equal(calculateMilestoneProgress({}), 0, "returns 0 for empty milestone object");
+assert.equal(calculateMilestoneProgress({ startDate: "2026-08-01" }), 0, "returns 0 for missing endDate");
+assert.equal(calculateMilestoneProgress({ endDate: "2026-08-11" }), 0, "returns 0 for missing startDate");
+assert.equal(calculateMilestoneProgress({ startDate: "invalid-date", endDate: "2026-08-11" }), 0, "returns 0 for invalid startDate string");
+assert.equal(calculateMilestoneProgress({ startDate: "2026-08-01", endDate: "invalid-date" }), 0, "returns 0 for invalid endDate string");
+assert.equal(calculateMilestoneProgress({ startDate: null, endDate: null }), 0, "returns 0 for null dates");
+assert.equal(calculateMilestoneProgress({ startDate: true, endDate: "2026-08-11" }), 0, "returns 0 for boolean date");
+assert.equal(calculateMilestoneProgress({ startDate: "2026-08-11", endDate: "2026-08-01" }), 0, "returns 0 when startDate >= endDate");
+
 console.log("event timeline replay unit tests passed ✓");
+
