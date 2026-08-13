@@ -619,12 +619,24 @@ export const rotateKey = async () => {
   }
 };
 
+/**
+ * Get the current key metadata.
+ *
+ * @returns {Object|null} Key metadata object or null if unavailable
+ */
 export const getKeyMetadata = () => {
   return getOrInitKeyMetadata();
 };
+
+/**
+ * Get the current crypto configuration.
+ *
+ * @returns {Object} Crypto configuration object
+ */
 export const getCryptoConfig = () => {
   return { ...CRYPTO_CONFIG };
 };
+
 
 export const deriveKey = async (password, salt) => {
   const encoder = new TextEncoder();
