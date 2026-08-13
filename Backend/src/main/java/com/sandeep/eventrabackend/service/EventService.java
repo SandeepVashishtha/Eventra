@@ -277,6 +277,12 @@ public class EventService {
                 return Sort.by(direction, mapped);
         }
 
+        private void validateTitle(String title) {
+                if (title == null || title.trim().length() < 3 || title.trim().length() > 100) {
+                        throw new IllegalArgumentException("Title must be between 3 and 100 characters.");
+                }
+        }
+
         /**
          * Returns a bounded window of public events near {@code around} for conflict
          * alternative suggestions (avoids loading the entire catalog).
@@ -492,6 +498,7 @@ public class EventService {
                 Event event = new Event();
                 validateEventCategory(request.getCategory());
                 validateEventCategories(request.getCategories());
+                validateTitle(request.getTitle());
                 event.setTitle(request.getTitle());
                 event.setDescription(request.getDescription());
                 event.setLocation(request.getLocation());
@@ -552,6 +559,7 @@ public class EventService {
                 validateEventCategory(request.getCategory());
                 validateEventCategories(request.getCategories());
 
+                validateTitle(request.getTitle());
                 event.setTitle(request.getTitle());
                 event.setDescription(request.getDescription());
                 event.setLocation(request.getLocation());
