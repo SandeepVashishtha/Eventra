@@ -283,6 +283,33 @@ const generateQueueId = () => {
 
 const MAX_PAYLOAD_BYTES = 50 * 1024;
 
+// ---------------------------------------------------------------------------
+// In-process mutex for queue writes (Issue #16172)
+// Rapid duplicate clicks can each pass the dedup check before the previous
+// write becomes visible. We serialize writes keyed by
+// actionType|eventId|userId so only one concurrent attempt can enqueue.
+// ---------------------------------------------------------------------------
+const _queueWriteLocks = new Map();
+
+const _withQueueLock = async (lockKey, fn) => {
+  while (_queueWriteLocks.has(lockKey)) {
+    await _queueWriteLocks.get(lockKey);
+  }
+
+  let release;
+  const lockPromise = new Promise((resolve) => {
+    release = resolve;
+  });
+  _queueWriteLocks.set(lockKey, lockPromise);
+
+  try {
+    return await fn();
+  } finally {
+    _queueWriteLocks.delete(lockKey);
+    release();
+  }
+};
+
 export const pushToQueue = async (item, userId = null) => {
   const actionItem = {
     id: item.id || generateQueueId(),
@@ -312,86 +339,110 @@ export const pushToQueue = async (item, userId = null) => {
     return false;
   }
 
-  const queue = getQueue();
-  if (queue.length >= offlineSyncConfig.maxQueueSize) {
-    logger.warn("Offline queue limit reached. Dropping item to prevent local overflow.");
-    return false;
-  }
-  const isDuplicate = queue.some((existing) => {
-    if (actionItem.idempotencyKey && existing.idempotencyKey) {
-      return existing.idempotencyKey === actionItem.idempotencyKey;
+  const lockKey = `${actionItem.actionType}|${actionItem.eventId}|${actionItem.userId}`;
+
+  return _withQueueLock(lockKey, async () => {
+    // Read BOTH stores and combine them so the localStorage mirror and the
+    // IndexedDB store can never diverge in the dedup decision (Issue #16172).
+    let combinedQueue = [];
+    try {
+      const lsQueue = getQueue();
+      const idbQueue = await getQueueIndexedDB();
+      const seenIds = new Set();
+      combinedQueue = [...lsQueue, ...idbQueue].filter((it) => {
+        if (!it || !it.id || seenIds.has(it.id)) return false;
+        seenIds.add(it.id);
+        return true;
+      });
+    } catch (error) {
+      logger.warn("[OfflineQueue] Failed to read queues for dedup, falling back to localStorage:", error);
+      combinedQueue = getQueue();
     }
 
-    // SECURITY (Issue #11074): offline check-ins must dedupe per attendee
-    // ticket, not per operator. Every offline scan for the same event shares
-    // the same eventId + operator userId + actionType, so the generic key
-    // below would collapse the second and every later attendee into the first
-    // item and they would never be synced.
-    if (actionItem.actionType === "TICKET_CHECK_IN") {
+    if (combinedQueue.length >= offlineSyncConfig.maxQueueSize) {
+      logger.warn("Offline queue limit reached. Dropping item to prevent local overflow.");
+      return false;
+    }
+
+    // Dedup across ALL action types: two items are duplicates if they share
+    // eventId + userId + actionType, and when an idempotencyKey is present
+    // that must match too (Issue #16172).
+    const isDuplicate = combinedQueue.some((existing) => {
+      if (actionItem.idempotencyKey && existing.idempotencyKey) {
+        return existing.idempotencyKey === actionItem.idempotencyKey;
+      }
+
+      // SECURITY (Issue #11074): offline check-ins must dedupe per attendee
+      // ticket, not per operator. Every offline scan for the same event shares
+      // the same eventId + operator userId + actionType, so the generic key
+      // below would collapse the second and every later attendee into the first
+      // item and they would never be synced.
+      if (actionItem.actionType === "TICKET_CHECK_IN") {
+        return (
+          existing.actionType === "TICKET_CHECK_IN" &&
+          existing.eventId === actionItem.eventId &&
+          Boolean(actionItem.payload?.ticketId) &&
+          existing.payload?.ticketId === actionItem.payload?.ticketId
+        );
+      }
+
       return (
-        existing.actionType === "TICKET_CHECK_IN" &&
         existing.eventId === actionItem.eventId &&
-        Boolean(actionItem.payload?.ticketId) &&
-        existing.payload?.ticketId === actionItem.payload?.ticketId
+        existing.userId === actionItem.userId &&
+        existing.actionType === actionItem.actionType
       );
+    });
+
+    if (isDuplicate) {
+      const identity =
+        actionItem.actionType === "TICKET_CHECK_IN"
+          ? `ticket ${actionItem.payload?.ticketId}`
+          : `user ${actionItem.userId}`;
+      logger.warn(
+        `[OfflineQueue] Duplicate action detected for event ${actionItem.eventId} ` +
+          `(${identity}, type ${actionItem.actionType}). Skipping enqueue.`
+      );
+      return true;
     }
 
-    return (
-      existing.eventId === actionItem.eventId &&
-      existing.userId === actionItem.userId &&
-      existing.actionType === actionItem.actionType
-    );
+    combinedQueue.push(actionItem);
+
+    let localStorageSuccess = false;
+    try {
+      localStorage.setItem(QUEUE_KEY, JSON.stringify(combinedQueue));
+      localStorageSuccess = true;
+    } catch (error) {
+      logger.error("Error writing localStorage backup:", error);
+    }
+
+    let indexedDbSuccess = false;
+    try {
+      const db = await openDB();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, "readwrite");
+        const store = tx.objectStore(STORE_NAME);
+        const request = store.put(actionItem);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
+      indexedDbSuccess = true;
+    } catch (err) {
+      logger.error("IndexedDB push failed:", err);
+    }
+
+    const queued = localStorageSuccess || indexedDbSuccess;
+
+    if (queued) {
+      notifyQueueUpdated(actionItem);
+      // Fire-and-forget: background-sync registration must never block the
+      // caller, even when no service worker becomes active (see #14604).
+      requestBackgroundSync().catch((error) => {
+        logger.warn("[OfflineQueue] Background sync request failed:", error);
+      });
+    }
+
+    return queued;
   });
-
-if (isDuplicate) {
-  const identity =
-    actionItem.actionType === "TICKET_CHECK_IN"
-      ? `ticket ${actionItem.payload?.ticketId}`
-      : `user ${actionItem.userId}`;
-  logger.warn(
-    `[OfflineQueue] Duplicate action detected for event ${actionItem.eventId} ` +
-      `(${identity}, type ${actionItem.actionType}). Skipping enqueue.`
-  );
-  return true;
-}
-
-queue.push(actionItem);
-
-  let localStorageSuccess = false;
-  try {
-    localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
-    localStorageSuccess = true;
-  } catch (error) {
-    logger.error("Error writing localStorage backup:", error);
-  }
-
-  let indexedDbSuccess = false;
-  try {
-    const db = await openDB();
-    await new Promise((resolve, reject) => {
-      const tx = db.transaction(STORE_NAME, "readwrite");
-      const store = tx.objectStore(STORE_NAME);
-      const request = store.put(actionItem);
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    });
-    indexedDbSuccess = true;
-  } catch (err) {
-    logger.error("IndexedDB push failed:", err);
-  }
-
-  const queued = localStorageSuccess || indexedDbSuccess;
-
-  if (queued) {
-    notifyQueueUpdated(actionItem);
-    // Fire-and-forget: background-sync registration must never block the
-    // caller, even when no service worker becomes active (see #14604).
-    requestBackgroundSync().catch((error) => {
-      logger.warn("[OfflineQueue] Background sync request failed:", error);
-    });
-  }
-
-  return queued;
 };
 
 export const setQueue = async (newQueue) => {
