@@ -60,6 +60,7 @@ import java.time.LocalDateTime;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Locale;
@@ -976,14 +977,31 @@ public class EventService {
                 
                 CsvWaitlistImportResponse response = new CsvWaitlistImportResponse();
                 response.setTotalProcessed(entries.size());
-                
+
                 int successfulImports = 0;
                 int failedImports = 0;
-                
-                // Sort entries by timestamp to maintain fair queuing (oldest first)
-                List<CsvWaitlistImportRequest.CsvWaitlistEntry> sortedEntries = entries.stream()
-                        .sorted((a, b) -> a.getTimestamp().compareTo(b.getTimestamp()))
-                        .toList();
+
+                // Deduplicate entries by email (case-insensitive) within the same
+                // CSV so a repeated email doesn't cause a unique-constraint
+                // violation. Keep the first occurrence (preserving original order)
+                // and record each duplicate as a failure.
+                LinkedHashMap<String, CsvWaitlistImportRequest.CsvWaitlistEntry> uniqueEntries = new LinkedHashMap<>();
+                for (int idx = 0; idx < entries.size(); idx++) {
+                        CsvWaitlistImportRequest.CsvWaitlistEntry entry = entries.get(idx);
+                        String key = entry.getEmail() == null ? "" : entry.getEmail().toLowerCase().trim();
+                        if (uniqueEntries.containsKey(key)) {
+                                response.addFailure(new CsvWaitlistImportResponse.ImportFailure(
+                                                idx, entry.getEmail(), "Duplicate email within CSV import"));
+                                failedImports++;
+                        } else {
+                                uniqueEntries.put(key, entry);
+                        }
+                }
+
+                // Sort unique entries by timestamp to maintain fair queuing (oldest first)
+                List<CsvWaitlistImportRequest.CsvWaitlistEntry> sortedEntries = uniqueEntries.values().stream()
+                                .sorted((a, b) -> a.getTimestamp().compareTo(b.getTimestamp()))
+                                .toList();
                 
                 // Get current max position for this event
                 int currentMaxPosition = eventWaitlistRepository.findMaxPositionByEventId(eventId);

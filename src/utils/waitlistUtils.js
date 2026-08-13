@@ -80,7 +80,19 @@ export const parseCsvWaitlistData = (csvText) => {
       entries.push(entry);
     }
 
-    return entries;
+    // Deduplicate rows by email (case-insensitive) so the same email isn't
+    // sent twice within a single CSV import. Keep the first occurrence.
+    const seenEmails = new Set();
+    const dedupedEntries = [];
+    for (const entry of entries) {
+      const emailKey = (entry.email || '').toLowerCase().trim();
+      if (!seenEmails.has(emailKey)) {
+        seenEmails.add(emailKey);
+        dedupedEntries.push(entry);
+      }
+    }
+
+    return dedupedEntries;
   } catch (error) {
     logger.error('[WaitlistUtils] Failed to parse CSV waitlist data:', error);
     throw new Error(`Failed to parse CSV: ${error.message}`);
