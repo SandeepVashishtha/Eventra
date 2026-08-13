@@ -46,7 +46,15 @@ public class PaymentPlanService {
         // Get registration
         EventRegistration registration = eventRegistrationRepository.findById(registrationId)
                 .orElseThrow(() -> new IllegalArgumentException("Registration not found"));
-        
+
+        // Idempotency: return the existing active plan for this registration if present
+        // to prevent duplicate Payment records and potential double-charging.
+        Optional<PaymentPlan> existingActivePlan =
+                paymentPlanRepository.findActivePaymentPlanByRegistrationId(registrationId);
+        if (existingActivePlan.isPresent()) {
+            return existingActivePlan.get();
+        }
+
         // Validate input
         if (ticketPrice == null || ticketPrice.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Ticket price must be greater than zero");
