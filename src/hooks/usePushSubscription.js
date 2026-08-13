@@ -1,12 +1,17 @@
 import { useState, useCallback, useEffect } from "react";
 import { apiUtils, API_ENDPOINTS } from "../config/api.js";
-import { useAuth } from "../context/AuthContext";
-import { logger } from "../utils/logger";
-import { safeJsonParse } from "../utils/safeJsonParse";
+import { useAuth } from "../context/AuthContext.js";
+import { logger } from "../utils/logger.js";
+import { safeJsonParse } from "../utils/safeJsonParse.js";
 import {
   PUSH_SUBSCRIPTION_KEY,
   urlBase64ToUint8Array,
-} from "../utils/notificationPreferences";
+} from "../utils/notificationPreferences.js";
+
+import {
+  getSwUrl,
+  getSwScope,
+} from "../utils/serviceWorkerRegistration.js";
 
 const getEnv = () =>
   typeof import.meta !== "undefined" && import.meta.env
@@ -32,7 +37,9 @@ const getRegistration = async () => {
   const existing = await navigator.serviceWorker.getRegistration();
   if (existing) return existing;
   try {
-    return await navigator.serviceWorker.register("/service-worker.js");
+    const swUrl = getSwUrl();
+    const swScope = getSwScope();
+    return await navigator.serviceWorker.register(swUrl, { scope: swScope });
   } catch (err) {
     logger.warn('[usePushSubscription] SW registration failed:', err);
     return null;

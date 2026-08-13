@@ -47,9 +47,42 @@ export const isServiceWorkerSupported = () => {
  * @param {boolean} [config.immediate=false] - Register immediately instead of waiting for window 'load'.
  * @returns {Promise<ServiceWorkerRegistration|null>} Registration promise.
  */
+export const getEnv = () =>
+  typeof import.meta !== "undefined" && import.meta.env
+    ? import.meta.env
+    : typeof process !== "undefined" && process.env
+      ? process.env
+      : {};
+
+export const getBaseUrl = () => {
+  const env = getEnv();
+  return env.BASE_URL || env.PUBLIC_URL || "/";
+};
+
+export const getSwUrl = () => {
+  const base = getBaseUrl();
+  if (typeof window !== "undefined" && window.location && window.location.href) {
+    const baseHref = new URL(base, window.location.href).href;
+    const baseWithSlash = baseHref.endsWith("/") ? baseHref : `${baseHref}/`;
+    return new URL("service-worker.js", baseWithSlash).pathname;
+  }
+  const normalizedBase = base.endsWith("/") ? base : `${base}/`;
+  return `${normalizedBase}service-worker.js`;
+};
+
+export const getSwScope = () => {
+  const base = getBaseUrl();
+  if (typeof window !== "undefined" && window.location && window.location.href) {
+    const baseHref = new URL(base, window.location.href).href;
+    const baseWithSlash = baseHref.endsWith("/") ? baseHref : `${baseHref}/`;
+    return new URL("./", baseWithSlash).pathname;
+  }
+  return base.endsWith("/") ? base : `${base}/`;
+};
+
 export function registerServiceWorker(config = {}) {
   const {
-    swUrl = "/service-worker.js",
+    swUrl = getSwUrl(),
     onSuccess,
     onUpdate,
     onError,
