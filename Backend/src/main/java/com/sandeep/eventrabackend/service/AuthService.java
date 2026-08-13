@@ -247,17 +247,18 @@ public class AuthService {
     /**
      * Initiates a password reset for the given email.
      *
-     * <p>A cryptographically random, short-lived token is generated and its
-     * SHA-256 hash is persisted so the raw token can be exchanged for a new
-     * password exactly once. The raw token is returned in the response because
-     * the backend has no email transport configured; deployments with a mailer
-     * should send it as a reset link instead and drop it from the response.</p>
+     * <p>A cryptographically random, short-lived token is generated and only
+     * its SHA-256 hash is persisted. The raw token is <em>never</em> returned
+     * in the API response (doing so would let an attacker take over any
+     * account, since this endpoint is unauthenticated). Deployments must
+     * deliver the raw token to the account owner out-of-band (e.g. email a
+     * reset link); the reset step exchanges the token via a server-side
+     * lookup of its hash.</p>
      *
      * <p>For privacy, unknown emails still return HTTP 200 with the same generic
      * message (no account enumeration).</p>
      *
-     * @return a map with {@code message} and, when the account exists,
-     *         {@code resetToken} (raw token for the next step)
+     * @return a map with the generic {@code message} (no token is disclosed)
      */
     @Transactional
     public Map<String, String> requestPasswordReset(String rawEmail) {
@@ -281,9 +282,10 @@ public class AuthService {
                 .used(false)
                 .build());
 
+        // The raw token is deliberately not included in the response; it must be
+        // delivered out-of-band (email) so only the account owner can reset.
         return Map.of(
-                "message", "If an account exists for that email, a password reset link has been sent.",
-                "resetToken", rawToken);
+                "message", "If an account exists for that email, a password reset link has been sent.");
     }
 
     private String generateResetToken() {
