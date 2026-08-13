@@ -29,6 +29,9 @@ public class TeamWorkspaceSyncService {
     private static final Pattern HACKATHON_ROOM_KEY =
             Pattern.compile("^hackathon:(\\d+)(?::team:.*)?$");
 
+    private static final String HACKATHON_ROOM_PREFIX = "hackathon:";
+    private static final String USER_ROOM_PREFIX = "user:";
+
     private static final class WorkspaceState {
         private final Object lock = new Object();
         private List<Map<String, Object>> tasks = new ArrayList<>();
