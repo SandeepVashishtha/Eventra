@@ -50,8 +50,15 @@ const CarbonFootprintGamification = () => {
       // Update leaderboard
       setLeaderboard(prev => {
         const newLb = [...prev];
-        newLb[2] = { ...newLb[2], points: ecoPoints + 150, saved: carbonSaved + 12.5 };
-        return newLb.sort((a, b) => b.points - a.points).map((item, index) => ({...item, rank: index + 1}));
+        const myIndex = newLb.findIndex(item => item.name === 'You');
+        if (myIndex === -1) return prev;
+        newLb[myIndex] = {
+          ...newLb[myIndex],
+          points: newLb[myIndex].points + 150,
+          saved: (newLb[myIndex].saved ?? 0) + 12.5,
+        };
+        return newLb.sort((a, b) => b.points - a.points)
+                  .map((item, index) => ({...item, rank: index + 1}));
       });
     }, 2000);
     
