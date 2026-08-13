@@ -1,7 +1,11 @@
 package com.sandeep.eventrabackend.controller;
 
 import com.sandeep.eventrabackend.model.SessionQuestion;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -10,7 +14,6 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/stream/qa")
-@CrossOrigin(origins = "*")
 public class QAStreamController {
 
     private final Map<String, SessionQuestion> questionsDatabase = new ConcurrentHashMap<>();
@@ -28,7 +31,15 @@ public class QAStreamController {
     }
 
     @PostMapping("/submit")
-    public ResponseEntity<SessionQuestion> submitQuestion(@RequestBody SessionQuestion payload) {
+    public ResponseEntity<SessionQuestion> submitQuestion(@RequestBody SessionQuestion payload,
+            Authentication authentication) {
+        if (authentication == null || !StringUtils.hasText(authentication.getName())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        if (payload.getSessionId() == null || payload.getSessionId().isBlank()
+                || payload.getQuestionText() == null || payload.getQuestionText().isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
         String id = "q-" + UUID.randomUUID().toString().substring(0, 8);
         SessionQuestion q = new SessionQuestion(id, payload.getSessionId(), payload.getAuthorName(), payload.getQuestionText());
         questionsDatabase.put(id, q);
@@ -36,16 +47,22 @@ public class QAStreamController {
     }
 
     @PostMapping("/{id}/upvote")
-    public ResponseEntity<SessionQuestion> upvoteQuestion(@PathVariable String id) {
+    public ResponseEntity<SessionQuestion> upvoteQuestion(@PathVariable String id, Authentication authentication) {
         SessionQuestion q = questionsDatabase.get(id);
-        if (q != null) {
-            q.setUpvotes(q.getUpvotes() + 1);
-            return ResponseEntity.ok(q);
+        if (q == null) {
+            return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.notFound().build();
+        if (authentication == null || !StringUtils.hasText(authentication.getName())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        if (!q.addVoter(authentication.getName())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+        return ResponseEntity.ok(q);
     }
 
     @PostMapping("/{id}/pin")
+    @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<SessionQuestion> pinQuestion(@PathVariable String id) {
         SessionQuestion q = questionsDatabase.get(id);
         if (q != null) {
@@ -56,6 +73,7 @@ public class QAStreamController {
     }
 
     @PostMapping("/{id}/answer")
+    @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<SessionQuestion> markAnswered(@PathVariable String id) {
         SessionQuestion q = questionsDatabase.get(id);
         if (q != null) {

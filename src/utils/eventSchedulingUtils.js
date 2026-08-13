@@ -318,8 +318,11 @@ export const buildTimeSlots = ({
   endHour = DEFAULT_DAY_END_HOUR,
   stepMinutes = 60,
 } = {}) => {
+  const safeStep = Number.isFinite(stepMinutes) && stepMinutes > 0 ? stepMinutes : DEFAULT_DURATION_MINUTES;
+  const start = startHour * 60;
+  const end = endHour * 60;
   const slots = [];
-  for (let minutes = startHour * 60; minutes < endHour * 60; minutes += stepMinutes) {
+  for (let minutes = start; minutes < end; minutes += safeStep) {
     slots.push({
       minutes,
       label: formatDisplayTime(new Date(2026, 0, 1, Math.floor(minutes / 60), minutes % 60)),

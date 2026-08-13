@@ -7,8 +7,13 @@ const CSPViolationDashboard = () => {
   const { token } = useAuth();
 
   useEffect(() => {
+    const headers = {};
+    if (token && token !== "cookie-managed") {
+      headers.Authorization = `Bearer ${token}`;
+    }
     fetch('/api/admin/csp-reports', {
-      headers: { Authorization: `Bearer ${token}` }
+      credentials: 'include',
+      headers,
     }).then(res => res.json()).then(setViolations).catch(err => console.error("[CSP] Failed to fetch violations:", err));
   }, [token]);
 

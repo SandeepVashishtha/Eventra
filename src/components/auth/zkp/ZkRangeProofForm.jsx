@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Lock, ShieldCheck, Cpu, RefreshCw, Key } from "lucide-react";
+import { useState } from "react";
+import { Lock, RefreshCw, Key } from "lucide-react";
 import ProofBadge from "./ProofBadge";
 
 export default function ZkRangeProofForm() {

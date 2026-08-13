@@ -103,6 +103,7 @@ const Login = () => {
       }
       else {
         incrementFailures("login");
+        recordAttempt();
 
         const delay =
           getBackoffDelay("login") / 1000;
