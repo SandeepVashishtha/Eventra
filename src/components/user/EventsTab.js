@@ -653,11 +653,11 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
           const records = await getGlobalWaitlist(user.id || user.email);
           const userId = user.id || user.email;
           const userWaitlists = records.filter(
-            (r) => r.userId === userId && r.status === "waiting"
+            (r) => String(r.userId) === String(userId) && r.status === "waiting"
           );
           const resolved = userWaitlists.map((w) => {
             const foundEvent = [...registeredEvents, ...hostedEvents].find(
-              (e) => e.id === w.eventId || e.eventId === w.eventId
+              (e) => String(e.id) === String(w.eventId) || String(e.eventId) === String(w.eventId)
             );
             if (foundEvent) {
               return { ...foundEvent, waitlistJoinedAt: w.joinedAt, isWaitlist: true };
