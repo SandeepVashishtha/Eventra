@@ -1,5 +1,6 @@
 package com.sandeep.eventrabackend.ratelimit;
 
+import com.sandeep.eventrabackend.config.RateLimitProperties;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockFilterChain;
@@ -9,6 +10,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -22,6 +24,8 @@ import static org.mockito.Mockito.verify;
  */
 class RateLimitingFilterUnitTests {
 
+    private final RateLimitProperties properties = new RateLimitProperties();
+
     private RateLimitResult allowed() {
         return new RateLimitResult(true, 100, 99, 0);
     }
@@ -32,7 +36,7 @@ class RateLimitingFilterUnitTests {
         RateLimitService service = mock(RateLimitService.class);
         org.mockito.Mockito.when(service.consume(anyString(), anyString(), anyInt(), any(Duration.class)))
                 .thenReturn(allowed());
-        RateLimitingFilter filter = new RateLimitingFilter(service, 1);
+        RateLimitingFilter filter = new RateLimitingFilter(service, properties, 1);
 
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setRequestURI("/api/some-endpoint");
@@ -49,7 +53,7 @@ class RateLimitingFilterUnitTests {
         RateLimitService service = mock(RateLimitService.class);
         org.mockito.Mockito.when(service.consume(anyString(), anyString(), anyInt(), any(Duration.class)))
                 .thenReturn(allowed());
-        RateLimitingFilter filter = new RateLimitingFilter(service, 1);
+        RateLimitingFilter filter = new RateLimitingFilter(service, properties, 1);
 
         for (String spoof : new String[]{"198.51.100.1, 203.0.113.50", "198.51.100.99, 203.0.113.50"}) {
             MockHttpServletRequest request = new MockHttpServletRequest();
@@ -69,7 +73,7 @@ class RateLimitingFilterUnitTests {
         RateLimitService service = mock(RateLimitService.class);
         org.mockito.Mockito.when(service.consume(anyString(), anyString(), anyInt(), any(Duration.class)))
                 .thenReturn(allowed());
-        RateLimitingFilter filter = new RateLimitingFilter(service, 1);
+        RateLimitingFilter filter = new RateLimitingFilter(service, properties, 1);
 
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setRequestURI("/api/some-endpoint");
@@ -86,7 +90,7 @@ class RateLimitingFilterUnitTests {
         RateLimitService service = mock(RateLimitService.class);
         org.mockito.Mockito.when(service.consume(anyString(), anyString(), anyInt(), any(Duration.class)))
                 .thenReturn(allowed());
-        RateLimitingFilter filter = new RateLimitingFilter(service, 1);
+        RateLimitingFilter filter = new RateLimitingFilter(service, properties, 1);
 
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setRequestURI("/api/some-endpoint");
