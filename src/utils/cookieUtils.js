@@ -32,6 +32,9 @@ const DEFAULT_OPTIONS = {
  * @returns {string} Formatted cookie string
  */
 export function buildCookieString(name, value, options = {}) {
+  if (!name || typeof name !== "string" || !/^[!#$%&'*+\-.0-9A-Z^_`|~a-z]+$/.test(name)) {
+    throw new Error("Invalid cookie name according to RFC 6265 specifications.");
+  }
   const opts = { ...DEFAULT_OPTIONS, ...options };
 
   // URI encode the value for safety
