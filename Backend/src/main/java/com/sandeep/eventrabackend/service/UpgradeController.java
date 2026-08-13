@@ -20,6 +20,9 @@ public class UpgradeController {
     @PostMapping("/ticket/{ticketId}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<String> upgrade(@PathVariable String ticketId, @RequestParam String targetTier) {
+        if (targetTier == null || targetTier.length() < 3 || targetTier.length() > 20 || !targetTier.matches("^[A-Z0-9_]+$")) {
+            return ResponseEntity.badRequest().body("Invalid target tier format.");
+        }
         boolean success = upgradeService.upgradeTicket(ticketId, targetTier);
         if (success) {
             return ResponseEntity.ok("Ticket upgraded successfully to " + targetTier);
