@@ -121,7 +121,7 @@ const GenAITrailerSynthesis = () => {
                    {generationState === 'analyzing' ? 'Analyzing Raw Footage...' : 'Synthesizing Trailer...'}
                  </span>
                  <div className="w-full bg-neutral-200 h-1.5 rounded-full mt-2 overflow-hidden">
-                   <div className="h-full bg-gradient-to-r from-fuchsia-500 to-indigo-500 transition-all duration-300" style={{ width: \`\${progress}%\` }}></div>
+                   <div className="h-full bg-gradient-to-r from-fuchsia-500 to-indigo-500 transition-all duration-300" style={{ width: `${progress}%` }}></div>
                  </div>
                </div>
              )}

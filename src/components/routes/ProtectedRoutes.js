@@ -27,6 +27,7 @@ const EventAnalyticsDashboard = lazy(() => import("../../Pages/Events/EventAnaly
 const EventSchedulerCalendar = lazy(() => import("../../Pages/Calendar/EventSchedulerCalendar.jsx"));
 const VirtualVenueWalkthrough = lazy(() => import("../../Pages/Events/VirtualVenueWalkthrough.jsx"));
 const EventRoleManagement = lazy(() => import("../../Pages/Events/EventRoleManagement.jsx"));
+const EventRegistrationManagement = lazy(() => import("../../Pages/Events/EventRegistrationManagement.jsx"));
 
 // 🔥 FIX: Added Suspense wrapper required for React.lazy() to prevent layout thrashing and crashes
 const withModuleBoundary = (children, boundaryName) => (
@@ -224,6 +225,15 @@ export const getProtectedRoutes = () => [
     element={
       <ProtectedRoute>
         {withModuleBoundary(<EventRoleManagement />, "Event Role Management")}
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/events/:eventId/registration-management"
+    path="/events/:eventId/registration-management"
+    element={
+      <ProtectedRoute requiredRoles={[ROLES.ORGANIZER, ROLES.ADMIN, ROLES.SUPER_ADMIN]}>
+        {withModuleBoundary(<EventRegistrationManagement />, "Event Registration Management")}
       </ProtectedRoute>
     }
   />,

@@ -95,7 +95,9 @@ const SearchFilter = () => {
       event.description.toLowerCase().includes(term);
 
     const matchesCategory =
-      selectedCategory === "all" || event.category === selectedCategory;
+      selectedCategory === "all" ||
+      event.category === selectedCategory ||
+      (event.categories && event.categories.includes(selectedCategory));
 
     const normalizedLocation = event.location
       .toLowerCase()

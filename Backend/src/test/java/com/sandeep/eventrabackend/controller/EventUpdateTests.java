@@ -1,6 +1,7 @@
 package com.sandeep.eventrabackend.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sandeep.eventrabackend.dto.request.EventScheduleRequest;
 import com.sandeep.eventrabackend.dto.request.EventUpdateRequest;
 import com.sandeep.eventrabackend.model.Event;
 import com.sandeep.eventrabackend.model.Role;
@@ -24,6 +25,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.LocalDateTime;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -219,7 +222,7 @@ public class EventUpdateTests {
                 .title("") // Blank title
                 .description("Description")
                 .location("Location")
-                .eventDate(LocalDateTime.now().minusDays(1)) // Past date
+                .eventDate(LocalDateTime.now().plusDays(1))
                 .capacity(-10) // Negative capacity
                 .build();
 
@@ -228,6 +231,53 @@ public class EventUpdateTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Update with past eventDate is allowed (#13587)")
+    void testUpdateWithPastEventDateAllowed() throws Exception {
+        existingEvent.setEventDate(LocalDateTime.now().minusDays(2));
+        eventRepository.save(existingEvent);
+
+        EventUpdateRequest request = EventUpdateRequest.builder()
+                .title("Live Event Title")
+                .description("Updated Description")
+                .location("Updated Location")
+                .eventDate(LocalDateTime.now().minusDays(2))
+                .capacity(120)
+                .isPublic(true)
+                .build();
+
+        mockMvc.perform(put("/api/events/" + existingEvent.getId())
+                        .with(user("admin@example.com").authorities(() -> "ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Live Event Title"))
+                .andExpect(jsonPath("$.capacity").value(120));
+    }
+
+    @Test
+    @DisplayName("Partial update preserves existing capacity and imageUrl (#12456)")
+    void testUpdateWithoutCapacityOrImageUrlPreservesExistingValues() throws Exception {
+        existingEvent.setImageUrl("https://example.com/images/banner.jpg");
+        eventRepository.save(existingEvent);
+
+        EventUpdateRequest request = EventUpdateRequest.builder()
+                .title("Partial Update Title")
+                .description("Description")
+                .location("Location")
+                .eventDate(LocalDateTime.now().plusDays(10))
+                .build();
+
+        mockMvc.perform(put("/api/events/" + existingEvent.getId())
+                        .with(user("admin@example.com").authorities(() -> "ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Partial Update Title"))
+                .andExpect(jsonPath("$.capacity").value(100))
+                .andExpect(jsonPath("$.imageUrl").value("https://example.com/images/banner.jpg"));
     }
 
     @Test
@@ -251,5 +301,29 @@ public class EventUpdateTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict());
+    }
+
+    @Test
+    @DisplayName("Event schedule endDate is persisted and survives reload (#14603)")
+    void testScheduleEndDatePersisted() throws Exception {
+        LocalDateTime start = LocalDateTime.now().plusDays(2).withNano(0);
+        LocalDateTime end = start.plusHours(3);
+
+        EventScheduleRequest request = new EventScheduleRequest();
+        request.setStartDate(start);
+        request.setEndDate(end);
+
+        mockMvc.perform(patch("/api/events/" + existingEvent.getId() + "/schedule")
+                        .with(user("organizer@example.com").authorities(() -> "ORGANIZER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.endDate").value(end.toString()));
+
+        mockMvc.perform(get("/api/events/" + existingEvent.getId() + "/schedule")
+                        .with(user("organizer@example.com").authorities(() -> "ORGANIZER")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.startDate").value(start.toString()))
+                .andExpect(jsonPath("$.endDate").value(end.toString()));
     }
 }

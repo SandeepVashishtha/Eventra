@@ -50,6 +50,51 @@ public class EventRegistration {
     @Column(name = "show_profile_in_attendee_directory", nullable = false)
     private boolean showProfileInAttendeeDirectory = false;
 
+    /**
+     * Group ID for group/bulk registrations (e.g., "Table of 10" tickets).
+     * All registrations with the same groupId belong to the same group.
+     */
+    @Column(name = "group_id", length = 100)
+    private String groupId;
+
+    /**
+     * Flag indicating if this registration is the primary buyer for a group.
+     * Used to identify the main contact person for group tickets.
+     */
+    @Column(name = "is_group_primary", nullable = false)
+    private boolean isGroupPrimary = false;
+
+    /**
+     * Name of the group (e.g., "Acme Corp - Table 5").
+     * Used for display purposes when managing group check-ins.
+     */
+    @Column(name = "group_name", length = 200)
+    private String groupName;
+
+    @Column(name = "ticket_price", precision = 10, scale = 2)
+    private java.math.BigDecimal ticketPrice;
+
+    @Column(name = "payment_status", length = 30)
+    private String paymentStatus = "PENDING"; // PENDING, PARTIAL, COMPLETED, FAILED, REFUNDED
+
+    @Column(name = "payment_method", length = 50)
+    private String paymentMethod;
+
+    @Column(name = "payment_provider", length = 50)
+    private String paymentProvider;
+
+    @Column(name = "stripe_payment_intent_id", length = 255)
+    private String stripePaymentIntentId;
+
+    @Column(name = "stripe_customer_id", length = 255)
+    private String stripeCustomerId;
+
+    @Column(name = "qr_activated", nullable = false)
+    private boolean qrActivated = false;
+
+    @Column(name = "qr_activation_date")
+    private java.time.LocalDateTime qrActivationDate;
+
     public Long getId() {
         return id;
     }
@@ -104,5 +149,105 @@ public class EventRegistration {
 
     public void setShowProfileInAttendeeDirectory(boolean showProfileInAttendeeDirectory) {
         this.showProfileInAttendeeDirectory = showProfileInAttendeeDirectory;
+    }
+
+    public String getGroupId() {
+        return groupId;
+    }
+
+    public void setGroupId(String groupId) {
+        this.groupId = groupId;
+    }
+
+    public boolean isGroupPrimary() {
+        return isGroupPrimary;
+    }
+
+    public void setGroupPrimary(boolean groupPrimary) {
+        isGroupPrimary = groupPrimary;
+    }
+
+    public String getGroupName() {
+        return groupName;
+    }
+
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
+    }
+
+    public java.math.BigDecimal getTicketPrice() {
+        return ticketPrice;
+    }
+
+    public void setTicketPrice(java.math.BigDecimal ticketPrice) {
+        this.ticketPrice = ticketPrice;
+    }
+
+    public String getPaymentStatus() {
+        return paymentStatus;
+    }
+
+    public void setPaymentStatus(String paymentStatus) {
+        this.paymentStatus = paymentStatus;
+    }
+
+    public String getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public void setPaymentMethod(String paymentMethod) {
+        this.paymentMethod = paymentMethod;
+    }
+
+    public String getPaymentProvider() {
+        return paymentProvider;
+    }
+
+    public void setPaymentProvider(String paymentProvider) {
+        this.paymentProvider = paymentProvider;
+    }
+
+    public String getStripePaymentIntentId() {
+        return stripePaymentIntentId;
+    }
+
+    public void setStripePaymentIntentId(String stripePaymentIntentId) {
+        this.stripePaymentIntentId = stripePaymentIntentId;
+    }
+
+    public String getStripeCustomerId() {
+        return stripeCustomerId;
+    }
+
+    public void setStripeCustomerId(String stripeCustomerId) {
+        this.stripeCustomerId = stripeCustomerId;
+    }
+
+    public boolean isQrActivated() {
+        return qrActivated;
+    }
+
+    public void setQrActivated(boolean qrActivated) {
+        this.qrActivated = qrActivated;
+    }
+
+    public java.time.LocalDateTime getQrActivationDate() {
+        return qrActivationDate;
+    }
+
+    public void setQrActivationDate(java.time.LocalDateTime qrActivationDate) {
+        this.qrActivationDate = qrActivationDate;
+    }
+
+    public boolean isPaymentCompleted() {
+        return "COMPLETED".equalsIgnoreCase(paymentStatus);
+    }
+
+    public boolean isPaymentPartial() {
+        return "PARTIAL".equalsIgnoreCase(paymentStatus);
+    }
+
+    public boolean isPaymentPending() {
+        return "PENDING".equalsIgnoreCase(paymentStatus);
     }
 }

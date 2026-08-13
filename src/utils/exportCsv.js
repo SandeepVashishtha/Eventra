@@ -68,7 +68,7 @@ const sanitizeCSVField = (field) => {
 export const exportAttendeesToCSV = (attendees, filename = "event-attendees.csv") => {
   if (typeof window === "undefined" || typeof document === "undefined") return;
   if (!attendees || attendees.length === 0) {
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
       window.dispatchEvent(new CustomEvent("eventra-toast", { detail: { message: "No attendees to export", type: "warning" } }));
     }
     return { success: false, reason: "empty" };
@@ -142,16 +142,16 @@ export const exportSurveyToCSV = (questions, responses, surveyTitle = "Survey") 
   const safeFilename = `feedback-${sanitizedTitle}-${dateStr}.csv`;
 
   // Columns: Timestamp followed by each question prompt
-  const headers = ["Timestamp", ...questions.map((q) => q.questionText || `Question (${q.type})`)];
+  const headers = ["Timestamp", ...questions.map((q) => sanitizeCSVField(q.questionText || `Question (${q.type})`))];
 
   // Rows: Each anonymous attendee submission
   const rows = responses.map((resp) => [
-    resp.timestamp || "",
-    ...questions.map((q) => resp.answers?.[q.id] ?? ""),
+    sanitizeCSVField(resp.timestamp || ""),
+    ...questions.map((q) => sanitizeCSVField(resp.answers?.[q.id] ?? "")),
   ]);
 
   const csvContent = [headers, ...rows]
-    .map((row) => row.map(sanitizeCSVField).join(","))
+    .map((row) => row.join(","))
     .join("\n");
 
   const BOM = "\uFEFF";

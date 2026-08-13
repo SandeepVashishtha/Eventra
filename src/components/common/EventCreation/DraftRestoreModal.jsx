@@ -21,7 +21,7 @@ const DraftRestoreModal = ({ show, onRestore, onDiscard }) => {
                 <h3 className="text-xl font-bold">Unfinished Draft Found</h3>
               </div>
               
-              <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+              <p className="text-gray-600 dark:text-gray-200 leading-relaxed">
                 It looks like you were in the middle of creating an event. Would you like to restore your progress or start fresh?
               </p>
 

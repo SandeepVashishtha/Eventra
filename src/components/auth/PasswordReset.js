@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 // Under the hood, password reset requests are sent to API_ENDPOINTS.AUTH.RESET_PASSWORD via authService.
 import { authService } from 'services/authService';
+import { getApiErrorMessage } from 'config/api/errors.js';
 import { motion } from "framer-motion";
 import useDocumentTitle from "hooks/useDocumentTitle";
 import { RESET_COOLDOWN_SECONDS, secondsUntilUnlock, STORAGE_KEY_RESET_LAST_SUBMIT } from 'utils/rateLimitUtils';
@@ -131,7 +132,7 @@ const PasswordReset = () => {
       startCooldownTimer();
       navTimerRef.current = setTimeout(() => navigate('/login'), 3000);
     } catch (err) {
-      const backendMessage = err.response?.data?.message || err?.data?.message;
+      const backendMessage = getApiErrorMessage(err);
       setError(backendMessage || 'Failed to send reset link. Please try again.');
     } finally {
       setLoading(false);
@@ -157,7 +158,7 @@ const PasswordReset = () => {
         </motion.div>
 
         <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 text-center">Reset Password</h1>
-        <p className="text-sm text-gray-600 dark:text-gray-400 text-center">Secure your account and get back to creating events.</p>
+        <p className="text-sm text-gray-600 dark:text-gray-200 text-center">Secure your account and get back to creating events.</p>
 
         {coolingDown && cooldownSeconds > 0 && (
           <motion.div

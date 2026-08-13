@@ -103,11 +103,19 @@ function bindActions(eventId) {
  * Hook for live audience interaction (Q&A and Polls).
  */
 export default function useLiveAudience(eventId) {
-  const { state, loadInitialData } = useLiveAudienceStream();
+  const { state, loadInitialData, subscribeToEvent, unsubscribeFromEvent } = useLiveAudienceStream();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const eventData = state.events[eventId];
+
+  // Scope the realtime live-audience subscription to the active event so this
+  // client only receives Q&A/poll traffic for the event being viewed (#15333).
+  useEffect(() => {
+    if (!eventId) return undefined;
+    subscribeToEvent(eventId);
+    return () => unsubscribeFromEvent(eventId);
+  }, [eventId, subscribeToEvent, unsubscribeFromEvent]);
 
   useEffect(() => {
     if (!eventId || eventData) return;

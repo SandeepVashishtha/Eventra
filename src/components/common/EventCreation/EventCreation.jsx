@@ -1,3 +1,4 @@
+import useFormDirty from "hooks/useFormDirty";
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -38,11 +39,14 @@ import { safeJsonParse } from "../../../utils/safeJsonParse";
 
 
 const EventCreation = () => {
+  // Fix: useFormDirty replaces manual hasUnsavedChanges + beforeunload
+  const { isDirty: hasUnsavedChanges } = useFormDirty(formData);
+
   const prefersReducedMotion = useReducedMotion();
   const location = useLocation();
 
   const [currentStep, setCurrentStep] = useState(CREATION_STEPS.FORM);
-  const [formData, setFormData] = useState(initialFormData);
+  const [formData, setFormData] = useState(initialFormData());
   const [errors, setErrors] = useState({});
   const [newTag, setNewTag] = useState("");
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
@@ -69,9 +73,12 @@ const EventCreation = () => {
     const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData);
     const result = response.data;
 
-    if (!(response.status === 200 && result.success)) {
+    // Backend returns 201 Created with EventResponse (id/title), not { success: true }.
+    const isSuccessStatus = response.status >= 200 && response.status < 300;
+    const hasEventData = Boolean(result && (result.id || result.title));
+    if (!(isSuccessStatus && hasEventData)) {
       const errorMessage =
-        result.message || result.error || `Server error: ${response.status}`;
+        result?.message || result?.error || `Server error: ${response.status}`;
       throw new Error(errorMessage);
     }
   });
@@ -330,22 +337,11 @@ const EventCreation = () => {
       return Boolean(value);
     });
 
-    const handleBeforeUnload = (e) => {
-      if (hasUnsavedChanges) {
-        e.preventDefault();
-        e.returnValue = "";
-      }
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
+  // Fix: beforeunload handled by useFormDirty hook above
   }, [formData]);
 
   const resetForm = () => {
-    setFormData(initialFormData);
+    setFormData(initialFormData());
     setErrors({});
     localStorage.removeItem(DRAFT_KEY);
     setNewTag("");
@@ -405,7 +401,7 @@ const EventCreation = () => {
 
             <p
               className="
-          text-gray-600 dark:text-gray-400
+          text-gray-600 dark:text-gray-200
           mb-6
         "
             >
@@ -473,7 +469,7 @@ const EventCreation = () => {
             <h1 className="text-4xl sm:text-5xl font-extrabold text-indigo-800 dark:text-indigo-300 mb-4">
               Create Your Event
             </h1>
-            <p className="text-xs sm:text-base text-gray-600 dark:text-gray-400">
+            <p className="text-xs sm:text-base text-gray-600 dark:text-gray-200">
               Fill in the details below and bring your event to life!
             </p>
           </motion.div>
@@ -508,7 +504,7 @@ const EventCreation = () => {
                 handleInputChange={handleInputChange}
                 errors={errors}
                 prefersReducedMotion={prefersReducedMotion}
-                todayString={todayString}
+                todayString={todayString()}
               />
               {/* Event Duration Type */}
               <motion.div
@@ -591,7 +587,7 @@ const EventCreation = () => {
                       name="startDate"
                       value={formData.startDate}
                       onChange={handleInputChange}
-                      min={todayString}
+                      min={todayString()}
                       className={`w-full border ${
                         errors.startDate ? "border-red-500" : "border-gray-300 dark:border-gray-600"
                       } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
@@ -611,7 +607,7 @@ const EventCreation = () => {
                       name="endDate"
                       value={formData.endDate}
                       onChange={handleInputChange}
-                      min={formData.startDate || todayString}
+                      min={formData.startDate || todayString()}
                       className={`w-full border ${
                         errors.endDate ? "border-red-500" : "border-gray-300 dark:border-gray-600"
                       } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
@@ -681,7 +677,7 @@ const EventCreation = () => {
                       name="date"
                       value={formData.date}
                       onChange={handleInputChange}
-                      min={todayString}
+                      min={todayString()}
                       className={`w-full border ${
                         errors.date ? "border-red-500" : "border-gray-300 dark:border-gray-600"
                       } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}

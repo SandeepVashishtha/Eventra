@@ -37,3 +37,66 @@ export async function verifyCertificate(uid) {
     return { success: false, error: err.message || "Network error during verification" };
   }
 }
+
+/**
+ * Search certificates by title or event name.
+ */
+export const searchCertificates = (certificates = [], query = "") => {
+  if (!query.trim()) return certificates;
+
+  const keyword = query.toLowerCase();
+
+  return certificates.filter(
+    (certificate) =>
+      certificate.title?.toLowerCase().includes(keyword) ||
+      certificate.eventName?.toLowerCase().includes(keyword)
+  );
+};
+
+/**
+ * Filter certificates by issue year, category, and status.
+ */
+export const filterCertificates = (
+  certificates = [],
+  year = "All",
+  category = "All",
+  status = "All"
+) => {
+  return certificates.filter((certificate) => {
+    const certificateYear = certificate.issueDate
+      ? new Date(certificate.issueDate).getFullYear().toString()
+      : "";
+
+    const matchesYear = year === "All" || certificateYear === year;
+    const matchesCategory = category === "All" || certificate.category === category;
+    const matchesStatus = status === "All" || certificate.status === status;
+
+    return matchesYear && matchesCategory && matchesStatus;
+  });
+};
+
+/**
+ * Get the distinct issue years present across certificates, newest first.
+ */
+export const getCertificateYears = (certificates = []) => {
+  return [
+    ...new Set(
+      certificates
+        .filter((certificate) => certificate.issueDate)
+        .map((certificate) =>
+          new Date(certificate.issueDate).getFullYear().toString()
+        )
+    ),
+  ].sort((a, b) => b.localeCompare(a));
+};
+
+/**
+ * Get the distinct categories present across certificates.
+ */
+export const getCertificateCategories = (certificates = []) => {
+  return [
+    ...new Set(
+      certificates.map((certificate) => certificate.category).filter(Boolean)
+    ),
+  ].sort();
+};

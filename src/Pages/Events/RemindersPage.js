@@ -99,7 +99,7 @@ const RemindersPage = () => {
             <h2 className="text-2xl font-bold text-gray-950 dark:text-white">
               No active reminders
             </h2>
-            <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-gray-600 dark:text-gray-400 sm:text-base">
+            <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-gray-600 dark:text-gray-200 sm:text-base">
               Bookmark or register for an upcoming event, then choose a reminder time from its event card or details page.
             </p>
             <Link
@@ -161,7 +161,7 @@ const RemindersPage = () => {
                               <p className="text-sm font-semibold text-gray-900 dark:text-white">
                                 {reminder.timingLabel}
                               </p>
-                              <p className="mt-1 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                              <p className="mt-1 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-200">
                                 <Clock className="h-3.5 w-3.5" />
                                 Alerts on {formatTriggerDate(reminder.triggerAt)}
                               </p>

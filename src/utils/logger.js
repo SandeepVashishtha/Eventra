@@ -1,37 +1,22 @@
 import { redactSensitiveData } from "./security/redactSensitiveData.js";
 
-/**
- * Determines if the current environment is for development.
- * Safe in both browser (Vite via import.meta.env) and Node-like environments
- * (e.g. SSR, tests) where neither is available. Without the typeof guard,
- * `process` is undefined in the browser and the module crashes on load.
- */
+// Cross-environment development check (Vite, Webpack, Node.js)
 export const isDevelopment = (() => {
-  if (typeof import.meta !== "undefined" && import.meta.env) {
-    if (import.meta.env.DEV === true) return true;
-    if (import.meta.env.PROD === true) return false;
+  if (typeof import.meta !== "undefined" && import.meta?.env) {
+    return import.meta.env.DEV ?? import.meta.env.MODE !== "production";
   }
-  if (
-    typeof process !== "undefined" &&
-    process &&
-    process.env &&
-    process.env.NODE_ENV
-  ) {
+  if (typeof process !== "undefined" && process?.env) {
     return process.env.NODE_ENV !== "production";
   }
-  // In any other environment (SSR, edge runtime) default to true so logs surface.
-  return true;
+  return false;
 })();
 
 /**
- * Formats a log message with the specified level.
- * @param {string} level - The log level (log, info, warn, error).
- * @param {string} message - The message content.
- * @returns {string} The formatted message string.
+  Formats log level into a standard bracketed prefix.
+  Passing this as an independent console argument prevents 
+  string coercion of non-string primary arguments (objects/errors).
  */
-const formatMessage = (level, message) => {
-  return `[${level.toUpperCase()}] ${message}`;
-};
+const getPrefix = (level) => `[${level.toUpperCase()}]`;
 
 const redactLogArgs = (args) => args.map((arg) => redactSensitiveData(arg));
 
@@ -47,8 +32,7 @@ export const logger = {
    */
   log: (...args) => {
     if (isDevelopment) {
-      const safeArgs = redactLogArgs(args);
-      console.log(formatMessage("log", safeArgs[0]), ...safeArgs.slice(1));
+      console.log(getPrefix("log"), ...redactLogArgs(args));
     }
   },
 
@@ -59,8 +43,7 @@ export const logger = {
    */
   info: (...args) => {
     if (isDevelopment) {
-      const safeArgs = redactLogArgs(args);
-      console.info(formatMessage("info", safeArgs[0]), ...safeArgs.slice(1));
+      console.info(getPrefix("info"), ...redactLogArgs(args));
     }
   },
 
@@ -70,10 +53,7 @@ export const logger = {
    * @param {...*} args - Additional arguments to pass to console.warn.
    */
   warn: (...args) => {
-    if (isDevelopment) {
-      const safeArgs = redactLogArgs(args);
-      console.warn(formatMessage("warn", safeArgs[0]), ...safeArgs.slice(1));
-    }
+    console.warn(getPrefix("warn"), ...redactLogArgs(args));
   },
 
   /**
@@ -82,22 +62,20 @@ export const logger = {
    * @param {...*} args - Additional arguments to pass to console.error.
    */
   error: (...args) => {
-    if (isDevelopment) {
-      const safeArgs = redactLogArgs(args);
-      console.error(formatMessage("error", safeArgs[0]), ...safeArgs.slice(1));
-    }
+    console.error(getPrefix("error"), ...redactLogArgs(args));
   },
 
+  /**
+   * Logs a security event with redacted metadata.
+   * @param {string} event - Machine-readable security event name.
+   * @param {Object} [data] - Event metadata; sensitive fields are redacted.
+   */
   security: (event, data = {}) => {
     const timestamp = new Date().toISOString();
-    const logEntry = redactSensitiveData({
-      timestamp,
-      event,
-      ...data,
-    });
+    const logEntry = redactSensitiveData({ timestamp, event, ...data });
 
     if (isDevelopment) {
-      console.warn(formatMessage("security", event), redactSensitiveData(data));
+      console.warn(getPrefix("security"), redactSensitiveData(data));
     } else {
       console.warn(JSON.stringify(logEntry));
     }

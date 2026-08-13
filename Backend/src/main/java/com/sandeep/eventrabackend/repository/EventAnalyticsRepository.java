@@ -13,12 +13,12 @@ import java.util.List;
 @Repository
 public interface EventAnalyticsRepository extends JpaRepository<Event, Long> {
 
-    // "Active" = event date is in the future (no status field on Event)
-    @Query("SELECT COUNT(e) FROM Event e WHERE e.eventDate > :now")
+    // "Active" = public, non-cancelled event whose date is in the future
+    @Query("SELECT COUNT(e) FROM Event e WHERE e.eventDate > :now AND e.isPublic = TRUE AND (e.status IS NULL OR e.status <> 'CANCELLED')")
     long countActiveEvents(@Param("now") LocalDateTime now);
 
-    // "Completed" = event date is in the past
-    @Query("SELECT COUNT(e) FROM Event e WHERE e.eventDate <= :now")
+    // "Completed" = public, non-cancelled event whose date is in the past
+    @Query("SELECT COUNT(e) FROM Event e WHERE e.eventDate <= :now AND e.isPublic = TRUE AND (e.status IS NULL OR e.status <> 'CANCELLED')")
     long countCompletedEvents(@Param("now") LocalDateTime now);
 
     // Uses registeredCount (denormalised counter already on Event — free query!)
@@ -34,6 +34,16 @@ public interface EventAnalyticsRepository extends JpaRepository<Event, Long> {
         """)
     List<Object[]> findMostPopularEvents(Pageable pageable);
 
+    // Per-category registration distribution. Returns: [category, count]
+    @Query("""
+        SELECT e.category, COUNT(e)
+        FROM Event e
+        WHERE e.category IS NOT NULL AND e.category <> ''
+        GROUP BY e.category
+        ORDER BY COUNT(e) DESC
+        """)
+    List<Object[]> findCategoryBreakdown(Pageable pageable);
+
     // Average utilization across events that have a capacity set
     @Query("""
         SELECT AVG(e.registeredCount * 1.0 / NULLIF(e.capacity, 0))
@@ -42,8 +52,8 @@ public interface EventAnalyticsRepository extends JpaRepository<Event, Long> {
         """)
     Double findAverageCapacityUtilization();
 
-    // Total unique participants via the join table
-    @Query("SELECT COUNT(DISTINCT a.id) FROM Event e JOIN e.attendees a")
+    // Total unique participants via confirmed registrations
+    @Query("SELECT COUNT(DISTINCT r.user.id) FROM EventRegistration r WHERE r.status = 'CONFIRMED'")
     long countUniqueParticipants();
 
     // Events a user owns or manages (owner or member of the event team)

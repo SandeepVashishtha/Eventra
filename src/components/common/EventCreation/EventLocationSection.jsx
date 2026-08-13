@@ -14,7 +14,7 @@ const FormField = ({ htmlFor, label, icon: Icon, error, children, required, hint
         {required && <span className="sr-only"> (Required)</span>}
       </label>
       {children}
-      {hint && <p id={`${htmlFor}-hint`} className="text-xs text-gray-500 dark:text-gray-400">{hint}</p>}
+      {hint && <p id={`${htmlFor}-hint`} className="text-xs text-gray-500 dark:text-gray-200">{hint}</p>}
       {error && (
         <p id={errorId} className="text-red-500 text-sm flex items-center gap-1" role="alert">
           <span role="img" aria-hidden="true">⚠️</span>

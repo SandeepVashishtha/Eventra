@@ -1,13 +1,15 @@
 /**
+ * Floor Plan Geometry & Collision Detection Utility
+ */
+
+/**
  * Compute the axis-aligned bounding box of a (possibly rotated) element.
  * For a rectangle rotated by `rotation` degrees, the AABB is computed from
  * the rotated half-extents so the box tightly wraps the actual footprint.
  */
 const getRotatedAABB = (el) => {
-  const posX = typeof el.x === 'number' && isFinite(el.x) ? el.x : 0;
-  const posY = typeof el.y === 'number' && isFinite(el.y) ? el.y : 0;
-  const cx = posX + el.width / 2;
-  const cy = posY + el.height / 2;
+  const cx = el.x + el.width / 2;
+  const cy = el.y + el.height / 2;
   const rad = ((el.rotation || 0) * Math.PI) / 180;
   const cos = Math.abs(Math.cos(rad));
   const sin = Math.abs(Math.sin(rad));
@@ -54,15 +56,13 @@ export const getSeatPositions = (el) => {
   const width = typeof el.width === 'number' && isFinite(el.width) && el.width > 0 ? el.width : 100;
   const height = typeof el.height === 'number' && isFinite(el.height) && el.height > 0 ? el.height : 100;
   const rotation = typeof el.rotation === 'number' && isFinite(el.rotation) ? el.rotation : 0;
-  const posX = typeof el.x === 'number' && isFinite(el.x) ? el.x : 0;
-  const posY = typeof el.y === 'number' && isFinite(el.y) ? el.y : 0;
 
   const projOffset = 10;
 
   if (el.type === "round-table") {
     const radius = width / 2;
-    const centerX = posX + radius - projOffset;
-    const centerY = posY + radius - projOffset;
+    const centerX = el.x + radius - projOffset;
+    const centerY = el.y + radius - projOffset;
     const chairDistance = radius + 22;
 
     for (let i = 0; i < count; i++) {
@@ -77,13 +77,11 @@ export const getSeatPositions = (el) => {
     const halfW = width / 2;
     const halfH = height / 2;
 
-    const cX = posX + halfW - projOffset;
-    const cY = posY + halfH - projOffset;
+    const cX = el.x + halfW - projOffset;
+    const cY = el.y + halfH - projOffset;
 
     const seatsPerSide = Math.ceil(count / 2);
-    const bottomCount = count - seatsPerSide;
-    const topSpacingX = width / (seatsPerSide + 1);
-    const bottomSpacingX = bottomCount > 0 ? width / (bottomCount + 1) : 0;
+    const spacingX = width / (seatsPerSide + 1);
 
     const rad = (rotation * Math.PI) / 180;
 
@@ -97,16 +95,15 @@ export const getSeatPositions = (el) => {
     };
 
     for (let i = 0; i < count; i++) {
-      const isTop = i < seatsPerSide;
-      const sideIndex = isTop ? i : i - seatsPerSide;
-      const spacing = isTop ? topSpacingX : bottomSpacingX;
-      const relativeX = spacing * (sideIndex + 1) - halfW;
+      const side = i < seatsPerSide ? "top" : "bottom";
+      const sideIndex = i % seatsPerSide;
+      const relativeX = spacingX * (sideIndex + 1) - halfW;
 
       let p;
-      if (isTop) {
-        p = rotatePt(posX - projOffset + halfW + relativeX, posY - projOffset - 18);
+      if (side === "top") {
+        p = rotatePt(el.x - projOffset + halfW + relativeX, el.y - projOffset - 18);
       } else {
-        p = rotatePt(posX - projOffset + halfW + relativeX, posY - projOffset + height + 18);
+        p = rotatePt(el.x - projOffset + halfW + relativeX, el.y - projOffset + height + 18);
       }
 
       positions.push({ x: p.x, y: p.y, index: i });
@@ -115,3 +112,41 @@ export const getSeatPositions = (el) => {
   return positions;
 };
 
+export function calculateDistance(ptA, ptB) {
+  return Math.hypot(ptB.x - ptA.x, ptB.y - ptA.y);
+}
+
+export function checkBoundsCollision(rectA, rectB, minClearanceMeters = 1.5) {
+  const clearancePx = minClearanceMeters * 20; // 20px per meter grid ratio
+
+  return !(
+    rectA.x + rectA.width + clearancePx < rectB.x ||
+    rectA.x > rectB.x + rectB.width + clearancePx ||
+    rectA.y + rectA.height + clearancePx < rectB.y ||
+    rectA.y > rectB.y + rectB.height + clearancePx
+  );
+}
+
+export function detectExitObstructions(tables = [], exits = [], minClearanceMeters = 1.5) {
+  const warnings = [];
+
+  tables.forEach((table) => {
+    exits.forEach((exit) => {
+      const dist = calculateDistance(
+        { x: table.x + (table.width || 40) / 2, y: table.y + (table.height || 40) / 2 },
+        { x: exit.x, y: exit.y }
+      );
+
+      if (dist < minClearanceMeters * 30) {
+        warnings.push({
+          tableId: table.id,
+          tableName: table.name || `Table ${table.id}`,
+          exitName: exit.name || "Emergency Exit",
+          distanceMeters: (dist / 30).toFixed(1),
+        });
+      }
+    });
+  });
+
+  return warnings;
+}

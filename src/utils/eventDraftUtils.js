@@ -70,9 +70,88 @@ export const clearDraft = () => {
 
 export const formatDraftAge = (isoTimestamp) => {
   if (!isoTimestamp) return null;
-  const diff = Math.floor((Date.now() - new Date(isoTimestamp)) / 1000);
+  const diff = Math.max(0, Math.floor((Date.now() - new Date(isoTimestamp)) / 1000));
   if (diff < 60) return `${diff}s ago`;
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
   return new Date(isoTimestamp).toLocaleDateString();
+};
+
+// --- Multi-draft API (consumed by EventDraftForm) ---
+
+const DRAFTS_STORAGE_KEY = "eventra_event_drafts";
+
+export const getEventDrafts = () => {
+  if (!isStorageAvailable()) return [];
+  try {
+    const storedDrafts = localStorage.getItem(DRAFTS_STORAGE_KEY);
+    if (!storedDrafts) return [];
+    const drafts = safeJsonParse(storedDrafts, []);
+    return Array.isArray(drafts) ? drafts : [];
+  } catch (error) {
+    console.error("Failed to load event drafts:", error);
+    return [];
+  }
+};
+
+const saveEventDrafts = (drafts) => {
+  if (!isStorageAvailable()) return drafts;
+  try {
+    localStorage.setItem(DRAFTS_STORAGE_KEY, JSON.stringify(drafts));
+  } catch (error) {
+    console.error("Failed to save event drafts:", error);
+  }
+  return drafts;
+};
+
+export const saveEventDraft = (eventData = {}) => {
+  const drafts = getEventDrafts();
+  const now = new Date().toISOString();
+  const draft = {
+    ...eventData,
+    id: eventData.id || `draft-${Date.now()}`,
+    status: "draft",
+    createdAt: eventData.createdAt || now,
+    updatedAt: now,
+  };
+  return saveEventDrafts([draft, ...drafts.filter((item) => item.id !== draft.id)]);
+};
+
+export const updateEventDraft = (draftId, eventData = {}) => {
+  if (!draftId) return getEventDrafts();
+  const drafts = getEventDrafts();
+  const updatedDrafts = drafts.map((draft) =>
+    draft.id === draftId
+      ? {
+          ...draft,
+          ...eventData,
+          id: draft.id,
+          status: "draft",
+          updatedAt: new Date().toISOString(),
+        }
+      : draft
+  );
+  return saveEventDrafts(updatedDrafts);
+};
+
+export const getEventDraft = (draftId) => {
+  if (!draftId) return null;
+  return getEventDrafts().find((draft) => draft.id === draftId) || null;
+};
+
+export const deleteEventDraft = (draftId) => {
+  if (!draftId) return getEventDrafts();
+  return saveEventDrafts(getEventDrafts().filter((draft) => draft.id !== draftId));
+};
+
+export const publishEventDraft = (draftId) => {
+  const draft = getEventDraft(draftId);
+  if (!draft) return null;
+  const publishedEvent = {
+    ...draft,
+    status: "published",
+    publishedAt: new Date().toISOString(),
+  };
+  deleteEventDraft(draftId);
+  return publishedEvent;
 };

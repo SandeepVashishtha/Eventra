@@ -57,7 +57,7 @@ const storageKey = (userId) => {
 const toEventSummary = (event) => ({
   id: event?.id,
   title: event?.title ?? "",
-  date: event?.date ?? "",
+  date: event?.date ?? event?.eventDate ?? "",
   location: event?.location ?? "",
   type: event?.type ?? event?.category ?? "",
   image: event?.image ?? event?.imageUrl ?? "",
@@ -134,14 +134,20 @@ export const MyEventsProvider = ({ children }) => {
     
     setLoading(true);
     loadFromIDB(userId).then(data => {
-      if (mounted) {
-        setMyEvents(data);
-        setLoading(false);
-        // Important: allow saves *after* initial load resolves
-        setTimeout(() => {
-          isInitialLoad.current = false;
-        }, 50);
-      }
+      if (!mounted) return;
+      setMyEvents(prev => {
+        const byId = new Map();
+        [...(data || []), ...prev].forEach(r => {
+          const key = String(r.eventId);
+          if (!byId.has(key)) byId.set(key, r);
+        });
+        return Array.from(byId.values());
+      });
+      setLoading(false);
+      // Important: allow saves *after* initial load resolves
+      setTimeout(() => {
+        isInitialLoad.current = false;
+      }, 50);
     });
 
     return () => { mounted = false; };
@@ -167,10 +173,14 @@ export const MyEventsProvider = ({ children }) => {
    */
   const addRegistration = useCallback((event, formData = {}, registrationId = null, qrToken = null) => {
     setMyEvents((prev) => {
+      // Idempotent: skip if the event is already registered. Normalize the
+      // event id to a string so a number/string type mismatch (e.g. queued
+      // eventId vs. event.id) cannot let a duplicate slip through.
+      const targetEventId = event?.id != null ? String(event.id) : null;
       const alreadyExists = prev.some(
         (r) =>
-          r.eventId === event.id ||
-        (registrationId && r.registrationId && r.registrationId === registrationId)
+          (targetEventId != null && String(r.eventId) === targetEventId) ||
+          (registrationId && r.registrationId && r.registrationId === registrationId)
       );
 
       if (alreadyExists) return prev;

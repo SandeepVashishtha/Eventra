@@ -1,3 +1,4 @@
+import useDateFormatter from "hooks/useDateFormatter";
 import { useRef, useEffect } from 'react';
 import { AlertTriangle, Clock, Calendar, X, ArrowRight, Globe } from 'lucide-react';
 import { formatTimeRange } from '../utils/conflictDetection';
@@ -37,16 +38,7 @@ const EventConflictModal = ({
   const userTimezone = getUserTimezone();
   const { containerRef: focusTrapRef } = useFocusTrap(isOpen, onCancel);
 
-  // 🔥 FIX: Added scroll lock to prevent background page from scrolling behind the modal
-  useEffect(() => {
-    if (isOpen) {
-      const originalStyle = window.getComputedStyle(document.body).overflow;
-      document.body.style.overflow = "hidden";
-      return () => {
-        document.body.style.overflow = originalStyle;
-      };
-    }
-  }, [isOpen]);
+useScrollLock(isOpen);
 
   useEffect(() => {
     if (isOpen) {
@@ -119,9 +111,9 @@ const EventConflictModal = ({
         <button
           onClick={onCancel}
           aria-label="Close conflict dialog"
-          className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
         >
-          <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+          <X className="w-5 h-5 text-gray-500 dark:text-gray-200" />
         </button>
 
         {/* Header */}
@@ -134,10 +126,10 @@ const EventConflictModal = ({
               <h2 id="modal-title" className="text-2xl font-bold text-gray-900 dark:text-white">
                 Scheduling Conflict Detected
               </h2>
-              <p className="mt-1 text-gray-600 dark:text-gray-400">
+              <p className="mt-1 text-gray-600 dark:text-gray-200">
                 This event overlaps with one or more events you&apos;ve already registered for.
               </p>
-              <span className="mt-2 inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+              <span className="mt-2 inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-200">
                 <Globe className="w-3 h-3" />
                 Times shown in: <strong>{userTimezone}</strong>
               </span>
@@ -255,7 +247,7 @@ const EventConflictModal = ({
         <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex gap-3">
           <button
             onClick={onCancel}
-            className="flex-1 px-6 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+            className="flex-1 px-6 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors font-medium"
            aria-label="Cancel registration">
             Cancel Registration
           </button>

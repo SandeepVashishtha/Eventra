@@ -1,4 +1,5 @@
-import { Github, ExternalLink, GitBranch, MapPin, Building, Users, Medal } from "lucide-react";
+import { ExternalLink, GitBranch, MapPin, Building, Users, Medal } from "lucide-react";
+import { FaGithub as Github } from "react-icons/fa";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { useReducedMotion } from '../hooks/useReducedMotion';
@@ -297,7 +298,7 @@ const ContributorsInner = () => {
           <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-4">
             Contributors are unavailable
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">{error}</p>
+          <p className="text-gray-600 dark:text-gray-200 mb-6">{error}</p>
           <button
             type="button"
             onClick={fetchContributors}
@@ -348,7 +349,7 @@ const ContributorsInner = () => {
         </motion.h2>
 
         {filteredContributors.length === 0 ? (
-          <div className="text-center text-gray-600 dark:text-gray-400 text-lg">
+          <div className="text-center text-gray-600 dark:text-gray-200 text-lg">
           <EmptyState
   title="No Contributors Found"
   description={
@@ -431,14 +432,14 @@ const ContributorsInner = () => {
                   <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
                     <GitBranch className="text-black dark:text-white mb-1" />
                     <span className="font-semibold">{c.public_repos}</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                    <span className="text-xs text-gray-500 dark:text-gray-200">
                       Repos
                     </span>
                   </div>
                   <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
                     <Users className="text-black dark:text-white mb-1" />
                     <span className="font-semibold">{c.followers}</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                    <span className="text-xs text-gray-500 dark:text-gray-200">
                       Followers
                     </span>
                   </div>
@@ -447,7 +448,7 @@ const ContributorsInner = () => {
                       🔥
                     </span>
                     <span className="font-semibold">{c.contributions}</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                    <span className="text-xs text-gray-500 dark:text-gray-200">
                       Contribs
                     </span>
                   </div>
@@ -466,7 +467,7 @@ const ContributorsInner = () => {
                 </div>
 
                 {/* Extra Info */}
-                <div className="flex flex-col gap-1 text-xs text-gray-500 dark:text-gray-400 mb-4">
+                <div className="flex flex-col gap-1 text-xs text-gray-500 dark:text-gray-200 mb-4">
                   {c.company && (
                     <span className="flex items-center gap-1 justify-center">
                       <Building /> {c.company}

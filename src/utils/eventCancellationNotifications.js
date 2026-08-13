@@ -7,7 +7,7 @@
  */
 
 import axios from 'axios';
-import { API_BASE_URL } from '../config/api';
+import { API_BASE_URL } from '../config/backendConfig';
 
 class EventCancellationNotificationService {
   constructor() {
@@ -21,7 +21,7 @@ class EventCancellationNotificationService {
    * Validate that event has essential data for notifications
    */
   validateEventData(event) {
-    const requiredFields = ['id', 'title', 'organiserId'];
+    const requiredFields = ['id', 'title', 'organizerId'];
     const missingFields = requiredFields.filter(field => !event[field]);
 
     if (missingFields.length > 0) {
@@ -203,7 +203,7 @@ This is an automated message. Please do not reply to this email.
    */
   async fetchEventRegistrations(eventId) {
     try {
-      const response = await this.apiClient.get(`/events/${eventId}/registrations`);
+      const response = await this.apiClient.get(`/events/${eventId}/attendees`);
       return response.data || [];
     } catch (error) {
       console.error(`Failed to fetch registrations for event ${eventId}:`, error);

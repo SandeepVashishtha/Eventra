@@ -18,7 +18,7 @@ public class DashboardStatsDTO {
 
     // Registration counts (CONFIRMED only)
     private long totalRegistrations;
-    private long uniqueParticipants;  // distinct users across event_attendees
+    private long uniqueParticipants;  // distinct users with CONFIRMED event_registrations
 
     // Capacity
     private double averageCapacityUtilization; // 0.0–1.0, null-safe

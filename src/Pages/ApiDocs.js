@@ -229,7 +229,7 @@ const ApiDocs = () => {
           in this frontend demo.
         </p>
 
-        <p className="mt-4 text-sm text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+        <p className="mt-4 text-sm text-gray-600 dark:text-gray-200 max-w-2xl mx-auto">
           These documented endpoints return sample JSON-style data in the demo
           app. Connect a backend service before using them as production APIs.
         </p>
@@ -281,7 +281,7 @@ const ApiDocs = () => {
                     {ep.url}
                   </td>
 
-                  <td className="p-4 text-gray-500 dark:text-gray-400">
+                  <td className="p-4 text-gray-500 dark:text-gray-200">
                     {ep.desc}
                   </td>
                 </tr>
@@ -309,7 +309,7 @@ const ApiDocs = () => {
                 <h3 className="text-xl font-semibold">{ep.title}</h3>
               </div>
 
-              <p className="text-gray-600 dark:text-gray-400 mb-3">
+              <p className="text-gray-600 dark:text-gray-200 mb-3">
                 {ep.desc}
               </p>
 
