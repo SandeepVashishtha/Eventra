@@ -60,6 +60,7 @@ import {
   saveSessionNote,
   deleteSessionNote,
 } from "utils/sessionNotesUtils";
+import LostAndFoundBoard from "components/events/LostAndFoundBoard";
 
 const formatEventDate = (dateValue) => {
   if (!dateValue) return { short: "TBD", full: "Date TBD", relative: "" };
@@ -1030,10 +1031,15 @@ ${window.location.href}
             <EventRecommendations currentEventId={event.id} currentCategory={event.category || event.categories?.[0]} />
           </div>
 
+          {/* Lost and Found Board — Crowdsourced Lost & Found with image recognition (#11923) */}
+          <div className="mt-8">
+            <LostAndFoundBoard />
+          </div>
+
           {/* Similar Events — multi-signal recommendation section (#7754)
               Scores candidates by category, shared tags, type, mode, and difficulty
               so the user is surfaced events that genuinely match what they viewed. */}
-          <div className="mt-4">
+          <div className="mt-8">
             <SimilarEvents currentEvent={event} />
           </div>
         </div>
