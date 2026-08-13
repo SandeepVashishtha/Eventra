@@ -35,6 +35,9 @@ export const normalizeSkill = (skill) => {
 export const getEventSkillTags = (
   event = {}
 ) => {
+  if (!event || typeof event !== "object") {
+    return [];
+  }
   const value =
     event.skillTags ??
     event.skills ??
