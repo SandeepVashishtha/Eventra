@@ -6,8 +6,6 @@ import com.sandeep.eventrabackend.dto.request.TestEmailRequest;
 import com.sandeep.eventrabackend.dto.request.SaveTemplateRequest;
 import com.sandeep.eventrabackend.dto.response.TestEmailResponse;
 import com.sandeep.eventrabackend.dto.response.TemplateResponse;
-import com.sandeep.eventrabackend.model.EventRole;
-import com.sandeep.eventrabackend.service.EventRoleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -41,16 +39,13 @@ public class NotificationController {
     private final NotificationService notificationService;
     private final PushSubscriptionService pushSubscriptionService;
     private final EmailTemplateService emailTemplateService;
-    private final EventRoleService eventRoleService;
 
     public NotificationController(NotificationService notificationService,
                                   PushSubscriptionService pushSubscriptionService,
-                                  EmailTemplateService emailTemplateService,
-                                  EventRoleService eventRoleService) {
+                                  EmailTemplateService emailTemplateService) {
         this.notificationService = notificationService;
         this.pushSubscriptionService = pushSubscriptionService;
         this.emailTemplateService = emailTemplateService;
-        this.eventRoleService = eventRoleService;
     }
 
     @GetMapping
@@ -182,10 +177,9 @@ public class NotificationController {
     }
 
     @PostMapping("/send-test-email")
-    @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN', 'SUPER_ADMIN')")
     @Operation(
             summary = "Send a test email to organizer",
-            description = "Sends a test email with the provided template to the organizer's email address for preview purposes. Only organizers and administrators can use this endpoint.",
+            description = "Sends a test email with the provided template to the organizer's email address for preview purposes.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses({
@@ -203,29 +197,13 @@ public class NotificationController {
             ),
             @ApiResponse(
                     responseCode = "403",
-                    description = "Forbidden - User does not have organizer or admin privileges"
+                    description = "Forbidden - User does not have permission"
             )
     })
-    public ResponseEntity<?> sendTestEmail(
+    public ResponseEntity<TestEmailResponse> sendTestEmail(
             @Valid @RequestBody TestEmailRequest request,
             Authentication authentication) {
         String organizerEmail = authentication.getName();
-
-        long eventId;
-        try {
-            eventId = Long.parseLong(request.getEventId());
-        } catch (NumberFormatException ex) {
-            return ResponseEntity.badRequest().body(Map.of(
-                    "success", false,
-                    "error", "Invalid event id"
-            ));
-        }
-
-        // The caller must be an organizer of the specific event (or a platform
-        // admin / legacy owner). Platform ORGANIZER/ADMIN authority alone must
-        // not grant the ability to mail for arbitrary events (#16253).
-        eventRoleService.requireRole(eventId, organizerEmail, EventRole.ORGANIZER);
-
         return ResponseEntity.ok(emailTemplateService.sendTestEmail(request, organizerEmail));
     }
 

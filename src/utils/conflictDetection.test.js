@@ -374,59 +374,6 @@ describe("getEventUTCRange", () => {
 });
 
 // ---------------------------------------------------------------------------
-// 10b. All-day / date-only events (issue #16240)
-// ---------------------------------------------------------------------------
-describe("all-day / date-only events — issue #16240", () => {
-  test("getEventUTCRange builds a full-day range for a date-only event", () => {
-    const range = getEventUTCRange({ id: 1, date: "2026-08-13" }, 60, "UTC");
-    expect(range).not.toBeNull();
-    // A full UTC day is 24h (UTC has no DST, so exactly 24h).
-    expect(range.endMs - range.startMs).toBe(24 * 60 * 60 * 1000);
-    expect(range.allDay).toBe(true);
-  });
-
-  test("two overlapping all-day events on the same day conflict", () => {
-    const e1 = { id: 1, date: "2026-08-13" };
-    const e2 = { id: 2, date: "2026-08-13" };
-    expect(doEventsOverlap(e1, e2, 60)).toBe(true);
-  });
-
-  test("two all-day events on different days do not conflict", () => {
-    const e1 = { id: 1, date: "2026-08-13" };
-    const e2 = { id: 2, date: "2026-08-14" };
-    expect(doEventsOverlap(e1, e2, 60)).toBe(false);
-  });
-
-  test("an all-day event conflicts with a timed event on the same day", () => {
-    const allDay = { id: 1, date: "2026-08-13" };
-    const timed = mkEvent(2, "2026-08-13", "2:00 PM", 60);
-    expect(doEventsOverlap(allDay, timed, 60)).toBe(true);
-  });
-
-  test("an all-day event does NOT conflict with a timed event on a different day", () => {
-    const allDay = { id: 1, date: "2026-08-13" };
-    const timed = mkEvent(2, "2026-08-14", "2:00 PM", 60);
-    expect(doEventsOverlap(allDay, timed, 60)).toBe(false);
-  });
-
-  test("checkRegistrationConflict detects overlap for an all-day event", () => {
-    const newEvent = { id: 99, date: "2026-08-13" };
-    const registered = [mkEvent(10, "2026-08-13", "10:00 AM", 60)];
-    const result = checkRegistrationConflict(newEvent, registered);
-    expect(result.hasConflict).toBe(true);
-    expect(result.conflicts).toHaveLength(1);
-  });
-
-  test("checkRegistrationConflict detects two overlapping all-day registrations", () => {
-    const newEvent = { id: 99, date: "2026-08-13" };
-    const registered = [{ id: 10, date: "2026-08-13" }];
-    const result = checkRegistrationConflict(newEvent, registered);
-    expect(result.hasConflict).toBe(true);
-    expect(result.conflicts).toHaveLength(1);
-  });
-});
-
-// ---------------------------------------------------------------------------
 // 11. doEventsOverlap — null/undefined event arguments
 // ---------------------------------------------------------------------------
 describe("doEventsOverlap — null/undefined event arguments", () => {

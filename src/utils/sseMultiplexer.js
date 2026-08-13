@@ -5,7 +5,6 @@ import { SSE_BASE_URL } from "../config/backendConfig.js";
 const MULTIPLEX_CHANNEL_NAME = "eventra_sse_multiplexer";
 const LOCK_NAME = "eventra_sse_leader_lock";
 const HEARTBEAT_KEY = "eventra_sse_leader_heartbeat";
-const RESERVATION_KEY = "eventra_sse_leader_reservation";
 const LOCAL_STORAGE_CONFIRM_MIN_MS = 25;
 const LOCAL_STORAGE_CONFIRM_JITTER_MS = 75;
 const TAB_ID = Math.random().toString(36).substring(2, 9);
@@ -155,58 +154,18 @@ export class SseMultiplexer {
         return;
       }
 
-      // Phase 1 (RESERVATION): write a per-tab reservation BEFORE touching the
-      // real heartbeat. localStorage writes are serialized by the event loop, so
-      // of all contending tabs only the LAST writer retains its reservation.
-      // This makes the winner deterministic and removes the check-then-act
-      // TOCTOU window that previously let two tabs both become leader.
-      localStorage.setItem(
-        RESERVATION_KEY,
-        JSON.stringify({ tabId: this.tabId, token, timestamp })
-      );
+      localStorage.setItem(HEARTBEAT_KEY, JSON.stringify({ tabId: this.tabId, token, timestamp }));
     } catch {
       this.becomeLocalStorageLeader(token);
       return;
     }
 
-    // Phase 2 (COMMIT): wait a small window so every contending tab has a
-    // chance to write its reservation, then commit the real heartbeat ONLY if
-    // our reservation is still intact (nobody overwrote it) AND the slot is
-    // still free/expired. Otherwise abort.
     const confirmDelay =
       LOCAL_STORAGE_CONFIRM_MIN_MS + Math.floor(Math.random() * LOCAL_STORAGE_CONFIRM_JITTER_MS);
 
     this.localStorageClaimTimeout = setTimeout(() => {
       this.localStorageClaimTimeout = null;
 
-      try {
-        const reservation = JSON.parse(localStorage.getItem(RESERVATION_KEY) || "null");
-        if (reservation?.tabId !== this.tabId || reservation?.token !== token) {
-          // Lost the reservation race — another tab is claiming leadership.
-          return;
-        }
-
-        const now = Date.now();
-        const heartbeat = JSON.parse(localStorage.getItem(HEARTBEAT_KEY) || "null");
-        if (
-          heartbeat &&
-          heartbeat.tabId !== this.tabId &&
-          now - (heartbeat.timestamp || 0) < heartbeatTimeout
-        ) {
-          // Slot was taken by a valid leader during the reservation window.
-          return;
-        }
-
-        localStorage.setItem(
-          HEARTBEAT_KEY,
-          JSON.stringify({ tabId: this.tabId, token, timestamp: now })
-        );
-      } catch {
-        return;
-      }
-
-      // Final confirmation that the heartbeat we committed is still ours
-      // before becoming leader.
       try {
         const heartbeat = JSON.parse(localStorage.getItem(HEARTBEAT_KEY) || "null");
         if (heartbeat?.tabId !== this.tabId || heartbeat?.token !== token) return;

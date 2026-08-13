@@ -164,8 +164,8 @@ export function validateFile(file, options = {}) {
     return { valid: false, error: "File is empty" };
   }
 
-  const cleanName = file.name.trim().replace(/\.+$/, "");
-  const ext = "." + cleanName.split(".").pop().toLowerCase();
+  const fileName = file.name.toLowerCase();
+  const ext = "." + fileName.split(".").pop();
 
   if (DANGEROUS_EXTENSIONS.includes(ext)) {
     return {

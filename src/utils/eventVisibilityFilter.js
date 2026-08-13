@@ -48,12 +48,12 @@ class EventVisibilityFilter {
 
     // Organizer-only events visible only to creator
     if (ORGANIZER_STATUSES.includes(event.status)) {
-      return isAuthenticated && currentUserId === event.organizerId;
+      return isAuthenticated && currentUserId === event.organiserId;
     }
 
     // Cancelled events visible only to organizer
     if (event.status === EVENT_STATUS.CANCELLED) {
-      return isAuthenticated && currentUserId === event.organizerId;
+      return isAuthenticated && currentUserId === event.organiserId;
     }
 
     return false;
@@ -113,7 +113,7 @@ class EventVisibilityFilter {
     if (!isAuthenticated) {
       return `${status} - hidden from unauthenticated users`;
     }
-    if (currentUserId === event.organizerId) {
+    if (currentUserId === event.organiserId) {
       return `${status} - visible to organizer`;
     }
     return `${status} - hidden from other users`;

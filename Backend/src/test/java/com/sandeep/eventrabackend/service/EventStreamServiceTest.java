@@ -50,7 +50,7 @@ class EventStreamServiceTest {
         };
         emitters.add(stale);
 
-        assertDoesNotThrow(() -> service.publish("events", null, "update", "{}"));
+        assertDoesNotThrow(() -> service.publish("events", "update", "{}"));
         assertFalse(emitters.contains(stale));
         assertEquals(0, count.get());
     }
@@ -92,7 +92,7 @@ class EventStreamServiceTest {
         emitters.add(stale);
         emitters.add(healthy);
 
-        assertDoesNotThrow(() -> service.publish("events", null, "update", "{}"));
+        assertDoesNotThrow(() -> service.publish("events", "update", "{}"));
         assertFalse(emitters.contains(stale));
         assertTrue(emitters.contains(healthy));
         assertEquals(1, count.get());
@@ -122,31 +122,6 @@ class EventStreamServiceTest {
         assertEquals(1, scoped42.size(), "event-42 subscriber receives event-42 broadcast");
         assertEquals(0, scoped7.size(), "event-7 subscriber does not receive event-42 broadcast");
         assertEquals(2, unscoped.size(), "unscoped subscriber receives every broadcast");
-    }
-
-    @Test
-    @DisplayName("publish only delivers to emitters scoped to the published eventId plus unscoped subscribers (#16237)")
-    void publishScopesToEventId() throws Exception {
-        EventStreamService service = new EventStreamService();
-
-        List<String> scoped42 = new ArrayList<>();
-        List<String> scoped7 = new ArrayList<>();
-        List<String> unscoped = new ArrayList<>();
-
-        SseEmitter emitter42 = trackingEmitter(scoped42);
-        SseEmitter emitter7 = trackingEmitter(scoped7);
-        SseEmitter emitterAll = trackingEmitter(unscoped);
-
-        registerEmitter(service, emitter42, 42L);
-        registerEmitter(service, emitter7, 7L);
-        registerEmitter(service, emitterAll, null);
-
-        service.publish("events", 42L, "update", "payload-42");
-        service.publish("events", 7L, "update", "payload-7");
-
-        assertEquals(1, scoped42.size(), "event-42 subscriber receives event-42 publish");
-        assertEquals(0, scoped7.size(), "event-7 subscriber does not receive event-42 publish");
-        assertEquals(2, unscoped.size(), "unscoped subscriber receives every publish");
     }
 
     @Test

@@ -8,7 +8,6 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
-import { createElement } from "react";
 import { MemoryRouter } from "react-router-dom";
 import useEventFilters from "../src/hooks/useEventFilters";
 
@@ -25,8 +24,9 @@ const DEFAULTS = {
   page: 1,
 };
 
-const wrapper = ({ children, initialEntries = ["/"] }) =>
-  createElement(MemoryRouter, { initialEntries }, children);
+const wrapper = ({ children, initialEntries = ["/"] }) => (
+  <MemoryRouter initialEntries={initialEntries}>{children}</MemoryRouter>
+);
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -73,8 +73,11 @@ describe("useEventFilters — URL params", () => {
     const { result } = renderHook(
       () => useEventFilters({ storageKey: STORAGE_KEY, defaults: DEFAULTS }),
       {
-        wrapper: ({ children }) =>
-          createElement(MemoryRouter, { initialEntries: ["/?category=hackathon"] }, children),
+        wrapper: ({ children }) => (
+          <MemoryRouter initialEntries={["/?category=hackathon"]}>
+            {children}
+          </MemoryRouter>
+        ),
       }
     );
     await act(async () => {});
@@ -85,8 +88,11 @@ describe("useEventFilters — URL params", () => {
     const { result } = renderHook(
       () => useEventFilters({ storageKey: STORAGE_KEY, defaults: DEFAULTS }),
       {
-        wrapper: ({ children }) =>
-          createElement(MemoryRouter, { initialEntries: ["/?sort=Oldest"] }, children),
+        wrapper: ({ children }) => (
+          <MemoryRouter initialEntries={["/?sort=Oldest"]}>
+            {children}
+          </MemoryRouter>
+        ),
       }
     );
     await act(async () => {});
@@ -97,8 +103,11 @@ describe("useEventFilters — URL params", () => {
     const { result } = renderHook(
       () => useEventFilters({ storageKey: STORAGE_KEY, defaults: DEFAULTS }),
       {
-        wrapper: ({ children }) =>
-          createElement(MemoryRouter, { initialEntries: ["/?page=3"] }, children),
+        wrapper: ({ children }) => (
+          <MemoryRouter initialEntries={["/?page=3"]}>
+            {children}
+          </MemoryRouter>
+        ),
       }
     );
     await act(async () => {});
@@ -126,8 +135,11 @@ describe("useEventFilters — storage fallback", () => {
     const { result } = renderHook(
       () => useEventFilters({ storageKey: STORAGE_KEY, defaults: DEFAULTS }),
       {
-        wrapper: ({ children }) =>
-          createElement(MemoryRouter, { initialEntries: ["/?category=hackathon"] }, children),
+        wrapper: ({ children }) => (
+          <MemoryRouter initialEntries={["/?category=hackathon"]}>
+            {children}
+          </MemoryRouter>
+        ),
       }
     );
     await act(async () => {});

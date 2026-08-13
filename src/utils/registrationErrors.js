@@ -1,8 +1,6 @@
 /**
  * Derives a user-facing error message from a failed registration API response.
  */
-import { CAPACITY_CONFLICT_STATUSES } from "./eventAvailabilityUtils.mjs";
-
 export const getRegistrationFailureMessage = (error) => {
   const message = error?.data?.message || error?.data?.error || error?.message || "";
   const normalizedMessage = message.toLowerCase();
@@ -20,7 +18,8 @@ export const getRegistrationFailureMessage = (error) => {
   }
 
   if (
-    CAPACITY_CONFLICT_STATUSES.includes(error?.status) ||
+    error?.status === 409 ||
+    error?.status === 423 ||
     /capacity|full|sold out|max(?:imum)? capacity/.test(normalizedMessage)
   ) {
     return "This event has reached maximum capacity. Please choose another event.";

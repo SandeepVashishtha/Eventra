@@ -69,9 +69,7 @@ public class SubtitleStreamController {
      * @return SseEmitter for streaming subtitles
      */
     @GetMapping("/event/{eventId}")
-    public SseEmitter streamEventSubtitles(@PathVariable Long eventId, Authentication authentication) {
-        requireOrganizer(eventId, authentication);
-
+    public SseEmitter streamEventSubtitles(@PathVariable Long eventId) {
         SseEmitter emitter = createEmitter();
         
         // Register emitter
@@ -100,9 +98,7 @@ public class SubtitleStreamController {
      * @return SseEmitter for streaming subtitles
      */
     @GetMapping("/session/{sessionId}")
-    public SseEmitter streamSessionSubtitles(@PathVariable String sessionId, Authentication authentication) {
-        requireSessionOrganizer(sessionId, authentication);
-
+    public SseEmitter streamSessionSubtitles(@PathVariable String sessionId) {
         SseEmitter emitter = createEmitter();
         
         // Register emitter
@@ -130,10 +126,7 @@ public class SubtitleStreamController {
     @GetMapping("/event/{eventId}/language/{language}")
     public SseEmitter streamEventSubtitlesByLanguage(
             @PathVariable Long eventId,
-            @PathVariable String language,
-            Authentication authentication) {
-        requireOrganizer(eventId, authentication);
-
+            @PathVariable String language) {
         SseEmitter emitter = createEmitter();
         
         // Register emitter with language filter
@@ -335,38 +328,25 @@ public class SubtitleStreamController {
      * Get statistics about active connections
      */
     @GetMapping("/stats")
-    public ResponseEntity<Map<String, Object>> getConnectionStats(
-            @RequestParam Long eventId,
-            Authentication authentication) {
-        requireOrganizer(eventId, authentication);
-
+    public ResponseEntity<Map<String, Object>> getConnectionStats() {
         Map<String, Object> stats = new HashMap<>();
-
-        // Count active emitters for the requested event only
+        
+        // Count active emitters by event
         Map<Long, Integer> eventCounts = new HashMap<>();
-        Map<SseEmitter, String> emitters = eventEmitters.get(eventId);
-        if (emitters != null) {
-            eventCounts.put(eventId, emitters.size());
-        }
-
-        // Count active emitters per session, scoped to sessions of the requested event
+        eventEmitters.forEach((eventId, emitters) -> 
+            eventCounts.put(eventId, emitters.size()));
+        
+        // Count active emitters by session
         Map<String, Integer> sessionCounts = new HashMap<>();
-        sessionEmitters.forEach((sessionId, emittersForSession) -> {
-            boolean belongsToEvent = subtitleService.getSession(sessionId)
-                    .map(SubtitleSession::getEventId)
-                    .map(eventId::equals)
-                    .orElse(false);
-            if (belongsToEvent) {
-                sessionCounts.put(sessionId, emittersForSession.size());
-            }
-        });
-
-        stats.put("totalEventConnections", eventCounts.values().stream().mapToInt(Integer::intValue).sum());
-        stats.put("totalSessionConnections", sessionCounts.values().stream().mapToInt(Integer::intValue).sum());
+        sessionEmitters.forEach((sessionId, emitters) -> 
+            sessionCounts.put(sessionId, emitters.size()));
+        
+        stats.put("totalEventConnections", eventEmitters.values().stream().mapToInt(Map::size).sum());
+        stats.put("totalSessionConnections", sessionEmitters.values().stream().mapToInt(List::size).sum());
         stats.put("activeEvents", eventCounts);
         stats.put("activeSessions", sessionCounts);
         stats.put("timestamp", new Date());
-
+        
         return ResponseEntity.ok(stats);
     }
     

@@ -47,10 +47,8 @@ public class LiveAudienceController {
             @ApiResponse(responseCode = "404", description = "Event not found",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    public ResponseEntity<LiveAudienceDataResponse> getInitialData(
-            @PathVariable Long eventId,
-            Authentication authentication) {
-        return ResponseEntity.ok(liveAudienceService.getInitialData(eventId, authentication.getName()));
+    public ResponseEntity<LiveAudienceDataResponse> getInitialData(@PathVariable Long eventId) {
+        return ResponseEntity.ok(liveAudienceService.getInitialData(eventId));
     }
 
     @GetMapping("/questions")
@@ -64,9 +62,8 @@ public class LiveAudienceController {
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<java.util.List<LiveAudienceQuestionResponse>> getQuestions(
-            @PathVariable Long eventId,
-            Authentication authentication) {
-        return ResponseEntity.ok(liveAudienceService.getQuestions(eventId, authentication.getName()));
+            @PathVariable Long eventId) {
+        return ResponseEntity.ok(liveAudienceService.getQuestions(eventId));
     }
 
     @PostMapping("/questions")

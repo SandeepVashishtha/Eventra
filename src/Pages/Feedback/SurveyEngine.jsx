@@ -6,7 +6,6 @@ import useDocumentTitle from "hooks/useDocumentTitle";
 import SurveyAnalytics from "components/admin/SurveyAnalytics";
 import { validate } from "../../validation";
 import { safeJsonParse } from "utils/safeJsonParse";
-import { logger } from "utils/logger";
 
 const SurveyEngine = () => {
   useDocumentTitle("Eventra | Dynamic Survey Engine");
@@ -65,7 +64,7 @@ const SurveyEngine = () => {
           setDraftDetected(true);
           return; // Skip setting isInitialized to prevent early overwrite
         }
-      } catch { logger.warn("[SurveyEngine] Draft detection failed"); }
+      } catch { console.warn("[SurveyEngine] Draft detection failed"); }
     }
     setIsInitialized(true);
   }, []);
