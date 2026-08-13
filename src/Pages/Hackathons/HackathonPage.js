@@ -1,3 +1,4 @@
+import useSearch from "hooks/useSearch";
 import { ChevronDown, X } from "lucide-react";
 import { FiRotateCw } from "react-icons/fi";
 import TeamMatchmaking from "./components/TeamMatchmaking";
@@ -16,7 +17,6 @@ import useDocumentTitle from "hooks/useDocumentTitle";
 import { filterHackathons } from "./hackathonFilterUtils.mjs";
 import { HackathonCardSkeleton } from "components/common/SkeletonLoaders";
 import useReducedMotion from "hooks/useReducedMotion.js";
-import useDebounce from "hooks/useDebounce";
 import ErrorBoundary from "components/common/ErrorBoundary";
 import { safeJsonParse } from "utils/safeJsonParse";
 

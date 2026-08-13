@@ -1,3 +1,4 @@
+import useSearch from "hooks/useSearch";
 import StatusBadge from "./common/StatusBadge";
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -39,8 +40,8 @@ const collaborationRequestSchema = z.object({
 const CollaborationHub = () => {
   const prefersReducedMotion = useReducedMotion();
   const [activeSection, setActiveSection] = useState('opportunities');
-  const [searchQuery, setSearchQuery] = useState('');
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  // Fix: useSearch replaces raw useDebounce — adds sanitization and URL sync
+  const { query: searchQuery, debouncedQuery: debouncedSearchQuery, setQuery: setSearchQuery } = useSearch({ syncUrl: false, debounceMs: 300 });
 
   const mockMaterials = [
     { id: 'slides-1', title: 'Tech Summit 2025 Keynote Presentation', type: 'ppt', size: '14.2 MB', url: '#' },
