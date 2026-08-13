@@ -79,6 +79,28 @@ const generateSecureUUID = () => {
   throw new Error("Secure random number generation is not supported in this browser.");
 };
 
+// Stable idempotency key derived from eventId + userId + payload so repeated
+// offline-queue pushes for the same registration collapse into one item
+// (Issue #16172). A random UUID (used for the online POST) would defeat the
+// queue's dedup on every retry/click.
+const createStableIdempotencyKey = (eventId, userId, payload) => {
+  try {
+    const normalized = JSON.stringify({
+      eventId: eventId ?? null,
+      userId: userId ?? null,
+      payload: payload ?? {},
+    });
+    let hash = 0;
+    for (let i = 0; i < normalized.length; i++) {
+      hash = (hash << 5) - hash + normalized.charCodeAt(i);
+      hash |= 0;
+    }
+    return `idem-${eventId}-${userId}-${Math.abs(hash).toString(36)}`;
+  } catch {
+    return `idem-fallback-${eventId}-${Date.now()}`;
+  }
+};
+
 const getRegistrationFailureMessage = (error) => {
   const message = error?.data?.message || error?.data?.error || error?.message || "";
   const normalizedMessage = message.toLowerCase();
@@ -366,7 +388,14 @@ const EventRegistration = () => {
       ? API_ENDPOINTS.EVENTS.REGISTER(eventId)
       : `/api/events/${eventId}/register`;
 
-    const idempotencyKey = generateSecureUUID();
+    const idempotencyKey = createStableIdempotencyKey(
+      eventId,
+      user.id,
+      {
+        actionType: isFreshlyFull ? "JOIN_WAITLIST" : "REGISTER_EVENT",
+        ...formData,
+      }
+    );
 
     // The selected seat travels with the registration so the server can
     // persist and atomically reserve it (format elementId:seatIndex).

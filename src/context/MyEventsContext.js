@@ -169,8 +169,8 @@ export const MyEventsProvider = ({ children }) => {
     setMyEvents((prev) => {
       const alreadyExists = prev.some(
         (r) =>
-          r.eventId === event.id ||
-        (registrationId && r.registrationId && r.registrationId === registrationId)
+          (event?.id != null && String(r.eventId) === String(event.id)) ||
+          (registrationId && r.registrationId && r.registrationId === registrationId)
       );
 
       if (alreadyExists) return prev;
@@ -202,7 +202,7 @@ export const MyEventsProvider = ({ children }) => {
   const restoreRegistration = useCallback((registration) => {
     if (!registration?.eventId) return;
     setMyEvents((prev) => {
-      if (prev.some((r) => r.eventId === registration.eventId)) return prev;
+      if (prev.some((r) => String(r.eventId) === String(registration.eventId))) return prev;
       return [...prev, registration];
     });
   }, []);
