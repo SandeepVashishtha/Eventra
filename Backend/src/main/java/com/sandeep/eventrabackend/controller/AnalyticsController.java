@@ -45,7 +45,8 @@ public class AnalyticsController {
             @RequestParam(required = false) String organizationId,
             @RequestParam(defaultValue = "monthly") String granularity,
             @RequestParam(defaultValue = "6") int periods) {
-        return ResponseEntity.ok(analyticsService.getRegistrationTrend(granularity, periods));
+        int safePeriods = Math.min(Math.max(periods, 1), 100);
+        return ResponseEntity.ok(analyticsService.getRegistrationTrend(granularity, safePeriods));
     }
 
     @GetMapping("/feedback")

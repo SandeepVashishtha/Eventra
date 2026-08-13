@@ -12,6 +12,31 @@
  * - Comprehensive set of pre-built domain validators (User, Commerce, Events, Security, Media, Billing)
  */
 
+import { API_BASE_URL } from "../config/backendConfig.js";
+
+/**
+ * Resolves a validation endpoint path relative to the configured API base URL.
+ * Ensures field validation functions function properly across all deployment topologies
+ * (e.g. subpath deployments, custom API origins, etc.).
+ *
+ * @param {string} path - Target path (e.g., "/validate/username/john" or "/api/validate/username/john")
+ * @returns {string} Fully resolved API validation URL
+ */
+export const resolveValidationUrl = (path = "") => {
+  if (!path) return "";
+  if (/^https?:\/\//i.test(path)) return path;
+
+  const cleanPath = path.replace(/^\/?api\//, "/");
+  const normalizedPath = cleanPath.startsWith("/") ? cleanPath : `/${cleanPath}`;
+
+  if (!API_BASE_URL) {
+    return normalizedPath.startsWith("/api") ? normalizedPath : `/api${normalizedPath}`;
+  }
+
+  const base = API_BASE_URL.replace(/\/+$/, "");
+  return `${base}${normalizedPath}`;
+};
+
 // ============================================================================
 // 1. IN-MEMORY CACHE & REQUEST DEDUPLICATION
 // ============================================================================
@@ -140,13 +165,12 @@ export const globalDeduplicator = new RequestDeduplicator();
  */
 export const createAsyncValidator = (asyncValidatorFn, debounceMs = 300, options = {}) => {
   let timeoutId = null;
-  const fieldKey = options.fieldKey || Symbol("asyncField");
+  const fieldKey = options.fieldKey || `async-field-${Math.random().toString(36).slice(2)}`;
 
   return function debouncedAsyncValidator(value, ...args) {
     return new Promise((resolve) => {
       if (timeoutId) clearTimeout(timeoutId);
 
-    return new Promise((resolve, reject) => {
       timeoutId = setTimeout(async () => {
         const signal = globalDeduplicator.getSignal(fieldKey);
         try {
@@ -163,7 +187,7 @@ export const createAsyncValidator = (asyncValidatorFn, debounceMs = 300, options
             resolve(error.message || "Validation error occurred");
           }
         }
-      }, delayMs);
+      }, debounceMs);
     });
   };
 };
@@ -180,9 +204,9 @@ export const withRetry = (validatorFn, maxRetries = 3, initialDelay = 500) => {
   return async function retryValidator(value, ...args) {
     let lastError;
 
-    for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    for (let attempt = 1; attempt <= maxRetries; attempt += 1) {
       try {
-        return await validator(...args);
+        return await validatorFn(value, ...args);
       } catch (error) {
         lastError = error;
 
@@ -192,7 +216,7 @@ export const withRetry = (validatorFn, maxRetries = 3, initialDelay = 500) => {
         }
 
         if (attempt < maxRetries - 1) {
-          const backoff = initialDelay * Math.pow(2, attempt);
+          const backoff = initialDelay * Math.pow(2, attempt - 1);
           const jitter = Math.random() * 200;
           await new Promise((resolve) => setTimeout(resolve, backoff + jitter));
         }
@@ -328,7 +352,7 @@ export const validateUsernameAvailable = async (username, signal) => {
   if (!username || username.trim().length < 3) return true;
 
   try {
-    const response = await fetch(`/api/validate/username/${encodeURIComponent(username.trim())}`, {
+    const response = await fetch(resolveValidationUrl(`/validate/username/${encodeURIComponent(username.trim())}`), {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       signal,
@@ -360,7 +384,7 @@ export const validateEmailAvailable = async (email, signal) => {
   if (!email || !email.includes("@")) return true;
 
   try {
-    const response = await fetch(`/api/validate/email/${encodeURIComponent(email.trim().toLowerCase())}`, {
+    const response = await fetch(resolveValidationUrl(`/validate/email/${encodeURIComponent(email.trim().toLowerCase())}`), {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       signal,
@@ -392,7 +416,7 @@ export const validateEmailDomainExists = async (email, signal) => {
   if (!email || !email.includes("@")) return true;
 
   try {
-    const response = await fetch("/api/validate/email-domain", {
+    const response = await fetch(resolveValidationUrl("/validate/email-domain"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: email.trim() }),
@@ -436,7 +460,7 @@ export const validatePasswordStrength = async (password, signal) => {
   }
 
   try {
-    const response = await fetch("/api/validate/password-policy", {
+    const response = await fetch(resolveValidationUrl("/validate/password-policy"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ password }),
@@ -472,7 +496,7 @@ export const validateSocialHandleExists = async (handle, signal, options = {}) =
   const cleanHandle = handle.replace(/^@/, "").trim();
 
   try {
-    const response = await fetch(`/api/validate/social-handle?platform=${platform}&handle=${encodeURIComponent(cleanHandle)}`, {
+    const response = await fetch(resolveValidationUrl(`/validate/social-handle?platform=${platform}&handle=${encodeURIComponent(cleanHandle)}`), {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       signal,
@@ -504,7 +528,7 @@ export const validatePhoneNumber = async (phone, signal, options = {}) => {
   if (!phone) return true;
 
   try {
-    const response = await fetch("/api/validate/phone", {
+    const response = await fetch(resolveValidationUrl("/validate/phone"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ phone: phone.trim(), country: options.country || "US" }),
@@ -539,7 +563,7 @@ export const validatePostalCodeForRegion = async (postalCode, signal, options = 
   const country = options.country || "US";
 
   try {
-    const response = await fetch(`/api/validate/postal-code?code=${encodeURIComponent(postalCode.trim())}&country=${country}`, {
+    const response = await fetch(resolveValidationUrl(`/validate/postal-code?code=${encodeURIComponent(postalCode.trim())}&country=${country}`), {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       signal,
@@ -566,7 +590,7 @@ export const validateAddressGeocode = async (address, signal) => {
   if (!address) return true;
 
   try {
-    const response = await fetch("/api/validate/address", {
+    const response = await fetch(resolveValidationUrl("/validate/address"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(typeof address === "string" ? { rawAddress: address } : address),
@@ -599,7 +623,7 @@ export const validatePromoCode = async (code, signal, context = {}) => {
   if (!code) return true;
 
   try {
-    const response = await fetch("/api/validate/promo-code", {
+    const response = await fetch(resolveValidationUrl("/validate/promo-code"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ code: code.trim().toUpperCase(), ...context }),
@@ -634,7 +658,7 @@ export const validateTaxId = async (taxId, signal, options = {}) => {
   const country = options.country || "US";
 
   try {
-    const response = await fetch("/api/validate/tax-id", {
+    const response = await fetch(resolveValidationUrl("/validate/tax-id"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ taxId: taxId.trim(), country }),
@@ -666,7 +690,7 @@ export const validateCreditCardBIN = async (cardNumber, signal, options = {}) =>
   const bin = cleanNumber.slice(0, 6);
 
   try {
-    const response = await fetch(`/api/validate/credit-card-bin/${bin}`, {
+    const response = await fetch(resolveValidationUrl(`/validate/credit-card-bin/${bin}`), {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       signal,
@@ -698,7 +722,7 @@ export const validateBankRoutingNumber = async (routingNumber, signal) => {
   if (cleanRouting.length !== 9) return true;
 
   try {
-    const response = await fetch(`/api/validate/bank-routing/${cleanRouting}`, {
+    const response = await fetch(resolveValidationUrl(`/validate/bank-routing/${cleanRouting}`), {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       signal,
@@ -729,7 +753,7 @@ export const validateInvitationCode = async (code, signal) => {
   if (!code) return true;
 
   try {
-    const response = await fetch(`/api/validate/invitation-code/${encodeURIComponent(code.trim())}`, {
+    const response = await fetch(resolveValidationUrl(`/validate/invitation-code/${encodeURIComponent(code.trim())}`), {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       signal,
@@ -767,7 +791,7 @@ export const validateEventSlugAvailable = async (slug, signal, options = {}) => 
       ...(options.excludeEventId ? { excludeId: options.excludeEventId } : {}),
     });
 
-    const response = await fetch(`/api/validate/event-slug?${queryParams}`, {
+    const response = await fetch(resolveValidationUrl(`/validate/event-slug?${queryParams}`), {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       signal,
@@ -796,7 +820,7 @@ export const validateTicketQuotaAvailable = async (quantity, signal, options = {
   if (isNaN(qty) || qty <= 0 || !options.ticketTierId) return true;
 
   try {
-    const response = await fetch("/api/validate/ticket-quota", {
+    const response = await fetch(resolveValidationUrl("/validate/ticket-quota"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ticketTierId: options.ticketTierId, quantity: qty }),
@@ -897,7 +921,7 @@ export const validateTotpCode = async (code, signal, options = {}) => {
   if (cleanCode.length !== 6) return true;
 
   try {
-    const response = await fetch("/api/validate/totp", {
+    const response = await fetch(resolveValidationUrl("/validate/totp"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ code: cleanCode, sessionToken: options.sessionToken }),
@@ -925,7 +949,7 @@ export const validateCaptchaToken = async (token, signal) => {
   if (!token) return "CAPTCHA verification is required";
 
   try {
-    const response = await fetch("/api/validate/captcha", {
+    const response = await fetch(resolveValidationUrl("/validate/captcha"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token }),
@@ -969,7 +993,7 @@ export const createCustomAsyncValidator = (endpoint, options = {}) => {
     if (value === null || value === undefined || value === "") return true;
 
     try {
-      let url = endpoint;
+      let url = resolveValidationUrl(endpoint);
       const init = {
         method,
         headers: { "Content-Type": "application/json" },
@@ -1013,7 +1037,7 @@ export const createGraphQLAsyncValidator = (endpoint, query, variablesMapper, re
     if (value === null || value === undefined || value === "") return true;
 
     try {
-      const response = await fetch(endpoint, {
+      const response = await fetch(resolveValidationUrl(endpoint), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1076,6 +1100,9 @@ export default {
   globalValidationCache,
   RequestDeduplicator,
   globalDeduplicator,
+
+  // URL Helpers
+  resolveValidationUrl,
 
   // Higher-Order Decorators
   createAsyncValidator,

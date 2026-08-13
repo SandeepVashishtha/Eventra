@@ -30,8 +30,14 @@ assert.match(
 
 assert.match(
   source,
-  /window\.scrollTo\(\{[\s\S]*top: 0,[\s\S]*behavior: "smooth"[\s\S]*\}\)/,
-  "BackToTopButton click behavior must still smooth-scroll to the top"
+  /window\.matchMedia\(\s*"\(prefers-reduced-motion: reduce\)"\s*\)/,
+  "BackToTopButton must respect the prefers-reduced-motion media query"
+);
+
+assert.match(
+  source,
+  /window\.scrollTo\(\{[\s\S]*top: 0,[\s\S]*behavior: prefersReducedMotion \? "auto" : "smooth"[\s\S]*\}\)/,
+  "BackToTopButton click behavior must smooth-scroll to the top unless prefers-reduced-motion"
 );
 
 assert.match(

@@ -78,9 +78,10 @@ if (isSentryEnabled && typeof window !== "undefined") {
     });
 
     isInitialized = true;
-  } catch {
-    // Sentry SDK unavailable — local fallback logging remains active
-  }
+    } catch {
+      // Sentry SDK unavailable — local fallback logging remains active
+    }
+  })();
 }
 
 // ============================================================================

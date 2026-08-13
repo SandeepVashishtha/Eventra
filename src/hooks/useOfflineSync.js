@@ -8,9 +8,9 @@
  * and session validation, and persists the resulting queue state.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useAuth } from "../context/AuthContext";
-import { processQueue } from "../utils/offlineQueue";
-import { logger } from "../utils/logger";
+import { useAuth } from "../context/AuthContext.js";
+import { processQueue } from "../utils/offlineQueue.js";
+import { logger } from "../utils/logger.js";
 
 // Message types the service worker may post to request an offline queue sync.
 // EVENTRA_BACKGROUND_SYNC is posted by public/service-worker.js when the

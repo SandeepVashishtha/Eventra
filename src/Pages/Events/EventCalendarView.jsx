@@ -6,6 +6,8 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { Link } from 'react-router-dom';
 import { X, MapPin, Tag, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useFocusTrap } from 'hooks/useFocusTrap';
+import useScrollLock from 'hooks/useScrollLock';
 
 const locales = {
   'en-US': enUS,
@@ -20,11 +22,18 @@ const localizer = dateFnsLocalizer({
 });
 
 const EventPopover = ({ event, onClose }) => {
+  const { containerRef } = useFocusTrap(Boolean(event), onClose);
+  useScrollLock(Boolean(event));
+
   if (!event) return null;
 
   return (
     <div className="fixed inset-0 z-1000 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" onClick={onClose}>
       <motion.div
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="event-popover-title"
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
@@ -32,17 +41,19 @@ const EventPopover = ({ event, onClose }) => {
         className="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-800"
       >
         <button
+          type="button"
           onClick={onClose}
+          aria-label="Close event details"
           className="absolute top-4 right-4 z-10 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full transition-colors"
         >
           <X size={16} />
         </button>
 
         <div className="relative h-48 w-full">
-          <img src={event.resource.image} alt={event.title} className="w-full h-full object-cover"   loading="lazy"/>
+          <img src={event.resource.image} alt="" className="w-full h-full object-cover"   loading="lazy"/>
           <div className="absolute inset-0 bg-linear-to-t from-black/80 to-transparent" />
           <div className="absolute bottom-4 left-4 right-4">
-            <h3 className="text-xl font-bold text-white line-clamp-2">{event.title}</h3>
+            <h3 id="event-popover-title" className="text-xl font-bold text-white line-clamp-2">{event.title}</h3>
           </div>
         </div>
 

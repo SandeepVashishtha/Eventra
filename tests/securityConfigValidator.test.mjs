@@ -120,4 +120,20 @@ console.log("Running security configuration validator tests...");
   console.log("✓ Security warnings are reported correctly");
 }
 
+// Parameterless invocation using default environment parameters
+{
+  const originalWarn = console.warn;
+  console.warn = () => {};
+  try {
+    const result = validateSecurityConfiguration();
+    assert.ok(result && typeof result.valid === "boolean");
+    assert.ok(Array.isArray(result.warnings));
+    assert.ok(Array.isArray(result.checkedKeys));
+  } finally {
+    console.warn = originalWarn;
+  }
+
+  console.log("✓ Default parameterless validateSecurityConfiguration works correctly");
+}
+
 console.log("\nAll security configuration validator tests passed!");
