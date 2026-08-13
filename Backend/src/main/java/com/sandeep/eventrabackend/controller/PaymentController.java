@@ -41,12 +41,15 @@ public class PaymentController {
     @PostMapping("/plans")
     @PreAuthorize("hasAnyAuthority('USER', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> createPaymentPlan(
+            Authentication authentication,
             @RequestParam Long registrationId,
             @RequestParam(required = false, defaultValue = "1000.00") BigDecimal ticketPrice,
             @RequestParam(required = false, defaultValue = "USD") String currency,
             @RequestParam(required = false, defaultValue = "25") Integer upfrontPercentage,
             @RequestParam(required = false, defaultValue = "4") Integer totalInstallments) {
-        
+
+        paymentPlanService.requirePaymentAccessByRegistration(registrationId, authentication.getName());
+
         try {
             PaymentPlan paymentPlan = paymentPlanService.createPaymentPlan(
                     registrationId, ticketPrice, currency, upfrontPercentage, totalInstallments);
@@ -85,6 +88,8 @@ public class PaymentController {
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String phone) {
 
+        paymentPlanService.requirePaymentAccessByRegistration(registrationId, authentication.getName());
+
         try {
             Map<String, String> result = paymentPlanService.initializeStripePayment(
                     registrationId, authentication.getName(), email, name, phone);
@@ -110,9 +115,12 @@ public class PaymentController {
     @PostMapping("/setup-method/{paymentPlanId}")
     @PreAuthorize("hasAnyAuthority('USER', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> setupPaymentMethodAndCreateUpfrontPayment(
+            Authentication authentication,
             @PathVariable Long paymentPlanId,
             @RequestBody Map<String, String> request) {
-        
+
+        paymentPlanService.requirePaymentAccessByPlan(paymentPlanId, authentication.getName());
+
         String paymentMethodId = request.get("paymentMethodId");
         
         if (paymentMethodId == null || paymentMethodId.isEmpty()) {
@@ -147,9 +155,12 @@ public class PaymentController {
     @PostMapping("/confirm-upfront/{paymentPlanId}")
     @PreAuthorize("hasAnyAuthority('USER', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> confirmUpfrontPaymentAndScheduleInstallments(
+            Authentication authentication,
             @PathVariable Long paymentPlanId,
             @RequestBody Map<String, String> request) {
-        
+
+        paymentPlanService.requirePaymentAccessByPlan(paymentPlanId, authentication.getName());
+
         String paymentMethodId = request.get("paymentMethodId");
         
         if (paymentMethodId == null || paymentMethodId.isEmpty()) {
@@ -184,8 +195,11 @@ public class PaymentController {
     @GetMapping("/plans/{registrationId}")
     @PreAuthorize("hasAnyAuthority('USER', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> getPaymentPlanByRegistrationId(
+            Authentication authentication,
             @PathVariable Long registrationId) {
-        
+
+        paymentPlanService.requirePaymentAccessByRegistration(registrationId, authentication.getName());
+
         try {
             Map<String, Object> status = paymentPlanService.getPaymentPlanStatus(registrationId);
             
@@ -223,8 +237,11 @@ public class PaymentController {
     @GetMapping("/registrations/{registrationId}")
     @PreAuthorize("hasAnyAuthority('USER', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> getPaymentsByRegistrationId(
+            Authentication authentication,
             @PathVariable Long registrationId) {
-        
+
+        paymentPlanService.requirePaymentAccessByRegistration(registrationId, authentication.getName());
+
         try {
             List<Payment> payments = paymentPlanService.getPaymentsByRegistrationId(registrationId);
             
@@ -248,8 +265,11 @@ public class PaymentController {
     @GetMapping("/schedule/{registrationId}")
     @PreAuthorize("hasAnyAuthority('USER', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> getInstallmentSchedule(
+            Authentication authentication,
             @PathVariable Long registrationId) {
-        
+
+        paymentPlanService.requirePaymentAccessByRegistration(registrationId, authentication.getName());
+
         try {
             List<Map<String, Object>> schedule = paymentPlanService.getInstallmentSchedule(registrationId);
             
@@ -273,9 +293,12 @@ public class PaymentController {
     @PostMapping("/retry/{paymentId}")
     @PreAuthorize("hasAnyAuthority('USER', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> retryFailedPayment(
+            Authentication authentication,
             @PathVariable Long paymentId,
             @RequestParam(required = false) String paymentMethodId) {
-        
+
+        paymentPlanService.requirePaymentAccessByPayment(paymentId, authentication.getName());
+
         try {
             Map<String, Object> result = paymentPlanService.retryFailedPayment(paymentId, paymentMethodId);
             
@@ -300,8 +323,11 @@ public class PaymentController {
     @GetMapping("/methods/{registrationId}")
     @PreAuthorize("hasAnyAuthority('USER', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> getCustomerPaymentMethods(
+            Authentication authentication,
             @PathVariable Long registrationId) {
-        
+
+        paymentPlanService.requirePaymentAccessByRegistration(registrationId, authentication.getName());
+
         try {
             List<Map<String, Object>> methods = paymentPlanService.getCustomerPaymentMethods(registrationId);
             
@@ -330,8 +356,11 @@ public class PaymentController {
     @GetMapping("/qr-status/{registrationId}")
     @PreAuthorize("hasAnyAuthority('USER', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> isQRCodeActivated(
+            Authentication authentication,
             @PathVariable Long registrationId) {
-        
+
+        paymentPlanService.requirePaymentAccessByRegistration(registrationId, authentication.getName());
+
         try {
             boolean activated = paymentPlanService.isQRCodeActivated(registrationId);
             boolean completed = paymentPlanService.isPaymentCompleted(registrationId);
@@ -356,9 +385,12 @@ public class PaymentController {
     @DeleteMapping("/plans/{paymentPlanId}")
     @PreAuthorize("hasAnyAuthority('USER', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> cancelPaymentPlan(
+            Authentication authentication,
             @PathVariable Long paymentPlanId,
             @RequestParam(required = false, defaultValue = "User request") String reason) {
-        
+
+        paymentPlanService.requirePaymentAccessByPlan(paymentPlanId, authentication.getName());
+
         try {
             paymentPlanService.cancelPaymentPlan(paymentPlanId, reason);
             
@@ -381,8 +413,11 @@ public class PaymentController {
     @GetMapping("/active/{registrationId}")
     @PreAuthorize("hasAnyAuthority('USER', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> hasActivePaymentPlan(
+            Authentication authentication,
             @PathVariable Long registrationId) {
-        
+
+        paymentPlanService.requirePaymentAccessByRegistration(registrationId, authentication.getName());
+
         try {
             boolean hasActive = paymentPlanService.hasActivePaymentPlan(registrationId);
             
