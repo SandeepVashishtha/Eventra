@@ -357,10 +357,15 @@ export const toggleEventTypePreference = (eventType) => {
   const trimmed = sanitizeString(eventType);
   if (!trimmed) return profile;
 
-  const exists = profile.eventTypes.includes(trimmed);
+  const matched = VALID_EVENT_TYPES.find(
+    (valid) => valid.toLowerCase() === trimmed.toLowerCase()
+  );
+  if (!matched) return profile;
+
+  const exists = profile.eventTypes.includes(matched);
   const updatedTypes = exists
-    ? profile.eventTypes.filter((t) => t !== trimmed)
-    : [...profile.eventTypes, trimmed];
+    ? profile.eventTypes.filter((t) => t !== matched)
+    : [...profile.eventTypes, matched];
 
   return updateUserProfile({ eventTypes: updatedTypes });
 };
