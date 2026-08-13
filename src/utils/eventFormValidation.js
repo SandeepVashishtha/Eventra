@@ -1,14 +1,14 @@
-import { parseTimeToMinutes } from "./eventCreationUtils";
+import { parseTimeToMinutes } from "./eventCreationUtils.js";
 export const validateForm = (formData) => {
   const newErrors = {};
 
-  if (!formData.title.trim()) {
+  if (!formData.title?.trim()) {
     newErrors.title = "Event title is required";
   } else if (formData.title.length < 3 || formData.title.length > 200) {
     newErrors.title = "Title must be between 3 and 200 characters";
   }
 
-  if (!formData.description.trim()) newErrors.description = "Event description is required";
+  if (!formData.description?.trim()) newErrors.description = "Event description is required";
   if (!formData.category) newErrors.category = "Please select a category";
 
   if (formData.isMultiDay) {
