@@ -22,6 +22,14 @@ public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecific
     Optional<Event> findByIdWithLock(@Param("id") Long id);
 
     /**
+     * Nulls the {@code ownerId} of every event owned by the given user so the
+     * user can be deleted without foreign-key violations.
+     */
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Event e SET e.ownerId = NULL WHERE e.ownerId = :userId")
+    void clearOwnerByUserId(@Param("userId") Long userId);
+
+    /**
      * FIX (#13914): Atomic single-query capacity guard for registration.
      *
      * <p>Increments {@code registeredCount} in one UPDATE only while a seat is

@@ -97,6 +97,7 @@ public class HackathonService {
                 .prizePool(request.getPrizePool())
                 .registrationDeadline(request.getRegistrationDeadline())
                 .imageUrl(request.getImageUrl())
+                .maxParticipants(request.getMaxParticipants())
                 .ownerId(creator.getId())
                 .build();
 
@@ -172,6 +173,7 @@ public class HackathonService {
         if (request.getPrizePool() != null) hackathon.setPrizePool(request.getPrizePool());
         if (request.getRegistrationDeadline() != null) hackathon.setRegistrationDeadline(request.getRegistrationDeadline());
         if (request.getImageUrl() != null) hackathon.setImageUrl(request.getImageUrl());
+        if (request.getMaxParticipants() != null) hackathon.setMaxParticipants(request.getMaxParticipants());
 
         Hackathon updated = hackathonRepository.save(hackathon);
         log.info("[AUDIT LOG] Administrative Action: HACKATHON_UPDATE | HackathonID: {} | UpdatedTitle: {}", updated.getId(), updated.getTitle());

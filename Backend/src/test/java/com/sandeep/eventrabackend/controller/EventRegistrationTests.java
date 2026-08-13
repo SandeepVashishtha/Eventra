@@ -100,6 +100,15 @@ public class EventRegistrationTests {
                     .build();
             userRepository.save(u);
         }
+
+        userRepository.save(User.builder()
+                .firstName("Admin")
+                .lastName("User")
+                .email("admin@example.com")
+                .username("admin")
+                .password(passwordEncoder.encode("password"))
+                .role(Role.ADMIN)
+                .build());
     }
 
     // ── Issue #2101 — Availability endpoint ──────────────────────────────────

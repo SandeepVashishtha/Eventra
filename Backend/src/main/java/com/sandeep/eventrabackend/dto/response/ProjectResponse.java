@@ -32,5 +32,5 @@ public class ProjectResponse {
     private String githubUrl;
 
     @Schema(description = "Number of upvotes received", example = "15")
-    private int upvotes;
+    private long upvotes;
 }

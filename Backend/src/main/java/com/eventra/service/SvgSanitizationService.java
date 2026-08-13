@@ -37,7 +37,7 @@ public class SvgSanitizationService {
     private static final Logger logger = Logger.getLogger(SvgSanitizationService.class.getName());
 
     private static final Set<String> ALLOWED_ELEMENTS = Set.of(
-            "svg", "g", "defs", "symbol", "use", "image", "marker",
+            "svg", "g", "defs", "symbol", "use", "image", "marker", "a",
             "path", "rect", "circle", "ellipse", "line", "polyline", "polygon",
             "text", "tspan", "textPath", "title", "desc",
             "linearGradient", "radialGradient", "stop", "pattern", "clipPath", "mask",
@@ -57,7 +57,8 @@ public class SvgSanitizationService {
             "text-anchor", "font-size", "font-family", "font-weight", "font-style",
             "letter-spacing", "dominant-baseline", "alignment-baseline",
             "stop-color", "stop-opacity", "color", "shape-rendering", "text-rendering",
-            "marker-start", "marker-mid", "marker-end", "overflow"
+            "marker-start", "marker-mid", "marker-end", "overflow",
+            "href", "xlink:href", "src"
     );
 
     private static final Set<String> URI_ATTRIBUTES = Set.of("href", "xlink:href", "src");
@@ -130,8 +131,8 @@ public class SvgSanitizationService {
                 continue;
             }
 
-            if (URI_ATTRIBUTES.contains(name)) {
-                if (!isSafeUri(value)) {
+            if (URI_ATTRIBUTES.contains(name) || URI_ATTRIBUTES.contains(local)) {
+                if (!isSafeUri(element, value)) {
                     element.removeAttributeNode(attr);
                 }
             }
@@ -159,10 +160,14 @@ public class SvgSanitizationService {
         }
     }
 
-    private boolean isSafeUri(String value) {
+    private boolean isSafeUri(Element element, String value) {
         String uri = value.trim();
         if (uri.startsWith("#")) {
             return true; // local fragment reference
+        }
+        String tag = element.getLocalName() != null ? element.getLocalName() : element.getNodeName();
+        if ("use".equalsIgnoreCase(tag)) {
+            return false; // external <use> references can exfiltrate data; fragments only
         }
         String lower = uri.toLowerCase();
         return lower.startsWith("http://") || lower.startsWith("https://") || lower.startsWith("mailto:");
