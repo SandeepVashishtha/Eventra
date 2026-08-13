@@ -119,6 +119,27 @@ assert(
   "decay factor should scale interaction weights",
 );
 
+// Interactions without a timestamp must default to full recency, never the event date
+const pastEvent = { ...events[2], date: new Date(NOW - 30 * DAY_MS).toISOString() };
+const noTimestampProfile = buildInteractionProfile({
+  viewedEvents: [{ ...pastEvent }],
+});
+assert.equal(
+  noTimestampProfile.categories["devops and cloud"],
+  1,
+  "interaction without its own timestamp should keep full weight instead of decaying against the event date",
+);
+
+// A freshly-viewed future event keeps a high category weight
+const futureEvent = { ...events[2], date: new Date(NOW + 30 * DAY_MS).toISOString() };
+const freshProfile = buildInteractionProfile({
+  viewedEvents: [{ ...futureEvent, createdAt: new Date(NOW - 1000).toISOString() }],
+});
+assert(
+  Math.abs(freshProfile.categories["devops and cloud"] - 1) < 0.01,
+  "freshly-viewed event should keep full category weight",
+);
+
 // ===========================================================================
 // Temporal urgency & expiration filtering
 // ===========================================================================

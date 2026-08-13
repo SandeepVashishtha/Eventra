@@ -288,7 +288,9 @@ export const buildInteractionProfile = ({
     const eventLocation = normalizeText(event.location);
 
     // Apply time-decay multiplier based on interaction timestamp
-    const decayFactor = applyTimeDecay(entry.createdAt || entry.timestamp || event.date);
+    // (never fall back to the event date, which is not a recency signal)
+    const interactionTime = entry?.createdAt || entry?.timestamp;
+    const decayFactor = interactionTime ? applyTimeDecay(interactionTime) : 1.0;
     const weight = baseWeight * decayFactor;
 
     if (id) interactedIds.add(id);
