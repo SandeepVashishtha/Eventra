@@ -78,7 +78,7 @@ export default function DynamicQrTicketModal({
         {/* Anti-Screenshot Warning */}
         <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-xs text-amber-800 dark:text-amber-300 flex items-center gap-2">
           <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
-          <span>Screenshots are disabled. Tickets carry an opaque server-issued token and are verified at the door.</span>
+          <span>Screenshots are disabled. Dynamic TOTP QR refreshes every 15s to prevent ticket fraud.</span>
         </div>
       </div>
     </div>

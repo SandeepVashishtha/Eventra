@@ -1,10 +1,10 @@
 package com.sandeep.eventrabackend.security.audit;
 
 import org.springframework.web.bind.annotation.*;
-import java.util.Map;
+import org.springframework.http.ResponseEntity;
 
 /**
- * Controller exposing REST mapping endpoint to monitor audit log trees integrity status (#16268).
+ * Controller mapping audit root endpoints (#17665).
  */
 @RestController
 @RequestMapping("/api/audit")
@@ -16,8 +16,8 @@ public class LogIntegrityController {
         this.logManager = logManager;
     }
 
-    @GetMapping("/roots")
-    public Map<String, String> getBlockRoots() {
-        return logManager.getBlockRoots();
+    @GetMapping("/merkle-root")
+    public ResponseEntity<String> getRoot() {
+        return ResponseEntity.ok(logManager.getMerkleRoot());
     }
 }

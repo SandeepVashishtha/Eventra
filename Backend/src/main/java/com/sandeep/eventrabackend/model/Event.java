@@ -23,12 +23,6 @@ public class Event {
      * chosen by the organizer survives reload (issue #14603).
      */
     private LocalDateTime endDate;
-
-    /**
-     * IANA timezone (e.g. "America/New_York") or short alias (e.g. "EST") the
-     * event times are expressed in. Falls back to UTC when not set.
-     */
-    private String timezone;
     private boolean isPublic = true;
 
     /**
@@ -176,14 +170,6 @@ public class Event {
 
     public void setEndDate(LocalDateTime endDate) {
         this.endDate = endDate;
-    }
-
-    public String getTimezone() {
-        return timezone;
-    }
-
-    public void setTimezone(String timezone) {
-        this.timezone = timezone;
     }
 
     public boolean isPublic() {

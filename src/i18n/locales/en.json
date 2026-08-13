@@ -65,8 +65,6 @@
     "hidePassword": "Hide password",
     "lockedOut": "Too many failed attempts. Try again in {{seconds}}s.",
     "attemptsRemaining": "{{count}} attempt(s) remaining before temporary lockout.",
-    "attemptsRemaining_one": "{{count}} attempt remaining before temporary lockout.",
-    "attemptsRemaining_other": "{{count}} attempts remaining before temporary lockout.",
     "lockedWait": "Locked — wait {{seconds}}s"
   },
   "validation": {
@@ -260,8 +258,6 @@
       "searchPlaceholder": "Search events, hackathons, projects...",
       "searchResults": "Search results",
       "resultsCount": "Results ({{count}})",
-      "resultsCount_one": "Result ({{count}})",
-      "resultsCount_other": "Results ({{count}})",
       "noDescription": "No description available",
       "noResults": "No results for",
       "scrollToExplore": "Scroll to explore",
@@ -429,8 +425,6 @@
     "statsShown": "shown on this page",
     "podiumHeading": "Top 3 Contributors",
     "showingContributors": "Showing {{count}} of {{total}} contributors",
-    "showingContributors_one": "Showing {{count}} of {{total}} contributor",
-    "showingContributors_other": "Showing {{count}} of {{total}} contributors",
     "pageOf": "Page {{current}} of {{total}}",
     "tableHeading": "Contributor Rankings",
     "tableHeaders": {

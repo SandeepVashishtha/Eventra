@@ -11,7 +11,6 @@
 
 import { useState, useCallback } from "react";
 import { apiUtils, API_ENDPOINTS } from "../config/api.js";
-import { getApiErrorMessage } from "../config/api/errors.js";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
 import { logger } from "../utils/logger";
@@ -144,7 +143,8 @@ const useEventCancellation = (eventId, onSuccess, ownerId) => {
         return true;
       } catch (err) {
         const message =
-          getApiErrorMessage(err) ||
+          err?.response?.data?.message ||
+          err?.message ||
           "An unexpected error occurred while cancelling the event.";
 
         logger.error("[useEventCancellation] Cancellation failed:", err);

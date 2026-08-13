@@ -1,4 +1,3 @@
-import useIdleDetection from "hooks/useIdleDetection";
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { safeJsonParse } from "../utils/safeJsonParse";
@@ -112,18 +111,9 @@ export const SessionRecoveryProvider = ({ children }) => {
   const [isOnline, setIsOnline] = useState(true);
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [showRecoveryPrompt, setShowRecoveryPrompt] = useState(false);
-  // Fix: useIdleDetection replaces manual lastActivity state + updateActivity +
-  // activity event listeners + session timeout setInterval.
-  const { lastActiveAt, reset: resetIdleTimer } = useIdleDetection({
-    idleMs: SESSION_TIMEOUT,
-    throttleMs: 1000,
-    onIdle: () => {
-      if (hasSession) clearSession();
-    },
-    events: ["mousedown", "mousemove", "keypress", "scroll", "touchstart", "click"],
-    enabled: !!user,
-  });
-  const lastActivity = lastActiveAt?.getTime() ?? Date.now();
+  const [lastActivity, setLastActivity] = useState(Date.now());
+
+  const lastActivityRef = useRef(Date.now());
   const isLoadingRef = useRef(true);
   const saveTimeoutRef = useRef(null);
   const activityTimeoutRef = useRef(null);
@@ -138,7 +128,15 @@ export const SessionRecoveryProvider = ({ children }) => {
     cloudSessions: cloudRecovery.cloudSessions,
   });
 
-  // Fix: updateActivity replaced by useIdleDetection hook above
+  const updateActivity = useCallback(() => {
+    const now = Date.now();
+    // 🔥 FIX: Throttle to max once per second to prevent CPU thrashing from mousemove/scroll
+    if (now - lastActivityRef.current > 1000) {
+      lastActivityRef.current = now;
+      // 🔥 FIX: Synchronize React state so context consumers get accurate data
+      setLastActivity(now);
+    }
+  }, []);
 
   useEffect(() => {
     const handleOnline = () => {
@@ -160,7 +158,15 @@ export const SessionRecoveryProvider = ({ children }) => {
     };
   }, []);
 
-  // Fix: activity event listeners now managed by useIdleDetection hook
+  useEffect(() => {
+    const events = ["mousedown", "mousemove", "keypress", "scroll", "touchstart", "click"];
+    // 🔥 FIX: Added { passive: true } to further optimize scroll performance
+    events.forEach((event) => window.addEventListener(event, updateActivity, { passive: true }));
+
+    return () => {
+      events.forEach((event) => window.removeEventListener(event, updateActivity));
+    };
+  }, [updateActivity]);
 
   // Load and decrypt the persisted session on mount
   useEffect(() => {
@@ -260,7 +266,7 @@ export const SessionRecoveryProvider = ({ children }) => {
             sessionName: sanitizedState.sessionName || sanitizedState.name,
             recoveryType,
             timestamp: Date.now(),
-            lastActivity: lastActivity,
+            lastActivity: lastActivityRef.current,
             deviceFingerprint: getDeviceFingerprint(),
           };
 
@@ -361,7 +367,16 @@ export const SessionRecoveryProvider = ({ children }) => {
     setShowRecoveryPrompt(false);
   }, []);
 
-  // Fix: session timeout now handled by useIdleDetection onIdle callback above
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const inactiveTime = now - lastActivityRef.current;
+      if (inactiveTime > SESSION_TIMEOUT && hasSession) {
+        clearSession();
+      }
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [hasSession, clearSession]);
 
   useEffect(() => {
     if ((multiRecovery.hasSessions || cloudRecovery.hasCloudSessions) && !sessionData) {

@@ -236,10 +236,6 @@ export const writeMultiSessions = (
   key = MULTI_SESSION_RECOVERY_KEY,
 ) => {
   const normalized = normalizeMultiSessions(sessions);
-  try {
-    storage?.setItem?.(key, JSON.stringify(normalized));
-  } catch (err) {
-    console.warn("[MultiSessionRecovery] Failed to write sessions to storage:", err.message);
-  }
+  storage?.setItem?.(key, JSON.stringify(normalized));
   return normalized;
 };

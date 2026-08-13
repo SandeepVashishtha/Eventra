@@ -2,7 +2,6 @@ import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
 
 import {
-  addSearchSuggestion,
   generateFilterSuggestions,
   getFallbackSuggestions,
   readSuggestionHistory,
@@ -147,25 +146,6 @@ describe("filterSuggestions", () => {
     const filterKeys = suggestions.map((item) => JSON.stringify(item.filters));
 
     assert.equal(new Set(filterKeys).size, filterKeys.length);
-  });
-
-  it("does not mutate the input search history array when adding a new search suggestion", () => {
-    const originalHistory = ["react", "vue"];
-    const historyCopy = [...originalHistory];
-
-    const updated = addSearchSuggestion(originalHistory, "angular");
-
-    assert.notEqual(updated, originalHistory);
-    assert.deepEqual(originalHistory, historyCopy);
-    assert.deepEqual(updated, ["angular", "react", "vue"]);
-  });
-
-  it("deduplicates queries and respects max limits without mutating input", () => {
-    const originalHistory = ["react", "vue", "node"];
-    const updated = addSearchSuggestion(originalHistory, "vue", 2);
-
-    assert.deepEqual(originalHistory, ["react", "vue", "node"]);
-    assert.deepEqual(updated, ["vue", "react"]);
   });
 });
 

@@ -1,18 +1,22 @@
 package com.sandeep.eventrabackend.security.audit;
 
 import org.springframework.stereotype.Component;
-import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.util.*;
+import java.security.NoSuchAlgorithmException;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Base64;
 
 /**
- * Merkle Tree Hashing Utility for Audit Log validation (#16268).
+ * Utility compiling lists of logging details to root Merkle hashes (#17665).
  */
 @Component
 public class MerkleTreeHasher {
 
-    public String computeRootHash(List<String> logs) {
-        if (logs == null || logs.isEmpty()) return "";
+    public String computeMerkleRoot(List<String> logs) {
+        if (logs == null || logs.isEmpty()) {
+            return "";
+        }
 
         List<String> tempTxList = new ArrayList<>(logs);
         List<String> newTxList = new ArrayList<>();
@@ -22,7 +26,7 @@ public class MerkleTreeHasher {
             for (int i = 0; i < tempTxList.size(); i += 2) {
                 String left = tempTxList.get(i);
                 String right = (i + 1 < tempTxList.size()) ? tempTxList.get(i + 1) : left;
-                newTxList.add(sha256(left + right));
+                newTxList.add(hashPair(left, right));
             }
             tempTxList = new ArrayList<>(newTxList);
         }
@@ -30,19 +34,13 @@ public class MerkleTreeHasher {
         return tempTxList.get(0);
     }
 
-    private String sha256(String base) {
+    private String hashPair(String left, String right) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(base.getBytes(StandardCharsets.UTF_8));
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : hash) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) hexString.append('0');
-                hexString.append(hex);
-            }
-            return hexString.toString();
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
+            byte[] hash = digest.digest((left + right).getBytes());
+            return Base64.getEncoder().encodeToString(hash);
+        } catch (NoSuchAlgorithmException e) {
+            return "";
         }
     }
 }

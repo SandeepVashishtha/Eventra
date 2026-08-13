@@ -14,7 +14,7 @@ import {
   getEventParticipationStatistics,
   getParticipationActivityLabel,
   getParticipationStatCards,
-} from "../../../utils/eventParticipationStatsUtils";
+} from "../../utils/eventParticipationStatsUtils";
 
 const EventParticipationStatistics = ({
   user = {},

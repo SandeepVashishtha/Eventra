@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Play, Pause, Settings, Volume2, ShieldCheck } from "lucide-react";
 import SwarmStatsOverlay from "./SwarmStatsOverlay";
-import { WebTorrentMeshManager } from "../../../utils/p2p/webtorrentMesh";
+import { WebTorrentMeshManager } from "../../utils/p2p/webtorrentMesh";
 
 export default function P2PVideoPlayer({
   streamUrl = "https://cdn.example.com/hls/keynote.m3u8",

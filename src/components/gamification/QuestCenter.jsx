@@ -220,18 +220,6 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0, gssocE
       if (now >= state.dailyResetAt || now >= state.weeklyResetAt) {
         setState(initState());
       }
-
-      // Clear stale claim guards for expired periods so claims aren't blocked
-      if (now >= state.dailyResetAt) {
-        claimedGuardRef.current = Object.fromEntries(
-          Object.entries(claimedGuardRef.current).filter(([k]) => !k.startsWith('dailyClaimed:'))
-        );
-      }
-      if (now >= state.weeklyResetAt) {
-        claimedGuardRef.current = Object.fromEntries(
-          Object.entries(claimedGuardRef.current).filter(([k]) => !k.startsWith('weeklyClaimed:'))
-        );
-      }
     }
     tick();
     const id = setInterval(tick, 30000); // update every 30s

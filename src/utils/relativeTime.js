@@ -64,7 +64,7 @@ export function getSmartDateLabel(dateInput, timeInput = "") {
 
   const relative = getRelativeTime(timeInput ? `${dateInput} ${timeInput}` : dateInput);
 
-  if (relative && relative !== RELATIVE_TIME_FALLBACK) return relative;
+  if (relative) return relative;
 
   return new Date(timeInput ? `${dateInput} ${timeInput}` : dateInput).toLocaleDateString("en-US", {
     weekday: "short",

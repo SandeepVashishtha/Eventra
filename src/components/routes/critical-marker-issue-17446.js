@@ -1,1 +1,0 @@
-// Critical GSSoC marker for Issue #17446\nexport default {};\n

@@ -181,10 +181,11 @@ useEffect(() => {
               {/* Dropdown / Submenu */}
               {(vertical || isOpen) && (
                 <div
-                  ref={(el) => (menuRefs.current[item.nameKey] = el)}
+                ref={(el) => (menuRefs.current[item.nameKey] = el)}
                   id={menuId}
                   role="menu"
                   aria-labelledby={`${menuId}-button`}
+                  role="menu"
                   className={
                     vertical
                       ? "mt-1 ml-6 space-y-1"

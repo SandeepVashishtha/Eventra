@@ -14,8 +14,8 @@
 export const WEIGHTED_LEXICON = new Map([
   // Positive Keywords
   ["love", 2.5], ["adore", 2.8], ["perfect", 2.5], ["amazing", 2.3],
-  ["great", 1.8], ["good", 1.5], ["excellent", 2.2], ["awesome", 2.2], ["fantastic", 2.3],
-  ["beautiful", 1.5], ["helpful", 1.2], ["help", 1.2], ["easy", 1.0], ["fast", 1.0],
+  ["great", 1.8], ["excellent", 2.2], ["awesome", 2.2], ["fantastic", 2.3],
+  ["beautiful", 1.5], ["helpful", 1.2], ["easy", 1.0], ["fast", 1.0],
   ["smooth", 1.0], ["happy", 1.5], ["nice", 1.0], ["resolved", 1.5],
   ["satisfied", 1.5], ["solved", 1.5], ["best", 2.5], ["cool", 1.0],
   ["wonderful", 2.0], ["superb", 2.2], ["outstanding", 2.5], ["impressive", 2.0],
@@ -48,12 +48,7 @@ export const DIMINISHERS = new Map([
 
 /** Negators that invert the sign of target sentiment words */
 export const NEGATORS = new Set([
-  "not", "no", "never", "neither", "nor", "cannot", "cant", "can't",
-  "dont", "don't", "wont", "won't", "doesnt", "doesn't", "didnt", "didn't",
-  "isnt", "isn't", "wasnt", "wasn't", "werent", "weren't",
-  "havent", "haven't", "hasnt", "hasn't", "hadnt", "hadn't",
-  "couldnt", "couldn't", "wouldnt", "wouldn't", "shouldnt", "shouldn't",
-  "arent", "aren't", "aint", "ain't",
+  "not", "no", "never", "neither", "nor", "cannot", "cant",
   "without", "lack", "lacks", "hardly", "n't",
 ]);
 
@@ -68,7 +63,7 @@ export const NEGATORS = new Set([
  * @returns {Array<{word: string, lower: string, isUpper: boolean, hasExclamation: boolean}>} Token array.
  */
 function tokenizeWithMetadata(text) {
-  const rawTokens = text.match(/\b[A-Za-z]+['’]?t?\b|[!?]+/g) || [];
+  const rawTokens = text.match(/\b[A-Za-z]+'?t?\b|[!?]+/g) || [];
   const tokens = [];
 
   for (let i = 0; i < rawTokens.length; i++) {
@@ -113,9 +108,8 @@ function evaluateTokenSequence(tokens) {
       if (prevIndex < 0) break;
 
       const prevToken = tokens[prevIndex].lower;
-      const normalizedPrevToken = prevToken.replace(/['’]/g, "");
 
-      if (NEGATORS.has(prevToken) || NEGATORS.has(normalizedPrevToken)) {
+      if (NEGATORS.has(prevToken)) {
         isNegated = true;
         negationCount++;
       } else if (INTENSIFIERS.has(prevToken)) {

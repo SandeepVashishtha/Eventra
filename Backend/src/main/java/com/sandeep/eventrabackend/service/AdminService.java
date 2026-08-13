@@ -169,17 +169,13 @@ public class AdminService {
 
         List<Long> affectedEventIds = eventRegistrationRepository.findEventIdsByUser_Id(id);
 
-        // Clear owner references before deletion to prevent foreign key constraint violations
-        eventRepository.clearOwnerByUserId(id);
-        hackathonRepository.clearOwnerByUserId(id);
-
         eventRegistrationRepository.deleteByUser_Id(id);
         eventWaitlistRepository.deleteByUser_Id(id);
         hackathonRegistrationRepository.deleteByUser_Id(id);
         projectUpvoteRepository.deleteByUser_Id(id);
         notificationRepository.deleteByUser_Id(id);
         feedbackRepository.deleteByUser_Id(id);
-        // eventRepository.deleteAttendeeRowsByUserId(id); // Removed dropped table call
+        eventRepository.deleteAttendeeRowsByUserId(id);
         eventTeamMemberRepository.clearAssignedByUserId(id);
         eventTeamMemberRepository.deleteByUser_Id(id);
 
@@ -273,7 +269,6 @@ public class AdminService {
         return toEventResponse(saved);
     }
 
-    @Transactional
     public void deleteEvent(Long id) {
         if (!eventRepository.existsById(id)) {
             throw new EntityNotFoundException("Event not found with id: " + id);

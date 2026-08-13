@@ -7,10 +7,6 @@ const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
 // In-memory response cache for validation results
 const validationCache = new Map();
 
-export const clearValidationCache = () => {
-  validationCache.clear();
-};
-
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const createValidationResponse = (
@@ -81,7 +77,7 @@ export const requestValidation = async (endpoint, options = {}) => {
   // Cache Lookup Key
   const cacheKey = `${method}:${endpoint}:${JSON.stringify(body || {})}`;
   if (useCache && validationCache.has(cacheKey)) {
-    return { ...validationCache.get(cacheKey) };
+    return validationCache.get(cacheKey);
   }
 
   let lastError = null;
@@ -163,6 +159,7 @@ export const requestValidation = async (endpoint, options = {}) => {
             errData?.message || invalidMessage,
             { status, data: errData },
           );
+          if (useCache) validationCache.set(cacheKey, failureResponse);
           return failureResponse;
         }
 
@@ -200,9 +197,10 @@ export const requestValidation = async (endpoint, options = {}) => {
       if (status && !RETRYABLE_STATUS_CODES.includes(status) && status < 500) {
         const failureResponse = createValidationResponse(
           false,
-          data?.message || networkMessage,
+          networkMessage,
           { status, data }
         );
+        if (useCache) validationCache.set(cacheKey, failureResponse);
         return failureResponse;
       }
 
@@ -228,11 +226,8 @@ export const requestValidation = async (endpoint, options = {}) => {
   );
 };
 
-export const checkEmailAvailability = (email, options = {}) => {
-  if (!email || typeof email !== "string" || !email.trim()) {
-    return Promise.resolve(createValidationResponse(false, "Email is required"));
-  }
-  return requestValidation(
+export const checkEmailAvailability = (email, options = {}) =>
+  requestValidation(
     options.endpoint || `/api/validate/email/${encodeURIComponent(email)}`,
     {
       invalidMessage: "Email is already registered",
@@ -241,11 +236,8 @@ export const checkEmailAvailability = (email, options = {}) => {
     },
   );
 
-export const checkUsernameAvailability = (username, options = {}) => {
-  if (!username || typeof username !== "string" || !username.trim()) {
-    return Promise.resolve(createValidationResponse(false, "Username is required"));
-  }
-  return requestValidation(
+export const checkUsernameAvailability = (username, options = {}) =>
+  requestValidation(
     options.endpoint ||
       `/api/validate/username/${encodeURIComponent(username)}`,
     {
@@ -269,7 +261,6 @@ const validationApi = {
   checkEmailAvailability,
   checkUsernameAvailability,
   checkPhoneValidation,
-  clearValidationCache,
   createValidationResponse,
   normalizeValidationApiResponse,
   requestValidation,

@@ -17,8 +17,8 @@ const CACHE_TTL = 1 * 60 * 60 * 1000; // 1 hour expiration
 const saveMetricsCache = (cache) => {
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
-  } catch {
-    // Ignore storage write failures
+  } catch (e) {
+    console.warn("Failed to save metrics cache:", e);
   }
 };
 
@@ -105,8 +105,8 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           cache = saved ? safeJsonParse(saved, {}) : {};
           cache[key] = { data: updated, timestamp: Date.now() };
           saveMetricsCache(cache);
-        } catch {
-          // Ignore cache update failures
+        } catch (err) {
+          console.warn('Failed to update metrics cache:', err);
         }
         return updated;
       });
@@ -144,8 +144,8 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           cache = saved ? safeJsonParse(saved, {}) : {};
           cache[key] = { data: updated, timestamp: Date.now() };
           saveMetricsCache(cache);
-        } catch {
-          // Ignore cache update failures
+        } catch (err) {
+          console.warn('Failed to update metrics cache:', err);
         }
         return updated;
       });

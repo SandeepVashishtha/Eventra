@@ -57,12 +57,12 @@ describe("SSE Multiplexer Memory Leak & Lock Acquisition Tests", () => {
     followerManager.release();
   });
 
-  it("should clear watchdog timers and release abort controllers on release", async () => {
+  it("should clear watchdog timers and release abort controllers on release", () => {
     const manager = new SseLockManager({
       tabId: "cleanup-tab-303",
     });
 
-    await manager.acquireLock();
+    manager.acquireLock();
     assert.ok(manager.watchdogTimer !== null || manager.isLeader === true);
 
     manager.release();

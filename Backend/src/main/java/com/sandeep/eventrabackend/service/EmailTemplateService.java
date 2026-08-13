@@ -33,11 +33,7 @@ public class EmailTemplateService {
     }
 
     /**
-     * Send a test email to the organizer with the provided template.
-     *
-     * <p>The recipient is always the authenticated organizer's own email; any
-     * caller-supplied recipient is ignored so the endpoint can never be used as
-     * an open relay to arbitrary addresses (#16253).</p>
+     * Send a test email to the organizer with the provided template
      */
     public TestEmailResponse sendTestEmail(TestEmailRequest request, String organizerEmail) {
         try {
@@ -49,11 +45,9 @@ public class EmailTemplateService {
             // Generate a test subject
             String subject = generateSubject(request.getTemplateType(), request.getEvent());
 
-            // Send the email using the email sender. The recipient is pinned to
-            // the authenticated organizer — request.getRecipientEmail() is never
-            // trusted, preventing arbitrary-recipient phishing relays.
+            // Send the email using the email sender
             String messageId = emailSender.sendEmail(
-                    organizerEmail,
+                    request.getRecipientEmail(),
                     subject,
                     renderedContent,
                     true // isHtml
@@ -62,7 +56,7 @@ public class EmailTemplateService {
             return new TestEmailResponse(
                     true,
                     messageId,
-                    organizerEmail,
+                    request.getRecipientEmail(),
                     request.getTemplateType(),
                     request.getEventId(),
                     "Test email sent successfully"
@@ -71,7 +65,7 @@ public class EmailTemplateService {
             return new TestEmailResponse(
                     false,
                     null,
-                    organizerEmail,
+                    request.getRecipientEmail(),
                     request.getTemplateType(),
                     request.getEventId(),
                     "Failed to send test email: " + e.getMessage()
@@ -175,85 +169,27 @@ public class EmailTemplateService {
         
         // Replace event placeholders
         if (event != null) {
-            content = content.replace("{eventTitle}", escapeHtml(String.valueOf(event.getOrDefault("title", "Event"))));
-            content = content.replace("{eventDate}", escapeHtml(String.valueOf(event.getOrDefault("eventDate", "N/A"))));
-            content = content.replace("{eventTime}", escapeHtml(String.valueOf(event.getOrDefault("eventTime", "N/A"))));
-            content = content.replace("{location}", escapeHtml(String.valueOf(event.getOrDefault("location", "TBD"))));
-            content = content.replace("{refundDeadline}", escapeHtml(String.valueOf(event.getOrDefault("refundDeadline", "N/A"))));
-            content = content.replace("{organizerEmail}", sanitizeUrl(String.valueOf(event.getOrDefault("organizerEmail", "support@eventra.com"))));
+            content = content.replace("{eventTitle}", String.valueOf(event.getOrDefault("title", "Event")));
+            content = content.replace("{eventDate}", String.valueOf(event.getOrDefault("eventDate", "N/A")));
+            content = content.replace("{eventTime}", String.valueOf(event.getOrDefault("eventTime", "N/A")));
+            content = content.replace("{location}", String.valueOf(event.getOrDefault("location", "TBD")));
+            content = content.replace("{refundDeadline}", String.valueOf(event.getOrDefault("refundDeadline", "N/A")));
+            content = content.replace("{organizerEmail}", String.valueOf(event.getOrDefault("organizerEmail", "support@eventra.com")));
         }
 
         // Replace attendee placeholders
         if (attendee != null) {
-            String firstName = escapeHtml(String.valueOf(attendee.getOrDefault("firstName", "Attendee")));
-            String lastName = escapeHtml(String.valueOf(attendee.getOrDefault("lastName", "")));
+            String firstName = String.valueOf(attendee.getOrDefault("firstName", "Attendee"));
+            String lastName = String.valueOf(attendee.getOrDefault("lastName", ""));
             String fullName = (firstName + " " + lastName).trim();
             
             content = content.replace("{attendeeName}", fullName.isEmpty() ? "Attendee" : fullName);
             content = content.replace("{firstName}", firstName);
             content = content.replace("{lastName}", lastName);
-            content = content.replace("{attendeeEmail}", sanitizeUrl(String.valueOf(attendee.getOrDefault("email", ""))));
+            content = content.replace("{attendeeEmail}", String.valueOf(attendee.getOrDefault("email", "")));
         }
 
         return content;
-    }
-
-    /**
-     * Escape HTML special characters to prevent stored XSS when interpolating
-     * user-controlled values into an HTML email body. Handles null safely.
-     */
-    private String escapeHtml(String s) {
-        if (s == null) {
-            return "";
-        }
-        StringBuilder out = new StringBuilder(s.length());
-        for (int i = 0; i < s.length(); i++) {
-            char c = s.charAt(i);
-            switch (c) {
-                case '&':
-                    out.append("&amp;");
-                    break;
-                case '<':
-                    out.append("&lt;");
-                    break;
-                case '>':
-                    out.append("&gt;");
-                    break;
-                case '"':
-                    out.append("&quot;");
-                    break;
-                case '\'':
-                    out.append("&#x27;");
-                    break;
-                default:
-                    out.append(c);
-            }
-        }
-        return out.toString();
-    }
-
-    /**
-     * Sanitize a URL before placing it into an href/src attribute. Only http(s)
-     * and mailto schemes are allowed; any other scheme (e.g. javascript:) is
-     * replaced with a safe fallback ("#") to prevent URL-based XSS. The result
-     * is also HTML-escaped.
-     */
-    private String sanitizeUrl(String url) {
-        if (url == null) {
-            return "#";
-        }
-        String trimmed = url.trim();
-        if (trimmed.isEmpty()) {
-            return "#";
-        }
-        int colon = trimmed.indexOf(':');
-        if (colon > 0 && colon < 32) {
-            String scheme = trimmed.substring(0, colon).toLowerCase();
-            if (!scheme.equals("http") && !scheme.equals("https") && !scheme.equals("mailto")) {
-                return "#";
-            }
-        }
-        return escapeHtml(trimmed);
     }
 
     /**

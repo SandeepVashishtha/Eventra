@@ -3,7 +3,6 @@ package com.sandeep.eventrabackend.service;
 import com.sandeep.eventrabackend.model.EventRegistration;
 import com.sandeep.eventrabackend.model.Payment;
 import com.sandeep.eventrabackend.model.PaymentPlan;
-import com.sandeep.eventrabackend.repository.EventRegistrationRepository;
 import com.sandeep.eventrabackend.repository.PaymentPlanRepository;
 import com.sandeep.eventrabackend.repository.PaymentRepository;
 import com.stripe.Stripe;
@@ -14,7 +13,6 @@ import com.stripe.param.*;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -34,14 +32,11 @@ public class StripeService {
 
     private final PaymentRepository paymentRepository;
     private final PaymentPlanRepository paymentPlanRepository;
-    private final EventRegistrationRepository eventRegistrationRepository;
 
-    public StripeService(PaymentRepository paymentRepository,
-                         PaymentPlanRepository paymentPlanRepository,
-                         EventRegistrationRepository eventRegistrationRepository) {
+    public StripeService(PaymentRepository paymentRepository, 
+                         PaymentPlanRepository paymentPlanRepository) {
         this.paymentRepository = paymentRepository;
         this.paymentPlanRepository = paymentPlanRepository;
-        this.eventRegistrationRepository = eventRegistrationRepository;
     }
 
     @PostConstruct
@@ -172,13 +167,26 @@ public class StripeService {
         
         // Calculate installment amounts
         BigDecimal installmentAmount = paymentPlan.getInstallmentAmount();
+        BigDecimal upfrontAmount = paymentPlan.getUpfrontAmount();
         BigDecimal remainingAmount = paymentPlan.getRemainingAmount();
         
         // Convert to cents (Stripe uses smallest currency unit)
+        long upfrontAmountCents = upfrontAmount.multiply(new BigDecimal(100)).longValue();
         long installmentAmountCents = installmentAmount.multiply(new BigDecimal(100)).longValue();
         
-        // Create remaining installments (2..N); the upfront payment is created
-        // and confirmed separately by PaymentPlanService.
+        // Create upfront payment (25%)
+        PaymentIntent upfrontIntent = createPaymentIntent(
+                customerId,
+                upfrontAmountCents,
+                paymentPlan.getCurrency().toLowerCase(),
+                paymentMethodId,
+                "Upfront payment for " + paymentPlan.getRegistration().getEvent().getTitle(),
+                createMetadata(paymentPlan, 1, paymentPlan.getTotalInstallments())
+        );
+        
+        paymentIntentIds.add(upfrontIntent.getId());
+        
+        // Create remaining installments (3 monthly payments)
         LocalDateTime eventDate = paymentPlan.getRegistration().getEvent().getEventDate();
         LocalDateTime now = LocalDateTime.now();
         
@@ -226,32 +234,30 @@ public class StripeService {
         return Subscription.retrieve(subscriptionId);
     }
 
-    // Verify webhook signature and construct the event (single verification).
-    // Fails closed: throws if the secret is missing or the signature is invalid
-    // rather than silently returning a boolean that lets bad payloads through.
-    // Returns the constructed event so the caller can use it without re-parsing.
-    public Event verifyWebhookSignature(String payload, String signatureHeader) throws StripeException {
+    // Verify webhook signature
+    public boolean verifyWebhookSignature(String payload, String signatureHeader) {
         if (stripeWebhookSecret == null || stripeWebhookSecret.isEmpty()) {
-            throw new IllegalStateException(
-                    "Stripe webhook secret is not configured; refusing to process webhook");
+            return false;
         }
+        
+        try {
+            String computedSignature = Webhook.constructEvent(
+                    payload,
+                    signatureHeader,
+                    stripeWebhookSecret
+            ).toString();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    // Parse webhook event
+    public Event parseWebhookEvent(String payload, String signatureHeader) throws StripeException {
         return Webhook.constructEvent(payload, signatureHeader, stripeWebhookSecret);
     }
 
-    private final Set<String> processedEventIds = ConcurrentHashMap.newKeySet();
-
-    // Idempotency: returns true if a Stripe event id has already been processed.
-    public boolean isEventProcessed(String eventId) {
-        return processedEventIds.contains(eventId);
-    }
-
-    // Idempotency: record a Stripe event id as processed so retries are ignored.
-    public void markEventProcessed(String eventId) {
-        processedEventIds.add(eventId);
-    }
-
     // Handle payment intent succeeded event
-    @Transactional
     public void handlePaymentIntentSucceeded(PaymentIntent paymentIntent) {
         String paymentIntentId = paymentIntent.getId();
         String registrationId = paymentIntent.getMetadata().get("registration_id");
@@ -269,11 +275,6 @@ public class StripeService {
             
             // Find the payment in database
             Optional<Payment> paymentOptional = paymentRepository.findByStripePaymentIntentId(paymentIntentId);
-
-            // Idempotency: skip if this payment intent was already completed
-            if (paymentOptional.isPresent() && "COMPLETED".equals(paymentOptional.get().getStatus())) {
-                return;
-            }
             
             Payment payment;
             if (paymentOptional.isPresent()) {
@@ -290,11 +291,10 @@ public class StripeService {
                 payment.setPaymentProvider("STRIPE");
                 payment.setInstallmentNumber(installmentNumber);
                 payment.setTotalInstallments(totalInstallments);
-
-                // Load the MANAGED EventRegistration to avoid a detached entity / broken FK
-                EventRegistration registration = eventRegistrationRepository.findById(regId)
-                        .orElseThrow(() -> new IllegalArgumentException(
-                                "EventRegistration not found for id: " + regId));
+                
+                // Find registration
+                EventRegistration registration = new EventRegistration();
+                registration.setId(regId);
                 payment.setRegistration(registration);
             }
             
@@ -313,12 +313,12 @@ public class StripeService {
                     paymentPlan.setCompletedAt(LocalDateTime.now());
                     paymentPlanRepository.save(paymentPlan);
                     
-                    // Update registration payment status and persist it within the same transaction
+                    // Update registration payment status
                     EventRegistration registration = paymentPlan.getRegistration();
                     registration.setPaymentStatus("COMPLETED");
                     registration.setQrActivated(true);
                     registration.setQrActivationDate(LocalDateTime.now());
-                    eventRegistrationRepository.save(registration);
+                    // Note: We would need to update registration through its repository
                 }
             }
             
@@ -328,7 +328,6 @@ public class StripeService {
     }
 
     // Handle payment intent failed event
-    @Transactional
     public void handlePaymentIntentFailed(PaymentIntent paymentIntent) {
         String paymentIntentId = paymentIntent.getId();
         String registrationId = paymentIntent.getMetadata().get("registration_id");
@@ -341,31 +340,15 @@ public class StripeService {
             Long regId = Long.parseLong(registrationId);
             
             Optional<Payment> paymentOptional = paymentRepository.findByStripePaymentIntentId(paymentIntentId);
-
-            // Idempotency: skip if this payment intent was already marked failed
-            if (paymentOptional.isPresent() && "FAILED".equals(paymentOptional.get().getStatus())) {
-                return;
-            }
             
-            Payment payment;
             if (paymentOptional.isPresent()) {
-                payment = paymentOptional.get();
-            } else {
-                // Create a failed payment record linked to the MANAGED registration
-                payment = new Payment();
-                payment.setStripePaymentIntentId(paymentIntentId);
-                payment.setPaymentProvider("STRIPE");
-                EventRegistration registration = eventRegistrationRepository.findById(regId)
-                        .orElseThrow(() -> new IllegalArgumentException(
-                                "EventRegistration not found for id: " + regId));
-                payment.setRegistration(registration);
+                Payment payment = paymentOptional.get();
+                payment.setStatus("FAILED");
+                payment.setFailedAt(LocalDateTime.now());
+                payment.setFailureReason(paymentIntent.getLastPaymentError() != null ? 
+                        paymentIntent.getLastPaymentError().getMessage() : "Payment failed");
+                paymentRepository.save(payment);
             }
-            
-            payment.setStatus("FAILED");
-            payment.setFailedAt(LocalDateTime.now());
-            payment.setFailureReason(paymentIntent.getLastPaymentError() != null ? 
-                    paymentIntent.getLastPaymentError().getMessage() : "Payment failed");
-            paymentRepository.save(payment);
             
         } catch (Exception e) {
             System.err.println("Error handling payment intent failed: " + e.getMessage());
@@ -480,45 +463,5 @@ public class StripeService {
                 .build();
         
         return Refund.create(params);
-    }
-
-    /**
-     * Refund a confirmed paid registration based on the event's refund policy.
-     *
-     * <p>Retrieves the PaymentIntent associated with the registration, reads the
-     * captured charge and refunds either the full amount (FULL) or a percentage of
-     * it (PARTIAL using {@code refundPercent}). When the policy is NONE the method
-     * is a no-op and returns {@code null}.</p>
-     *
-     * @param stripePaymentIntentId the registration's Stripe Payment Intent id
-     * @param refundPolicy           FULL, PARTIAL or NONE (case-insensitive)
-     * @param refundPercent          percentage to refund when policy is PARTIAL (1-100)
-     * @return the created {@link Refund}, or {@code null} when no refund is due
-     * @throws StripeException if the Stripe API call fails
-     */
-    public Refund refundPayment(String stripePaymentIntentId, String refundPolicy, Integer refundPercent)
-            throws StripeException {
-        if (stripePaymentIntentId == null || refundPolicy == null) {
-            return null;
-        }
-        if (!"FULL".equalsIgnoreCase(refundPolicy) && !"PARTIAL".equalsIgnoreCase(refundPolicy)) {
-            return null;
-        }
-
-        PaymentIntent intent = PaymentIntent.retrieve(stripePaymentIntentId);
-        if (intent.getCharges() == null || intent.getCharges().getData().isEmpty()) {
-            return null;
-        }
-        Charge charge = intent.getCharges().getData().get(0);
-
-        long chargeAmount = charge.getAmount();
-        long refundAmount;
-        if ("PARTIAL".equalsIgnoreCase(refundPolicy) && refundPercent != null) {
-            refundAmount = (long) (chargeAmount * refundPercent / 100.0);
-        } else {
-            refundAmount = chargeAmount;
-        }
-
-        return createRefund(charge.getId(), refundAmount);
     }
 }

@@ -85,3 +85,34 @@ export function useDebouncedCallback(callback, delayMs = 300) {
   );
 }
 
+/**
+ * useDebouncedSearch
+ *
+ * Convenience hook that pairs a local input value with a debounced search
+ * term. Returns three values:
+ *   - `inputValue`   — the current (immediate) value, bind to `<input value>`
+ *   - `searchTerm`   — the debounced value, pass to the search/filter pipeline
+ *   - `setInputValue` — the setter, bind to `<input onChange>`
+ *
+ * Callers that were previously doing:
+ *
+ *   onChange={(e) => listing.setSearchQuery(e.target.value)}
+ *
+ * can now do:
+ *
+ *   const { inputValue, searchTerm, setInputValue } = useDebouncedSearch(
+ *     listing.searchQuery, 300
+ *   );
+ *   // <input value={inputValue} onChange={(e) => setInputValue(e.target.value)} />
+ *   // Use searchTerm as the prop passed to the filtering hook.
+ *
+ * @param {string} initialValue
+ * @param {number} [delayMs=300]
+ * @returns {{ inputValue: string, searchTerm: string, setInputValue: function }}
+ */
+export function useDebouncedSearch(initialValue = "", delayMs = 300) {
+  const [inputValue, setInputValue] = useState(initialValue);
+  const searchTerm = useDebouncedValue(inputValue, delayMs);
+
+  return { inputValue, searchTerm, setInputValue };
+}

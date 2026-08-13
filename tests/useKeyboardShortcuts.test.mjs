@@ -23,14 +23,6 @@ global.document = dom.window.document;
 global.KeyboardEvent = dom.window.KeyboardEvent;
 global.CustomEvent = dom.window.CustomEvent;
 
-// JSDOM (without pretendToBeVisual) has no requestAnimationFrame; the hook
-// defers element focus to a RAF callback, so provide a synchronous shim.
-global.requestAnimationFrame = (cb) => {
-  cb();
-  return 0;
-};
-global.cancelAnimationFrame = () => {};
-
 // Mock Navigate
 const navigatedPaths = [];
 globalThis.ReactRouterDomMock = {
@@ -58,8 +50,6 @@ global.React = {
 
 // ── Import Hook ──────────────────────────────────────────────────────────────
 const { useKeyboardShortcuts } = await import("../src/hooks/useKeyboardShortcuts.js");
-const { renderHook } = await import("@testing-library/react");
-const { MemoryRouter } = await import("react-router-dom");
 
 // ── Listen to Custom Events ──────────────────────────────────────────────────
 const commandPaletteEvents = [];
@@ -82,11 +72,6 @@ function fireKeydown(keyOptions) {
 }
 
 // Helper to reset test states
-const hookRenderer = renderHook(
-  ({ shortcuts, disabled }) => useKeyboardShortcuts(shortcuts, disabled),
-  { wrapper: MemoryRouter, initialProps: { shortcuts: {}, disabled: false } }
-);
-
 function setupTest(shortcuts = {}, disabled = false) {
   activeCleanups.forEach(c => {
     try { c(); } catch (e) {}
@@ -97,7 +82,7 @@ function setupTest(shortcuts = {}, disabled = false) {
   if (document.activeElement) {
     document.activeElement.blur();
   }
-  hookRenderer.rerender({ shortcuts, disabled });
+  useKeyboardShortcuts(shortcuts, disabled);
 }
 
 // ── Test Cases ───────────────────────────────────────────────────────────────
