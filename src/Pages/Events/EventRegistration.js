@@ -299,34 +299,6 @@ const EventRegistration = () => {
 
     setShowConflictModal(false);
 
-    // Re-check capacity immediately before the POST (TOCTOU)
-    let isFreshlyFull = false;
-    try {
-      const latestAvailability = await refreshEventAvailability(eventId);
-      isFreshlyFull =
-        latestAvailability != null
-          ? latestAvailability.isFull
-          : event
-            ? event.attendees >= event.maxAttendees
-            : false;
-    } catch {
-      isFreshlyFull = event ? event.attendees >= event.maxAttendees : false;
-    }
-
-    if (isFreshlyFull) {
-      try {
-        const { joinWaitlist, getQueuePosition } = await import("utils/waitlistUtils");
-        await joinWaitlist(eventId, user, { ...formData, eventTitle: event?.title || "the event" });
-        const pos = await getQueuePosition(eventId, user.id);
-        toast.success(t("eventRegistration.toastWaitlistSuccess"));
-        clearSession();
-        return { success: true, error: null, waitlistPosition: pos };
-      } catch (err) {
-        toast.error(err.message || t("eventRegistration.toastRegistrationError"));
-        return { success: false, error: err.message, waitlistPosition: -1 };
-      }
-    }
-
     const endpoint = API_ENDPOINTS.EVENTS?.REGISTER
       ? API_ENDPOINTS.EVENTS.REGISTER(eventId)
       : `/api/events/${eventId}/register`;
@@ -364,37 +336,42 @@ const EventRegistration = () => {
     } catch (error) {
       const failureMessage = getRegistrationFailureMessage(error);
 
+      // Backend is the source of truth for capacity. If the registration POST
+      // returns a 409 capacity conflict, the event filled up just now —
+      // gracefully auto-join the waitlist instead of surfacing a hard error.
       if (isCapacityConflictError(error)) {
         await refreshEventAvailability(eventId);
+        try {
+          const { joinWaitlist, getQueuePosition } = await import("utils/waitlistUtils");
+          await joinWaitlist(eventId, user, {
+            ...formData,
+            eventTitle: event?.title || "the event",
+          });
+          const pos = await getQueuePosition(eventId, user.id);
+          toast.success(t("eventRegistration.toastWaitlistSuccess"));
+          clearSession();
+          return { success: true, error: null, waitlistPosition: pos };
+        } catch (err) {
+          toast.error(err.message || t("eventRegistration.toastRegistrationError"));
+          return { success: false, error: err.message, waitlistPosition: -1 };
+        }
       }
 
       const isOfflineFailure = error?.isNetworkError || error?.isTimeout;
       const isAlreadyRegistered = failureMessage === "You are already registered for this event.";
 
       if (isOfflineFailure) {
-        const payload = isFreshlyFull
-          ? {
-              userId: user.id || user.email,
-              name:
-                user.fullName ||
-                `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
-                user.username ||
-                "Anonymous",
-              email: user.email,
-              phone: formData.phone || "",
-              eventTitle: event?.title || "the event",
-            }
-          : {
-              ...formData,
-              eventId: parseInt(eventId, 10),
-              idempotencyKey,
-              seatId: selectedSeatId,
-              showProfileInAttendeeDirectory: Boolean(formData.showProfileInAttendeeDirectory),
-            };
+        const payload = {
+          ...formData,
+          eventId: parseInt(eventId, 10),
+          idempotencyKey,
+          seatId: selectedSeatId,
+          showProfileInAttendeeDirectory: Boolean(formData.showProfileInAttendeeDirectory),
+        };
 
         const success = await pushToQueue(
           {
-            actionType: isFreshlyFull ? "JOIN_WAITLIST" : "REGISTER_EVENT",
+            actionType: "REGISTER_EVENT",
             endpoint,
             eventId: parseInt(eventId, 10),
             idempotencyKey,
@@ -425,11 +402,7 @@ const EventRegistration = () => {
       }
 
       if (isAlreadyRegistered) {
-        toast.success(
-          isFreshlyFull
-            ? t("eventRegistration.toastWaitlistSuccess")
-            : t("eventRegistration.toastRegistrationSuccess")
-        );
+        toast.success(t("eventRegistration.toastRegistrationSuccess"));
         const existingRegId =
           typeof crypto !== "undefined" && crypto.randomUUID
             ? crypto.randomUUID()
