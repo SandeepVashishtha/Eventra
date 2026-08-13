@@ -1224,12 +1224,15 @@ public class EventService {
                         }
                 }
 
-                // FIX (#13914): atomic capacity guard. The single UPDATE
-                // increments registeredCount only while a seat is free (row
-                // count 1), so two concurrent registrations cannot both pass an
-                // in-memory check and overshoot capacity. Row count 0 => full.
+                // Capacity gate under the pessimistic lock. Because
+                // findByIdWithLock acquires a PESSIMISTIC_WRITE lock, concurrent
+                // executeRegistration calls are serialized: the in-memory check
+                // below is performed on the locked row, so two concurrent
+                // registrations can never both pass when capacity=1 and oversell.
+                // The registration is then created and the count incremented
+                // before the lock (transaction) is released.
                 if (event.getCapacity() != null
-                                && eventRepository.incrementRegisteredCountAtomically(eventId) == 0) {
+                                && event.getRegisteredCount() >= event.getCapacity()) {
 
                         throw new EventFullException(
                                         "Event is already full. Capacity: " + event.getCapacity());
@@ -1249,9 +1252,11 @@ public class EventService {
                         throw mapRegistrationIntegrityViolation(ex, seatId);
                 }
 
-                event.setRegisteredCount((int) eventRegistrationRepository
-                                .countByEvent_IdAndStatus(eventId, "CONFIRMED"));
-                Event saved = eventRepository.save(event);
+                // Increment the locked event's count and persist before the lock
+                // is released, keeping capacity check + increment + registration
+                // in the same critical section.
+                event.setRegisteredCount(event.getRegisteredCount() + 1);
+                Event saved = eventRepository.saveAndFlush(event);
 
                 broadcastAvailability(saved);
 
