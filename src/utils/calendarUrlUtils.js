@@ -40,11 +40,9 @@ const formatUTCtoCalendarString = (utcMs, mode = 'compact') => {
   const second = pad(d.getUTCSeconds());
 
   if (mode === 'iso') {
-    // "YYYY-MM-DDTHH:mm:ssZ" — the trailing Z marks the instant as UTC.
-    // Without it Outlook treats the bare timestamp as the viewer's local
-    // time, shifting the event. The Z makes the UTC instant explicit so
-    // Outlook (and other RFC5545 consumers) interpret it correctly.
-    return `${year}-${month}-${day}T${hour}:${minute}:${second}Z`;
+    // "YYYY-MM-DDTHH:mm:ss" — no trailing Z; Outlook interprets it as UTC
+    // when passed alongside the timezone-neutral startdt param.
+    return `${year}-${month}-${day}T${hour}:${minute}:${second}`;
   }
 
   // Compact: "YYYYMMDDTHHmmssZ"

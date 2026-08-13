@@ -5,6 +5,7 @@ const MobileNavbar = ({
   isOpen,
   setIsOpen,
   isAuthenticated,
+  user,
   logout,
   cursorEnabled,
   toggleCursor,
@@ -31,6 +32,7 @@ const MobileNavbar = ({
         isOpen={isOpen}
         closeMenu={() => setIsOpen(false)}
         isAuthenticated={isAuthenticated}
+        user={user}
         logout={logout}
         cursorEnabled={cursorEnabled}
         toggleCursor={toggleCursor}

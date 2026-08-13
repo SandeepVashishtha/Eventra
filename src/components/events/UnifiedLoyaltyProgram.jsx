@@ -155,10 +155,10 @@ const UnifiedLoyaltyProgram = () => {
                   <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-2">THEN Action (Execution)</p>
                   <div className="space-y-2">
                     <p className="font-mono text-sm text-emerald-700 font-bold bg-emerald-50 p-2 rounded">
-                      Email.SendTemplate(&apos;VIP_Discount_25&apos;)
+                      Email.SendTemplate('VIP_Discount_25')
                     </p>
                     <p className="font-mono text-sm text-emerald-700 font-bold bg-emerald-50 p-2 rounded">
-                      Attendee.Tags.Add(&apos;VIP&apos;)
+                      Attendee.Tags.Add('VIP')
                     </p>
                   </div>
                 </div>

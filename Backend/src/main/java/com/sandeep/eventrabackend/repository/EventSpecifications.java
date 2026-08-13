@@ -38,7 +38,6 @@ public final class EventSpecifications {
                         .collect(java.util.stream.Collectors.toSet());
         boolean requestsCancelled = requested.contains("CANCELLED") || requested.contains("CANCELED");
         boolean requestsArchived = requested.contains("ARCHIVED");
-        boolean requestsDraft = requested.contains("DRAFT");
 
         return (root, query, cb) -> {
             java.util.List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
@@ -47,9 +46,6 @@ public final class EventSpecifications {
             }
             if (!requestsArchived) {
                 predicates.add(cb.notEqual(cb.upper(root.get("status")), "ARCHIVED"));
-            }
-            if (!requestsDraft) {
-                predicates.add(cb.notEqual(cb.upper(root.get("status")), "DRAFT"));
             }
             if (predicates.isEmpty()) {
                 return cb.conjunction();
@@ -60,45 +56,6 @@ public final class EventSpecifications {
 
     public static Specification<Event> isPublic() {
         return (root, query, cb) -> cb.isTrue(root.get("isPublic"));
-    }
-
-    public static Specification<Event> notCancelled() {
-        return (root, query, cb) -> cb.notEqual(cb.upper(root.get("status")), "CANCELLED");
-    }
-
-    public static Specification<Event> categoryEquals(String category) {
-        if (!StringUtils.hasText(category)) {
-            return null;
-        }
-        return (root, query, cb) -> cb.equal(
-                cb.upper(root.get("category")),
-                category.trim().toUpperCase(Locale.ROOT));
-    }
-
-    public static Specification<Event> eventDateAfter(String startDate) {
-        if (!StringUtils.hasText(startDate)) {
-            return null;
-        }
-        LocalDateTime startDateTime;
-        try {
-            startDateTime = LocalDateTime.parse(startDate.trim());
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid startDate parameter: " + startDate);
-        }
-        return (root, query, cb) -> cb.greaterThanOrEqualTo(root.get("eventDate"), startDateTime);
-    }
-
-    public static Specification<Event> eventDateBefore(String endDate) {
-        if (!StringUtils.hasText(endDate)) {
-            return null;
-        }
-        LocalDateTime endDateTime;
-        try {
-            endDateTime = LocalDateTime.parse(endDate.trim());
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid endDate parameter: " + endDate);
-        }
-        return (root, query, cb) -> cb.lessThanOrEqualTo(root.get("eventDate"), endDateTime);
     }
 
     public static Specification<Event> searchContains(String search) {

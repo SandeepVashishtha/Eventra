@@ -1,6 +1,6 @@
 import { memo, useCallback, useMemo } from "react";
 import useModalManager from "hooks/useModalManager";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Copy,
   Mail,
@@ -43,7 +43,9 @@ const ShareModal = ({ isOpen, onClose, event }) => {
     await copyInviteLink(shareData.shareUrl);
   }, [copyInviteLink, shareData]);
 
-  return isOpen && shareData ? (
+  return (
+    <AnimatePresence>
+      {isOpen && shareData ? (
         <motion.div
           ref={containerRef}
           role="dialog"
@@ -124,7 +126,9 @@ const ShareModal = ({ isOpen, onClose, event }) => {
               </button>
             </div>
         </motion.div>
-  ) : null;
+      ) : null}
+    </AnimatePresence>
+  );
 };
 
 export default ShareModal;

@@ -46,7 +46,6 @@ export function readPersistedRateLimit() {
     return { attempts, lockoutUntil: validLockout };
   } catch (err) {
       console.warn("[rateLimitUtils] Rate limit operation failed:", err);
-      return { attempts: 0, lockoutUntil: 0 };
     }
 }
 

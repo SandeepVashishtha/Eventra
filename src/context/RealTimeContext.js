@@ -41,23 +41,16 @@ const initialAnalyticsState = {
 // their initial (IDLE) state.
 
 function LeaderboardProvider({ children }) {
-  // Memoize the value so consumers never re-render from a changing
-  // provider-value identity. The leaderboard topics have no backend publisher
-  // (issue #15334), so the value is a stable initial snapshot.
-  const value = useMemo(() => initialLeaderboardState, []);
-
   return (
-    <LeaderboardContext.Provider value={value}>
+    <LeaderboardContext.Provider value={initialLeaderboardState}>
       {children}
     </LeaderboardContext.Provider>
   );
 }
 
 function AnalyticsProvider({ children }) {
-  const value = useMemo(() => initialAnalyticsState, []);
-
   return (
-    <AnalyticsContext.Provider value={value}>
+    <AnalyticsContext.Provider value={initialAnalyticsState}>
       {children}
     </AnalyticsContext.Provider>
   );

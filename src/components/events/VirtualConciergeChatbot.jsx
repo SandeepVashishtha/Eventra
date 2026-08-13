@@ -167,7 +167,7 @@ const VirtualConciergeChatbot = () => {
         </form>
       </div>
 
-      <style>{`
+      <style jsx>{`
         .hide-scrollbar::-webkit-scrollbar {
           display: none;
         }

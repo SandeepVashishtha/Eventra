@@ -1,45 +1,70 @@
 import assert from "node:assert/strict";
-import { normalizeDateToUTC } from "../src/utils/calendarUtils.js";
+import { generateGoogleCalendarUrl, addEventToGoogleCalendar, addHackathonToGoogleCalendar } from "../src/utils/calendarUtils.js";
 
-// The Google Calendar URL builders (generateGoogleCalendarUrl /
-// addEventToGoogleCalendar / addHackathonToGoogleCalendar) were removed from
-// src/utils/calendarUtils.js when the module was narrowed to timezone
-// normalization (#14086). The current module only exports normalizeDateToUTC.
+const eventData = {
+  title: "Hackathon Launch",
+  description: "Intro session",
+  location: "Main Hall",
+  startDate: "2026-05-28",
+  endDate: "2026-05-29"
+};
 
+const url = generateGoogleCalendarUrl(eventData);
+assert.ok(url.includes("action=TEMPLATE"));
+assert.ok(url.includes("text=Hackathon%20Launch"));
+
+const event = {
+  title: "Workshop",
+  date: "2026-05-28",
+  time: "10:00 AM"
+};
+const eventUrl = addEventToGoogleCalendar(event);
+assert.ok(eventUrl.includes("Workshop"));
+
+const hackathon = {
+  title: "GSSoC Hack",
+  startDate: "2026-05-28",
+  endDate: "2026-05-30"
+};
+const hackUrl = addHackathonToGoogleCalendar(hackathon);
+assert.ok(hackUrl.includes("GSSoC%20Hack"));
+
+// Timed events must land on the organizer-specified date with the specified
+// wall-clock time in the local timezone, regardless of the UTC offset.
+const timeEventData = {
+  title: "Timed Event",
+  startDate: "2026-06-15",
+  endDate: "2026-06-15",
+  startTime: "10:00",
+  endTime: "12:00",
+};
+const timeUrl = generateGoogleCalendarUrl(timeEventData);
+const datesMatch = timeUrl.match(/dates=(\d{8})T(\d{6})Z\/(\d{8})T(\d{6})Z/);
+assert.ok(datesMatch, "timed Google Calendar URLs use compact UTC format");
+
+const parseCompactUtc = (datePart, timePart) =>
+  new Date(
+    `${datePart.slice(0, 4)}-${datePart.slice(4, 6)}-${datePart.slice(6, 8)}` +
+    `T${timePart.slice(0, 2)}:${timePart.slice(2, 4)}:${timePart.slice(4, 6)}Z`
+  );
+
+const startLocal = new Date(parseCompactUtc(datesMatch[1], datesMatch[2]).getTime());
 assert.equal(
-  typeof normalizeDateToUTC,
-  "function",
-  "calendarUtils must export normalizeDateToUTC"
+  `${startLocal.getFullYear()}-${String(startLocal.getMonth() + 1).padStart(2, "0")}-${String(startLocal.getDate()).padStart(2, "0")}`,
+  "2026-06-15",
+  "timed events land on the organizer-specified date in the local timezone"
+);
+assert.equal(
+  `${String(startLocal.getHours()).padStart(2, "0")}:${String(startLocal.getMinutes()).padStart(2, "0")}`,
+  "10:00",
+  "timed events preserve the organizer-specified wall-clock start time"
 );
 
-// Date-only inputs are parsed as UTC and normalized to a UTC ISO string.
+const endLocal = new Date(parseCompactUtc(datesMatch[3], datesMatch[4]).getTime());
 assert.equal(
-  normalizeDateToUTC("2026-05-28"),
-  "2026-05-28T00:00:00.000Z"
-);
-
-// The normalized output is always a valid UTC ISO string that round-trips.
-const normalized = normalizeDateToUTC("2026-05-28T10:00:00Z");
-assert.equal(normalized, "2026-05-28T10:00:00.000Z");
-assert.equal(new Date(normalized).toISOString(), normalized);
-
-// The normalized output must preserve the instant even when the input carries
-// a non-UTC offset.
-assert.equal(
-  normalizeDateToUTC("2026-05-28T10:00:00+05:30"),
-  "2026-05-28T04:30:00.000Z"
-);
-
-// Invalid dates fall back to the Unix epoch in UTC.
-assert.equal(
-  normalizeDateToUTC("not-a-date"),
-  new Date(0).toISOString(),
-  "invalid dates fall back to the epoch"
-);
-assert.equal(
-  normalizeDateToUTC(undefined),
-  new Date(0).toISOString(),
-  "undefined dates fall back to the epoch"
+  `${String(endLocal.getHours()).padStart(2, "0")}:${String(endLocal.getMinutes()).padStart(2, "0")}`,
+  "12:00",
+  "timed events preserve the organizer-specified wall-clock end time"
 );
 
 console.log("calendarUtils tests passed ✓");

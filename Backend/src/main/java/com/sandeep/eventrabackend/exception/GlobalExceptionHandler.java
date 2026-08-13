@@ -145,13 +145,6 @@ public class GlobalExceptionHandler {
         return buildError(HttpStatus.FORBIDDEN, "Forbidden", ex.getMessage(), request);
     }
 
-    @ExceptionHandler(AccountNotVerifiedException.class)
-    public ResponseEntity<ErrorResponse> handleAccountNotVerified(
-            AccountNotVerifiedException ex,
-            HttpServletRequest request) {
-        return buildError(HttpStatus.CONFLICT, "Conflict", ex.getMessage(), request);
-    }
-
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDenied(
             AccessDeniedException ex,

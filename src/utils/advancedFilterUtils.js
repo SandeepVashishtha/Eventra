@@ -406,10 +406,7 @@ export const normalizeAdvancedFilters = (filters = {}) => ({
   priceRange: filters.priceRange
     ? {
         min: Number(filters.priceRange.min) || 0,
-        max:
-          filters.priceRange.max === Infinity || filters.priceRange.max == null
-            ? Infinity
-            : Number(filters.priceRange.max) || 0,
+        max: filters.priceRange.max === Infinity ? Infinity : Number(filters.priceRange.max) || 0,
       }
     : null,
   dateRange: filters.dateRange
@@ -431,11 +428,7 @@ export const serializeAdvancedFilters = (filters = {}) => {
   if (normalized.skillLevels.length) payload.skillLevels = normalized.skillLevels;
   if (normalized.tags.length) payload.tags = normalized.tags;
   if (normalized.location.trim()) payload.location = normalized.location.trim();
-  if (normalized.priceRange) {
-    const pr = { min: normalized.priceRange.min };
-    if (Number.isFinite(normalized.priceRange.max)) pr.max = normalized.priceRange.max;
-    payload.priceRange = pr;
-  }
+  if (normalized.priceRange) payload.priceRange = normalized.priceRange;
   if (normalized.dateRange && (normalized.dateRange.startDate || normalized.dateRange.endDate)) {
     payload.dateRange = normalized.dateRange;
   }

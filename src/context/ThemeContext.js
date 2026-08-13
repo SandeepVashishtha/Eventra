@@ -62,7 +62,6 @@ export const ThemeProvider = ({ children }) => {
 
   const [theme, setThemeState] = useState(() => getInitialTheme());
 
-  const [systemTheme, setSystemTheme] = useState(() => getSystemTheme());
   // States to preserve existing codebase drawer flow without breaking
   const [activeThemeId, setActiveThemeId] = useState(() => {
     return safeStorage.getItem("activeThemeId", "default");
@@ -91,7 +90,7 @@ export const ThemeProvider = ({ children }) => {
     return saved !== null ? saved === "true" : prefersReduced;
   });
 
-  const resolvedTheme = theme === "system" ? systemTheme : theme;
+  const resolvedTheme = theme === "system" ? getSystemTheme() : theme;
   const isDarkMode = resolvedTheme === "dark";
 
   // Track whether we have already applied the profile theme for this session
@@ -235,11 +234,13 @@ export const ThemeProvider = ({ children }) => {
 
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = () => {
-      setSystemTheme(getSystemTheme());
+      if (!safeStorage.getItem(THEME_STORAGE_KEY)) {
+        setTheme("system");
+      }
     };
     mediaQuery.addEventListener("change", handleChange);
     return () => mediaQuery.removeEventListener("change", handleChange);
-  }, []);
+  }, [setTheme]);
 
   const value = useMemo(
     () => ({

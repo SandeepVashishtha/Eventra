@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Sparkles, MessageSquare, Cpu } from "lucide-react";
-import { createMarkdownParserWorkerCode, parseMarkdownToSafeHtml } from "./markdownParserWorker";
+import { createMarkdownParserWorkerCode } from "./markdownParserWorker";
 
 export default function LiveChatMarkdownParser({ rawMarkdown = "**Welcome to Eventra Live Chat!** Type `hello` below." }) {
   const [parsedHtml, setParsedHtml] = useState("");
@@ -8,7 +8,7 @@ export default function LiveChatMarkdownParser({ rawMarkdown = "**Welcome to Eve
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof Worker === "undefined") {
-      setParsedHtml(parseMarkdownToSafeHtml(rawMarkdown));
+      setParsedHtml(rawMarkdown);
       setLoading(false);
       return;
     }
@@ -36,7 +36,7 @@ export default function LiveChatMarkdownParser({ rawMarkdown = "**Welcome to Eve
       };
     } catch (err) {
       console.warn("[Markdown Parser] Fallback to sync parsing active:", err);
-      setParsedHtml(parseMarkdownToSafeHtml(rawMarkdown));
+      setParsedHtml(rawMarkdown);
       setLoading(false);
     }
   }, [rawMarkdown]);
