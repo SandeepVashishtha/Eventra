@@ -35,6 +35,7 @@ export const isPastEvent = (
   event,
   referenceDate = new Date()
 ) => {
+  const refDate = parseEventDate(referenceDate) || new Date();
   const eventDate = parseEventDate(
     event?.date || event?.eventDate
   );
@@ -43,7 +44,7 @@ export const isPastEvent = (
     return false;
   }
 
-  return eventDate < referenceDate;
+  return eventDate < refDate;
 };
 
 /**
@@ -53,6 +54,7 @@ export const isUpcomingEvent = (
   event,
   referenceDate = new Date()
 ) => {
+  const refDate = parseEventDate(referenceDate) || new Date();
   const eventDate = parseEventDate(
     event?.date || event?.eventDate
   );
@@ -61,7 +63,7 @@ export const isUpcomingEvent = (
     return false;
   }
 
-  return eventDate >= referenceDate;
+  return eventDate >= refDate;
 };
 
 /**
