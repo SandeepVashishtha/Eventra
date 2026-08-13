@@ -18,11 +18,16 @@ public class ContactService {
 
     private final ContactMessageRepository contactMessageRepository;
 
-    @Transactional
+        @Transactional
     public ContactResponse submitContactMessage(ContactRequest request) {
         if (request.getName() == null || request.getName().trim().length() < 2 || request.getName().trim().length() > 100) {
             throw new IllegalArgumentException("Name must be between 2 and 100 characters.");
-        if (request.getEmail() == null || !request.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) { throw new IllegalArgumentException("Invalid email format."); }
+        }
+        if (request.getEmail() == null || !request.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+            throw new IllegalArgumentException("Invalid email format.");
+        }
+        if (request.getSubject() == null || request.getSubject().trim().length() < 3 || request.getSubject().trim().length() > 150) {
+            throw new IllegalArgumentException("Subject must be between 3 and 150 characters.");
         }
         ContactMessage contactMessage = new ContactMessage();
         contactMessage.setName(request.getName().trim());
