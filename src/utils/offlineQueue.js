@@ -500,6 +500,279 @@ export const filterQueueByOwnership = (queue, currentUserId) => {
   });
 };
 
+/**
+ * SECURITY (Issue #5727): Validate that the current session is still valid and
+ * belongs to the same user before replaying queued actions.
+ *
+ * Legacy items with a null/missing sessionId are migrated to the current
+ * session after ownership validation has already confirmed the user match.
+ *
+ * @param {Array}  queue          - Ownership-filtered offline queue
+ * @param {string} currentSession - Current session ID from sessionStorage
+ * @returns {Array} Items whose stored sessionId matches the current session
+ */
+export const validateQueueSession = (queue, currentSession) => {
+  if (!currentSession) {
+    logger.warn(
+      "[Security] No current session ID available — dropping all queued actions as a safety precaution."
+    );
+    return [];
+  }
+
+  return queue.reduce((validatedItems, item) => {
+    if (!item.sessionId) {
+      logger.warn(
+        `[OfflineQueue] Migrating queued action ${item.id}: no sessionId stored. ` +
+          "Binding legacy item to the current verified session."
+      );
+      validatedItems.push({ ...item, sessionId: currentSession });
+      return validatedItems;
+    }
+    if (item.sessionId !== currentSession) {
+      logger.warn(
+        `[Security] Dropping queued action ${item.id}: ` +
+          `stored sessionId does not match current session. ` +
+          "This prevents stale-session cross-user action replay."
+      );
+      return validatedItems;
+    }
+    validatedItems.push(item);
+    return validatedItems;
+  }, []);
+};
+
+// ---------------------------------------------------------------------------
+// Processing Pipeline — exponential backoff, retry, and replay
+// ---------------------------------------------------------------------------
+
+const MAX_RETRY_COUNT = 5;
+const BASE_BACKOFF_MS = 1_000;
+const REQUEST_TIMEOUT_MS = 10_000;
+
+const notifyQueueProcessed = (result) => {
+  if (typeof window === "undefined" || typeof window.dispatchEvent !== "function") return;
+  window.dispatchEvent(
+    new CustomEvent("eventra-offline-queue-processed", {
+      detail: result,
+    })
+  );
+};
+
+/**
+ * Internal: combine two AbortSignals into one so either can abort.
+ */
+const combineAbortSignals = (...signals) => {
+  const controller = new AbortController();
+  const onAbort = () => controller.abort();
+
+  for (const signal of signals) {
+    if (signal.aborted) {
+      controller.abort();
+      return { signal: controller.signal, cleanup: () => {} };
+    }
+    signal.addEventListener("abort", onAbort, { once: true });
+  }
+
+  const cleanup = () => {
+    for (const signal of signals) {
+      signal.removeEventListener("abort", onAbort);
+    }
+  };
+
+  return { signal: controller.signal, cleanup };
+};
+
+/**
+ * Retry a single queued action with exponential backoff + jitter.
+ *
+ * cleanupCombined is hoisted so catch/early-return paths never throw
+ * ReferenceError and abort the rest of the queue.
+ *
+ * @param {object}   item      - Queued action item (must have endpoint, payload, id, retryCount)
+ * @param {function} fetchFn   - Async function(url, options) => Response
+ * @param {object}   [options] - { signal, onConflict }
+ * @returns {Promise<{status: "success"|"dropped"|"conflict"|"error", item: object}>}
+ */
+export const processQueueItem = async (item, fetchFn, options = {}) => {
+  const { signal, onConflict } = options;
+
+  for (let attempt = 0; attempt <= MAX_RETRY_COUNT; attempt++) {
+    if (signal?.aborted) return { status: "error", item, error: new DOMException("Aborted", "AbortError") };
+
+    if (attempt > 0) {
+      const delay = BASE_BACKOFF_MS * Math.pow(2, attempt - 1) + Math.random() * 500;
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+
+    const url = item.endpoint;
+    if (!url) {
+      logger.warn(`[OfflineQueue] Item ${item.id} has no endpoint — dropping.`);
+      return { status: "dropped", item };
+    }
+
+    let controller;
+    let timeoutId;
+    let cleanupCombined = null;
+
+    const clearPendingTimeout = () => {
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+        timeoutId = undefined;
+      }
+    };
+
+    try {
+      controller = new AbortController();
+      timeoutId = setTimeout(() => {
+        if (controller) controller.abort();
+      }, REQUEST_TIMEOUT_MS);
+      let combinedSignal = controller.signal;
+      if (signal) {
+        const combined = combineAbortSignals(signal, controller.signal);
+        combinedSignal = combined.signal;
+        cleanupCombined = combined.cleanup;
+      }
+
+      const response = await fetchFn(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(item.payload),
+        signal: combinedSignal,
+      });
+
+      clearPendingTimeout();
+      if (cleanupCombined) cleanupCombined();
+
+      if (response.ok) return { status: "success", item };
+
+      if (response.status === 409) {
+        let serverState = null;
+        try { serverState = await response.json(); } catch { serverState = {}; }
+
+        if (typeof onConflict === "function") {
+          const resolution = await onConflict(item, serverState);
+          if (resolution === "retry") { continue; }
+          if (resolution === "discard") { return { status: "dropped", item }; }
+          return { status: "success", item };
+        }
+        return { status: "conflict", item, serverState };
+      }
+
+      if (response.status === 401 || response.status === 403) {
+        logger.warn(
+          `[OfflineQueue] Auth rejected item ${item.id} with ${response.status} — will retry after session refresh.`
+        );
+        return { status: "error", item, error: new Error(`Auth failed (${response.status})`) };
+      }
+
+      if (response.status >= 400 && response.status < 500) {
+        logger.warn(
+          `[OfflineQueue] Server rejected item ${item.id} with ${response.status} — dropping.`
+        );
+        return { status: "dropped", item };
+      }
+
+      // 5xx — retry with backoff
+      continue;
+    } catch (error) {
+      clearPendingTimeout();
+      if (cleanupCombined) cleanupCombined();
+      if (error.name === "AbortError") return { status: "error", item, error };
+      logger.error(`[OfflineQueue] Network error processing item ${item.id}:`, error);
+      // Retry on network errors
+    }
+  }
+
+  return { status: "dropped", item };
+};
+
+/**
+ * Process all items in the offline queue.
+ *
+ * @param {string}   currentUserId - User ID for ownership validation (required)
+ * @param {function} fetchFn       - Async HTTP fetch function
+ * @param {object}   [options]     - { signal, onConflict }
+ * @returns {Promise<{processed: number, succeeded: number, dropped: number, remaining: number}>}
+ */
+export const processQueue = async (currentUserId, fetchFn, options = {}) => {
+  if (!currentUserId) {
+    logger.error(
+      "[Security] processQueue called without currentUserId — replay blocked. " +
+        "Always pass the authenticated user's ID to prevent cross-user action execution."
+    );
+    throw new Error(
+      "[OfflineQueue] currentUserId is required to process the queue. " +
+        "Replay is blocked without a verified user identity."
+    );
+  }
+
+  const { signal } = options;
+
+  const queue = await getQueueIndexedDB();
+  if (queue.length === 0) return { processed: 0, succeeded: 0, dropped: 0, remaining: 0 };
+
+  const validated = filterQueueByOwnership(queue, currentUserId);
+  if (validated.length === 0) {
+    return { processed: 0, succeeded: 0, dropped: 0, remaining: 0 };
+  }
+
+  const currentSession = ensureSessionSnapshot(currentUserId);
+  const sessionValidated = validateQueueSession(validated, currentSession);
+  if (sessionValidated.length === 0) {
+    const validatedIds = new Set(validated.map(item => item.id));
+    const otherUsersQueue = queue.filter(item => !validatedIds.has(item.id));
+    await setQueue(otherUsersQueue);
+    return { processed: 0, succeeded: 0, dropped: 0, remaining: 0 };
+  }
+
+  const succeeded = [];
+  const dropped = [];
+  const failed = [];
+
+  for (const item of sessionValidated) {
+    if (signal?.aborted) break;
+
+    if (item.retryCount >= MAX_RETRY_COUNT) {
+      dropped.push(item);
+      continue;
+    }
+
+    const result = await processQueueItem(item, fetchFn, {
+      ...options,
+      onConflict: options.onConflict
+        ? (queuedItem, serverState) => options.onConflict(queuedItem, serverState)
+        : undefined,
+    });
+
+    if (result.status === "success") {
+      succeeded.push(item);
+    } else if (result.status === "dropped" || result.status === "conflict") {
+      if (result.status === "conflict") {
+        logger.warn(`[OfflineQueue] Unresolved 409 conflict for item ${item.id} — dropping.`);
+      }
+      dropped.push(item);
+    } else {
+      failed.push({ ...item, retryCount: (item.retryCount || 0) + 1 });
+    }
+  }
+
+  const validatedIds = new Set(validated.map(item => item.id));
+  const otherUsersQueue = queue.filter(item => !validatedIds.has(item.id));
+  const finalQueue = [...otherUsersQueue, ...failed];
+  await setQueue(finalQueue);
+
+  const remaining = failed.length;
+
+  notifyQueueProcessed({ succeeded: succeeded.length, dropped: dropped.length, remaining });
+
+  return {
+    processed: sessionValidated.length,
+    succeeded: succeeded.length,
+    dropped: dropped.length,
+    remaining,
+  };
+};
+
 // ============================================================================
 // 1. OFFLINE STORAGE METRICS & DIAGNOSTICS ENGINE
 // ============================================================================
@@ -801,7 +1074,7 @@ export class ExponentialBackoffRetryPolicy {
     this.maxDelayMs = options.maxDelayMs || 30000;
     this.factor = options.factor || 2;
     this.jitter = options.jitter !== undefined ? options.jitter : true;
-    this.retryableStatusCodes = new Set(options.retryableStatusCodes || [408, 429, 500, 502, 503, 504]);
+    this.retryableStatusCodes = new Set(options.retryableStatusCodes || [401, 403, 408, 429, 500, 502, 503, 504]);
   }
 
   /**

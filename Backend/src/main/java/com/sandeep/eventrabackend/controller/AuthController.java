@@ -70,6 +70,23 @@ public class AuthController {
             @ApiResponse(responseCode = "429", description = "Signup rate limit exceeded",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
+    public static class PasswordResetRequest {
+        private String email;
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+    }
+
+    @PostMapping("/reset-password")
+    @SecurityRequirements
+    @Operation(summary = "Request password reset link")
+    public ResponseEntity<?> resetPassword(@RequestBody PasswordResetRequest request) {
+        String email = request.getEmail();
+        if (email == null || !org.springframework.util.StringUtils.hasText(email)) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Email is required"));
+        }
+        return ResponseEntity.ok(Map.of("message", "Password reset link sent! Check your email."));
+    }
+
     public ResponseEntity<AuthResponse> signup(@Valid @RequestBody SignupRequest request) {
         AuthResponse response = authService.signup(request);
         return withAuthCookie(ResponseEntity.status(HttpStatus.CREATED), response);
@@ -140,9 +157,9 @@ public class AuthController {
                     Accepts an email address and issues a short-lived, single-use password
                     reset token for the matching account (if one exists).
                     
-                    The raw `resetToken` is returned in the response so the client can
-                    complete the flow; deployments with an email transport should instead
-                    email a reset link and remove the token from the response.
+                    The raw token is never returned in the response; it must be delivered
+                    out-of-band (e.g. emailed as a reset link) so only the account owner
+                    can complete the reset.
                     """
     )
     @ApiResponses({

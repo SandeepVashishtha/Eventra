@@ -193,6 +193,7 @@ export const API_ENDPOINTS = {
     GOOGLE: buildApiUrl("/auth/google"),
     REAUTH: buildApiUrl("/auth/reauth"),
     GITHUB: buildApiUrl("/auth/github"),
+    CLAIM_GUEST_ACCOUNT: buildApiUrl("/auth/guest/claim"),
   },
   EVENTS: {
     CREATE: buildApiUrl("/events/create"),
@@ -200,6 +201,7 @@ export const API_ENDPOINTS = {
     LIST: buildApiUrl("/events"),
     DETAIL: (id) => buildApiUrl(`/events/${id}`),
     REGISTER: (id) => buildApiUrl(`/events/${id}/register`),
+    GUEST_REGISTER: (id) => buildApiUrl(`/events/${id}/register/guest`),
     CANCEL_REGISTRATION: (id) => buildApiUrl(`/events/${id}/registration`),
     CANCEL: (id) => buildApiUrl(`/events/${id}/cancel`),
     ARCHIVE: (id) => buildApiUrl(`/events/${id}/archive`),
@@ -380,7 +382,7 @@ export const apiUtils = {
 
 export default API;
 
-export { ApiError, RateLimitError, normalizeApiError };
+export { ApiError, RateLimitError, normalizeApiError, getApiErrorStatus, getApiErrorMessage };
 
 // Centralized configuration cache store for fallback endpoints
 export const apiConfigCache = {

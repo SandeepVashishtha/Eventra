@@ -97,9 +97,11 @@ export const formatCurrency = (
   currency = "INR",
   locale = "en-IN"
 ) => {
-  return new Intl.NumberFormat(locale, {
+  const cleanCurrency = typeof currency === "string" && /^[A-Z]{3}$/.test(currency.trim()) ? currency.trim() : "INR";
+  const cleanLocale = typeof locale === "string" && /^[a-z]{2}(-[A-Z]{2})?$/.test(locale.trim()) ? locale.trim() : "en-IN";
+  return new Intl.NumberFormat(cleanLocale, {
     style: "currency",
-    currency,
+    currency: cleanCurrency,
     maximumFractionDigits: 2,
   }).format(toNumber(value));
 };

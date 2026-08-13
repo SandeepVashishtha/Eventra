@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { API_ENDPOINTS, apiUtils } from "config/api";
+import { getApiErrorStatus } from "config/api/errors.js";
 import { normalizeEvent } from "utils/eventUtils";
 import { getEventStatus } from "utils/eventUtils";
 import useDebounce from "hooks/useDebounce";
@@ -178,7 +179,7 @@ const useEventListing = () => {
         serverPaginated: false,
       });
 
-      if (error?.response?.status === 403) {
+      if (getApiErrorStatus(error) === 403) {
         setLoadError("Access to events is currently restricted. Please try again later.");
       } else {
         setLoadError("Failed to load events. Please try again later.");

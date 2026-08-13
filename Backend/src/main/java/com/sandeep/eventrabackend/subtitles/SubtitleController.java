@@ -43,9 +43,16 @@ public class SubtitleController {
     
     /**
      * Create a new subtitle
+     *
+     * FIX (#16191): The caller must organize the target event and the subtitle
+     * is attributed to the authenticated principal, never to a client-supplied
+     * userId.
      */
     @PostMapping
-    public ResponseEntity<SubtitleDTO> createSubtitle(@Valid @RequestBody SubtitleDTO subtitleDTO) {
+    public ResponseEntity<SubtitleDTO> createSubtitle(Authentication authentication,
+            @Valid @RequestBody SubtitleDTO subtitleDTO) {
+        assertCanModifyEvent(resolveEventId(subtitleDTO.getEventId(), subtitleDTO.getSessionId()), authentication);
+        subtitleDTO.setUserId(currentUser(authentication).getId());
         Subtitle subtitle = subtitleService.createSubtitle(subtitleDTO);
         SubtitleDTO result = SubtitleDTO.fromEntity(subtitle);
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
@@ -53,9 +60,16 @@ public class SubtitleController {
     
     /**
      * Create a real-time subtitle (for streaming)
+     *
+     * FIX (#16191): The caller must organize the target event and the subtitle
+     * is attributed to the authenticated principal, never to a client-supplied
+     * userId.
      */
     @PostMapping("/realtime")
-    public ResponseEntity<SubtitleDTO> createRealTimeSubtitle(@Valid @RequestBody RealTimeSubtitleRequest request) {
+    public ResponseEntity<SubtitleDTO> createRealTimeSubtitle(Authentication authentication,
+            @Valid @RequestBody RealTimeSubtitleRequest request) {
+        assertCanModifyEvent(resolveEventId(request.getEventId(), request.getSessionId()), authentication);
+        request.setUserId(currentUser(authentication).getId());
         Subtitle subtitle = subtitleService.createRealTimeSubtitle(request);
         SubtitleDTO result = SubtitleDTO.fromEntity(subtitle);
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
@@ -395,7 +409,7 @@ public class SubtitleController {
     }
 
     /**
-     * FIX (#15368): A user may only list their own subtitles; admins may list
+     * FIX (#16168): A user may only list their own subtitles; admins may list
      * any user's subtitles.
      */
     private void assertCanReadUser(Long userId, Authentication authentication) {
@@ -403,6 +417,25 @@ public class SubtitleController {
         if (isAdmin(caller) || caller.getId().equals(userId)) {
             return;
         }
+        throw new AccessDeniedException("You can only view your own subtitles.");
+    }
+
+    /**
+     * Resolve the event a subtitle belongs to, either from the eventId directly
+     * or through the subtitle session.
+     */
+    private Long resolveEventId(Long eventId, String sessionId) {
+        if (eventId != null) {
+            return eventId;
+        }
+        if (sessionId != null && !sessionId.isBlank()) {
+            return subtitleService.getSession(sessionId)
+                    .map(SubtitleSession::getEventId)
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Subtitle session not found: " + sessionId));
+        }
+        throw new IllegalArgumentException("eventId or sessionId is required to create a subtitle.");
+    }
         throw new AccessDeniedException("You can only view your own subtitles.");
     }
 

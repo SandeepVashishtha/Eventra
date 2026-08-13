@@ -73,8 +73,15 @@ public class HackathonService {
         User creator = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + userEmail));
 
+        if (request.getMaxParticipants() != null && request.getMaxParticipants() < 2) {
+            throw new IllegalArgumentException("Maximum participants capacity must be at least 2.");
+        }
+
         // FIX (#14532): reject inverted date ranges on create, same as update.
         validateDateRanges(request.getStartDate(), request.getEndDate(), request.getRegistrationDeadline());
+        if (request.getTitle() != null && (request.getTitle().trim().length() < 3 || request.getTitle().trim().length() > 100)) {
+            throw new IllegalArgumentException("Title must be between 3 and 100 characters.");
+        }
         if (request.getDescription() != null && (request.getDescription().trim().length() < 10 || request.getDescription().trim().length() > 2000)) {
             throw new IllegalArgumentException("Description must be between 10 and 2000 characters.");
         }
@@ -93,6 +100,12 @@ public class HackathonService {
                 .ownerId(creator.getId())
                 .build();
 
+        if (request.getOrganizer() != null && (request.getOrganizer().trim().length() < 2 || request.getOrganizer().trim().length() > 100)) {
+            throw new IllegalArgumentException("Organizer name must be between 2 and 100 characters.");
+        }
+        if (request.getLocation() != null && (request.getLocation().trim().length() < 3 || request.getLocation().trim().length() > 150)) {
+            throw new IllegalArgumentException("Location must be between 3 and 150 characters.");
+        }
         Hackathon saved = hackathonRepository.save(hackathon);
         log.info("[AUDIT LOG] Administrative Action: HACKATHON_CREATE | HackathonID: {} | Title: {}", saved.getId(), saved.getTitle());
         return mapToResponse(saved);
@@ -117,23 +130,44 @@ public class HackathonService {
 
         // FIX (#14532): shared chronological validation, null-safe for partial updates.
         validateDateRanges(request.getStartDate(), request.getEndDate(), request.getRegistrationDeadline());
+        if (request.getTitle() != null && (request.getTitle().trim().length() < 3 || request.getTitle().trim().length() > 100)) {
+            throw new IllegalArgumentException("Title must be between 3 and 100 characters.");
+        }
         if (request.getDescription() != null && (request.getDescription().trim().length() < 10 || request.getDescription().trim().length() > 2000)) {
             throw new IllegalArgumentException("Description must be between 10 and 2000 characters.");
+        }
+        if (request.getMaxParticipants() != null && request.getMaxParticipants() < 2) {
+            throw new IllegalArgumentException("Maximum participants capacity must be at least 2.");
         }
 
         // FIX (#14532): partial update — only apply fields present in the request,
         // so a single-field payload cannot wipe the other columns.
-        if (request.getTitle() != null) hackathon.setTitle(request.getTitle());
+        if (request.getTitle() != null) {
+            if (request.getTitle().trim().length() < 3 || request.getTitle().trim().length() > 100) {
+                throw new IllegalArgumentException("Title must be between 3 and 100 characters.");
+            }
+            hackathon.setTitle(request.getTitle());
+        }
         if (request.getDescription() != null) {
             if (request.getDescription().trim().length() < 10 || request.getDescription().trim().length() > 2000) {
                 throw new IllegalArgumentException("Description must be between 10 and 2000 characters.");
             }
             hackathon.setDescription(request.getDescription());
         }
-        if (request.getOrganizer() != null) hackathon.setOrganizer(request.getOrganizer());
+        if (request.getOrganizer() != null) {
+            if (request.getOrganizer().trim().length() < 2 || request.getOrganizer().trim().length() > 100) {
+                throw new IllegalArgumentException("Organizer name must be between 2 and 100 characters.");
+            }
+            hackathon.setOrganizer(request.getOrganizer());
+        }
         if (request.getStartDate() != null) hackathon.setStartDate(request.getStartDate());
         if (request.getEndDate() != null) hackathon.setEndDate(request.getEndDate());
-        if (request.getLocation() != null) hackathon.setLocation(request.getLocation());
+        if (request.getLocation() != null) {
+            if (request.getLocation().trim().length() < 3 || request.getLocation().trim().length() > 150) {
+                throw new IllegalArgumentException("Location must be between 3 and 150 characters.");
+            }
+            hackathon.setLocation(request.getLocation());
+        }
         if (request.getMode() != null) hackathon.setMode(request.getMode());
         if (request.getPrizePool() != null) hackathon.setPrizePool(request.getPrizePool());
         if (request.getRegistrationDeadline() != null) hackathon.setRegistrationDeadline(request.getRegistrationDeadline());
