@@ -13,11 +13,15 @@ export function calculateSecondaryRoyalties(salePrice, royaltyBps = 1000) {
 }
 
 export function verifyResalePriceCap(listPrice, originalFaceValue, maxMarkupPercent = 10) {
-  const maxAllowedPrice = originalFaceValue * (1 + maxMarkupPercent / 100);
+  // Shift to integer values to prevent floating-point precision issues (#16523)
+  const listPriceCents = Math.round(listPrice * 1000000);
+  const faceValueCents = Math.round(originalFaceValue * 1000000);
+  const maxAllowedPriceCents = Math.round(faceValueCents * (1 + maxMarkupPercent / 100));
+
   return {
-    isValid: listPrice <= maxAllowedPrice,
-    maxAllowedPrice: Math.round(maxAllowedPrice * 100) / 100,
-    markupAmount: Math.round((listPrice - originalFaceValue) * 100) / 100,
+    isValid: listPriceCents <= maxAllowedPriceCents,
+    maxAllowedPrice: Math.round((maxAllowedPriceCents / 1000000) * 100) / 100,
+    markupAmount: Math.round(((listPriceCents - faceValueCents) / 1000000) * 100) / 100,
   };
 }
 
