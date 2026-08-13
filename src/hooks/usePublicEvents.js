@@ -26,7 +26,10 @@ export function usePublicEvents(options = {}) {
 
     try {
       // Add user context header for backend to filter appropriately
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const headers =
+        token && token !== "cookie-managed"
+          ? { Authorization: `Bearer ${token}` }
+          : {};
 
       const params = new URLSearchParams({
         page: String(page),
