@@ -192,6 +192,17 @@ public class EventController {
                 return ResponseEntity.ok(events);
         }
 
+        // ── Issue #16693 — GET /api/events/categories/summary ───────────────────
+
+        @GetMapping("/categories/summary")
+        @Operation(summary = "Get event count by category", description = "Returns total event counts per category computed using database-level GROUP BY aggregation.")
+        @ApiResponses({
+                        @ApiResponse(responseCode = "200", description = "Category statistics fetched successfully")
+        })
+        public ResponseEntity<java.util.Map<String, Long>> getEventCountByCategory() {
+                return ResponseEntity.ok(eventService.getEventCountByCategory());
+        }
+
         // ── Issue #2101 — GET /api/events/{id} ──────────────────────────────────
 
         @GetMapping("/{id}")
