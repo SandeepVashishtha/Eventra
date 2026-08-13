@@ -1,234 +1,125 @@
-const clamp01 = (value) => Math.max(0, Math.min(1, Number(value) || 0));
+/**
+ * Predictive ML Attendance & No-Show Probability Engine (#13906)
+ * Calculates registrant turnout probabilities using weighted feature vectors.
+ */
 
-const parseEventDate = (event) => {
-  if (!event) return null;
-  const dateString = event.startDate || event.date || event.eventDate;
-  if (!dateString) return null;
-  const date = new Date(dateString);
-  return Number.isNaN(date.getTime()) ? null : date;
+/**
+ * Feature Vector Weights
+ */
+const WEIGHTS = {
+  pastAttendanceRatio: 0.45,
+  daysRegisteredBeforeEvent: 0.20,
+  profileCompleteness: 0.15,
+  badgeCount: 0.10,
+  isLocalResident: 0.10,
 };
 
-const getDaysUntilEvent = (event) => {
-  const eventDate = parseEventDate(event);
-  if (!eventDate) return null;
-  const now = new Date();
-  const diffMs = eventDate.getTime() - now.getTime();
-  return Math.max(0, Math.round(diffMs / (1000 * 60 * 60 * 24)));
-};
+/**
+ * Predict no-show probability for an individual attendee (0.0 = 100% turnout, 1.0 = 100% no-show).
+ */
+export function calculateAttendeeNoShowProbability(attendee = {}) {
+  const pastRatio = typeof attendee.pastAttendanceRatio === "number" ? attendee.pastAttendanceRatio : 0.7;
+  const daysBefore = Math.min(30, attendee.daysRegisteredBeforeEvent || 7) / 30.0;
+  const profileScore = (attendee.profileCompleteness || 80) / 100.0;
+  const badgeScore = Math.min(5, attendee.badgeCount || 2) / 5.0;
+  const isLocalScore = attendee.isLocalResident ? 1.0 : 0.6;
 
-const getCapacityUtilization = (event) => {
-  const attendees = Number(event.attendees || 0);
-  const capacity = Number(event.maxAttendees || event.capacity || 0);
+  const showScore =
+    pastRatio * WEIGHTS.pastAttendanceRatio +
+    daysBefore * WEIGHTS.daysRegisteredBeforeEvent +
+    profileScore * WEIGHTS.profileCompleteness +
+    badgeScore * WEIGHTS.badgeCount +
+    isLocalScore * WEIGHTS.isLocalResident;
 
-  if (capacity <= 0) {
-    return 0;
-  }
+  const clampedShow = Math.max(0.1, Math.min(0.95, showScore));
+  const noShowProb = 1.0 - clampedShow;
 
-  return clamp01(attendees / capacity);
-};
+  return Math.round(noShowProb * 100) / 100;
+}
 
-const getTicketTypeScore = (event) => {
-  if (event.price === 0 || event.price === "0" || String(event.price).trim() === "") {
-    return 0.92;
-  }
-
-  const price = Number(event.price);
-  if (Number.isNaN(price)) {
-    return 0.75;
-  }
-
-  if (price <= 50) return 0.88;
-  if (price <= 150) return 0.8;
-  if (price <= 300) return 0.72;
-  return 0.62;
-};
-
-const getEventModeScore = (eventMode) => {
-  if (!eventMode) return 0.75;
-  const mode = String(eventMode).trim().toLowerCase();
-  if (mode === "online") return 0.92;
-  if (mode === "hybrid") return 0.86;
-  return 0.72;
-};
-
-const getProximityScore = (event) => {
-  const days = getDaysUntilEvent(event);
-  if (days === null) return 0.72;
-  if (days <= 1) return 0.94;
-  if (days <= 4) return 0.88;
-  if (days <= 10) return 0.8;
-  if (days <= 30) return 0.72;
-  if (days <= 90) return 0.64;
-  return 0.56;
-};
-
-const getReminderEngagementScore = (reminders = []) => {
-  const count = Array.isArray(reminders) ? reminders.length : 0;
-  if (count >= 3) return 0.98;
-  if (count === 2) return 0.94;
-  if (count === 1) return 0.88;
-  return 0.78;
-};
-
-const parseRegistrationDate = (event) => {
-  if (!event) return null;
-  const dateString = event.registrationDate || event.registrationStart || event.firstRegistrationDate || event.createdAt;
-  if (!dateString) return null;
-  const date = new Date(dateString);
-  return Number.isNaN(date.getTime()) ? null : date;
-};
-
-const getRegistrationLeadDays = (event) => {
-  const eventDate = parseEventDate(event);
-  const registrationDate = parseRegistrationDate(event);
-  if (!eventDate || !registrationDate) return null;
-  const diffMs = eventDate.getTime() - registrationDate.getTime();
-  return Math.max(0, Math.round(diffMs / (1000 * 60 * 60 * 24)));
-};
-
-const getRegistrationTimingScore = (event) => {
-  const leadDays = getRegistrationLeadDays(event);
-  if (leadDays === null) return 0.76;
-  if (leadDays >= 60) return 0.94;
-  if (leadDays >= 30) return 0.9;
-  if (leadDays >= 14) return 0.84;
-  if (leadDays >= 7) return 0.78;
-  if (leadDays >= 3) return 0.7;
-  if (leadDays >= 1) return 0.64;
-  return 0.56;
-};
-
-const getEngagementScore = (event) => {
-  const rawEngagement = Number(event.engagementScore ?? event.engagementRate ?? event.engagement ?? NaN);
-  if (!Number.isNaN(rawEngagement) && rawEngagement >= 0 && rawEngagement <= 1) {
-    return clamp01(rawEngagement);
-  }
-
-  if (Number(event.socialShares) >= 10 || Number(event.comments) >= 5) return 0.92;
-  if (Number(event.socialShares) >= 5 || Number(event.comments) >= 3) return 0.86;
-  return 0.78;
-};
-
-const getHistoricalAttendanceScore = (event) => {
-  const pastRate = Number(event.pastAttendanceRate);
-  if (!Number.isNaN(pastRate) && pastRate >= 0 && pastRate <= 1) {
-    return clamp01(pastRate);
-  }
-  return 0.76;
-};
-
-const getWaitlistSize = (event) => {
-  return Number(event.waitlistCount ?? event.waitlistSize ?? event.pendingWaitlist ?? 0);
-};
-
-const getAttendanceConfidenceLabel = (probability) => {
-  if (probability >= 0.85) return "High confidence";
-  if (probability >= 0.7) return "Moderate confidence";
-  if (probability >= 0.55) return "Low confidence";
-  return "Very low confidence";
-};
-
-export const computeAttendancePrediction = (event = {}, options = {}) => {
-  const reminders = options.reminders || [];
-  const capacity = Number(event.maxAttendees || event.capacity || 0);
-  const attendees = Number(event.attendees || 0);
-  const fillRate = getCapacityUtilization(event);
-
-  const weights = {
-    fillRate: 0.30,
-    ticket: 0.14,
-    eventMode: 0.12,
-    proximity: 0.12,
-    reminders: 0.14,
-    historical: 0.08,
-    registrationTiming: 0.07,
-    engagement: 0.03,
-  };
-
-  const probability = clamp01(
-    fillRate * weights.fillRate +
-      getTicketTypeScore(event) * weights.ticket +
-      getEventModeScore(event.eventMode) * weights.eventMode +
-      getProximityScore(event) * weights.proximity +
-      getReminderEngagementScore(reminders) * weights.reminders +
-      getHistoricalAttendanceScore(event) * weights.historical +
-      getRegistrationTimingScore(event) * weights.registrationTiming +
-      getEngagementScore(event) * weights.engagement
-  );
-
-  const attendanceProbability = Math.round(probability * 100);
-  const noShowProbability = Math.round((1 - probability) * 100);
-  const predictedAttendees = capacity > 0 ? Math.round(probability * capacity) : attendees;
-  const predictedGap = predictedAttendees - attendees;
-  const waitlistSize = getWaitlistSize(event);
-  const expectedOpenSeats = Math.max(0, capacity - predictedAttendees);
-  const expectedNoShowSeats = Math.max(0, attendees - predictedAttendees);
-
-  const recommendedPromotions = waitlistSize > 0
-    ? Math.min(waitlistSize, Math.max(0, Math.round(expectedNoShowSeats * 0.8)))
-    : 0;
-
-  const projectedFillRate = capacity > 0
-    ? Math.round(((attendees + recommendedPromotions) / capacity) * 100)
-    : 0;
-
-  const reminderHint = attendanceProbability < 75
-    ? "Send last-minute reminders and confirm key attendees before the event."
-    : "Attendance looks stable; keep reminder cadence normal.";
-
-  return {
-    attendanceProbability,
-    noShowProbability,
-    confidenceLabel: getAttendanceConfidenceLabel(probability),
-    predictedAttendees,
-    predictedGap,
-    expectedOpenSeats,
-    expectedNoShowSeats,
-    recommendedPromotions,
-    projectedFillRate,
-    waitlistSize,
-    reminderHint,
-  };
-};
-
-export const buildWaitlistPromotionSummary = (event = {}, options = {}) => {
-  const prediction = computeAttendancePrediction(event, options);
-    const capacity = Number(event.maxAttendees || event.capacity || 0);
-  const seatsToPromote = prediction.recommendedPromotions;
-  const hasWaitlist = prediction.waitlistSize > 0;
-
-  if (!capacity || !hasWaitlist) {
+/**
+ * Predict total turnout metrics for an entire event registration list.
+ */
+export function predictEventTurnout(registrations = [], eventCapacity = 0) {
+  if (!Array.isArray(registrations) || registrations.length === 0) {
     return {
-      summary: "No waitlist data available.",
-      actions: [],
-      seatsToPromote: 0,
+      totalRegistered: 0,
+      predictedTurnout: 0,
+      predictedNoShows: 0,
+      turnoutPercentage: 0,
+      recommendedOverbookingCapacity: 0,
+      recommendedWaitlistPromotions: 0,
     };
   }
 
-  const summary = seatsToPromote > 0
-    ? `Promote ${seatsToPromote} waitlisted attendee(s) to compensate for expected no-shows and maximize venue utilization.`
-    : "Current attendance confidence is strong. No automatic waitlist promotion is recommended at this time.";
+  let totalNoShowProb = 0;
+  registrations.forEach((reg) => {
+    totalNoShowProb += calculateAttendeeNoShowProbability(reg);
+  });
+
+  const totalRegistered = registrations.length;
+  const predictedNoShows = Math.round(totalNoShowProb);
+  const predictedTurnout = totalRegistered - predictedNoShows;
+  const turnoutPercentage = Math.round((predictedTurnout / totalRegistered) * 100);
+
+  // Over-booking multiplier (e.g. if 25% no-show expected, allow 1.25x waitlist over-booking)
+  const noShowRate = predictedNoShows / totalRegistered;
+  const recommendedOverbookingCapacity = Math.round(totalRegistered * (1 + noShowRate * 0.8));
+
+  // Only recommend waitlist promotions if event has valid positive capacity
+  const expectedNoShowSeats = predictedNoShows;
+  const recommendedWaitlistPromotions = eventCapacity > 0
+    ? Math.min(expectedNoShowSeats, Math.max(0, eventCapacity - totalRegistered + expectedNoShowSeats))
+    : 0;
 
   return {
-    summary,
-    actions: [
-      `Projecting ${prediction.expectedNoShowSeats} no-show seat(s).`,
-      `Target fill rate: ${prediction.projectedFillRate}% after promotion.`,
-      prediction.reminderHint,
-    ],
-    seatsToPromote,
+    totalRegistered,
+    predictedTurnout,
+    predictedNoShows,
+    turnoutPercentage,
+    recommendedOverbookingCapacity,
+    recommendedWaitlistPromotions,
   };
-};
+}
 
-export const getPredictedAttendanceSummary = (event = {}, options = {}) => {
-  const prediction = computeAttendancePrediction(event, options);
-  return {
-    title: event.title || "Event",
-    attendanceProbability: prediction.attendanceProbability,
-    confidenceLabel: prediction.confidenceLabel,
-    loadReason:
-      prediction.attendanceProbability < 70
-        ? "Send extra reminders and monitor waitlist movement."
-        : "Monitor current registrations and keep promotion steady.",
-  };
-};
+/**
+ * Predict average attendance rate percentage from historical event records.
+ * Filters out invalid entries (e.g. non-numeric values, zero or missing capacity)
+ * and safely handles empty history arrays to avoid division by zero or NaN results.
+ *
+ * @param {Array<{attended?: number, capacity?: number, maxAttendees?: number}>} history - Event history list
+ * @param {number} [defaultRate=0] - Fallback percentage if history is empty or invalid
+ * @returns {number} Average attendance percentage (0 to 100)
+ */
+export function predictAttendanceRate(history = [], defaultRate = 0) {
+  if (!Array.isArray(history) || history.length === 0) {
+    return defaultRate;
+  }
+
+  const validEntries = history.filter((entry) => {
+    if (!entry || typeof entry !== "object") return false;
+    const capacity = Number(entry.capacity ?? entry.maxAttendees);
+    const attended = Number(entry.attended ?? entry.attendeesCount);
+
+    return (
+      Number.isFinite(capacity) &&
+      capacity > 0 &&
+      Number.isFinite(attended) &&
+      attended >= 0
+    );
+  });
+
+  if (validEntries.length === 0) {
+    return defaultRate;
+  }
+
+  const totalRatio = validEntries.reduce((sum, entry) => {
+    const capacity = Number(entry.capacity ?? entry.maxAttendees);
+    const attended = Number(entry.attended ?? entry.attendeesCount);
+    const ratio = Math.min(Math.max(attended / capacity, 0), 1);
+    return sum + ratio;
+  }, 0);
+
+  const averageRatio = totalRatio / validEntries.length;
+  return Math.round(averageRatio * 100);
+}
