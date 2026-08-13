@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useActionState } from "react";
+import { useState, useEffect, useCallback, useMemo, useActionState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 // Calendar URL helpers — import from the timezone-aware utility instead of
 // using the old inline implementations (which were UTC-blind and hardcoded
@@ -153,9 +153,15 @@ const EventRegistration = () => {
     priority: "Medium",
     showProfileInAttendeeDirectory: false,
   });
+
+  // Keep a stable ref to the latest setValues so it can be used inside the
+  // event-loading effect without being listed as an unstable dependency.
+  const setValuesRef = useRef(setValues);
+  setValuesRef.current = setValues;
   // Load event data from backend API
   useEffect(() => {
     let isCancelled = false;
+    const controller = new AbortController();
 
     const applyLoadedEvent = (nextEvent) => {
       if (!isCancelled) {
@@ -165,7 +171,7 @@ const EventRegistration = () => {
 
     const prefillAuthenticatedUser = () => {
       if (!isCancelled && isAuthenticated() && user) {
-        setValues((prev) => ({
+        setValuesRef.current((prev) => ({
           ...prev,
           fullName: user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim() || "",
           email: user.email || "",
@@ -177,7 +183,9 @@ const EventRegistration = () => {
       setLoading(true);
 
       try {
-        const response = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
+        const response = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId), {
+          signal: controller.signal,
+        });
 
         if (response.status === 200 && response.data) {
           if (isCancelled) return;
@@ -220,9 +228,10 @@ const EventRegistration = () => {
     loadEvent();
     return () => {
       isCancelled = true;
+      controller.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventId, user, isAuthenticated, setValues, location.pathname]);
+  }, [eventId, user, isAuthenticated]);
 
   const refreshEventAvailability = useCallback(async (id) => {
     try {
