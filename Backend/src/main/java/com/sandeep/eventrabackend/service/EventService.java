@@ -145,10 +145,6 @@ public class EventService {
          * @throws EventNotFoundException if no event with {@code id} exists
          */
         public EventAvailabilityResponse getEventAvailability(Long id) {
-                return getEventAvailability(id, null);
-        }
-
-        public EventAvailabilityResponse getEventAvailability(Long id, String userEmail) {
                 Event event = requirePublicEvent(id);
 
                 Integer capacity = event.getCapacity();
@@ -160,22 +156,12 @@ public class EventService {
 
                 boolean isFull = (capacity != null) && (registeredCount >= capacity);
 
-                Integer waitlistPosition = null;
-                if (userEmail != null) {
-                        waitlistPosition = eventWaitlistRepository
-                                        .findByEvent_IdAndUser_EmailAndStatus(id, userEmail, "WAITING")
-                                        .map(EventWaitlist::getPosition)
-                                        .orElse(null);
-                }
-
                 return EventAvailabilityResponse.builder()
                                 .capacity(capacity)
                                 .registeredCount(registeredCount)
                                 .spotsLeft(spotsLeft)
                                 .isFull(isFull)
                                 .eventPassed(event.isEventPast())
-                                .waitlistPosition(waitlistPosition)
-                                .waitlisted(waitlistPosition != null)
                                 .build();
         }
 
@@ -1452,8 +1438,6 @@ public class EventService {
                                 .spotsLeft(spotsLeft)
                                 .isFull(isFull)
                                 .eventPassed(event.isEventPast())
-                                .waitlistPosition(null)
-                                .waitlisted(false)
                                 .build();
         }
 
