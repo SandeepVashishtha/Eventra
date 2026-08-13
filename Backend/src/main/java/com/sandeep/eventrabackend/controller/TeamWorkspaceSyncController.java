@@ -54,29 +54,3 @@ public class TeamWorkspaceSyncController {
         return ResponseEntity.ok(teamWorkspaceSyncService.applyUpdate(resolved, body));
     }
 }
-
-    @GetMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter stream(
-            @RequestParam(required = false) String roomKey,
-            @RequestParam(required = false) String hackathonId,
-            @RequestParam(required = false) String teamId) {
-        String resolved = teamWorkspaceSyncService.resolveRoomKey(roomKey, hackathonId, teamId);
-        teamWorkspaceSyncService.requireReadAccess(resolved);
-        return teamWorkspaceSyncService.subscribe(resolved);
-    }
-
-    @PostMapping
-    public ResponseEntity<Map<String, Object>> pollOrUpdate(
-            @RequestParam(required = false) String roomKey,
-            @RequestParam(required = false) String hackathonId,
-            @RequestParam(required = false) String teamId,
-            @RequestBody(required = false) Map<String, Object> body) {
-        String resolved = teamWorkspaceSyncService.resolveRoomKey(roomKey, hackathonId, teamId);
-        if (body == null || body.isEmpty()) {
-            teamWorkspaceSyncService.requireReadAccess(resolved);
-            return ResponseEntity.ok(teamWorkspaceSyncService.snapshot(resolved));
-        }
-        teamWorkspaceSyncService.requireWriteAccess(resolved);
-        return ResponseEntity.ok(teamWorkspaceSyncService.applyUpdate(resolved, body));
-    }
-}
