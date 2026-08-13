@@ -25,7 +25,6 @@ import ErrorMessage from "../../components/common/ErrorMessage";
 import { EventTimeline } from "../../components/EventTimeline";
 import EventComparison from "./EventComparison";
 import { toast } from "react-toastify";
-import { logger } from "utils/logger";
 import {
   decodeAdvancedFilters,
   encodeAdvancedFilters,
@@ -314,7 +313,7 @@ const category =
         })
       );
     } catch (err) {
-      logger.error("Failed to persist filter params:", err);
+      console.error("Failed to persist filter params:", err);
     }
   }, [
     listing.currentPage,
@@ -486,7 +485,7 @@ const category =
         />
         {localSearchInput.trim() && (
           <div className="mb-4 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950/30 dark:text-indigo-300">
-            Showing results for: <span className="font-semibold">&quot;{localSearchInput}&quot;</span>
+            Showing results for: <span className="font-semibold">"{localSearchInput}"</span>
           </div>
         )}
         <div className="mb-4 text-sm text-slate-600 dark:text-slate-300">

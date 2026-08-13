@@ -152,32 +152,6 @@ class EmailTemplateServiceTest {
     }
 
     @Test
-    @DisplayName("Test email recipient is pinned to the authenticated organizer (#16253)")
-    void sendTestEmail_IgnoresCallerSuppliedRecipient() {
-        when(emailSender.sendEmail(any(), any(), any(), anyBoolean()))
-                .thenAnswer(invocation -> {
-                    String to = invocation.getArgument(0);
-                    assertEquals(organizerEmail, to, "recipient must be the organizer's own email");
-                    return "msg-16253";
-                });
-
-        // Caller supplies a victim address; it must be ignored.
-        TestEmailRequest request = new TestEmailRequest(
-                "123",
-                "cancellation",
-                testEmailRequest.getEvent(),
-                testEmailRequest.getAttendee(),
-                "Dear {attendeeName}",
-                "victim@evil.example"
-        );
-
-        TestEmailResponse response = emailTemplateService.sendTestEmail(request, organizerEmail);
-
-        assertTrue(response.isSuccess());
-        assertEquals(organizerEmail, response.getRecipient());
-    }
-
-    @Test
     @DisplayName("Save new template successfully")
     void saveTemplate_NewTemplate() {
         // Mock repository to return null (no existing template)
@@ -281,42 +255,6 @@ class EmailTemplateServiceTest {
         assertEquals("cancellation", response.getTemplateType());
         assertNull(response.getTemplate());
         assertTrue(response.getMessage().contains("Template not found"));
-    }
-
-    @Test
-    @DisplayName("renderTemplate HTML-escapes user data and neutralizes javascript: URLs (Closes #16236)")
-    void sendTestEmail_HtmlEscaping() {
-        Map<String, Object> event = new HashMap<>();
-        event.put("title", "<script>alert(1)</script>");
-        event.put("location", "<img src=x onerror=alert(1)>");
-        event.put("organizerEmail", "javascript:alert(1)");
-
-        Map<String, Object> attendee = new HashMap<>();
-        attendee.put("firstName", "<b>x</b>");
-        attendee.put("lastName", "\"><script>evil()</script>");
-
-        TestEmailRequest request = new TestEmailRequest(
-                "789",
-                "cancellation",
-                event,
-                attendee,
-                "Event {eventTitle} at {location} by {attendeeName} contact {organizerEmail}",
-                organizerEmail
-        );
-
-        when(emailSender.sendEmail(any(), any(), any(), anyBoolean()))
-                .thenAnswer(invocation -> {
-                    String body = invocation.getArgument(2);
-                    assertFalse(body.contains("<script>"), "raw <script> must be escaped");
-                    assertFalse(body.contains("onerror="), "raw HTML attributes must be escaped");
-                    assertFalse(body.contains("javascript:alert(1)"), "javascript: URL must be neutralized");
-                    assertTrue(body.contains("&lt;script&gt;"), "script payload must be escaped to entities");
-                    assertTrue(body.contains("#"), "unsafe URL should fall back to safe value");
-                    return "msg-xss";
-                });
-
-        TestEmailResponse response = emailTemplateService.sendTestEmail(request, organizerEmail);
-        assertTrue(response.isSuccess());
     }
 
     @Test

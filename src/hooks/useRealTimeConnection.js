@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { sseConnectionManager } from "../services/sseConnectionManager";
+import { sseMultiplexer } from "../utils/sseMultiplexer";
 
 export const SSE_STATUS = {
   IDLE: "idle",
@@ -13,7 +13,7 @@ export const SSE_STATUS = {
  *
  * ### Purpose
  * Rather than spawning independent `EventSource` connections for every component or browser tab, this
- * hook delegates to a centralized `sseConnectionManager`. This prevents browser connection pool exhaustion
+ * hook delegates to a centralized `sseMultiplexer`. This prevents browser connection pool exhaustion
  * (where HTTP/1.1 restricts browsers to a maximum of 6 concurrent connections per domain), enabling
  * multi-tab synchronization with minimal resource overhead.
  *
@@ -31,7 +31,7 @@ export const SSE_STATUS = {
  *
  * ### Error Handling & Reconnection
  * - The connection status (`idle`, `connecting`, `connected`, `reconnecting`) is updated automatically
- *   via status change callbacks dispatched from the `sseConnectionManager`.
+ *   via status change callbacks dispatched from the `sseMultiplexer`.
  * - The hook exposes a memoized `reconnect` function, which allows consumers to manually trigger a fresh
  *   connection attempt for the current path in case of network drops or timeout errors.
  *
@@ -96,9 +96,8 @@ export default function useRealTimeConnection(path, { onMessage, enabled = true 
       }
     };
 
-    // Register subscription with the shared, reference-counted connection
-    // manager so consumers of the same path share a single EventSource.
-    const unsubscribe = sseConnectionManager.subscribe(path, handleMessage, handleStatus);
+    // Register subscription with sseMultiplexer
+    const unsubscribe = sseMultiplexer.subscribe(path, handleMessage, handleStatus);
 
     return () => {
       unsubscribe();
@@ -106,7 +105,7 @@ export default function useRealTimeConnection(path, { onMessage, enabled = true 
   }, [path, enabled]);
 
   const reconnect = useCallback(() => {
-    sseConnectionManager.reconnect(path);
+    sseMultiplexer.reconnect(path);
   }, [path]);
 
   return { status, reconnect };

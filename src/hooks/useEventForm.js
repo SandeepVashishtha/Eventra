@@ -305,17 +305,10 @@ export const useEventForm = () => {
 
   // Sync category field with categories for backward compatibility
   useEffect(() => {
-    if (formData.categories && formData.categories.length > 0) {
-      if (formData.category !== formData.categories[0]) {
-        setFormData(prev => ({
-          ...prev,
-          category: prev.categories[0]
-        }));
-      }
-    } else if (formData.category !== "") {
+    if (formData.categories && formData.categories.length > 0 && formData.category !== formData.categories[0]) {
       setFormData(prev => ({
         ...prev,
-        category: ""
+        category: prev.categories[0]
       }));
     }
   }, [formData.categories, formData.category, setFormData]);
@@ -338,7 +331,7 @@ export const useEventForm = () => {
       ...eventData,
       category: eventData.categories && eventData.categories.length > 0 
         ? eventData.categories[0] 
-        : "",
+        : eventData.category || "",
       categories: eventData.categories || [],
       description: sanitizeHtml(eventData.description || ""),
     };
@@ -675,15 +668,14 @@ export const useEventForm = () => {
   }, [discardDraft]);
 
   const hasUnsavedChanges = useMemo(() => {
-    const baseline = initialFormData();
     return Object.entries(formData).some(([key, value]) => {
       if (["banner", "bannerPreview"].includes(key)) return false;
-      if (typeof value === "string") return value.trim() !== (baseline[key] || "");
+      if (typeof value === "string") return value.trim() !== (initialFormData[key] || "");
       if (Array.isArray(value)) return value.length > 0;
       if (typeof value === "object" && value !== null) {
-        return JSON.stringify(value) !== JSON.stringify(baseline[key] || {});
+        return JSON.stringify(value) !== JSON.stringify(initialFormData[key] || {});
       }
-      return Boolean(value) !== Boolean(baseline[key]);
+      return Boolean(value) !== Boolean(initialFormData[key]);
     });
   }, [formData]);
 

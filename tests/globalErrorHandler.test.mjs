@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 
-globalThis.window = { addEventListener: () => {} };
+globalThis.window = {};
 globalThis.process = { env: { NODE_ENV: "production" } };
 
 import { initializeGlobalErrorHandling } from "../src/utils/globalErrorHandler.js";

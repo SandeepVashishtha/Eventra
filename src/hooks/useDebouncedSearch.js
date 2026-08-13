@@ -1,47 +1,31 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState, useEffect, useRef } from 'react';
 
-export function useDebouncedSearch(initialValue = '', delay = 300) {
-  const [searchTerm, setSearchTerm] = useState(initialValue);
-  const [debouncedTerm, setDebouncedTerm] = useState(initialValue);
-  const [isDebouncing, setIsDebouncing] = useState(false);
-  const timerRef = useRef(null);
+export const useDebouncedSearch = (searchCallback, delay = 300) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const callbackRef = useRef(searchCallback);
+  const latestTermRef = useRef(searchTerm);
 
   useEffect(() => {
-    setIsDebouncing(true);
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-    }
-    timerRef.current = setTimeout(() => {
-      setDebouncedTerm(searchTerm);
-      setIsDebouncing(false);
-      timerRef.current = null;
+    callbackRef.current = searchCallback;
+  }, [searchCallback]);
+
+  useEffect(() => {
+    latestTermRef.current = searchTerm;
+    const handler = setTimeout(() => {
+      if (callbackRef.current) {
+        callbackRef.current(latestTermRef.current);
+      }
     }, delay);
 
     return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
-      timerRef.current = null;
+      clearTimeout(handler);
     };
   }, [searchTerm, delay]);
 
-  const clear = useCallback(() => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-    }
-    timerRef.current = null;
-    setSearchTerm('');
-    setDebouncedTerm('');
-    setIsDebouncing(false);
-  }, []);
-
   return {
     searchTerm,
-    debouncedTerm,
     setSearchTerm,
-    isDebouncing,
-    clear,
   };
-}
+};
 
 export default useDebouncedSearch;

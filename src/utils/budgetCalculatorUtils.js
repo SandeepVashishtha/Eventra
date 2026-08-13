@@ -97,11 +97,9 @@ export const formatCurrency = (
   currency = "INR",
   locale = "en-IN"
 ) => {
-  const cleanCurrency = typeof currency === "string" && /^[A-Z]{3}$/.test(currency.trim()) ? currency.trim() : "INR";
-  const cleanLocale = typeof locale === "string" && /^[a-z]{2}(-[A-Z]{2})?$/.test(locale.trim()) ? locale.trim() : "en-IN";
-  return new Intl.NumberFormat(cleanLocale, {
+  return new Intl.NumberFormat(locale, {
     style: "currency",
-    currency: cleanCurrency,
+    currency,
     maximumFractionDigits: 2,
   }).format(toNumber(value));
 };
@@ -121,12 +119,9 @@ export const validateBudgetInput = (budget = {}) => {
     "participants",
   ];
 
-  return fields.every((field) => {
-    const raw = budget[field];
-    if (raw === "" || raw === null || raw === undefined) return false;
-    const num = Number(raw);
-    return Number.isFinite(num) && num >= 0;
-  });
+  return fields.every(
+    (field) => toNumber(budget[field]) >= 0
+  );
 };
 
 /**

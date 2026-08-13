@@ -24,6 +24,12 @@ public class TeamWorkspaceSyncService {
     private static final Pattern HACKATHON_ROOM_KEY =
             Pattern.compile("^hackathon:(\\d+)(?::team:.*)?$");
 
+    private final HackathonRegistrationRepository hackathonRegistrationRepository;
+
+    public TeamWorkspaceSyncService(HackathonRegistrationRepository hackathonRegistrationRepository) {
+        this.hackathonRegistrationRepository = hackathonRegistrationRepository;
+    }
+
     private static final class WorkspaceState {
         private final Object lock = new Object();
         private List<Map<String, Object>> tasks = new ArrayList<>();
@@ -157,6 +163,14 @@ public class TeamWorkspaceSyncService {
         } catch (NumberFormatException ex) {
             return null;
         }
+    }
+        if (StringUtils.hasText(hackathonId) && StringUtils.hasText(teamId)) {
+            return "hackathon:" + hackathonId.trim() + ":team:" + teamId.trim();
+        }
+        if (StringUtils.hasText(hackathonId)) {
+            return "hackathon:" + hackathonId.trim();
+        }
+        return "user:" + authenticatedEmail().trim().toLowerCase();
     }
 
     /**

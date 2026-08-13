@@ -2,7 +2,6 @@
  * Singleton WebGL Context Pool & Resource Disposal Utility
  * Prevents WEBGL_LOSE_CONTEXT and memory leaks during virtual venue walkthrough navigation.
  */
-import { logger } from "utils/logger";
 
 class WebGLContextPool {
   constructor() {
@@ -35,7 +34,7 @@ class WebGLContextPool {
           this.setupContextLostListeners();
         }
       } catch (err) {
-        logger.warn("[WebGLContextPool] Failed to initialize WebGL context:", err);
+        console.warn("[WebGLContextPool] Failed to initialize WebGL context:", err);
       }
     }
 
@@ -48,12 +47,12 @@ class WebGLContextPool {
     this.canvasElement.addEventListener("webglcontextlost", (event) => {
       event.preventDefault();
       this.isContextLost = true;
-      logger.warn("[WebGLContextPool] WEBGL_LOSE_CONTEXT detected. Switching to 2D fallback mode.");
+      console.warn("[WebGLContextPool] WEBGL_LOSE_CONTEXT detected. Switching to 2D fallback mode.");
     });
 
     this.canvasElement.addEventListener("webglcontextrestored", () => {
       this.isContextLost = false;
-      logger.info("[WebGLContextPool] WEBGL context restored.");
+      console.info("[WebGLContextPool] WEBGL context restored.");
     });
   }
 

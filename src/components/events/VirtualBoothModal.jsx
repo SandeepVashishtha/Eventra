@@ -23,16 +23,6 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
   const chatLeadCapturedRef = useRef(false);
   const isMountedRef = useRef(true);
 
-  const isSafeUrl = (url) => {
-    if (!url || typeof url !== "string") return false;
-    try {
-      const parsed = new URL(url);
-      return parsed.protocol === "http:" || parsed.protocol === "https:";
-    } catch {
-      return false;
-    }
-  };
-
   /* ---------------- Lead Capture ---------------- */
   const captureLead = (action) => {
     try {
@@ -205,16 +195,16 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
                 </p>
 
                 <div className="flex gap-3 text-gray-400">
-                  {isSafeUrl(booth.sponsorWebsite) && (
+                  {booth.sponsorWebsite && (
                     <a href={booth.sponsorWebsite} target="_blank" rel="noopener noreferrer" aria-label={`${booth.label} website`}><Globe size={16} /></a>
                   )}
-                  {isSafeUrl(booth.sponsorLinkedin) && (
+                  {booth.sponsorLinkedin && (
                     <a href={booth.sponsorLinkedin} target="_blank" rel="noopener noreferrer" aria-label={`${booth.label} LinkedIn`}><Linkedin size={16} /></a>
                   )}
-                  {isSafeUrl(booth.sponsorTwitter) && (
+                  {booth.sponsorTwitter && (
                     <a href={booth.sponsorTwitter} target="_blank" rel="noopener noreferrer" aria-label={`${booth.label} Twitter`}><Twitter size={16} /></a>
                   )}
-                  {isSafeUrl(booth.sponsorGithub) && (
+                  {booth.sponsorGithub && (
                     <a href={booth.sponsorGithub} target="_blank" rel="noopener noreferrer" aria-label={`${booth.label} GitHub`}><Github size={16} /></a>
                   )}
                 </div>

@@ -1,77 +1,81 @@
-import { strict as assert } from "node:assert";
-import { describe, it, beforeEach, afterEach } from "node:test";
+import assert from "node:assert/strict";
+import { describe, it, beforeEach } from "node:test";
+import { JSDOM } from "jsdom";
 
-class LocalStorageMock {
-  constructor() {
-    this._store = {};
-  }
-  getItem(key) {
-    return Object.prototype.hasOwnProperty.call(this._store, key) ? this._store[key] : null;
-  }
-  setItem(key, value) {
-    this._store[key] = String(value);
-  }
-  removeItem(key) {
-    delete this._store[key];
-  }
-  clear() {
-    this._store = {};
-  }
-  get length() {
-    return Object.keys(this._store).length;
-  }
-  key(index) {
-    return Object.keys(this._store)[index] ?? null;
-  }
-}
+process.env.TEST_OPACITY = "true";
 
-describe("storageKeyManager #16249", () => {
-  let prevWindow;
-  let prevLocalStorage;
+// Setup JSDOM environment for localStorage
+const dom = new JSDOM("<!DOCTYPE html><html><body></body></html>", {
+  url: "http://localhost",
+});
+globalThis.window = dom.window;
+globalThis.localStorage = dom.window.localStorage;
 
+// Import target under test
+const { getOpaqueKey, getOrMigrateKey } = await import("../src/utils/storageKeyManager.js");
+
+describe("storageKeyManager", () => {
   beforeEach(() => {
-    prevWindow = global.window;
-    prevLocalStorage = global.localStorage;
-    global.window = {};
-    global.localStorage = new LocalStorageMock();
+    localStorage.clear();
   });
 
-  afterEach(() => {
-    global.window = prevWindow;
-    global.localStorage = prevLocalStorage;
+  it("key hashing generates opaque keys utilizing SHA-256", () => {
+    const key = getOpaqueKey("bookmarks", "user-123");
+    assert.match(key, /^bookmarks_[a-f0-9]{64}$/);
   });
 
-  it("scopes the salt per namespace (no single global salt)", async () => {
-    const { getOpaqueKey } = await import("../src/utils/storageKeyManager.js");
+  it("handles guest fallback", () => {
+    const keyWithNull = getOpaqueKey("bookmarks", null);
+    assert.strictEqual(keyWithNull, "bookmarks_guest");
 
-    getOpaqueKey("calendar", "user-1");
-    getOpaqueKey("prefs", "user-1");
+    const keyWithUndefined = getOpaqueKey("bookmarks", undefined);
+    assert.strictEqual(keyWithUndefined, "bookmarks_guest");
 
-    // Each namespace must have its own salt entry; the old global key must not exist.
-    assert.ok(
-      global.localStorage.getItem("eventra:storage-key-salt:calendar"),
-      "calendar namespace should have its own salt"
-    );
-    assert.ok(
-      global.localStorage.getItem("eventra:storage-key-salt:prefs"),
-      "prefs namespace should have its own salt"
-    );
-    assert.strictEqual(
-      global.localStorage.getItem("eventra:storage-key-salt"),
-      null,
-      "global salt key must no longer be used"
-    );
+    const keyWithGuest = getOpaqueKey("bookmarks", "guest");
+    assert.strictEqual(keyWithGuest, "bookmarks_guest");
   });
 
-  it("returns a stable opaque key within a namespace", async () => {
-    const { getOpaqueKey } = await import("../src/utils/storageKeyManager.js");
-    const a = getOpaqueKey("prefs", "user-9");
-    const b = getOpaqueKey("prefs", "user-9");
-    assert.strictEqual(a, b);
+  it("no raw userId leakage", () => {
+    const userId = "highly_sensitive_user_id_12345";
+    const key = getOpaqueKey("bookmarks", userId);
+    assert.strictEqual(key.includes(userId), false);
   });
 
-  it("returns a guest key without hashing", async () => {
-    const { getOpaqueKey } = await import("../src/utils/storageKeyManager.js");
-    assert.strictEqual(getOpaqueKey("prefs", "guest"), "prefs_guest");
+  it("deterministic behavior", () => {
+    const key1 = getOpaqueKey("bookmarks", "user-456");
+    const key2 = getOpaqueKey("bookmarks", "user-456");
+    assert.strictEqual(key1, key2);
+  });
+
+  it("uniqueness between different users", () => {
+    const key1 = getOpaqueKey("bookmarks", "user-1");
+    const key2 = getOpaqueKey("bookmarks", "user-2");
+    assert.notStrictEqual(key1, key2);
+  });
+
+  it("uniqueness between different namespaces", () => {
+    const key1 = getOpaqueKey("bookmarks", "user-1");
+    const key2 = getOpaqueKey("drafts", "user-1");
+    assert.notStrictEqual(key1, key2);
+  });
+
+  it("migration correctly moves data and removes legacy key", () => {
+    const legacyKey = "bookmarks_user-789";
+    const testData = JSON.stringify([{ id: "event-1", title: "Test Event" }]);
+
+    localStorage.setItem(legacyKey, testData);
+
+    const resolvedKey = getOrMigrateKey("bookmarks", "user-789", legacyKey);
+
+    assert.strictEqual(localStorage.getItem(resolvedKey), testData);
+    assert.strictEqual(localStorage.getItem(legacyKey), null);
+  });
+
+  it("migration is a no-op if legacy key is empty", () => {
+    const legacyKey = "bookmarks_user-abc";
+    const resolvedKey = getOrMigrateKey("bookmarks", "user-abc", legacyKey);
+
+    assert.strictEqual(localStorage.getItem(resolvedKey), null);
+    assert.strictEqual(localStorage.getItem(legacyKey), null);
   });
 });

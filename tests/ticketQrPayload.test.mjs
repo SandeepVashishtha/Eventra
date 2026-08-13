@@ -20,11 +20,12 @@ describe("Dynamic Ticket QR Payload & TOTP Rotating Protocol Tests", () => {
     assert.ok(typeof windowNum === "number" && windowNum > 0);
   });
 
-  it("should generate an opaque ticket QR payload matching the scanner contract", () => {
+  it("should generate dynamic TOTP QR payload with timeWindow", () => {
     const payload = buildTicketQrPayload({ registration: { registrationId: "REG-101" } });
     assert.ok(payload);
-    assert.deepEqual(payload, { ticketId: "REG-101" });
-    assert.equal(Object.keys(payload).length, 1);
+    assert.equal(payload.ticketId, "REG-101");
+    assert.ok(payload.totpToken);
+    assert.ok(payload.timeWindow);
 
     const jsonStr = buildTicketQrValue(payload);
     assert.equal(jsonStr, JSON.stringify({ ticketId: "REG-101" }));
@@ -32,10 +33,11 @@ describe("Dynamic Ticket QR Payload & TOTP Rotating Protocol Tests", () => {
   });
 
   it("should validate current TOTP time window and reject expired windows", () => {
-    const validPayload = { timeWindow: getTotpTimeWindow(15) };
+    const validPayload = buildTicketQrPayload({ registration: { registrationId: "REG-101" } });
     assert.equal(validateTicketQrWindow(validPayload), true);
 
     const expiredPayload = {
+      ...validPayload,
       timeWindow: validPayload.timeWindow - 5, // 5 windows ago (>15s * 5 = 75s ago)
     };
     assert.equal(validateTicketQrWindow(expiredPayload), false);

@@ -284,9 +284,11 @@ export function RealTimeSubtitleProvider({ children }) {
   const processSubtitleQueue = useCallback(() => {
     if (subtitleQueue.current.length === 0) return;
     
-    // Get the next subtitle from queue
-    const nextSubtitle = subtitleQueue.current.shift();
-    if (!nextSubtitle) return;
+    const queue = [...subtitleQueue.current];
+    subtitleQueue.current = [];
+    
+    // Get the first subtitle from queue
+    const nextSubtitle = queue[0];
     
     // Update active subtitle
     setActiveSubtitle(nextSubtitle);
@@ -322,7 +324,7 @@ export function RealTimeSubtitleProvider({ children }) {
     }));
     
     // Process remaining queue
-    if (subtitleQueue.current.length > 0) {
+    if (queue.length > 1) {
       // Delay processing to maintain order
       setTimeout(processSubtitleQueue, 100);
     }

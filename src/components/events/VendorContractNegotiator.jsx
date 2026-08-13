@@ -37,7 +37,7 @@ const VendorContractNegotiator = () => {
             Vendor Contract <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-500">Negotiation Bot</span>.
           </h1>
           <p className="text-slate-400 text-sm leading-relaxed mb-6">
-            Stop paying entertainment lawyers $500/hour to read boilerplate AV rentals. Eventra&apos;s specialized NLP engine is trained on thousands of event industry legal contracts. Upload a vendor PDF, and the bot instantly highlights non-standard clauses, flags hidden service charges, and suggests red-line edits to protect your budget and liability.
+            Stop paying entertainment lawyers $500/hour to read boilerplate AV rentals. Eventra's specialized NLP engine is trained on thousands of event industry legal contracts. Upload a vendor PDF, and the bot instantly highlights non-standard clauses, flags hidden service charges, and suggests red-line edits to protect your budget and liability.
           </p>
 
           <div className="bg-slate-900 rounded-3xl p-6 border border-slate-800 shadow-xl relative overflow-hidden flex flex-col h-[400px]">
@@ -97,8 +97,8 @@ const VendorContractNegotiator = () => {
                        <span className="text-[10px] font-bold text-rose-400 uppercase tracking-widest">Predatory Fee Detected</span>
                        <span className="text-[10px] font-mono text-slate-500">Section 4.b</span>
                      </div>
-                     <p className="text-white text-xs font-bold leading-snug">&quot;Mandatory 22% discretionary service charge on all late load-outs.&quot;</p>
-                     <p className="text-slate-400 text-[10px] mt-2 border-t border-rose-500/20 pt-2 font-mono">Action: Negotiate down to standard 15% or define &apos;late&apos; explicitly.</p>
+                     <p className="text-white text-xs font-bold leading-snug">"Mandatory 22% discretionary service charge on all late load-outs."</p>
+                     <p className="text-slate-400 text-[10px] mt-2 border-t border-rose-500/20 pt-2 font-mono">Action: Negotiate down to standard 15% or define 'late' explicitly.</p>
                    </div>
                    {/* Flag 2 */}
                    <div className="bg-amber-900/20 border border-amber-500/30 p-3 rounded-xl">
@@ -145,7 +145,7 @@ const VendorContractNegotiator = () => {
               
               <div className="space-y-4">
                 <h3 className="font-bold">1. EQUIPMENT RENTAL</h3>
-                <p className="text-justify text-slate-600">The Provider agrees to rent the audio, visual, and lighting equipment listed in Exhibit A (&quot;Equipment&quot;) to the Client for the Event defined herein. The Provider guarantees that all Equipment shall be in good working order upon delivery.</p>
+                <p className="text-justify text-slate-600">The Provider agrees to rent the audio, visual, and lighting equipment listed in Exhibit A ("Equipment") to the Client for the Event defined herein. The Provider guarantees that all Equipment shall be in good working order upon delivery.</p>
               </div>
 
               <div className="space-y-4 relative">
@@ -180,13 +180,13 @@ const VendorContractNegotiator = () => {
                       </span>
                     )}
                   </span>
-                  and agrees to hold Provider harmless against any claims, losses, or damages arising from the use of the Equipment by the Client&apos;s attendees.
+                  and agrees to hold Provider harmless against any claims, losses, or damages arising from the use of the Equipment by the Client's attendees.
                 </p>
                 
                 {analysisState === 'results' && (
                   <div className="mt-4 bg-emerald-50 border-l-4 border-emerald-500 p-3 font-sans animate-fade-in text-xs">
                     <span className="font-bold text-emerald-800 block mb-1">Bot Suggested Redline Edit:</span>
-                    <p className="text-emerald-700 italic">&quot;Provider shall maintain force majeure insurance covering acts of God; Client liability is strictly limited to gross negligence.&quot;</p>
+                    <p className="text-emerald-700 italic">"Provider shall maintain force majeure insurance covering acts of God; Client liability is strictly limited to gross negligence."</p>
                   </div>
                 )}
               </div>

@@ -571,6 +571,7 @@ const EventsEmptyState = () => (
 const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const prefersReducedMotion = useReducedMotion();
   const staggerVariants = stagger(prefersReducedMotion);
+  const { formatDate, formatShort } = useDateFormatter();
   const {
     myEvents,
     removeRegistration,
@@ -653,11 +654,11 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
           const records = await getGlobalWaitlist(user.id || user.email);
           const userId = user.id || user.email;
           const userWaitlists = records.filter(
-            (r) => String(r.userId) === String(userId) && r.status === "waiting"
+            (r) => r.userId === userId && r.status === "waiting"
           );
           const resolved = userWaitlists.map((w) => {
             const foundEvent = [...registeredEvents, ...hostedEvents].find(
-              (e) => String(e.id) === String(w.eventId) || String(e.eventId) === String(w.eventId)
+              (e) => e.id === w.eventId || e.eventId === w.eventId
             );
             if (foundEvent) {
               return { ...foundEvent, waitlistJoinedAt: w.joinedAt, isWaitlist: true };

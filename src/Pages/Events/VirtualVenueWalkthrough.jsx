@@ -8,7 +8,6 @@ import VirtualBoothModal from "components/events/VirtualBoothModal";
 import { toast } from "react-toastify";
 import { safeJsonParse } from "utils/safeJsonParse";
 import { webglPool } from "./utils/webglContextPool";
-import { logger } from "utils/logger";
 
 // Default premium developer sponsor booths (fallback if none loaded from designer)
 const DEFAULT_SPONSORS = [
@@ -146,7 +145,7 @@ const VirtualVenueWalkthrough = () => {
           baseSponsors = sponsors;
         }
       } catch (e) {
-        logger.error("Failed to parse floorplan", e);
+        console.error("Failed to parse floorplan", e);
       }
     }
 
@@ -162,7 +161,7 @@ const VirtualVenueWalkthrough = () => {
           baseSponsors.push(customSponsor);
         }
       } catch (e) {
-        logger.error("Failed to parse sponsor dashboard settings", e);
+        console.error("Failed to parse sponsor dashboard settings", e);
       }
     }
 

@@ -17,37 +17,25 @@ public class GoogleAuthService {
     @Value("${google.client.id}")
     private String googleClientId;
 
-    private volatile GoogleIdTokenVerifier verifier;
-
     public GoogleIdToken.Payload verifyToken(String token)
             throws Exception {
 
-        GoogleIdToken idToken = getVerifier().verify(token);
+        GoogleIdTokenVerifier verifier =
+                new GoogleIdTokenVerifier.Builder(
+                        new NetHttpTransport(),
+                        new GsonFactory()
+                )
+                .setAudience(
+                        Collections.singletonList(googleClientId)
+                )
+                .build();
+
+        GoogleIdToken idToken = verifier.verify(token);
 
         if (idToken != null) {
             return idToken.getPayload();
         }
 
         throw new InvalidGoogleTokenException("Invalid Google token");
-    }
-
-    GoogleIdTokenVerifier getVerifier() {
-        GoogleIdTokenVerifier local = verifier;
-        if (local == null) {
-            synchronized (this) {
-                local = verifier;
-                if (local == null) {
-                    verifier = local = new GoogleIdTokenVerifier.Builder(
-                            new NetHttpTransport(),
-                            new GsonFactory()
-                    )
-                            .setAudience(
-                                    Collections.singletonList(googleClientId)
-                            )
-                            .build();
-                }
-            }
-        }
-        return local;
     }
 }

@@ -1,6 +1,5 @@
 package com.sandeep.eventrabackend.controller;
 
-import com.eventra.service.SvgSanitizationService;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
@@ -13,11 +12,9 @@ import org.springframework.web.multipart.MultipartFile;
 public class AttachmentUploadController {
 
     private final AsyncUploadManager uploadManager;
-    private final SvgSanitizationService svgSanitizationService;
 
-    public AttachmentUploadController(AsyncUploadManager uploadManager, SvgSanitizationService svgSanitizationService) {
+    public AttachmentUploadController(AsyncUploadManager uploadManager) {
         this.uploadManager = uploadManager;
-        this.svgSanitizationService = svgSanitizationService;
     }
 
     /**
@@ -30,18 +27,9 @@ public class AttachmentUploadController {
         }
 
         try {
-            byte[] content = file.getBytes();
-            String filename = file.getOriginalFilename();
-            if (filename != null && filename.toLowerCase().endsWith(".svg")) {
-                // Sanitize SVG uploads against stored XSS before they reach storage.
-                content = svgSanitizationService.sanitizeSvgContent(content);
-            }
-
             // Processing dynamic network streaming safely without active database transactions
-            String link = uploadManager.writeToStorage(filename, content);
+            String link = uploadManager.writeToStorage(file.getOriginalFilename(), file.getBytes());
             return ResponseEntity.ok("File uploaded to: " + link);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body("Rejected SVG upload: " + e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Upload failed: " + e.getMessage());
         }

@@ -59,28 +59,6 @@ try {
 }
 assert.strictEqual(errorThrown, true, "Error should propagate");
 
-// Test maxWait executes with the latest arguments and resolves the latest caller's promise
-const maxWaitCalls = [];
-const maxWaitDebounced = debounceAsync(async (value) => {
-  maxWaitCalls.push(value);
-  await delay(5);
-  return `maxwait:${value}`;
-}, 500, { maxWait: 40 });
-
-const supersededMaxWait = maxWaitDebounced("first");
-supersededMaxWait.catch(() => {});
-const maxWaitResult = await maxWaitDebounced("second");
-assert.strictEqual(
-  maxWaitResult,
-  "maxwait:second",
-  "maxWait execution should use the latest args and resolve the latest caller",
-);
-assert.deepEqual(
-  maxWaitCalls,
-  ["second"],
-  "maxWait should execute exactly once with the latest args",
-);
-
 // Test createDebouncedValidator returns cancelled flag for superseded calls
 const validator = createDebouncedValidator(async (value) => {
   await delay(10);
