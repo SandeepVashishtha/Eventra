@@ -5,7 +5,8 @@
 "use client";
 import { useEffect, useRef } from "react";
 import { useState } from "react";
-import { useReducedMotion } from "../../hooks/useReducedMotion";
+import { useReducedMotion } from "hooks/useReducedMotion";
+import { logger } from "utils/logger";
 
 /**
  * A React component that renders a WebGL-powered fluid simulation
@@ -104,7 +105,7 @@ const FluidCursor = ({ enabled = true }) => {
     const { gl, ext } = getWebGLContext(canvas);
 
     if (!gl || !ext?.formatRGBA || !ext?.formatRG || !ext?.formatR) {
-      console.warn("[FluidCursor] WebGL fluid cursor disabled: unsupported graphics context.");
+      logger.warn("[FluidCursor] WebGL fluid cursor disabled: unsupported graphics context.");
       return undefined;
     }
 
@@ -154,11 +155,25 @@ const FluidCursor = ({ enabled = true }) => {
         );
       }
 
-      gl.clearColor(0.0, 0.0, 0.0, 1.0);
+      gl.clearColor(0.0, 0.0, 0.0, 0.0);
 
       const halfFloatTexType = isWebGL2
-        ? gl.HALF_FLOAT
-        : halfFloat.HALF_FLOAT_OES;
+          ? gl.HALF_FLOAT
+          : halfFloat?.HALF_FLOAT_OES;
+
+        if (!halfFloatTexType) {
+          logger.warn("[FluidCursor] Half float textures not supported.");
+          return {
+            gl: null,
+            ext: {
+              formatRGBA: null,
+              formatRG: null,
+              formatR: null,
+              halfFloatTexType: null,
+              supportLinearFiltering: false,
+            },
+          };
+        }
       let formatRGBA;
       let formatRG;
       let formatR;
@@ -295,7 +310,7 @@ const FluidCursor = ({ enabled = true }) => {
       gl.linkProgram(program);
 
       if (!gl.getProgramParameter(program, gl.LINK_STATUS))
-        console.trace(gl.getProgramInfoLog(program));
+        logger.error("[FluidCursor] WebGL program link failed:", gl.getProgramInfoLog(program));
 
       return program;
     }
@@ -318,7 +333,7 @@ const FluidCursor = ({ enabled = true }) => {
       gl.compileShader(shader);
 
       if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS))
-        console.trace(gl.getShaderInfoLog(shader));
+        logger.error("[FluidCursor] WebGL shader compile failed:", gl.getShaderInfoLog(shader));
 
       return shader;
     }
@@ -658,7 +673,7 @@ const FluidCursor = ({ enabled = true }) => {
           gl.bindFramebuffer(gl.FRAMEBUFFER, target.fbo);
         }
         if (clear) {
-          gl.clearColor(0.0, 0.0, 0.0, 1.0);
+          gl.clearColor(0.0, 0.0, 0.0, 0.0);
           gl.clear(gl.COLOR_BUFFER_BIT);
         }
         gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
@@ -1083,7 +1098,7 @@ const FluidCursor = ({ enabled = true }) => {
           1.0 / height,
         );
       gl.uniform1i(displayMaterial.uniforms.uTexture, dye.read.attach(0));
-      blit(target);
+      blit(target, true);
     }
 
     function splatPointer(pointer) {
@@ -1165,11 +1180,11 @@ const FluidCursor = ({ enabled = true }) => {
 
     function generateColor() {
       // Premium sky blue / deep ocean cyan (#00A3FF)
-      // Scaled by 0.15 to maintain the perfect density in the fluid solver and prevent over-saturation
+      // Scaled by 0.32 to provide stronger glow visibility on both light and dark backgrounds
       return {
-        r: 0.0 * 0.07,
-        g: (163 / 255) * 0.07,
-        b: (255 / 255) * 0.07
+        r: 0.0 * 0.32,
+        g: (163 / 255) * 0.32,
+        b: (255 / 255) * 0.32
       };
     }
 
@@ -1215,12 +1230,14 @@ const FluidCursor = ({ enabled = true }) => {
     // and detect the actual DOM element beneath it.
     function isExcludedZone(clientX, clientY, target) {
       if (target && typeof target.closest === 'function') {
-        if (target.closest("nav") !== null || target.closest("footer") !== null || target.closest("a") !== null || target.closest("button") !== null) {
+        // Only exclude header nav and footer to prevent cluttering global navigation,
+        // but keep trail active on buttons, links, and inputs for visual consistency.
+        if (target.closest("nav") !== null || target.closest("footer") !== null) {
           return true;
         }
       }
       // 🔥 FIX 2: Removed document.elementFromPoint to prevent massive Layout Thrashing.
-      // Since the canvas is pointer-events-none, window.onmousemove already receives 
+      // Since the canvas is pointer-events-none, window.onmousemove already receives
       // the true underlying DOM element as e.target. Calling elementFromPoint 60x a second
       // forces synchronous layout recalculations and tanks rendering FPS.
       return false;
@@ -1292,7 +1309,7 @@ const FluidCursor = ({ enabled = true }) => {
       if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
       }
-      
+
       // 🔥 FIX 1: Prevent WebGL Context Exhaustion (Memory Leak)
       // We must explicitly ask the browser to destroy the active WebGL context.
       // Otherwise, toggling the cursor leaves orphaned contexts in memory until the browser crashes.

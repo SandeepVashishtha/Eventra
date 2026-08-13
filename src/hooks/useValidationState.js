@@ -1,3 +1,5 @@
+const EMPTY_OBJECT = {};
+
 /**
  * Helper hook for managing validation state in forms
  * Works alongside useFormValidation hook for enhanced validation UX
@@ -8,9 +10,15 @@ import { useCallback, useMemo } from "react";
  * Custom React hook to compute visual states, accessibility attributes, and CSS class names 
  * based on the validation lifecycle of a form field.
  *
- * ### Purpose
- * Standardizes form field validation feedback across the application. It decouples the visual 
- * representation and accessibility characteristics of form inputs from the core validation logic.
+ * Supports both options object signature and positional parameters:
+ * e.g. useValidationState({ fieldName, validationState, error, touched, messages })
+ * e.g. useValidationState(fieldName, validationState, error, touched, messages)
+ *
+ * @param {string|Object} fieldNameOrOptions - Field name string or options object
+ * @param {string} [validationStateArg="idle"] - Current validation state ('idle' | 'validating' | 'success' | 'error')
+ * @param {string|null} [errorArg=null] - Field error message
+ * @param {boolean} [touchedArg=false] - Whether field has been touched
+ * @param {Object} [messagesArg={}] - Custom message template strings or formatter functions for i18n
  *
  * ### State & Styling Transitions
  * - **Un-touched Field**: If `touched` is false, styling class names returned via `fieldClassName` 
@@ -43,17 +51,15 @@ import { useCallback, useMemo } from "react";
  * @param {string|null} [error=null] - The validation error message. Required when `validationState` is `'error'`.
  * @param {boolean} [touched=false] - Flag indicating if the user has interacted with the field.
  *
- * @returns {Object} Validation status and styling utilities.
- * @returns {string} Object.statusIndicator - Visual code indicating the indicator icon type to render (`'idle'`, `'validating'`, `'success'`, or `'error'`).
- * @returns {string} Object.statusMessage - A descriptive string announcement suitable for screen readers or ARIA live regions.
- * @returns {boolean} Object.shouldShowError - Helper flag to determine if the error message block should be rendered. Evaluates to true only if `touched` is true, state is `'error'`, and a non-empty `error` message exists.
- * @returns {boolean} Object.isValidating - Helper flag indicating if validation is currently in progress.
- * @returns {boolean} Object.isValid - Helper flag indicating if validation has completed successfully.
- * @returns {function(string): string} Object.fieldClassName - A memoized callback function that accepts a string of base CSS classes and returns the classes concatenated with appropriate tailwind border colors based on the validation status.
- * @returns {Object} Object.ariaAttributes - A memoized set of ARIA attributes (`aria-invalid`, `aria-describedby`, `aria-busy`) mapping to the current validation state.
- * @returns {string} Object.validationState - The original validation state string.
- * @returns {boolean} Object.touched - The original touched boolean flag.
- * @returns {string|null} Object.error - The original error string or null.
+ * Supports both options object signature and positional parameters:
+ * e.g. useValidationState({ fieldName, validationState, error, touched, messages })
+ * e.g. useValidationState(fieldName, validationState, error, touched, messages)
+ *
+ * @param {string|Object} fieldNameOrOptions - Field name string or options object
+ * @param {string} [validationStateArg="idle"] - Current validation state ('idle' | 'validating' | 'success' | 'error')
+ * @param {string|null} [errorArg=null] - Field error message
+ * @param {boolean} [touchedArg=false] - Whether field has been touched
+ * @param {Object} [messagesArg={}] - Custom message template strings or formatter functions for i18n
  *
  * @example
  * import React from 'react';
@@ -62,6 +68,10 @@ import { useCallback, useMemo } from "react";
  * const FormInput = ({ label, name, value, onChange, validationState, error, touched }) => {
  *   const {
  *     shouldShowError,
+    fieldClassName,
+    ariaProps,
+    isWarning,
+    shouldShowWarning,
  *     isValidating,
  *     fieldClassName,
  *     ariaAttributes,
@@ -93,64 +103,135 @@ import { useCallback, useMemo } from "react";
  * };
  */
 export const useValidationState = (
-  fieldName,
-  validationState = "idle",
-  error = null,
-  touched = false,
+  fieldNameOrOptions,
+  validationStateArg = "idle",
+  errorArg = null,
+  touchedArg = false,
+  messagesArg = {},
 ) => {
+  // Normalize arguments for both object and positional parameter signatures
+  const isOptionsObject =
+    typeof fieldNameOrOptions === "object" && fieldNameOrOptions !== null;
+
+  const fieldName = isOptionsObject
+    ? fieldNameOrOptions.fieldName
+    : fieldNameOrOptions;
+  const validationState = isOptionsObject
+    ? fieldNameOrOptions.validationState ?? "idle"
+    : validationStateArg;
+  const error = isOptionsObject
+    ? fieldNameOrOptions.error ?? null
+    : errorArg;
+  const touched = isOptionsObject
+    ? fieldNameOrOptions.touched ?? false
+    : touchedArg;
+  const messages = isOptionsObject
+    ? fieldNameOrOptions.messages ?? {}
+    : messagesArg;
+
   /**
    * Get visual indicator based on validation state
    * 🔥 FIX: Converted from invoked useCallback to useMemo for proper computed caching
    */
   const statusIndicator = useMemo(() => {
-    switch (validationState) {
+    switch (state) {
       case "validating":
         return "validating"; // Show spinner
       case "success":
         return "success"; // Show checkmark
+      case "warning":
+        if (typeof customMessages.warning === "function") {
+          return customMessages.warning(name, err);
+        }
+        if (typeof customMessages.warning === "string") {
+          return customMessages.warning;
+        }
+        return `${name} has a warning: ${err || "Validation warning"}`;
+      case "warning":
+        return "warning";
       case "error":
         return "error"; // Show error icon
       default:
         return "idle"; // No indicator
     }
-  }, [validationState]);
+  }, [state]);
 
   /**
-   * Get status message for accessibility announcements
+   * Get status message for accessibility announcements and UI display.
+   * Resolves custom string templates or i18n formatter functions if provided in `messages`.
    */
-  const statusMessage = useMemo(() => {
+  const getStatusMessage = useCallback(() => {
+    const customMessage = messages?.[validationState];
+
+    if (typeof customMessage === "function") {
+      return customMessage(fieldName, error);
+    }
+
+    if (typeof customMessage === "string") {
+      return customMessage;
+    }
+
+    // Default fallback messages
     switch (validationState) {
       case "validating":
-        return `${fieldName} is being validated`;
+        if (typeof customMessages.validating === "function") {
+          return customMessages.validating(name);
+        }
+        if (typeof customMessages.validating === "string") {
+          return customMessages.validating;
+        }
+        return `${name} is being validated`;
       case "success":
-        return `${fieldName} is valid`;
+        if (typeof customMessages.success === "function") {
+          return customMessages.success(name);
+        }
+        if (typeof customMessages.success === "string") {
+          return customMessages.success;
+        }
+        return `${name} is valid`;
+      case "warning":
+        if (typeof customMessages.warning === "function") {
+          return customMessages.warning(name, err);
+        }
+        if (typeof customMessages.warning === "string") {
+          return customMessages.warning;
+        }
+        return `${name} has a warning: ${err || "Validation warning"}`;
       case "error":
-        return `${fieldName} has an error: ${error || "Invalid input"}`;
+        if (typeof customMessages.error === "function") {
+          return customMessages.error(name, err);
+        }
+        if (typeof customMessages.error === "string") {
+          return customMessages.error;
+        }
+        return `${name} has an error: ${err || "Invalid input"}`;
       default:
         return "";
     }
-  }, [fieldName, error, validationState]);
+  }, [fieldName, error, validationState, messages]);
 
   /**
    * Check if field should show error message
    */
-  const shouldShowError = useMemo(() => {
-    return touched && validationState === "error" && error;
+  const shouldShowError = useCallback(() => {
+    return touched && validationState === "error" && Boolean(error);
   }, [touched, validationState, error]);
 
   /**
    * Check if validation is in progress
    */
   const isValidating = useMemo(() => {
-    return validationState === "validating";
-  }, [validationState]);
+    return state === "validating";
+  }, [state]);
 
   /**
    * Check if validation passed
    */
+  const isWarning = state === "warning";
+  const shouldShowWarning = Boolean(isTouched && isWarning);
   const isValid = useMemo(() => {
-    return validationState === "success";
-  }, [validationState]);
+    return state === "success";
+  }, [state]);
 
   /**
    * Get CSS classes for styling based on validation state
@@ -160,14 +241,22 @@ export const useValidationState = (
     (baseClass = "") => {
       let classes = baseClass;
 
-      if (!touched) {
+      if (!isTouched) {
         return classes;
       }
 
-      switch (validationState) {
+      switch (state) {
         case "success":
           return `${classes} border-green-500 dark:border-green-400`;
-        case "error":
+        case "warning":
+        if (typeof customMessages.warning === "function") {
+          return customMessages.warning(name, err);
+        }
+        if (typeof customMessages.warning === "string") {
+          return customMessages.warning;
+        }
+        return `${name} has a warning: ${err || "Validation warning"}`;
+      case "error":
           return `${classes} border-red-500 dark:border-red-400`;
         case "validating":
           return `${classes} border-blue-500 dark:border-blue-400`;
@@ -175,7 +264,7 @@ export const useValidationState = (
           return classes;
       }
     },
-    [touched, validationState],
+    [isTouched, state],
   );
 
   /**
@@ -185,29 +274,66 @@ export const useValidationState = (
   const ariaAttributes = useMemo(() => {
     const attributes = {};
 
-    if (error && touched) {
+    if (err && isTouched) {
       attributes["aria-invalid"] = "true";
-      attributes["aria-describedby"] = `${fieldName}-error`;
+      attributes["aria-describedby"] = `${name}-error`;
     } else {
       attributes["aria-invalid"] = "false";
     }
 
-    if (validationState === "validating") {
+    if (state === "validating") {
       attributes["aria-busy"] = "true";
     }
 
     if (isValid) {
-      attributes["aria-describedby"] = `${fieldName}-success`;
+      attributes["aria-describedby"] = `${name}-success`;
     }
 
     return attributes;
-  }, [fieldName, error, touched, validationState, isValid]);
+  }, [name, err, isTouched, state, isValid]);
+
+    const ariaProps = useMemo(() => {
+    const isInvalid = state === "error" && shouldShowError;
+      const customFieldClassName = opts.fieldClassName;
+
+  const fieldClassName = useMemo(() => {
+    if (typeof customFieldClassName === "function") {
+      return customFieldClassName({ state, isTouched, shouldShowError,
+    fieldClassName, isValid });
+    }
+    return customFieldClassName || "";
+  }, [customFieldClassName, state, isTouched, shouldShowError,
+    fieldClassName, isValid]);
+
+  return {
+      "aria-invalid": isInvalid,
+      "aria-errormessage": isInvalid ? `${name}-error` : undefined,
+      "aria-describedby": statusMessage ? `${name}-status` : undefined,
+    };
+  }, [state, shouldShowError,
+    fieldClassName,
+    ariaProps, statusMessage, name]);
+
+    const customFieldClassName = opts.fieldClassName;
+
+  const fieldClassName = useMemo(() => {
+    if (typeof customFieldClassName === "function") {
+      return customFieldClassName({ state, isTouched, shouldShowError,
+    fieldClassName, isValid });
+    }
+    return customFieldClassName || "";
+  }, [customFieldClassName, state, isTouched, shouldShowError,
+    fieldClassName, isValid]);
 
   return {
     // Status checks
     statusIndicator,
     statusMessage,
     shouldShowError,
+    fieldClassName,
+    ariaProps,
+    isWarning,
+    shouldShowWarning,
     isValidating,
     isValid,
 
@@ -216,9 +342,9 @@ export const useValidationState = (
     ariaAttributes,
 
     // Direct accessors
-    validationState,
-    touched,
-    error,
+    validationState: state,
+    touched: isTouched,
+    error: err,
   };
 };
 

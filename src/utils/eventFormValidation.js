@@ -1,5 +1,4 @@
 import { parseTimeToMinutes } from "./eventCreationUtils";
-
 export const validateForm = (formData) => {
   const newErrors = {};
 
@@ -40,14 +39,13 @@ export const validateForm = (formData) => {
     newErrors.location = "Location name is required for offline events";
   }
 
-  if (formData.isVirtual && !formData.virtualLink.trim()) {
+  if (formData.isVirtual && !formData.virtualLink?.trim()) {
     newErrors.virtualLink = "Virtual link is required for online events";
   }
-
   if (formData.capacity) {
     const capacity = Number(formData.capacity);
-    if (!capacity || capacity <= 0) {
-      newErrors.capacity = "Please enter a valid number of attendees";
+    if (!Number.isFinite(capacity) || capacity <= 0 || !Number.isInteger(capacity)) {
+      newErrors.capacity = "Please enter a valid whole number of attendees";
     } else if (capacity > 100000) {
       newErrors.capacity = "Maximum capacity is 100,000 attendees";
     }
@@ -61,38 +59,52 @@ export const validateForm = (formData) => {
     const registrationEnd = formData.registrationEnd
       ? new Date(formData.registrationEnd)
       : null;
-    const eventStart = new Date(
-      `${formData.isMultiDay ? formData.startDate : formData.date}T${formData.startTime}`
-    );
 
-    if (registrationStart && registrationStart < now) {
+    // Normalize date to YYYY-MM-DD format before combining with time
+    const rawDate = formData.isMultiDay ? formData.startDate : formData.date;
+    const dateStr = rawDate?.includes("T") ? rawDate.split("T")[0] : rawDate;
+    const eventStart = new Date(`${dateStr}T${formData.startTime}`);
+
+    if (registrationStart && isNaN(registrationStart.getTime())) {
+      newErrors.registrationStart = "Invalid registration start date";
+    } else if (registrationStart && registrationStart < now) {
       newErrors.registrationStart = "Registration start cannot be in the past";
     }
 
-    if (registrationStart && registrationEnd && registrationStart >= registrationEnd) {
-      newErrors.registrationEnd = "Registration end must be after registration start";
+    if (registrationEnd && isNaN(registrationEnd.getTime())) {
+      newErrors.registrationEnd = "Invalid registration end date";
     }
 
-    if (registrationStart && !isNaN(eventStart.getTime()) && registrationStart >= eventStart) {
-      newErrors.registrationStart = "Registration start must be before the event starts";
+    if (registrationStart && registrationEnd && !isNaN(registrationStart.getTime()) && !isNaN(registrationEnd.getTime())) {
+      if (registrationStart >= registrationEnd) {
+        newErrors.registrationEnd = "Registration end must be after registration start";
+      }
     }
 
-    if (registrationEnd && !isNaN(eventStart.getTime()) && registrationEnd > eventStart) {
-      newErrors.registrationEnd = "Registration must close before the event starts";
+    if (registrationStart && !isNaN(eventStart.getTime()) && !isNaN(registrationStart.getTime())) {
+      if (registrationStart >= eventStart) {
+        newErrors.registrationStart = "Registration start must be before the event starts";
+      }
+    }
+
+    if (registrationEnd && !isNaN(eventStart.getTime()) && !isNaN(registrationEnd.getTime())) {
+      if (registrationEnd >= eventStart) {
+        newErrors.registrationEnd = "Registration must close before the event starts";
+      }
     }
   }
 
   if (formData.ticketTiers && formData.ticketTiers.length > 0) {
-    formData.ticketTiers.forEach((tier, index) => {
+    formData.ticketTiers.forEach((tier) => {
       if (tier.name && tier.name.trim()) {
         const price = Number(tier.price);
         if (price < 0) {
-          newErrors[`ticketPrice_${index}`] = "Ticket price cannot be negative";
+          newErrors[`ticketPrice_${tier.id}`] = "Ticket price cannot be negative";
         }
         if (tier.capacity) {
           const capacity = Number(tier.capacity);
           if (capacity <= 0) {
-            newErrors[`ticketCapacity_${index}`] = "Ticket capacity must be greater than 0";
+            newErrors[`ticketCapacity_${tier.id}`] = "Ticket capacity must be greater than 0";
           }
         }
       }

@@ -4,7 +4,7 @@
  */
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useReducedMotion } from '../../hooks/useReducedMotion';
+import { useReducedMotion } from 'hooks/useReducedMotion';
 
 /**
  * A React component that displays an animated typewriter effect,

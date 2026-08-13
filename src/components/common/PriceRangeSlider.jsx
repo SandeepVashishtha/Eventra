@@ -57,7 +57,7 @@ const PriceRangeSlider = ({
 
         {/* Active range track */}
         <div
-          className="absolute h-2 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full top-2"
+          className="absolute h-2 bg-linear-to-r from-indigo-500 to-purple-600 rounded-full top-2"
           style={{
             left: `${minPercent}%`,
             right: `${100 - maxPercent}%`,

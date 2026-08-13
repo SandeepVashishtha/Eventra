@@ -1,16 +1,16 @@
 import { BarChart, Calendar, Check, CheckCircle, ChevronDown, Mail, MessageSquare, Monitor, MoreHorizontal, Plus, Star, User, Bug } from "lucide-react";
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import useReducedMotion from "../../hooks/useReducedMotion.js";
+import useReducedMotion from "hooks/useReducedMotion.js";
 import { toast } from "react-toastify";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
-import { analyzeSentiment, getSentimentDisplay } from "../../utils/sentiment.js";
+import useDocumentTitle from "hooks/useDocumentTitle";
+import { analyzeSentiment, getSentimentDisplay } from "utils/sentiment.js";
 import { useTranslation } from "react-i18next";
 
 // Star Rating Component
 const StarRating = ({ rating, onRatingChange, error }) => {
   const { t } = useTranslation();
-  useReducedMotion();
+  const prefersReducedMotion = useReducedMotion();
   const [hoveredRating, setHoveredRating] = useState(0);
 
   const handleStarClick = (star) => {
@@ -42,8 +42,8 @@ const StarRating = ({ rating, onRatingChange, error }) => {
             onMouseEnter={() => setHoveredRating(star)}
             onMouseLeave={() => setHoveredRating(0)}
             className="focus:outline-none"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={prefersReducedMotion ? {} : { scale: 1.1 }}
+            whileTap={prefersReducedMotion ? {} : { scale: 0.95 }}
             aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
             title={`Click to rate ${star} star${star > 1 ? "s" : ""
               } (click again to deselect)`}
@@ -60,7 +60,7 @@ const StarRating = ({ rating, onRatingChange, error }) => {
           <motion.span
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
-            className="ml-3 text-sm text-gray-600 dark:text-gray-400"
+            className="ml-3 text-sm text-gray-600 dark:text-gray-200"
           >
             {rating === 1 && t("feedback.starRatingLabels.1")}
             {rating === 2 && t("feedback.starRatingLabels.2")}
@@ -130,7 +130,7 @@ const FloatingInput = ({
               ? "text-red-500 dark:text-red-400"
               : isFocused
                 ? "text-black dark:text-white"
-                : "text-gray-500 dark:text-gray-400"
+                : "text-gray-500 dark:text-gray-200"
             }`}
         >
           {label} {required && <span className="text-red-500">*</span>}
@@ -186,7 +186,7 @@ const CustomFloatingSelect = ({
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [dropdownRef]);
+  }, []);
 
   const handleSelect = (optionValue) => {
     const selectedOption = options.find((opt) => opt.value === optionValue);
@@ -200,7 +200,7 @@ const CustomFloatingSelect = ({
 
   return (
     <div className="relative mt-6" ref={dropdownRef}>
-      <div className="relative">        
+      <div className="relative">
 
         <button
           type="button"
@@ -231,7 +231,7 @@ const CustomFloatingSelect = ({
               ? "text-red-500 dark:text-red-400"
               : isOpen
                 ? "text-black dark:text-white"
-                : "text-gray-500 dark:text-gray-400"
+                : "text-gray-500 dark:text-gray-200"
             }`}
         >
           {label} {required && <span className="text-red-500">*</span>}
@@ -256,14 +256,14 @@ const CustomFloatingSelect = ({
                 <li
                   key={option.value}
                   onClick={() => handleSelect(option.value)}
-                  className={`px-4 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 flex items-center
+                  className={`px-4 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 flex items-center
                      ${value === option.value
                       ? "bg-indigo-100 dark:bg-indigo-500"
                       : ""
                     }`}
                 >
                   {option.icon && (
-                    <option.icon className="w-5 h-5 mr-3 text-gray-500 dark:text-gray-400" />
+                    <option.icon className="w-5 h-5 mr-3 text-gray-500 dark:text-gray-200" />
                   )}
                   {option.label}
                   {value === option.value && (
@@ -310,10 +310,15 @@ const FeedbackPage = () => {
     feedbackType: "",
     message: "",
     rating: 0,
+    // Feature request structured fields
+    featureTitle: "",
+    featureProblem: "",
+    featureAlternatives: "",
+    featurePriority: "",
   });
 
   const [errors, setErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);  
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [sentimentScore, setSentimentScore] = useState(0);
 
   useEffect(() => {
@@ -337,6 +342,15 @@ const FeedbackPage = () => {
     { value: "event", label: t("feedback.feedbackTypes.event"), icon: Calendar },
     { value: "other", label: t("feedback.feedbackTypes.other"), icon: MoreHorizontal },
   ];
+
+  const featurePriorityOptions = [
+    { value: "low", label: t("feedback.featureRequest.priorityLow"), icon: MoreHorizontal },
+    { value: "medium", label: t("feedback.featureRequest.priorityMedium"), icon: BarChart },
+    { value: "high", label: t("feedback.featureRequest.priorityHigh"), icon: Star },
+    { value: "critical", label: t("feedback.featureRequest.priorityCritical"), icon: CheckCircle },
+  ];
+
+  const isFeatureRequest = formData.feedbackType === "feature";
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -375,6 +389,25 @@ const FeedbackPage = () => {
     // Rating validation
     if (!formData.rating || formData.rating === 0) {
       newErrors.rating = t("validation.feedbackRatingRequired");
+    }
+
+    // Feature request structured fields validation
+    if (formData.feedbackType === "feature") {
+      if (!formData.featureTitle || !formData.featureTitle.trim()) {
+        newErrors.featureTitle = t("validation.featureTitleRequired");
+      } else if (formData.featureTitle.trim().length < 5) {
+        newErrors.featureTitle = t("validation.featureTitleMinLength");
+      }
+
+      if (!formData.featureProblem || !formData.featureProblem.trim()) {
+        newErrors.featureProblem = t("validation.featureProblemRequired");
+      } else if (formData.featureProblem.trim().length < 20) {
+        newErrors.featureProblem = t("validation.featureProblemMinLength");
+      }
+
+      if (!formData.featurePriority || formData.featurePriority === "") {
+        newErrors.featurePriority = t("validation.featurePriorityRequired");
+      }
     }
 
     setErrors(newErrors);
@@ -446,11 +479,15 @@ const FeedbackPage = () => {
         feedbackType: "",
         message: "",
         rating: 0,
+        featureTitle: "",
+        featureProblem: "",
+        featureAlternatives: "",
+        featurePriority: "",
       });
       setSentimentScore(0);
       setErrors({});
       setIsSubmitting(false);
-    } catch (error) {
+    } catch {
       toast.error(t("feedback.toastError"));
       setIsSubmitting(false);
     }
@@ -549,7 +586,7 @@ const FeedbackPage = () => {
                   {t("feedback.formHeading")}
                 </h2>
 
-                <p className="mt-2 text-gray-600 dark:text-gray-400">
+                <p className="mt-2 text-gray-600 dark:text-gray-200">
                   {t("feedback.formSubtitle")}
                 </p>
               </div>
@@ -591,6 +628,122 @@ const FeedbackPage = () => {
                   required={true}
                 />
 
+                {/* STRUCTURED FEATURE REQUEST FIELDS */}
+                <AnimatePresence>
+                  {isFeatureRequest && (
+                    <motion.div
+                      key="feature-request-fields"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: prefersReducedMotion ? 0 : 0.3 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="mt-4 rounded-2xl border border-indigo-100 dark:border-indigo-800 bg-indigo-50/40 dark:bg-indigo-950/20 p-5 space-y-4">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Plus className="w-4 h-4 text-indigo-500" />
+                          <p className="text-sm font-semibold text-indigo-700 dark:text-indigo-300">
+                            {t("feedback.featureRequest.sectionTitle")}
+                          </p>
+                        </div>
+
+                        {/* Feature Title */}
+                        <FloatingInput
+                          id="featureTitle"
+                          label={t("feedback.featureRequest.titleLabel")}
+                          value={formData.featureTitle}
+                          onChange={handleChange}
+                          error={errors.featureTitle}
+                          icon={Plus}
+                          required={true}
+                        />
+
+                        {/* Problem it solves */}
+                        <div className="relative mt-2">
+                          <div className="relative">
+                            <MessageSquare className="absolute left-4 top-4 text-gray-400 dark:text-gray-500 w-5 h-5 z-10" />
+                            <textarea
+                              id="featureProblem"
+                              name="featureProblem"
+                              rows="3"
+                              maxLength={500}
+                              value={formData.featureProblem}
+                              onChange={handleChange}
+                              className={`w-full px-4 pl-14 pt-6 pb-2 border-2 rounded-xl focus:ring-4 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 transition-all duration-300 resize-none ${
+                                errors.featureProblem
+                                  ? "border-red-500 focus:border-red-500 focus:ring-red-100 dark:focus:ring-red-900/30"
+                                  : "border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-100 dark:focus:ring-indigo-900/30"
+                              }`}
+                            />
+                            <label
+                              htmlFor="featureProblem"
+                              className={`absolute left-14 pointer-events-none transition-all duration-200 ease-out ${
+                                formData.featureProblem
+                                  ? "top-2 text-xs font-medium"
+                                  : "top-4 text-sm"
+                              } ${
+                                errors.featureProblem
+                                  ? "text-red-500"
+                                  : formData.featureProblem
+                                  ? "text-black dark:text-white"
+                                  : "text-gray-500 dark:text-gray-200"
+                              }`}
+                            >
+                              {t("feedback.featureRequest.problemLabel")}{" "}
+                              <span className="text-red-500">*</span>
+                            </label>
+                          </div>
+                          {errors.featureProblem && (
+                            <p className="text-red-500 text-xs mt-2 ml-1">
+                              {errors.featureProblem}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Alternatives considered (optional) */}
+                        <div className="relative mt-2">
+                          <div className="relative">
+                            <MoreHorizontal className="absolute left-4 top-4 text-gray-400 dark:text-gray-500 w-5 h-5 z-10" />
+                            <textarea
+                              id="featureAlternatives"
+                              name="featureAlternatives"
+                              rows="2"
+                              maxLength={300}
+                              value={formData.featureAlternatives}
+                              onChange={handleChange}
+                              className="w-full px-4 pl-14 pt-6 pb-2 border-2 rounded-xl focus:ring-4 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 transition-all duration-300 resize-none border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-100 dark:focus:ring-indigo-900/30"
+                            />
+                            <label
+                              htmlFor="featureAlternatives"
+                              className={`absolute left-14 pointer-events-none transition-all duration-200 ease-out ${
+                                formData.featureAlternatives
+                                  ? "top-2 text-xs font-medium text-black dark:text-white"
+                                  : "top-4 text-sm text-gray-500 dark:text-gray-200"
+                              }`}
+                            >
+                              {t("feedback.featureRequest.alternativesLabel")}
+                              <span className="ml-1 text-xs text-gray-400 dark:text-gray-500">
+                                ({t("feedback.featureRequest.optionalBadge")})
+                              </span>
+                            </label>
+                          </div>
+                        </div>
+
+                        {/* Priority */}
+                        <CustomFloatingSelect
+                          id="featurePriority"
+                          label={t("feedback.featureRequest.priorityLabel")}
+                          value={formData.featurePriority}
+                          onChange={handleSelectChange}
+                          options={featurePriorityOptions}
+                          error={errors.featurePriority}
+                          required={true}
+                        />
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
                 {/* MESSAGE */}
                 <div className="relative mt-6">
                   <div className="relative">
@@ -618,7 +771,7 @@ const FeedbackPage = () => {
                           ? "text-red-500"
                           : formData.message
                             ? "text-black dark:text-white"
-                            : "text-gray-500 dark:text-gray-400"
+                            : "text-gray-500 dark:text-gray-200"
                         }`}
                     >
                       {t("feedback.formMessage")}
@@ -630,7 +783,7 @@ const FeedbackPage = () => {
                     const messageLength = formData.message ? formData.message.length : 0;
                     const MAX_MESSAGE_LENGTH = 500;
                     const progressPercent = Math.min((messageLength / MAX_MESSAGE_LENGTH) * 100, 100);
-                    
+
                     return (
                       <div className="mt-2.5 space-y-1.5">
                         {/* Animated Bar Meter */}
@@ -657,7 +810,7 @@ const FeedbackPage = () => {
                           <span
                             className={`font-medium transition-colors duration-300 flex-1 leading-relaxed ${
                               messageLength === 0
-                                ? "text-gray-500 dark:text-gray-400"
+                                ? "text-gray-500 dark:text-gray-200"
                                 : messageLength < 20
                                 ? "text-yellow-600 dark:text-yellow-400"
                                 : messageLength >= 400
@@ -675,7 +828,7 @@ const FeedbackPage = () => {
                           </span>
 
                           {/* Character Counter */}
-                          <span className={`font-mono shrink-0 text-gray-500 dark:text-gray-400 ${messageLength === MAX_MESSAGE_LENGTH ? "text-red-500 dark:text-red-400 font-bold" : ""}`}>
+                          <span className={`font-mono shrink-0 text-gray-500 dark:text-gray-200 ${messageLength === MAX_MESSAGE_LENGTH ? "text-red-500 dark:text-red-400 font-bold" : ""}`}>
                             {messageLength} / {MAX_MESSAGE_LENGTH}
                           </span>
                         </div>
@@ -715,7 +868,7 @@ const FeedbackPage = () => {
                           <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
                             {t("feedback.sentimentLabel", { sentiment: getSentimentDisplay(sentimentScore).label })}
                           </p>
-                          <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                          <p className="text-[10px] text-gray-500 dark:text-gray-200">
                             {t("feedback.sentimentSubtitle")}
                           </p>
                         </div>

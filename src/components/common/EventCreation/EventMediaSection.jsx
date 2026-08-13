@@ -1,9 +1,15 @@
-import React from "react";
+import useFileUpload from "hooks/useFileUpload";
+
 import { motion, AnimatePresence } from "framer-motion";
 import { ImageIcon, Upload, X, Plus } from "lucide-react";
-import { logger } from "../../../utils/logger";
 
 const MAX_BANNER_SIZE = 5 * 1024 * 1024; // 5MB
+const allowedTypes = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+];
 
 const TagInput = ({ tags, onAdd, onRemove, newTag, setNewTag, placeholder = "Add a tag" }) => {
   const handleKeyDown = (e) => {
@@ -62,6 +68,20 @@ const TagInput = ({ tags, onAdd, onRemove, newTag, setNewTag, placeholder = "Add
 };
 
 const EventMediaSection = ({ 
+  // Fix: useFileUpload replaces createObjectURL with auto-revocation
+  // Previously the old bannerPreview URL was manually revoked in setFormData
+  // but this was fragile — useFileUpload handles it correctly on change/unmount.
+  const {
+    preview: bannerPreviewUrl,
+    error: bannerUploadError,
+    handleFileChange: handleBannerChange,
+    reset: resetBanner,
+  } = useFileUpload({
+    mode: "objectUrl",
+    maxBytes: 5_242_880, // 5MB
+    accept: ["image/*"],
+  });
+
   formData, 
   setFormData, 
   newTag, 
@@ -74,26 +94,25 @@ const EventMediaSection = ({
     const file = e.target.files[0];
     if (!file) return;
 
+    if (!allowedTypes.includes(file.type)) {
+      alert("Please upload JPG, PNG, or WEBP images only.");
+      return;
+    }
+
     if (file.size > MAX_BANNER_SIZE) {
       alert("Image is too large (max 5MB)");
       return;
     }
 
     setIsUploading(true);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setFormData((prev) => ({
-        ...prev,
-        banner: file,
-        bannerPreview: reader.result,
-      }));
-      setIsUploading(false);
-    };
-    reader.onerror = () => {
-      logger.error("Failed to read file");
-      setIsUploading(false);
-    };
-    reader.readAsDataURL(file);
+    // Fix: handleBannerChange from useFileUpload handles URL creation + revocation
+    await handleBannerChange({ target: { files: [file] } });
+    setFormData((prev) => ({
+      ...prev,
+      banner: file,
+      bannerPreview: bannerPreviewUrl,
+    }));
+    setIsUploading(false);
   };
 
   return (
@@ -107,10 +126,17 @@ const EventMediaSection = ({
         <div className="relative group cursor-pointer">
           {formData.bannerPreview ? (
             <div className="relative aspect-video rounded-xl overflow-hidden border-2 border-indigo-500">
-              <img src={formData.bannerPreview} alt="Preview" className="w-full h-full object-cover" />
+              <img src={formData.bannerPreview} alt="Preview" className="w-full h-full object-cover"  loading="lazy" />
               <button
                 type="button"
-                onClick={() => setFormData(prev => ({ ...prev, banner: null, bannerPreview: null }))}
+                onClick={() => {
+                  setFormData(prev => {
+                    if (prev.bannerPreview && prev.bannerPreview.startsWith("blob:")) {
+                      URL.revokeObjectURL(prev.bannerPreview);
+                    }
+                    return { ...prev, banner: null, bannerPreview: null };
+                  });
+                }}
                 className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 <X className="w-4 h-4" />

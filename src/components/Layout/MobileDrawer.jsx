@@ -1,8 +1,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
-import { useTheme } from "../../context/ThemeContext";
-import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "context/ThemeContext";
+import { useAuth } from "context/AuthContext";
 import BrandMark from "./BrandMark";
 import MobileNavLink from "./MobileNavLink";
 import MobileNavGroup from "./MobileNavGroup";
@@ -40,7 +40,7 @@ const MobileDrawerHeader = ({ closeBtnRef, closeAllMenus }) => (
       onClick={closeAllMenus}
       // 🔥 FIX 2: Added missing aria-label and focus-visible states for screen readers/keyboard users
       aria-label="Close mobile menu"
-      className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-gray-400 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+      className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-gray-200 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
     >
       <ChevronDown className="w-6 h-6 rotate-90" />
     </button>
@@ -57,6 +57,7 @@ const MobileDrawerFooter = ({
   handleLogoutClick,
   isDarkMode,
   toggleTheme,
+  setIsCustomizerOpen,
   cursorEnabled,
   toggleCursor,
 }) => (
@@ -75,7 +76,7 @@ const MobileDrawerFooter = ({
         <AuthButtons isMobile={true} closeAllMenus={closeAllMenus} />
       )}
       <div className="flex gap-3 mt-4">
-        <ThemeToggleButton isDarkMode={isDarkMode} toggleTheme={toggleTheme} isMobile={true} />
+        <ThemeToggleButton isDarkMode={isDarkMode} toggleTheme={toggleTheme} isMobile={true} setIsCustomizerOpen={setIsCustomizerOpen} />
         <CursorToggleButton
           cursorEnabled={cursorEnabled}
           toggleCursor={toggleCursor}
@@ -88,7 +89,7 @@ const MobileDrawerFooter = ({
 
 const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeAllMenus, handleTouchStart, handleTouchMove, handleTouchEnd, closeBtnRef, handleLogoutClick, primaryLine, secondaryLine, cursorEnabled, toggleCursor, navItems }) => {
   const location = useLocation();
-  const { isDarkMode, toggleTheme } = useTheme();
+  const { isDarkMode, toggleTheme, setIsCustomizerOpen } = useTheme();
   const { user, isAuthenticated } = useAuth();
 
   return (
@@ -100,7 +101,7 @@ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeA
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
-          className="fixed inset-y-0 right-0 h-dvh overflow-y-auto w-[88vw] max-w-[20rem] sm:max-w-sm shadow-2xl z-[110] flex flex-col bg-white/95 backdrop-blur-xl dark:bg-slate-900/95"
+          className="fixed inset-y-0 right-0 h-dvh overflow-y-auto w-[88vw] max-w-[20rem] sm:max-w-sm shadow-2xl z-modal flex flex-col bg-white/95 backdrop-blur-xl dark:bg-slate-900/95"
           role="dialog"
           aria-modal="true"
           // 🔥 FIX 3: Added aria-label to the modal dialog so screen readers announce it properly
@@ -132,6 +133,7 @@ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeA
             handleLogoutClick={handleLogoutClick}
             isDarkMode={isDarkMode}
             toggleTheme={toggleTheme}
+            setIsCustomizerOpen={setIsCustomizerOpen}
             cursorEnabled={cursorEnabled}
             toggleCursor={toggleCursor}
           />

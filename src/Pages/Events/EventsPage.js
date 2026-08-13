@@ -1,60 +1,82 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useMemo, useState } from "react";
+import BackToTopButton from "components/common/BackToTopButton";
 import { useSearchParams, useLocation } from "react-router-dom";
-import VirtualizedEventGrid from "../../components/common/VirtualizedEventGrid"; 
+import VirtualizedEventGrid from "components/common/VirtualizedEventGrid";
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
-import FeedbackButton from "../../components/FeedbackButton";
+import EventCalendarView from "./EventCalendarView";
+import FeedbackButton from "components/FeedbackButton";
 import EventCTA from "./EventCTA";
 import EventFiltersToolbar from "./EventFiltersToolbar";
-import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
-import SearchEmptyState from "../../components/common/SearchEmptyState";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
+import EventCardSkeleton from "components/common/EventCardSkeleton"; // CHANGED: Import from specific file
+import SearchEmptyState from "components/common/SearchEmptyState";
+import EmptyState from "components/common/EmptyState";
+import useDocumentTitle from "hooks/useDocumentTitle";
 import ActiveFilters from "./ActiveFilters";
 import PaginationControls from "./PaginationControls";
 import useEventListing from "./useEventListing";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
+import { safeJsonParse } from "utils/safeJsonParse";
+import RecentlyViewedEvents from "components/common/RecentlyViewedEvents";
+import TrendingEvents from "components/TrendingEvents/TrendingEvents";
 import ErrorBoundary from "../../components/common/ErrorBoundary";
 import ErrorMessage from "../../components/common/ErrorMessage";
 import { EventTimeline } from "../../components/EventTimeline";
+import EventComparison from "./EventComparison";
+import { toast } from "react-toastify";
 import {
   decodeAdvancedFilters,
   encodeAdvancedFilters,
   getDefaultFilters,
-  hasActiveFilters as hasActiveAdvancedFilters,
+  hasActiveAdvancedFilters,
   normalizeAdvancedFilters,
   serializeAdvancedFilters,
-} from "../../utils/advancedFilterUtils";
-
+} from "utils/advancedFilterUtils";
 const FILTER_STORAGE_KEY = "eventra:event-filters:v1";
+
+const EventsPagination = ({ listing }) => {
+  if (listing.isLoading || listing.totalPages <= 1) return null;
+  return (
+    <div className="mt-8 flex justify-center">
+      <PaginationControls
+        currentPage={listing.currentPage}
+        totalPages={listing.totalPages}
+        totalEvents={listing.totalElements}
+        eventsPerPage={listing.eventsPerPage}
+        onPageChange={listing.setSafePage}
+        onPageSizeChange={listing.setEventsPerPage}
+      />
+    </div>
+  );
+};
+
+// CHANGED: Updated skeleton to use EventCardSkeleton with proper key
+const ExploreEventsSkeleton = () => (
+  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" aria-label="Loading events">
+    {Array.from({ length: 6 }, (_, index) => (
+      <EventCardSkeleton key={`skeleton-${index}`} />
+    ))}
+  </div>
+);
 
 const renderCardSection = (
   isLoading,
   loadError,
   onRetry,
   paginatedEvents,
+  filteredEvents,
   viewMode,
   searchQuery,
-  onClearSearch
+  onClearSearch,
+  matchScoreMap,
+  selectedEvents,
+  toggleCompare,
+  setShowComparison
 ) => {
   if (isLoading) {
-    return (
-      <div>
-        <div className="mb-4 text-sm text-gray-500 dark:text-gray-400">
-          Loading events...
-        </div>
-        <div
-          className="animate-pulse transition-all duration-300 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-          role="status"
-          aria-label="Loading events"
-        >
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <EventCardSkeleton key={`skeleton-${i}`} />
-          ))}
-        </div>
-      </div>
-    );
-  }
+  return <ExploreEventsSkeleton />;
+}
 
   if (loadError) {
     return (
@@ -71,44 +93,79 @@ const renderCardSection = (
   }
 
   if (paginatedEvents.length === 0) {
-    return (
-      <div className="relative overflow-hidden rounded-3xl p-10 text-center border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)]">
-        <SearchEmptyState
-          query={searchQuery}
-          itemLabel="events"
-          browseLabel="Browse All Events"
-          browsePath="/events"
-          onClear={onClearSearch}
-          popularTags={["AI", "Blockchain", "Web", "DevOps", "React", "UX"]}
+    const hasSearch = searchQuery && searchQuery.trim() !== "";
+    if (hasSearch) {
+      return (
+        <div className="relative overflow-hidden rounded-3xl p-10 text-center border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)]">
+          <SearchEmptyState
+            query={searchQuery}
+            itemLabel="events"
+            browseLabel="Browse All Events"
+            browsePath="/events"
+            onClear={onClearSearch}
+            popularTags={["AI", "Blockchain", "Web", "DevOps", "React", "UX"]}
+          />
+        </div>
+      );
+    } else {
+      return (
+        <EmptyState
+          type="filters"
+          title="No events match your filters"
+          description="Try adjusting your sliders, removing location parameters, or resetting categories."
+          actionLabel="Clear Filters"
+          onAction={onClearSearch}
         />
-      </div>
-    );
+      );
+    }
   }
-  if (viewMode === "grid" && paginatedEvents.length > 20) {
+  if (viewMode === "grid" && paginatedEvents.length > 50) {
     return <VirtualizedEventGrid events={paginatedEvents} />;
+  }
+  if (viewMode === "calendar") {
+    return <EventCalendarView events={filteredEvents} />;
   }
   return (
     <div
-      className={`grid gap-6 ${
-        viewMode === "grid"
-          ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-          : "grid-cols-1 max-w-4xl mx-auto"
-      }`}
+      className={`grid gap-6 ${viewMode === "grid"
+        ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+        : "grid-cols-1 max-w-4xl mx-auto"
+        }`}
     >
+
+      {selectedEvents.length >= 2 && (
+          <button
+              onClick={() => setShowComparison(true)}
+              className="mb-6 px-5 py-2 bg-indigo-600 text-white rounded-lg"
+          >
+              Compare {selectedEvents.length} Events
+          </button>
+      )}
+
       {paginatedEvents.map((event) => (
-        <EventCard key={event.id} event={event} />
+        <EventCard
+            key={event.id}
+            event={event}
+            onCompare={toggleCompare}
+            isSelected={selectedEvents.some(e => e.id === event.id)}
+        />
       ))}
     </div>
   );
 };
 
+const RecentlyViewedSection = () => (
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+    <RecentlyViewedEvents />
+  </div>
+);
+
 const EventsPage = () => {
   useDocumentTitle("Eventra | Events");
 
-  const location = useLocation(); // ✅ Now this works!
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // SECURITY: Safely decode and sanitize search query from URL params
   const rawSearchParam =
     new URLSearchParams(location.search).get("search") || "";
 
@@ -119,36 +176,58 @@ const EventsPage = () => {
       decodeURIComponent(rawSearchParam)
     );
   } catch {
-    // Malformed URI component
     routeSearchQuery = "";
   }
 
   const listing = useEventListing();
-  const { isLoading } = listing;
+  const [selectedEvents, setSelectedEvents] = useState([]);
+  const [showComparison, setShowComparison] = useState(false);
+  const {
+    isLoading,
+    setAdvancedFilters,
+    setCategoryFilter,
+    setEventsPerPage,
+    setFilterType,
+    setSafePage,
+    setSearchQuery,
+    setSortType,
+    setViewMode,
+  } = listing;
   const cardSectionRef = useRef();
   const hasHydratedFilters = useRef(false);
   const [filtersHydrated, setFiltersHydrated] = useState(false);
 
-  // Local input value updates immediately on each keystroke so the input
-  // feels responsive. The debounced value is passed to the listing hook so
-  // the Fuse.js search pipeline only runs after the user pauses typing.
   const [localSearchInput, setLocalSearchInput] = useState(listing.searchQuery);
   const debouncedSearchQuery = useDebouncedValue(localSearchInput, 300);
 
+  const toggleCompare = (event) => {
+  const exists = selectedEvents.find((e) => e.id === event.id);
+
+  if (exists) {
+    setSelectedEvents(selectedEvents.filter((e) => e.id !== event.id));
+    return;
+  }
+
+  if (selectedEvents.length >= 3) {
+    toast.error("You can compare only 3 events.");
+    return;
+  }
+
+  setSelectedEvents([...selectedEvents, event]);
+};
+
   // Sync the debounced value into the listing hook whenever it settles.
   useEffect(() => {
-    listing.setSearchQuery(debouncedSearchQuery);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearchQuery]);
+    setSearchQuery(debouncedSearchQuery);
+  }, [debouncedSearchQuery, setSearchQuery]);
 
-  // Initialize state from URL params, falling back to persisted filters.
   useEffect(() => {
     if (hasHydratedFilters.current) return;
 
     let savedFilters = {};
 
     try {
-      savedFilters = JSON.parse(
+      savedFilters = safeJsonParse(
         window.sessionStorage.getItem(FILTER_STORAGE_KEY) || "{}"
       );
     } catch {
@@ -157,42 +236,62 @@ const EventsPage = () => {
 
     const page = parseInt(searchParams.get("page"), 10) || 1;
     const perPage =
-      parseInt(searchParams.get("perPage"), 10) || savedFilters.perPage || 6;
+      parseInt(searchParams.get("perPage"), 10) || savedFilters.perPage || 20;
     const filter =
       searchParams.get("filter") || savedFilters.filterType || "all";
+    const savedCategory =
+  window.localStorage.getItem("eventra:last-category") || "all";
+
+const category =
+  searchParams.get("category") ||
+  savedFilters.categoryFilter ||
+  savedCategory ||
+  "all";
     const sort = searchParams.get("sort") || savedFilters.sortType || "Newest";
     const view = searchParams.get("view") || savedFilters.viewMode || "grid";
     const urlAdvancedFilters = searchParams.get("filters");
     const advancedFilters = urlAdvancedFilters
       ? decodeAdvancedFilters(urlAdvancedFilters)
       : normalizeAdvancedFilters(
-          savedFilters.advancedFilters || getDefaultFilters()
-        );
+        savedFilters.advancedFilters || getDefaultFilters()
+      );
     const initialSearch = routeSearchQuery || savedFilters.searchQuery || "";
 
     if (initialSearch) {
       setLocalSearchInput(initialSearch);
-      listing.setSearchQuery(initialSearch);
+      setSearchQuery(initialSearch);
     }
-    listing.setFilterType(filter);
-    listing.setSortType(sort);
-    listing.setViewMode(view);
-    listing.setEventsPerPage(perPage);
-    listing.setAdvancedFilters(advancedFilters);
-    if (page !== 1) listing.setSafePage(page);
+    setFilterType(filter);
+    setCategoryFilter(category);
+    setSortType(sort);
+    setViewMode(view);
+    setEventsPerPage(perPage);
+    setAdvancedFilters(advancedFilters);
+    if (page !== 1) setSafePage(page);
     hasHydratedFilters.current = true;
     setFiltersHydrated(true);
-  }, [searchParams, routeSearchQuery, listing]);
+  }, [
+    searchParams,
+    routeSearchQuery,
+    setAdvancedFilters,
+    setCategoryFilter,
+    setEventsPerPage,
+    setFilterType,
+    setSafePage,
+    setSearchQuery,
+    setSortType,
+    setViewMode,
+  ]);
 
-  // Sync search query when URL param changes (e.g. navigating from navbar search)
   useEffect(() => {
     if (!filtersHydrated) return;
 
     const params = {};
     if (listing.currentPage > 1) params.page = listing.currentPage;
-    if (listing.eventsPerPage !== 6) params.perPage = listing.eventsPerPage;
+    if (listing.eventsPerPage !== 20) params.perPage = listing.eventsPerPage;
     if (listing.searchQuery) params.search = listing.searchQuery;
     if (listing.filterType !== "all") params.filter = listing.filterType;
+    if (listing.categoryFilter !== "all") params.category = listing.categoryFilter;
     if (listing.sortType !== "Newest") params.sort = listing.sortType;
     if (listing.viewMode !== "grid") params.view = listing.viewMode;
     if (hasActiveAdvancedFilters(listing.advancedFilters)) {
@@ -206,20 +305,22 @@ const EventsPage = () => {
         JSON.stringify({
           searchQuery: listing.searchQuery,
           filterType: listing.filterType,
+          categoryFilter: listing.categoryFilter,
           sortType: listing.sortType,
           viewMode: listing.viewMode,
           perPage: listing.eventsPerPage,
           advancedFilters: serializeAdvancedFilters(listing.advancedFilters),
         })
       );
-    } catch {
-      // sessionStorage can be unavailable in private browsing or embedded views.
+    } catch (err) {
+      console.error("Failed to persist filter params:", err);
     }
   }, [
     listing.currentPage,
     listing.eventsPerPage,
     listing.searchQuery,
     listing.filterType,
+    listing.categoryFilter,
     listing.sortType,
     listing.viewMode,
     listing.advancedFilters,
@@ -227,21 +328,19 @@ const EventsPage = () => {
     setSearchParams,
   ]);
 
-  // Keep local state in sync when an explicit route search changes.
   useEffect(() => {
     if (!rawSearchParam) return;
 
     const safeQuery = prepareSafeSearchQuery(routeSearchQuery);
     if (safeQuery !== listing.searchQuery) {
       setLocalSearchInput(safeQuery);
-      listing.setSearchQuery(safeQuery);
+      setSearchQuery(safeQuery);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     rawSearchParam,
     routeSearchQuery,
     listing.searchQuery,
-    listing.setSearchQuery,
+    setSearchQuery,
   ]);
 
   const handleSearch = (query = "") => {
@@ -251,7 +350,6 @@ const EventsPage = () => {
     return listing.filteredEvents;
   };
 
-  // Scroll to card section after loading when a route search is active
   useEffect(() => {
     if (!isLoading && routeSearchQuery) {
       setTimeout(() => {
@@ -262,6 +360,22 @@ const EventsPage = () => {
       }, 100);
     }
   }, [isLoading, routeSearchQuery]);
+  useEffect(() => {
+  const savedScroll = sessionStorage.getItem("eventra:events-scroll-position");
+
+  if (!savedScroll) return;
+
+  const timeout = setTimeout(() => {
+    window.scrollTo({
+      top: Number(savedScroll),
+      behavior: "auto",
+    });
+
+    sessionStorage.removeItem("eventra:events-scroll-position");
+  }, 100);
+
+  return () => clearTimeout(timeout);
+}, []);
 
   const scrollToCard = () => {
     cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -276,8 +390,39 @@ const EventsPage = () => {
     setLocalSearchInput("");
   };
 
+  const currentFilterConfig = useMemo(
+    () => ({
+      searchQuery: localSearchInput,
+      filterType: listing.filterType,
+      categoryFilter: listing.categoryFilter,
+      sortType: listing.sortType,
+      viewMode: listing.viewMode,
+      advancedFilters: listing.advancedFilters,
+    }),
+    [
+      localSearchInput,
+      listing.filterType,
+      listing.categoryFilter,
+      listing.sortType,
+      listing.viewMode,
+      listing.advancedFilters,
+    ],
+  );
+
+  const applyFilterPreset = (filters) => {
+    const search = filters?.searchQuery || "";
+    setLocalSearchInput(search);
+    listing.setSearchQuery(search);
+    listing.setFilterType(filters?.filterType || "all");
+    listing.setCategoryFilter(filters?.categoryFilter || "all");
+    listing.setSortType(filters?.sortType || "Newest");
+    listing.setViewMode(filters?.viewMode || "grid");
+    listing.setAdvancedFilters(filters?.advancedFilters || getDefaultFilters());
+    listing.setSafePage(1);
+  };
+
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100 overflow-x-hidden">
+    <div className="flex flex-col min-h-screen bg-linear-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100 overflow-x-hidden">
       <EventHero
         searchQuery={localSearchInput}
         setSearchQuery={setLocalSearchInput}
@@ -286,12 +431,16 @@ const EventsPage = () => {
         scrollToCard={scrollToCard}
       />
 
+      <div className="mt-6 sm:mt-8">
+        <TrendingEvents title="Trending Events" limit={6} fetchSize={24} />
+        <RecentlyViewedSection />
+      </div>
+
       <div
         ref={cardSectionRef}
         className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8"
       >
         <div className="mb-5 sm:mb-6">
-
           <EventFiltersToolbar
             filterType={listing.filterType}
             onFilterChange={listing.setFilterType}
@@ -310,6 +459,10 @@ const EventsPage = () => {
             priceStats={listing.priceStats}
             dateRangeStats={listing.dateRangeStats}
             onResetFilters={clearSearchAndFilters}
+            currentFilterConfig={currentFilterConfig}
+            onApplyPreset={applyFilterPreset}
+            visibleEvents={listing.paginatedEvents}
+            totalElements={listing.totalElements}
           />
         </div>
 
@@ -330,30 +483,44 @@ const EventsPage = () => {
           advancedFilters={listing.advancedFilters}
           onAdvancedFiltersChange={listing.setAdvancedFilters}
         />
-
+        {localSearchInput.trim() && (
+          <div className="mb-4 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950/30 dark:text-indigo-300">
+            Showing results for: <span className="font-semibold">"{localSearchInput}"</span>
+          </div>
+        )}
+        <div className="mb-4 text-sm text-slate-600 dark:text-slate-300">
+  {listing.filteredEvents.length === 0
+    ? "No events found"
+    : `Showing ${listing.filteredEvents.length} ${
+        listing.filteredEvents.length === 1 ? "event" : "events"
+      }`}
+</div>
+{listing.lastUpdated && (
+  <div className="mb-4 text-xs text-slate-500 dark:text-slate-400">
+    Last updated: Just now
+  </div>
+)}
         <ErrorBoundary level="section" label="Events">
-     {renderCardSection(
+    {renderCardSection(
   isLoading,
   listing.loadError,
   listing.fetchEvents,
   listing.paginatedEvents,
+  listing.filteredEvents,
   listing.viewMode,
   listing.searchQuery,
-  clearSearchAndFilters
+  clearSearchAndFilters,
+  listing.matchScoreMap,
+  selectedEvents,
+  toggleCompare,
+  setShowComparison
 )}
 
           {!listing.isLoading && listing.totalPages > 1 && (
-            <div className="mt-8 flex justify-center">
-              <PaginationControls
-                currentPage={listing.currentPage}
-                totalPages={listing.totalPages}
-                onPageChange={listing.setSafePage}
-              />
-            </div>
+            <EventsPagination listing={listing} />
           )}
         </ErrorBoundary>
 
-        {/* Interactive Event Timeline Planner Section */}
         <div className="mt-12 sm:mt-16">
           <ErrorBoundary level="section" label="Event Timeline Planner">
             <EventTimeline />
@@ -361,8 +528,16 @@ const EventsPage = () => {
         </div>
       </div>
 
+      {showComparison && (
+          <EventComparison
+              events={selectedEvents}
+              onClose={() => setShowComparison(false)}
+          />
+      )}
+
       <EventCTA />
-      <FeedbackButton />
+<FeedbackButton />
+<BackToTopButton />
     </div>
   );
 };

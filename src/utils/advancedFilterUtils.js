@@ -1,9 +1,14 @@
 /**
- * Advanced filtering utilities for event management
- * Provides modular and scalable filtering functions
+ * Advanced Event Filtering, Sorting & Search Engine
+ *
+ * Provides high-performance, chainable filtering, fuzzy text search,
+ * multi-attribute sorting, URL state serialization, and stats calculation.
  */
 
-// Event categories mapping
+// ============================================================================
+// 1. Constants & Mappings
+// ============================================================================
+
 export const EVENT_CATEGORIES = [
   { id: "web-development", label: "Web Development", color: "blue" },
   { id: "ai-ml", label: "AI & Machine Learning", color: "purple" },
@@ -17,37 +22,40 @@ export const EVENT_CATEGORIES = [
   { id: "networking", label: "Networking & Community", color: "emerald" },
 ];
 
-// Event modes
 export const EVENT_MODES = [
   { id: "online", label: "Online", icon: "Globe" },
   { id: "offline", label: "Offline", icon: "MapPin" },
   { id: "hybrid", label: "Hybrid", icon: "Cpu" },
 ];
 
-// Event status options
 export const EVENT_STATUS_OPTIONS = [
   { id: "upcoming", label: "Upcoming", color: "blue" },
   { id: "live", label: "Ongoing", color: "green" },
   { id: "past", label: "Past", color: "gray" },
 ];
 
-// Price range presets
 export const PRICE_RANGES = [
-  { min: 0, max: 0, label: "Free" },
-  { min: 1, max: 250, label: "Under $250" },
-  { min: 250, max: 500, label: "$250 - $500" },
-  { min: 500, max: 1000, label: "$500 - $1000" },
-  { min: 1000, max: Infinity, label: "$1000+" },
+  { id: "free", min: 0, max: 0, label: "Free" },
+  { id: "under-250", min: 1, max: 250, label: "Under $250" },
+  { id: "250-500", min: 250, max: 500, label: "$250 - $500" },
+  { id: "500-1000", min: 500, max: 1000, label: "$500 - $1000" },
+  { id: "1000-plus", min: 1000, max: Infinity, label: "$1000+" },
+];
+
+export const SORT_OPTIONS = [
+  { id: "date-asc", label: "Date: Soonest First" },
+  { id: "date-desc", label: "Date: Latest First" },
+  { id: "price-asc", label: "Price: Low to High" },
+  { id: "price-desc", label: "Price: High to Low" },
+  { id: "title-asc", label: "Title: A-Z" },
+  { id: "popularity-desc", label: "Most Popular" },
 ];
 
 export const FILTER_PRESETS = [
   {
     id: "free-online",
     label: "Free Online",
-    filters: {
-      modes: ["online"],
-      priceRange: { min: 0, max: 0 },
-    },
+    filters: { modes: ["online"], priceRange: { min: 0, max: 0 } },
   },
   {
     id: "upcoming-workshops",
@@ -68,21 +76,23 @@ export const FILTER_PRESETS = [
   {
     id: "live-virtual",
     label: "Live Virtual",
-    filters: {
-      modes: ["online"],
-      statuses: ["live"],
-    },
+    filters: { modes: ["online"], statuses: ["live"] },
   },
 ];
 
-const normalizeFilterValue = (value) =>
+// ============================================================================
+// 2. Normalization & Formatting Helpers
+// ============================================================================
+
+export const normalizeFilterValue = (value) =>
   String(value || "")
     .toLowerCase()
+    .trim()
     .replace(/&/g, "and")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-const toDateInputValue = (value) => {
+export const toDateInputValue = (value) => {
   if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
@@ -92,249 +102,250 @@ const toDateInputValue = (value) => {
 };
 
 /**
- * Get category label from mapping
- * @param {string} categoryKey - The key or label to look up
- * @returns {string} The display label or the original key if not found
+ * Retrieves human-readable category label from an ID or string.
+ *
+ * @param {string} categoryKey - Category ID or raw string.
+ * @returns {string} Formatted category display name.
  */
 export const getCategoryLabel = (categoryKey) => {
-  // 🛡️ Robust Defensive Guard: Return empty string for null/undefined/falsy values
-  // to prevent downstream UI components from crashing when trying to render/slice.
-  if (categoryKey === null || categoryKey === undefined) {
-    return "";
-  }
-
-  // Handle empty strings or whitespace-only keys early
+  if (!categoryKey) return "";
   const trimmedKey = String(categoryKey).trim();
-  if (!trimmedKey) {
-    return "";
-  }
+  if (!trimmedKey) return "";
 
   const category = EVENT_CATEGORIES.find(
     (cat) =>
       cat.id === trimmedKey ||
-      normalizeFilterValue(cat.label) === normalizeFilterValue(trimmedKey),
+      normalizeFilterValue(cat.label) === normalizeFilterValue(trimmedKey)
   );
 
   return category?.label || trimmedKey;
 };
 
+// ============================================================================
+// 3. Modular Atomic Filters
+// ============================================================================
+
 /**
- * Filter events by category
- * @param {Array} events - Array of events to filter
- * @param {Array} selectedCategories - Selected category keys
- * @returns {Array} Filtered events
+ * Filters events by multi-field search query (title, description, tags, organizer).
+ *
+ * @param {Array<Object>} events - Array of event items.
+ * @param {string} searchQuery - Search keywords.
+ * @returns {Array<Object>} Filtered events array.
  */
-export const filterByCategory = (events, selectedCategories) => {
-  if (!Array.isArray(events)) {
-    return [];
-  }
-  if (!selectedCategories || selectedCategories.length === 0) {
-    return events;
-  }
+export const filterBySearch = (events, searchQuery) => {
+  if (!Array.isArray(events)) return [];
+  const query = String(searchQuery || "").trim().toLowerCase();
+  if (!query) return events;
 
   return events.filter((event) => {
-    if (!event) return false;
-    const eventCategory = normalizeFilterValue(event.category || event.type);
-    return selectedCategories.some((cat) => {
-      const mappedCategory = EVENT_CATEGORIES.find(
-        (category) =>
-          category &&
-          (category.id === cat ||
-            normalizeFilterValue(category.label) === normalizeFilterValue(cat)),
-      );
+    const title = String(event.title || event.name || "").toLowerCase();
+    const description = String(event.description || event.summary || "").toLowerCase();
+    const organizer = String(event.organizer || event.host || "").toLowerCase();
+    const tags = Array.isArray(event.tags) ? event.tags.join(" ").toLowerCase() : "";
 
-      return (
-        eventCategory === normalizeFilterValue(cat) ||
-        eventCategory === normalizeFilterValue(mappedCategory?.id) ||
-        eventCategory === normalizeFilterValue(mappedCategory?.label)
-      );
-    });
-  });
-};
-
-export const filterByLocation = (events, locationQuery) => {
-  if (!Array.isArray(events)) {
-    return [];
-  }
-  const query = String(locationQuery || "").trim().toLowerCase();
-  if (!query) {
-    return events;
-  }
-
-  return events.filter((event) =>
-    event ? String(event.location || event.venue || event.city || "")
-      .toLowerCase()
-      .includes(query) : false,
-  );
-};
-
-/**
- * Filter events by event mode (online/offline/hybrid)
- * @param {Array} events - Array of events to filter
- * @param {Array} selectedModes - Selected mode IDs
- * @returns {Array} Filtered events
- */
-export const filterByMode = (events, selectedModes) => {
-  if (!Array.isArray(events)) {
-    return [];
-  }
-  if (!selectedModes || selectedModes.length === 0) {
-    return events;
-  }
-
-  return events.filter((event) =>
-    event ? selectedModes.includes(
-      normalizeFilterValue(event.eventMode || event.mode || "offline"),
-    ) : false,
-  );
-};
-
-/**
- * Filter events by price range
- * @param {Array} events - Array of events to filter
- * @param {Object} priceRange - { min: number, max: number }
- * @returns {Array} Filtered events
- */
-export const filterByPrice = (events, priceRange) => {
-  if (!Array.isArray(events)) {
-    return [];
-  }
-  if (!priceRange) {
-    return events;
-  }
-
-  const { min = 0, max = Infinity } = priceRange;
-
-  return events.filter((event) => {
-    if (!event) return false;
-    const price = event.price || 0;
-    return price >= min && price <= max;
-  });
-};
-
-/**
- * Filter events by date range
- * @param {Array} events - Array of events to filter
- * @param {Object} dateRange - { startDate: Date, endDate: Date }
- * @returns {Array} Filtered events
- */
-export const filterByDateRange = (events, dateRange) => {
-  if (!Array.isArray(events)) {
-    return [];
-  }
-  if (!dateRange || (!dateRange.startDate && !dateRange.endDate)) {
-    return events;
-  }
-
-  const startDate = dateRange.startDate
-    ? new Date(dateRange.startDate)
-    : new Date("1900-01-01");
-  const endDate = dateRange.endDate
-    ? new Date(dateRange.endDate)
-    : new Date("2099-12-31");
-
-  // Set end date to end of day
-  endDate.setHours(23, 59, 59, 999);
-
-  return events.filter((event) => {
-    if (!event) return false;
-    const eventDate = new Date(event.date || event.startDate);
-    return eventDate >= startDate && eventDate <= endDate;
-  });
-};
-
-/**
- * Filter events by status (upcoming, ongoing, past)
- * @param {Array} events - Array of events to filter
- * @param {Array} selectedStatuses - Selected status IDs
- * @returns {Array} Filtered events
- */
-export const filterByStatus = (events, selectedStatuses) => {
-  if (!Array.isArray(events)) {
-    return [];
-  }
-  if (!selectedStatuses || selectedStatuses.length === 0) {
-    return events;
-  }
-
-  return events.filter((event) => {
-    if (!event) return false;
-    const status = normalizeFilterValue(event.status || "upcoming");
-    return selectedStatuses.some(
-      (selectedStatus) => normalizeFilterValue(selectedStatus) === status,
+    return (
+      title.includes(query) ||
+      description.includes(query) ||
+      organizer.includes(query) ||
+      tags.includes(query)
     );
   });
 };
 
 /**
- * Apply all filters to events
- * @param {Array} events - Array of events to filter
- * @param {Object} filters - Filter configuration object
- * @returns {Array} Filtered events
+ * Filters events matching selected category identifiers.
  */
-export const applyAdvancedFilters = (events, filters = {}) => {
-  let filtered = events;
+export const filterByCategory = (events, selectedCategories) => {
+  if (!Array.isArray(events)) return [];
+  if (!selectedCategories || selectedCategories.length === 0) return events;
 
-  if (filters.categories && filters.categories.length > 0) {
-    filtered = filterByCategory(filtered, filters.categories);
-  }
+  const normalizedSelected = selectedCategories.map((cat) => normalizeFilterValue(cat));
 
-  if (filters.modes && filters.modes.length > 0) {
-    filtered = filterByMode(filtered, filters.modes);
-  }
-
-  if (filters.location) {
-    filtered = filterByLocation(filtered, filters.location);
-  }
-
-  if (filters.priceRange) {
-    filtered = filterByPrice(filtered, filters.priceRange);
-  }
-
-  if (filters.dateRange) {
-    filtered = filterByDateRange(filtered, filters.dateRange);
-  }
-
-  if (filters.statuses && filters.statuses.length > 0) {
-    filtered = filterByStatus(filtered, filters.statuses);
-  }
-
-  return filtered;
-};
-
-/**
- * Get unique categories from events
- * @param {Array} events - Array of events
- * @returns {Array} Unique categories
- */
-export const getUniqueCategories = (events) => {
-  const categories = new Set();
-  events.forEach((event) => {
-    if (event.category) {
-      categories.add(event.category);
-    }
+  return events.filter((event) => {
+    const eventCategory = normalizeFilterValue(event.category || event.type);
+    return normalizedSelected.some((cat) => {
+      const mapped = EVENT_CATEGORIES.find((c) => c.id === cat || normalizeFilterValue(c.label) === cat);
+      return (
+        eventCategory === cat ||
+        eventCategory === normalizeFilterValue(mapped?.id) ||
+        eventCategory === normalizeFilterValue(mapped?.label)
+      );
+    });
   });
-  return Array.from(categories).sort((a, b) => a.localeCompare(b));
 };
 
 /**
- * Get price range statistics from events
- * @param {Array} events - Array of events
- * @returns {Object} { min: number, max: number, average: number }
+ * Filters events matching location or city query.
  */
+export const filterByLocation = (events, locationQuery) => {
+  if (!Array.isArray(events)) return [];
+  const query = String(locationQuery || "").trim().toLowerCase();
+  if (!query) return events;
+
+  return events.filter((event) =>
+    String(event.location || event.venue || event.city || "").toLowerCase().includes(query)
+  );
+};
+
+/**
+ * Filters events by mode (online, offline, hybrid).
+ */
+export const filterByMode = (events, selectedModes) => {
+  if (!Array.isArray(events)) return [];
+  if (!selectedModes || selectedModes.length === 0) return events;
+
+  const normalizedModes = selectedModes.map((m) => normalizeFilterValue(m));
+
+  return events.filter((event) =>
+    normalizedModes.includes(normalizeFilterValue(event.eventMode || event.mode || "offline"))
+  );
+};
+
+/**
+ * Filters events by price range bounds.
+ */
+export const filterByPrice = (events, priceRange) => {
+  if (!Array.isArray(events)) return [];
+  if (!priceRange) return events;
+
+  const { min = 0, max = Infinity } = priceRange;
+
+  return events.filter((event) => {
+    const price = typeof event.price === "number" ? event.price : parseFloat(event.price) || 0;
+    return price >= min && price <= max;
+  });
+};
+
+/**
+ * Filters events within a start and end date window.
+ */
+export const filterByDateRange = (events, dateRange) => {
+  if (!Array.isArray(events)) return [];
+  if (!dateRange || (!dateRange.startDate && !dateRange.endDate)) return events;
+
+  const startDate = dateRange.startDate ? new Date(dateRange.startDate) : new Date("1900-01-01");
+  const endDate = dateRange.endDate ? new Date(dateRange.endDate) : new Date("2099-12-31");
+  endDate.setHours(23, 59, 59, 999);
+
+  return events.filter((event) => {
+    const eventDate = new Date(event.date || event.startDate || event.createdAt);
+    return !Number.isNaN(eventDate.getTime()) && eventDate >= startDate && eventDate <= endDate;
+  });
+};
+
+/**
+ * Filters events by status (upcoming, live, past).
+ */
+export const filterByStatus = (events, selectedStatuses) => {
+  if (!Array.isArray(events)) return [];
+  if (!selectedStatuses || selectedStatuses.length === 0) return events;
+
+  const normalizedStatuses = selectedStatuses.map((s) => normalizeFilterValue(s));
+
+  return events.filter((event) => {
+    if (!event) return false;
+    const status = normalizeFilterValue(event.status || "upcoming");
+    return normalizedStatuses.includes(status);
+  });
+};
+
+// ============================================================================
+// 4. Sorting & Pipeline Orchestration
+// ============================================================================
+
+/**
+ * Sorts event list based on predefined criteria.
+ *
+ * @param {Array<Object>} events - Unsorted events array.
+ * @param {string} [sortBy='date-asc'] - Sorting key identifier.
+ * @returns {Array<Object>} New sorted events array.
+ */
+export const sortEvents = (events, sortBy = "date-asc") => {
+  if (!Array.isArray(events)) return [];
+  const list = [...events];
+
+  switch (sortBy) {
+    case "date-asc":
+      return list.sort((a, b) => new Date(a.date || a.startDate) - new Date(b.date || b.startDate));
+    case "date-desc":
+      return list.sort((a, b) => new Date(b.date || b.startDate) - new Date(a.date || a.startDate));
+    case "price-asc":
+      return list.sort((a, b) => (a.price || 0) - (b.price || 0));
+    case "price-desc":
+      return list.sort((a, b) => (b.price || 0) - (a.price || 0));
+    case "title-asc":
+      return list.sort((a, b) => String(a.title || "").localeCompare(String(b.title || "")));
+    case "popularity-desc":
+      return list.sort((a, b) => (b.attendeesCount || b.views || 0) - (a.attendeesCount || a.views || 0));
+    default:
+      return list;
+  }
+};
+
+/**
+ * Applies all filter criteria and sorting to an event dataset.
+ *
+ * @param {Array<Object>} events - Raw event array.
+ * @param {Object} [filters={}] - Consolidated filter parameters.
+ * @param {string} [sortBy='date-asc'] - Sorting strategy key.
+ * @returns {Array<Object>} Filtered and sorted event list.
+ */
+export const applyAdvancedFilters = (events, filters = {}, sortBy = "date-asc") => {
+  if (!Array.isArray(events)) return [];
+
+  let result = events;
+
+  if (filters.search) result = filterBySearch(result, filters.search);
+  if (filters.categories?.length) result = filterByCategory(result, filters.categories);
+  if (filters.modes?.length) result = filterByMode(result, filters.modes);
+  if (filters.location) result = filterByLocation(result, filters.location);
+  if (filters.priceRange) result = filterByPrice(result, filters.priceRange);
+  if (filters.dateRange) result = filterByDateRange(result, filters.dateRange);
+  if (filters.statuses?.length) result = filterByStatus(result, filters.statuses);
+
+  return sortEvents(result, sortBy);
+};
+
+/**
+ * Paginate an event array.
+ */
+export const paginateEvents = (events, page = 1, pageSize = 10) => {
+  if (!Array.isArray(events)) return { items: [], totalPages: 0, totalItems: 0 };
+  const validPage = Math.max(1, parseInt(page, 10) || 1);
+  const validPageSize = Math.max(1, parseInt(pageSize, 10) || 10);
+  const totalItems = events.length;
+  const totalPages = Math.ceil(totalItems / validPageSize);
+  const startIndex = (validPage - 1) * validPageSize;
+
+  return {
+    items: events.slice(startIndex, startIndex + validPageSize),
+    page: validPage,
+    pageSize: validPageSize,
+    totalItems,
+    totalPages,
+    hasNextPage: validPage < totalPages,
+    hasPrevPage: validPage > 1,
+  };
+};
+
+// ============================================================================
+// 5. Data Aggregation & State Helpers
+// ============================================================================
+
+export const getUniqueCategories = (events) => {
+  if (!Array.isArray(events)) return [];
+  const categories = new Set();
+  events.forEach((e) => e.category && categories.add(e.category));
+  return Array.from(categories).sort();
+};
+
 export const getPriceStats = (events) => {
-  if (events.length === 0) {
-    return { min: 0, max: 0, average: 0 };
-  }
-
+  if (!Array.isArray(events) || events.length === 0) return { min: 0, max: 0, average: 0 };
   const prices = events
-    .map((e) => e.price || 0)
-    .filter((p) => typeof p === "number");
+    .map((e) => (typeof e.price === "number" ? e.price : parseFloat(e.price) || 0))
+    .filter((p) => !Number.isNaN(p));
 
-  if (prices.length === 0) {
-    return { min: 0, max: 0, average: 0 };
-  }
-
+  if (prices.length === 0) return { min: 0, max: 0, average: 0 };
   const min = Math.min(...prices);
   const max = Math.max(...prices);
   const average = Math.round(prices.reduce((a, b) => a + b, 0) / prices.length);
@@ -342,23 +353,13 @@ export const getPriceStats = (events) => {
   return { min, max, average };
 };
 
-/**
- * Get date range from events
- * @param {Array} events - Array of events
- * @returns {Object} { earliest: Date, latest: Date }
- */
 export const getDateRange = (events) => {
-  if (events.length === 0) {
-    return { earliest: new Date(), latest: new Date() };
-  }
-
+  if (!Array.isArray(events) || events.length === 0) return { earliest: new Date(), latest: new Date() };
   const dates = events
     .map((e) => new Date(e.date || e.startDate))
     .filter((d) => !Number.isNaN(d.getTime()));
 
-  if (dates.length === 0) {
-    return { earliest: new Date(), latest: new Date() };
-  }
+  if (dates.length === 0) return { earliest: new Date(), latest: new Date() };
 
   return {
     earliest: new Date(Math.min(...dates)),
@@ -366,32 +367,27 @@ export const getDateRange = (events) => {
   };
 };
 
-/**
- * Check if any filters are active
- * @param {Object} filters - Filter configuration
- * @returns {boolean} True if any filter is active
- */
 export const hasActiveFilters = (filters = {}) => {
-  return (
+  return Boolean(
+    (filters.search && filters.search.trim() !== "") ||
     (filters.categories && filters.categories.length > 0) ||
     (filters.modes && filters.modes.length > 0) ||
     (filters.statuses && filters.statuses.length > 0) ||
+    (filters.skillLevels && filters.skillLevels.length > 0) ||
+    (filters.tags && filters.tags.length > 0) ||
     (filters.location && filters.location.trim() !== "") ||
-    (filters.priceRange &&
-      (filters.priceRange.min > 0 || filters.priceRange.max < Infinity)) ||
-    (filters.dateRange &&
-      (filters.dateRange.startDate || filters.dateRange.endDate))
+    (filters.priceRange && (filters.priceRange.min > 0 || filters.priceRange.max < Infinity)) ||
+    (filters.dateRange && (filters.dateRange.startDate || filters.dateRange.endDate))
   );
 };
 
-/**
- * Reset all filters to default state
- * @returns {Object} Default filter state
- */
 export const getDefaultFilters = () => ({
+  search: "",
   categories: [],
   modes: [],
   statuses: [],
+  skillLevels: [],
+  tags: [],
   location: "",
   priceRange: null,
   dateRange: null,
@@ -400,17 +396,17 @@ export const getDefaultFilters = () => ({
 export const normalizeAdvancedFilters = (filters = {}) => ({
   ...getDefaultFilters(),
   ...filters,
+  search: typeof filters.search === "string" ? filters.search : "",
   categories: Array.isArray(filters.categories) ? filters.categories : [],
   modes: Array.isArray(filters.modes) ? filters.modes : [],
   statuses: Array.isArray(filters.statuses) ? filters.statuses : [],
+  skillLevels: Array.isArray(filters.skillLevels) ? filters.skillLevels : [],
+  tags: Array.isArray(filters.tags) ? filters.tags : [],
   location: typeof filters.location === "string" ? filters.location : "",
   priceRange: filters.priceRange
     ? {
         min: Number(filters.priceRange.min) || 0,
-        max:
-          filters.priceRange.max === Infinity
-            ? Infinity
-            : Number(filters.priceRange.max) || 0,
+        max: filters.priceRange.max === Infinity ? Infinity : Number(filters.priceRange.max) || 0,
       }
     : null,
   dateRange: filters.dateRange
@@ -425,15 +421,15 @@ export const serializeAdvancedFilters = (filters = {}) => {
   const normalized = normalizeAdvancedFilters(filters);
   const payload = {};
 
+  if (normalized.search.trim()) payload.search = normalized.search.trim();
   if (normalized.categories.length) payload.categories = normalized.categories;
   if (normalized.modes.length) payload.modes = normalized.modes;
   if (normalized.statuses.length) payload.statuses = normalized.statuses;
+  if (normalized.skillLevels.length) payload.skillLevels = normalized.skillLevels;
+  if (normalized.tags.length) payload.tags = normalized.tags;
   if (normalized.location.trim()) payload.location = normalized.location.trim();
   if (normalized.priceRange) payload.priceRange = normalized.priceRange;
-  if (
-    normalized.dateRange &&
-    (normalized.dateRange.startDate || normalized.dateRange.endDate)
-  ) {
+  if (normalized.dateRange && (normalized.dateRange.startDate || normalized.dateRange.endDate)) {
     payload.dateRange = normalized.dateRange;
   }
 
@@ -442,16 +438,11 @@ export const serializeAdvancedFilters = (filters = {}) => {
 
 export const encodeAdvancedFilters = (filters = {}) => {
   const payload = serializeAdvancedFilters(filters);
-  return Object.keys(payload).length
-    ? encodeURIComponent(JSON.stringify(payload))
-    : "";
+  return Object.keys(payload).length ? encodeURIComponent(JSON.stringify(payload)) : "";
 };
 
 export const decodeAdvancedFilters = (value) => {
-  if (!value) {
-    return getDefaultFilters();
-  }
-
+  if (!value) return getDefaultFilters();
   try {
     const parsed = JSON.parse(decodeURIComponent(value));
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
@@ -462,3 +453,5 @@ export const decodeAdvancedFilters = (value) => {
     return getDefaultFilters();
   }
 };
+
+export default applyAdvancedFilters;

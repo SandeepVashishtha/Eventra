@@ -29,8 +29,10 @@ export const recordCheckIn = async (ticketId, eventId, metadata = {}) => {
 
 export const fetchCheckInHistory = async (eventId) => {
   try {
-    const params = eventId ? `?eventId=${eventId}` : "";
-    const response = await apiUtils.get(`${API_ENDPOINTS.TICKETS.HISTORY}${params}`);
+    const params = new URLSearchParams();
+    if (eventId) params.set("eventId", eventId);
+    const query = params.toString() ? `?${params}` : "";
+    const response = await apiUtils.get(`${API_ENDPOINTS.TICKETS.HISTORY}${query}`);
     return response.data;
   } catch (error) {
     handleError(error, "Failed to fetch check-in history");
@@ -52,7 +54,9 @@ export const fetchScannerEvents = async () => {
 
 export const fetchTicketStats = async (eventId) => {
   try {
-    const response = await apiUtils.get(`/api/tickets/stats?eventId=${eventId}`);
+    const params = new URLSearchParams();
+    if (eventId) params.set("eventId", eventId);
+    const response = await apiUtils.get(`${API_ENDPOINTS.TICKETS.STATS}?${params}`);
     return response.data;
   } catch (error) {
     handleError(error, "Failed to fetch ticket stats");

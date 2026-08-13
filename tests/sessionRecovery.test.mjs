@@ -150,5 +150,55 @@ const tamperedState = {
 assert.notEqual(tamperedState.deviceFingerprint, originalFingerprint, "Malicious fingerprint does not match original");
 assert.ok(tamperedState.deviceFingerprint !== getDeviceFingerprint(), "Mismatched device fingerprint successfully detected");
 
+// ── Test 5: Session Overwrite Race Condition Protection ──────────────────────
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const contextSrc = readFileSync(
+  path.resolve(__dirname, "../src/context/SessionRecoveryContext.js"),
+  "utf8"
+);
+
+assert.ok(
+  contextSrc.includes("isLoadingRef = useRef(true)"),
+  "Must initialize isLoadingRef to true to track initial load state"
+);
+assert.ok(
+  contextSrc.includes("isLoadingRef.current = false"),
+  "Must set isLoadingRef.current to false when session loading completes"
+);
+assert.ok(
+  contextSrc.includes("isLoadingRef.current || saveCancelledRef.current"),
+  "Must guard saveSession from writing to localStorage if initial session load is in progress"
+);
+
+// ── Test 6: clearSession cancels pending debounced save (#14606) ─────────────
+const clearSessionStart = contextSrc.indexOf("const clearSession = useCallback");
+const clearSessionEnd = contextSrc.indexOf("const restoreSession = useCallback");
+const clearSessionBody = contextSrc.slice(clearSessionStart, clearSessionEnd);
+assert.ok(
+  clearSessionBody.includes("clearTimeout(saveTimeoutRef.current)"),
+  "clearSession must cancel any pending debounced save timer"
+);
+assert.ok(
+  clearSessionBody.includes("saveCancelledRef.current = true"),
+  "clearSession must set the cancelled guard flag so stale saves are ignored"
+);
+
+const setItemPos = contextSrc.indexOf("localStorage.setItem(SESSION_KEY, ciphertext)");
+const postEncryptGuardPos = contextSrc.indexOf("if (saveCancelledRef.current) return;");
+assert.ok(
+  postEncryptGuardPos !== -1 &&
+    setItemPos !== -1 &&
+    postEncryptGuardPos < setItemPos,
+  "saveSession must re-check the cancelled guard flag after encrypting and before persisting"
+);
+assert.ok(
+  contextSrc.includes("isLoadingRef.current || saveCancelledRef.current"),
+  "saveSession must skip its work when the save was cancelled"
+);
+
 console.log("All Session Recovery Sanitization & Cryptography tests passed successfully ✓");
 

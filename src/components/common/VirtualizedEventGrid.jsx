@@ -1,37 +1,52 @@
-import { FixedSizeGrid as Grid } from "react-window";
+import { memo } from "react";
+import { Grid } from "react-window";
 import EventCard from "../../Pages/Events/EventCard";
+import { AutoSizer } from "react-virtualized-auto-sizer";
 
-const COLUMN_COUNT = 3;
 const CARD_WIDTH = 380;
 const CARD_HEIGHT = 420;
 
-const VirtualizedEventGrid = ({ events }) => {
-  const rowCount = Math.ceil(events.length / COLUMN_COUNT);
+const Cell = memo(({ columnIndex, rowIndex, style, items, columnCount }) => {
+  const index = rowIndex * columnCount + columnIndex;
+  const event = items[index];
 
-  const Cell = ({ columnIndex, rowIndex, style }) => {
-    const index = rowIndex * COLUMN_COUNT + columnIndex;
-    const event = events[index];
-
-    if (!event) return null;
-
-    return (
-      <div style={style}>
-        <EventCard event={event} />
-      </div>
-    );
-  };
+  if (!event) return null;
 
   return (
-    <Grid
-      columnCount={COLUMN_COUNT}
-      columnWidth={CARD_WIDTH}
-      height={900}
-      rowCount={rowCount}
-      rowHeight={CARD_HEIGHT}
-      width={1200}
-    >
-      {Cell}
-    </Grid>
+    <div style={style}>
+      <EventCard event={event} />
+    </div>
+  );
+});
+Cell.displayName = "Cell";
+
+// Fix (Issue #9410): Replace hardcoded width/height with AutoSizer so the
+// grid fills its container and responds to window resize. Fixed dimensions
+// caused the grid to overflow on mobile and never reclaim space on resize,
+// contributing to layout thrash and memory growth.
+
+const VirtualizedEventGrid = ({ events }) => {
+  return (
+    <div style={{ width: "100%", height: "80vh" }}>
+      <AutoSizer>
+        {({ height, width }) => {
+          const colCount = Math.max(1, Math.floor(width / CARD_WIDTH));
+          const colWidth = Math.floor(width / colCount);
+          return (
+            <Grid
+              columnCount={colCount}
+              columnWidth={colWidth}
+              height={height}
+              rowCount={Math.ceil(events.length / colCount)}
+              rowHeight={CARD_HEIGHT}
+              width={width}
+              cellComponent={Cell}
+              cellProps={{ items: events, columnCount: colCount }}
+            />
+          );
+        }}
+      </AutoSizer>
+    </div>
   );
 };
 

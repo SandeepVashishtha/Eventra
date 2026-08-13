@@ -1,17 +1,19 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { toast } from "react-toastify";
-import { API_ENDPOINTS, apiUtils } from "../config/api";
+import { API_ENDPOINTS, apiUtils } from "../config/api.js";
 import { useFormSubmit } from "./useFormSubmit";
 import {
   DRAFT_KEY,
+  getInitialFormData,
   initialFormData,
 } from "../constants/eventDefaults";
+import { useFormDraft } from "./useFormDraft";
 import {
   parseTimeToMinutes,
 } from "../utils/eventCreationUtils";
 import { sanitizeHtml } from "../utils/sanitizeHtml";
-import { logger } from "../utils/logger";
 import { useAuth } from "../context/AuthContext";
+import { getOrMigrateKey } from "../utils/storageKeyManager";
 
 // 🎯 Constants for better maintainability
 const MAX_CAPACITY = 100000;
@@ -35,15 +37,16 @@ const DEBOUNCE_DELAY = 1000;
  * inputs are handled automatically via `e.target.checked`.
  *
  * **2. Draft persistence**
- * Drafts are saved to `localStorage` under a user-scoped key
- * (`<DRAFT_KEY>_<userId>`, falling back to `<DRAFT_KEY>_guest` when
- * unauthenticated). Saves are debounced by `DEBOUNCE_DELAY` (1 s) to avoid
- * thrashing storage on every keystroke. `banner` and `bannerPreview` are
- * intentionally excluded from the draft — File objects cannot be serialised
- * and must be re-selected after a page reload. On mount (after a 300 ms
- * delay), the hook checks for an existing draft and surfaces
+ * Delegated to `useFormDraft`, which owns `formData` and mirrors it to
+ * `localStorage` under a user-scoped key (`<DRAFT_KEY>_<userId>`, falling back
+ * to `<DRAFT_KEY>_guest` when unauthenticated). Saves are debounced by
+ * `DEBOUNCE_DELAY` (1 s) to avoid thrashing storage on every keystroke.
+ * `banner` and `bannerPreview` are intentionally excluded from the draft —
+ * File objects cannot be serialised and must be re-selected after a page
+ * reload. On mount the hook checks for an existing draft and surfaces
  * `showRestoreModal` when one is found; the consumer decides whether to call
- * `handleRestoreDraft` or `handleDiscardDraft`.
+ * `handleRestoreDraft` or `handleDiscardDraft`. Until that decision is made no
+ * autosave runs, so an untouched form cannot overwrite the offered draft.
  *
  * **3. Validation**
  * `validateForm` reads from `formDataRef` (a ref kept in sync with state) so
@@ -232,10 +235,18 @@ const DEBOUNCE_DELAY = 1000;
  *                                         shows a success toast, and closes
  *                                         the restore modal. Signature:
  *                                         `() => void`.
- * @returns {Function} handleDiscardDraft - Removes the draft from localStorage
- *                                         and closes the restore modal without
- *                                         changing `formData`. Signature:
- *                                         `() => void`.
+ * @returns {Function} handleDiscardDraft - Removes the draft from localStorage,
+ *                                         resets `formData` to its initial
+ *                                         values and clears validation errors.
+ *                                         Signature: `() => void`.
+ * @returns {boolean}  draftRestored       - `true` once a draft has been
+ *                                          restored, so the UI can show the
+ *                                          "Draft restored" banner.
+ * @returns {string|null} lastSavedAt      - ISO timestamp of the most recent
+ *                                          autosave, or `null` before the
+ *                                          first one.
+ * @returns {Function} dismissRestoredBanner - Hides the restored banner.
+ *                                            Signature: `() => void`.
  *
  * // ── Derived state ──────────────────────────────────────────────────────────
  *
@@ -261,23 +272,52 @@ const DEBOUNCE_DELAY = 1000;
  */
 export const useEventForm = () => {
   const { user } = useAuth();
-  const scopedDraftKey = `${DRAFT_KEY}_${user?.id || "guest"}`;
+  const legacyKey = `${DRAFT_KEY}_${user?.id || "guest"}`;
+  const scopedDraftKey = getOrMigrateKey(DRAFT_KEY, user?.id, legacyKey);
+  // 🗄️ Draft persistence — owns `formData` and mirrors it to localStorage.
+  const {
+    values: formData,
+    setValues: setFormData,
+    hasPendingDraft,
+    draftRestored,
+    lastSavedAt,
+    restoreDraft,
+    discardDraft,
+    clearDraft,
+    dismissRestoredBanner,
+  } = useFormDraft(scopedDraftKey, getInitialFormData, {
+    debounceMs: DEBOUNCE_DELAY,
+    exclude: ["banner", "bannerPreview"],
+  });
+
   // 📊 State Management
-  const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
   const [newTag, setNewTag] = useState("");
-  const [isDraftLoaded, setIsDraftLoaded] = useState(false);
-  const [showRestoreModal, setShowRestoreModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
   // 🔄 Refs for optimization
   const formDataRef = useRef(formData);
-  const saveDraftTimeoutRef = useRef(null);
 
   // Keep ref in sync with state
   useEffect(() => {
     formDataRef.current = formData;
   }, [formData]);
+
+  // Sync category field with categories for backward compatibility
+  useEffect(() => {
+    if (formData.categories && formData.categories.length > 0 && formData.category !== formData.categories[0]) {
+      setFormData(prev => ({
+        ...prev,
+        category: prev.categories[0]
+      }));
+    }
+  }, [formData.categories, formData.category, setFormData]);
+
+  const resetForm = useCallback(() => {
+    setFormData(getInitialFormData());
+    setErrors({});
+    clearDraft();
+  }, [setFormData, clearDraft]);
 
   // 🎯 Form Submission Hook
   const {
@@ -286,10 +326,18 @@ export const useEventForm = () => {
     error: submitError,
     success: submitSuccess
   } = useFormSubmit(async (eventData) => {
-    const sanitized = {
+    // Ensure backward compatibility - sync category with categories
+    const dataWithCompatibility = {
       ...eventData,
+      category: eventData.categories && eventData.categories.length > 0 
+        ? eventData.categories[0] 
+        : eventData.category || "",
+      categories: eventData.categories || [],
       description: sanitizeHtml(eventData.description || ""),
     };
+    
+    const sanitized = dataWithCompatibility;
+    
     if (!API_ENDPOINTS.EVENTS.CREATE) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       return { id: "mock-event-id", success: true };
@@ -298,63 +346,35 @@ export const useEventForm = () => {
     const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, sanitized);
     const result = response.data;
 
-    if (!(response.status === 200 && result?.success)) {
+    // The backend returns 201 Created (and no `success` flag), so treat both
+    // 200 and 201 with a response body as a successful creation (#11773).
+    if (![200, 201].includes(response.status)) {
       const errorMessage = result?.message || result?.error || `Server error: ${response.status}`;
       throw new Error(errorMessage);
     }
 
+    resetForm();
     return result;
   });
 
-  // 🗄️ Draft Management
-  useEffect(() => {
-    const checkForDraft = () => {
-      try {
-        const saved = localStorage.getItem(scopedDraftKey);
-        if (saved) {
-          setShowRestoreModal(true);
-        }
-      } catch (error) {
-        logger.error("Failed to check for saved draft:", error);
-      } finally {
-        setIsDraftLoaded(true);
-      }
-    };
-
-    const timer = setTimeout(checkForDraft, 300);
-    return () => clearTimeout(timer);
-  }, [scopedDraftKey]);
-
-  // 💾 Debounced Draft Saving
-  useEffect(() => {
-    if (!isDraftLoaded) return;
-
-    if (saveDraftTimeoutRef.current) {
-      clearTimeout(saveDraftTimeoutRef.current);
-    }
-
-    saveDraftTimeoutRef.current = setTimeout(() => {
-      try {
-        const saveable = { ...formDataRef.current };
-        delete saveable.banner;
-        delete saveable.bannerPreview;
-        localStorage.setItem(scopedDraftKey, JSON.stringify(saveable));
-      } catch (error) {
-        logger.error("Failed to save draft:", error);
-      }
-    }, DEBOUNCE_DELAY);
-
-    return () => {
-      if (saveDraftTimeoutRef.current) {
-        clearTimeout(saveDraftTimeoutRef.current);
-      }
-    };
-  }, [formData, isDraftLoaded, scopedDraftKey]);
-
   // 🔍 Validation Logic
+
+  /**
+   * Returns today's date string in YYYY-MM-DD format (local time) — used
+   * as the `min` attribute on date pickers and for past-date comparisons.
+   */
+  const getTodayDateString = () => {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const dd = String(now.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
   const validateForm = useCallback(() => {
     const newErrors = {};
     const data = formDataRef.current;
+    const todayStr = getTodayDateString();
 
     const title = data.title?.trim();
     if (!title) {
@@ -364,16 +384,38 @@ export const useEventForm = () => {
     }
 
     if (!data.description?.trim()) newErrors.description = "Event description is required";
-    if (!data.category) newErrors.category = "Please select a category";
+    
+    // Validate categories (new multi-select field)
+    if (!data.categories || data.categories.length === 0) {
+      newErrors.categories = "Please select at least one category";
+    } else if (data.categories.length > 3) {
+      newErrors.categories = "You can select a maximum of 3 categories";
+    }
+    
+    // Backward compatibility - keep category field in sync
+    if (data.categories && data.categories.length > 0 && !data.category) {
+      newErrors.category = "Please select a category";
+    }
 
     if (data.isMultiDay) {
-      if (!data.startDate) newErrors.startDate = "Start date is required";
-      if (!data.endDate) newErrors.endDate = "End date is required";
-      if (data.startDate && data.endDate && new Date(data.endDate) < new Date(data.startDate)) {
+      if (!data.startDate) {
+        newErrors.startDate = "Start date is required";
+      } else if (data.startDate < todayStr) {
+        newErrors.startDate = "Event date cannot be in the past";
+      }
+      if (!data.endDate) {
+        newErrors.endDate = "End date is required";
+      } else if (data.endDate < todayStr) {
+        newErrors.endDate = "Event date cannot be in the past";
+      } else if (data.startDate && data.endDate && new Date(data.endDate) < new Date(data.startDate)) {
         newErrors.endDate = "End date must be after start date";
       }
     } else {
-      if (!data.date) newErrors.date = "Event date is required";
+      if (!data.date) {
+        newErrors.date = "Event date is required";
+      } else if (data.date < todayStr) {
+        newErrors.date = "Event date cannot be in the past";
+      }
     }
 
     if (!data.startTime) newErrors.startTime = "Start time is required";
@@ -424,11 +466,100 @@ export const useEventForm = () => {
     return Object.keys(newErrors).length === 0;
   }, []);
 
-  const resetForm = useCallback(() => {
-    setFormData(initialFormData);
-    setErrors({});
-    localStorage.removeItem(scopedDraftKey);
-  }, [scopedDraftKey]);
+  /**
+   * validateField — validates a single named field on blur and merges the
+   * result into `errors`.  Supports the same field names used by validateForm.
+   * Called by `handleFieldBlur` which form inputs wire up to their `onBlur`.
+   */
+  const validateField = useCallback((fieldName, value) => {
+    const data = formDataRef.current;
+    const todayStr = getTodayDateString();
+    let fieldError = "";
+
+    switch (fieldName) {
+      case "title": {
+        const title = (value ?? data.title)?.trim();
+        if (!title) fieldError = "Event title is required";
+        else if (title.length < MIN_TITLE_LENGTH || title.length > MAX_TITLE_LENGTH)
+          fieldError = `Title must be between ${MIN_TITLE_LENGTH} and ${MAX_TITLE_LENGTH} characters`;
+        break;
+      }
+      case "description":
+        if (!(value ?? data.description)?.trim()) fieldError = "Event description is required";
+        break;
+      case "category":
+        if (!(value ?? data.category)) fieldError = "Please select a category";
+        break;
+      case "date": {
+        const date = value ?? data.date;
+        if (!date) fieldError = "Event date is required";
+        else if (date < todayStr) fieldError = "Event date cannot be in the past";
+        break;
+      }
+      case "startDate": {
+        const startDate = value ?? data.startDate;
+        if (!startDate) fieldError = "Start date is required";
+        else if (startDate < todayStr) fieldError = "Event date cannot be in the past";
+        break;
+      }
+      case "endDate": {
+        const endDate = value ?? data.endDate;
+        if (!endDate) fieldError = "End date is required";
+        else if (endDate < todayStr) fieldError = "Event date cannot be in the past";
+        else if (data.startDate && new Date(endDate) < new Date(data.startDate))
+          fieldError = "End date must be after start date";
+        break;
+      }
+      case "startTime":
+        if (!(value ?? data.startTime)) fieldError = "Start time is required";
+        break;
+      case "endTime": {
+        const endTime = value ?? data.endTime;
+        if (!endTime) {
+          fieldError = "End time is required";
+        } else if (data.startTime && !data.isMultiDay) {
+          const startMin = parseTimeToMinutes(data.startTime);
+          const endMin = parseTimeToMinutes(endTime);
+          if (startMin >= endMin) fieldError = "End time must be after start time";
+        }
+        break;
+      }
+      case "location": {
+        if (!data.isVirtual && !(value ?? data.location?.name)?.trim())
+          fieldError = "Location name is required for in-person events";
+        break;
+      }
+      case "virtualLink": {
+        const link = (value ?? data.virtualLink)?.trim();
+        if (data.isVirtual) {
+          if (!link) fieldError = "Virtual link is required for online events";
+          else if (!/^https:\/\//i.test(link)) fieldError = "Virtual link must use HTTPS protocol";
+        }
+        break;
+      }
+      default:
+        break;
+    }
+
+    setErrors((prev) => {
+      if (!fieldError) {
+        const next = { ...prev };
+        delete next[fieldName];
+        return next;
+      }
+      return { ...prev, [fieldName]: fieldError };
+    });
+  }, []);
+
+  /**
+   * handleFieldBlur — standard `onBlur` handler to wire to any <input> /
+   * <select> / <textarea>.  Reads the field name from `e.target.name` and
+   * delegates to validateField.
+   */
+  const handleFieldBlur = useCallback((e) => {
+    const { name, value } = e.target;
+    if (name) validateField(name, value);
+  }, [validateField]);
 
   const handleInputChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
@@ -459,14 +590,13 @@ export const useEventForm = () => {
         [name]: type === "checkbox" ? checked : value,
       }));
     }
-    if (errors[name]) {
-      setErrors((prev) => {
-        const newErrs = { ...prev };
-        delete newErrs[name];
-        return newErrs;
-      });
-    }
-  }, [errors]);
+    setErrors((prev) => {
+      if (!prev[name]) return prev;
+      const newErrs = { ...prev };
+      delete newErrs[name];
+      return newErrs;
+    });
+  }, [setFormData]);
 
   const handleNestedChange = useCallback((category, field, value) => {
     setFormData((prev) => ({
@@ -476,32 +606,30 @@ export const useEventForm = () => {
         [field]: value,
       },
     }));
-    if (errors[category]) {
-      setErrors((prev) => {
-        const newErrs = { ...prev };
-        delete newErrs[category];
-        return newErrs;
-      });
-    }
-  }, [errors]);
+    setErrors((prev) => {
+      if (!prev[category]) return prev;
+      const newErrs = { ...prev };
+      delete newErrs[category];
+      return newErrs;
+    });
+  }, [setFormData]);
 
   const addTag = useCallback(() => {
     const tag = newTag.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
-    if (tag && !formData.tags.includes(tag)) {
-      setFormData((prev) => ({
-        ...prev,
-        tags: [...prev.tags, tag],
-      }));
-      setNewTag("");
-    }
-  }, [newTag, formData.tags]);
+    if (!tag) return;
+    setFormData((prev) => {
+      if (prev.tags.includes(tag)) return prev;
+      return { ...prev, tags: [...prev.tags, tag] };
+    });
+    setNewTag("");
+  }, [newTag, setFormData]);
 
   const removeTag = useCallback((tagToRemove) => {
     setFormData((prev) => ({
       ...prev,
       tags: prev.tags.filter((tag) => tag !== tagToRemove),
     }));
-  }, []);
+  }, [setFormData]);
 
   const addTicketTier = useCallback(() => {
     setFormData((prev) => ({
@@ -511,14 +639,14 @@ export const useEventForm = () => {
         { id: Date.now(), name: "", price: "", capacity: "", description: "" },
       ],
     }));
-  }, []);
+  }, [setFormData]);
 
   const removeTicketTier = useCallback((index) => {
     setFormData((prev) => ({
       ...prev,
       ticketTiers: prev.ticketTiers.filter((_, i) => i !== index),
     }));
-  }, []);
+  }, [setFormData]);
 
   const updateTicketTier = useCallback((index, field, value) => {
     setFormData((prev) => ({
@@ -527,26 +655,17 @@ export const useEventForm = () => {
         i === index ? { ...tier, [field]: value } : tier
       ),
     }));
-  }, []);
+  }, [setFormData]);
 
   const handleRestoreDraft = useCallback(() => {
-    try {
-      const saved = localStorage.getItem(scopedDraftKey);
-      if (saved) {
-        setFormData((prev) => ({ ...prev, ...JSON.parse(saved), banner: null, bannerPreview: null }));
-        toast.success("Draft restored successfully!");
-      }
-    } catch (error) {
-      logger.error("Failed to restore draft:", error);
-    } finally {
-      setShowRestoreModal(false);
-    }
-  }, [scopedDraftKey]);
+    restoreDraft();
+    toast.success("Draft restored successfully!");
+  }, [restoreDraft]);
 
   const handleDiscardDraft = useCallback(() => {
-    localStorage.removeItem(scopedDraftKey);
-    setShowRestoreModal(false);
-  }, [scopedDraftKey]);
+    discardDraft();
+    setErrors({});
+  }, [discardDraft]);
 
   const hasUnsavedChanges = useMemo(() => {
     return Object.entries(formData).some(([key, value]) => {
@@ -577,13 +696,15 @@ export const useEventForm = () => {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setFormData((prev) => ({ ...prev, banner: file, bannerPreview: event.target.result }));
-      setErrors((prev) => ({ ...prev, banner: "" }));
-    };
-    reader.readAsDataURL(file);
-  }, []);
+    const objectUrl = URL.createObjectURL(file);
+    setFormData((prev) => {
+      if (prev.bannerPreview && prev.bannerPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(prev.bannerPreview);
+      }
+      return { ...prev, banner: file, bannerPreview: objectUrl };
+    });
+    setErrors((prev) => ({ ...prev, banner: "" }));
+  }, [setFormData]);
 
   // Browser guard for unsaved changes
   useEffect(() => {
@@ -597,6 +718,40 @@ export const useEventForm = () => {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [hasUnsavedChanges]);
 
+  // Cleanup ObjectURLs on unmount
+  useEffect(() => {
+    return () => {
+      const preview = formDataRef.current?.bannerPreview;
+      if (preview && preview.startsWith("blob:")) {
+        URL.revokeObjectURL(preview);
+      }
+    };
+  }, []);
+
+  /**
+   * isFormValid — true when the errors object is empty AND all required
+   * fields have been touched / filled.  Used to disable the submit button
+   * before the user has attempted any submission.
+   */
+  const isFormValid = useMemo(() => {
+    if (Object.keys(errors).length > 0) return false;
+    const data = formData;
+    const todayStr = getTodayDateString();
+    if (!data.title?.trim() || data.title.trim().length < MIN_TITLE_LENGTH) return false;
+    if (!data.description?.trim()) return false;
+    if (!data.category) return false;
+    if (data.isMultiDay) {
+      if (!data.startDate || data.startDate < todayStr) return false;
+      if (!data.endDate || data.endDate < todayStr) return false;
+    } else {
+      if (!data.date || data.date < todayStr) return false;
+    }
+    if (!data.startTime || !data.endTime) return false;
+    if (!data.isVirtual && !data.location?.name?.trim()) return false;
+    if (data.isVirtual && !data.virtualLink?.trim()) return false;
+    return true;
+  }, [formData, errors]);
+
   return {
     formData,
     setFormData,
@@ -604,8 +759,10 @@ export const useEventForm = () => {
     setErrors,
     newTag,
     setNewTag,
-    showRestoreModal,
-    setShowRestoreModal,
+    showRestoreModal: hasPendingDraft,
+    draftRestored,
+    lastSavedAt,
+    dismissRestoredBanner,
     isUploading,
     setIsUploading,
     isSubmitting,
@@ -613,6 +770,9 @@ export const useEventForm = () => {
     submitSuccess,
     submitEventForm,
     validateForm,
+    validateField,
+    handleFieldBlur,
+    isFormValid,
     resetForm,
     handleInputChange,
     handleNestedChange,

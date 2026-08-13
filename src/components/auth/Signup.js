@@ -11,8 +11,8 @@ import {
   X,
 } from "lucide-react";
 import SignupForm from "./SignupForm";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
-import useReducedMotion from "../../hooks/useReducedMotion";
+import useDocumentTitle from "hooks/useDocumentTitle";
+import useReducedMotion from "hooks/useReducedMotion";
 
 const PASSWORD_REQUIREMENTS = [
   { id: "length", label: "At least 8 characters", regex: /.{8,}/ },
@@ -29,6 +29,7 @@ const INTRO_POINTS = [
 ];
 
 const checkPasswordRequirement = (password, requirement) => requirement.regex.test(password);
+
 
 export const FormField = ({
   id,
@@ -93,7 +94,7 @@ export const FormField = ({
           <button
             type="button"
             onClick={() => setShowPassword((current) => !current)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-white"
             aria-label={showPassword ? "Hide password" : "Show password"}
             aria-pressed={showPassword}
           >
@@ -103,7 +104,7 @@ export const FormField = ({
       </div>
 
       {hint && !error && !success && (
-        <p id={`${id}-hint`} className="text-xs text-gray-500 dark:text-gray-400">
+        <p id={`${id}-hint`} className="text-xs text-gray-500 dark:text-gray-200">
           {hint}
         </p>
       )}
@@ -185,7 +186,7 @@ export const PasswordField = ({
         <button
           type="button"
           onClick={() => setShowPassword((current) => !current)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-white"
           aria-label={showPassword ? "Hide password" : "Show password"}
           aria-pressed={showPassword}
         >
@@ -220,7 +221,7 @@ export const PasswordField = ({
                 <li
                   key={requirement.id}
                   className={`flex items-center gap-1.5 ${
-                    met ? "text-green-600 dark:text-green-400" : "text-gray-500 dark:text-gray-400"
+                    met ? "text-green-600 dark:text-green-400" : "text-gray-500 dark:text-gray-200"
                   }`}
                 >
                   {met ? (
@@ -267,14 +268,14 @@ const Signup = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: prefersReducedMotion ? 0 : 0.5 }}
-      className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/30 px-4 py-8 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 sm:px-6 lg:px-8"
+      className="min-h-screen bg-linear-to-br from-gray-50 via-blue-50/30 to-indigo-50/30 px-4 py-8 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 sm:px-6 lg:px-8"
     >
       <div className="mx-auto grid max-w-5xl items-center gap-8 md:grid-cols-2">
         <motion.section
           initial={{ x: prefersReducedMotion ? 0 : -20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: prefersReducedMotion ? 0 : 0.5 }}
-          className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 p-8 text-white shadow-2xl"
+          className="relative overflow-hidden rounded-3xl bg-linear-to-br from-blue-600 via-indigo-600 to-purple-700 p-8 text-white shadow-2xl"
         >
           <div className="absolute inset-0 opacity-10">
             <div className="absolute left-10 top-10 h-32 w-32 rounded-full bg-white blur-3xl" />
@@ -336,7 +337,7 @@ const Signup = () => {
           className="rounded-3xl border border-gray-200/60 bg-white/90 p-6 shadow-2xl backdrop-blur-xl dark:border-gray-700/60 dark:bg-gray-800/85 md:p-8"
         >
           <SignupForm />
-          <p className="mt-6 text-center text-xs text-gray-500 dark:text-gray-400">
+          <p className="mt-6 text-center text-xs text-gray-500 dark:text-gray-200">
             By creating an account, you agree to our{" "}
             <Link to="/terms" className="font-medium text-blue-600 hover:underline dark:text-blue-400">
               Terms

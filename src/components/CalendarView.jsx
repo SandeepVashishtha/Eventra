@@ -12,7 +12,7 @@ const CalendarView = ({ events }) => {
 
   if (!events || events.length === 0) {
     return (
-      <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+      <div className="p-4 text-center text-gray-500 dark:text-gray-200">
         No registered events to display.
       </div>
     );
@@ -51,7 +51,7 @@ const CalendarView = ({ events }) => {
               <p className="font-medium text-gray-900 dark:text-gray-100">
                 {ev.title || "Untitled Event"}
               </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-gray-600 dark:text-gray-200">
                 {formattedDate}{' '}
                 {ev.time ? formatTimeRange(
                   ev.time,

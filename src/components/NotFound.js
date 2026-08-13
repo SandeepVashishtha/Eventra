@@ -55,7 +55,7 @@ const NotFoundPage = () => {
     <main
       ref={ref}
       // UPDATED: Added a light mode background and made the dark theme conditional
-      className="relative min-h-screen flex flex-col justify-center items-center overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-indigo-900 dark:via-blue-900 dark:to-black p-6"
+      className="relative min-h-screen flex flex-col justify-center items-center overflow-hidden bg-linear-to-br from-gray-50 via-white to-gray-100 dark:from-indigo-900 dark:via-blue-900 dark:to-black p-6"
     >
       {/* Floating bubbles along edges */}
       {bubblePositions.map((pos, i) => (
@@ -153,7 +153,7 @@ const NotFoundPage = () => {
               >
                 {/* UPDATED: Text colors */}
                 <div className="text-sm text-gray-500 dark:text-white/70">{event.category}</div>
-                <h4 className="font-semibold text-lg mt-1">{event.name}</h4>
+                <h4 title={event.name} className="font-semibold text-lg mt-1 break-words">{event.name}</h4>
                 <Link
                   to="/events"
                   // UPDATED: Link color

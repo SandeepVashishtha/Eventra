@@ -124,6 +124,8 @@ export const useEventTemplates = () => {
             return false;
           }
         }
+
+        return false;
       } catch (error) {
         logger.error("[Templates] Error deleting template:", error);
         toast.error("An error occurred while deleting the template.");

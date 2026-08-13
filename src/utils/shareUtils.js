@@ -1,5 +1,7 @@
 import { ENV } from "../config/env.js";
 
+const DEFAULT_EVENT_SHARE_HOST = "sandeepvashishtha.tech";
+
 /**
  * Sharing utility functions for Eventra
  * These functions generate URLs for sharing content across various platforms
@@ -20,6 +22,15 @@ import { ENV } from "../config/env.js";
 //
 // Rejects: external URLs, javascript: URIs, data: URIs
 // ---------------------------------------------------------------------------
+const normalizeOrigin = (origin) => {
+  if (!origin) return "";
+  try {
+    return new URL(origin).origin;
+  } catch {
+    return origin.replace(/\/+$/, "");
+  }
+};
+
 export const isValidShareUrl = (url) => {
   if (!url || typeof url !== "string") return false;
   if (url.startsWith("/")) return true; // relative path — always same-origin
@@ -29,15 +40,14 @@ export const isValidShareUrl = (url) => {
     if (parsed.protocol === "javascript:" || parsed.protocol === "data:") return false;
 
     const allowedOrigins = new Set();
-    if (typeof window !== "undefined") allowedOrigins.add(window.location.origin);
+    if (typeof window !== "undefined") {
+      allowedOrigins.add(normalizeOrigin(window.location.origin));
+    }
 
     const configuredPublicUrl = ENV.PUBLIC_URL;
     if (configuredPublicUrl) {
-      try {
-        allowedOrigins.add(new URL(configuredPublicUrl).origin);
-      } catch {
-        /* ignore malformed env var */
-      }
+      const normalized = normalizeOrigin(configuredPublicUrl);
+      if (normalized) allowedOrigins.add(normalized);
     }
 
     return allowedOrigins.has(parsed.origin);
@@ -82,8 +92,14 @@ export const generateSharingUrl = (shareData, platform) => {
     case "facebook":
       return `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
 
-    case "messenger":
-      return "";
+    case "messenger": {
+      const fbAppId = process.env.REACT_APP_FB_APP_ID;
+      if (!fbAppId) {
+        console.warn("[shareUtils] Missing REACT_APP_FB_APP_ID environment variable for Messenger sharing.");
+        return "";
+      }
+      return `https://www.facebook.com/dialog/send?link=${encodedUrl}&app_id=${encodeURIComponent(fbAppId)}&redirect_uri=${encodedUrl}`;
+    }
 
     case "linkedin":
       return `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}&title=${encodedTitle}&summary=${encodedDescription}`;
@@ -109,22 +125,32 @@ export const generateSharingUrl = (shareData, platform) => {
  * @returns {Object} Sharing data object
  */
 export const generateEventSharingData = (event, baseUrl = null) => {
-  const publicUrl = ENV.PUBLIC_URL;
+  if (!event?.id) {
+    console.warn("[shareUtils] generateEventSharingData called with missing event.id — share URL cannot be constructed.");
+    return {
+      title: "",
+      description: "",
+      url: "",
+      hashtags: "eventra,event,tech",
+      image: "",
+    };
+  }
 
-  // If baseUrl is provided, use it, otherwise detect
+  // Determine the correct base URL for sharing
+  const currentOrigin =
+    typeof window !== "undefined"
+      ? window.location.origin
+      : "";
+
+  const effectiveBase = baseUrl || currentOrigin || ENV.PUBLIC_URL || `https://${DEFAULT_EVENT_SHARE_HOST}`;
+  const deployedOrigin = effectiveBase.startsWith("http")
+    ? effectiveBase.replace(/\/$/, "")
+    : `https://${effectiveBase}`;
+
+  // If baseUrl is provided, use it. Otherwise use the current origin or public share host so
+  // copied/shared event links stay stable across local and production renders.
   if (!baseUrl) {
-    if (typeof window !== "undefined") {
-      const currentUrl = window.location.href;
-      // Use the configured public URL if it matches the current domain
-      if (publicUrl && currentUrl.includes(publicUrl)) {
-        baseUrl = publicUrl;
-      } else {
-        // Use the current origin (localhost or other development environment)
-        baseUrl = window.location.origin;
-      }
-    } else {
-      baseUrl = publicUrl; // Fallback for SSR/Node
-    }
+    baseUrl = deployedOrigin;
   }
 
   // Create a proper event URL
@@ -156,9 +182,14 @@ export const generateEventSharingData = (event, baseUrl = null) => {
  * @returns {Promise<boolean>} Success status
  */
 export const copyToClipboard = async (text) => {
+  if (typeof document === "undefined") {
+    return false;
+  }
+
   try {
-    if (navigator.clipboard) {
-      await navigator.clipboard.writeText(text);
+    const clipboard = globalThis.navigator?.clipboard;
+    if (clipboard) {
+      await clipboard.writeText(text);
       return true;
     } else {
       // Fallback for older browsers
@@ -173,7 +204,6 @@ export const copyToClipboard = async (text) => {
       return successful;
     }
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.error("Failed to copy text: ", err);
     return false;
   }

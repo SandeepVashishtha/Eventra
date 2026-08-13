@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, useEffect } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 
 /**
  * A custom React hook that acts as a drop-in replacement for `useState`, designed to skip
@@ -70,7 +70,7 @@ import { useCallback, useRef, useState, useEffect } from "react";
  *   return (
  *     <div>
  *       <button onClick={clearFilters}>Reset Filters</button>
- *       {/* render filteredEvents ... *\/
+ *       {/* render filteredEvents ... * /}
  *     </div>
  *   );
  * };
@@ -81,9 +81,9 @@ export function useStableFilters(initialValue) {
 
   // Keep the ref in sync so the stable setter always compares against the
   // latest committed value, not a stale closure capture.
-  useEffect(()=>{
-    valueRef.current=value;
-  },[value]);
+  useLayoutEffect(() => {
+    valueRef.current = value;
+  }, [value]);
 
   const setStableValue = useCallback((newValue) => {
     try {
@@ -94,7 +94,7 @@ export function useStableFilters(initialValue) {
       // JSON.stringify failed (circular ref or non-serialisable value)
       // — fall through and let React decide whether to re-render.
     }
-    setValueInternal(newValue);
+    setValueInternal(typeof newValue === 'function' ? newValue(valueRef.current) : newValue);
   }, []);
 
   return [value, setStableValue];

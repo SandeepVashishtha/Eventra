@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { WifiOff, Wifi, X } from "lucide-react";
-import { useOfflineStatus } from "../../hooks/useOfflineStatus";
+import { useOfflineStatus } from "hooks/useOfflineStatus";
 
 /**
  * OfflineIndicator
@@ -54,7 +54,7 @@ const OfflineIndicator = () => {
             transform: "translateX(-50%)",
             zIndex: 9999,
             width: "max-content",
-            maxWidth: "calc(100vw - 2rem)",
+            maxWidth: "calc(100% - 2rem)",
           }}
         >
           <div

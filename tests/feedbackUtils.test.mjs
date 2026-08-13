@@ -1,19 +1,12 @@
 import assert from 'node:assert/strict';
 import { beforeEach, describe, it } from 'node:test';
-import {
-  saveFeedback,
-  getEventFeedback,
-  getAverageRating,
-  getRecommendationStats,
-  getTagStats,
-  getUserFeedback,
-  hasUserSubmittedFeedback,
-  deleteFeedback,
-  exportFeedbackAsCSV,
-  clearAllFeedback,
-} from '../src/utils/feedbackUtils.js';
+import { JSDOM } from 'jsdom';
 
 const storage = new Map();
+const dom = new JSDOM('');
+
+globalThis.window = dom.window;
+globalThis.document = dom.window.document;
 globalThis.localStorage = {
   getItem(key) {
     return storage.has(key) ? storage.get(key) : null;
@@ -28,6 +21,20 @@ globalThis.localStorage = {
     storage.clear();
   },
 };
+
+const {
+  saveFeedback,
+  getEventFeedback,
+  getAverageRating,
+  getRecommendationStats,
+  getTagStats,
+  getUserFeedback,
+  hasUserSubmittedFeedback,
+  deleteFeedback,
+  exportFeedbackAsCSV,
+  clearAllFeedback,
+  sanitizeCSVCell,
+} = await import('../src/utils/feedbackUtils.js');
 
 const expect = (actual) => ({
   toBe(expected) {
@@ -45,6 +52,9 @@ const expect = (actual) => ({
   not: {
     toBeNull() {
       assert.notStrictEqual(actual, null);
+    },
+    toContain(expected) {
+      assert.ok(!actual.includes(expected));
     },
   },
 });
@@ -112,6 +122,21 @@ describe('Feedback Utils', () => {
       const saved = getEventFeedback(testEventId);
       expect(saved).toHaveLength(2);
     });
+
+    it('should sanitize feedback comments when retrieved', () => {
+      saveFeedback(testEventId, {
+        rating: 5,
+        comment: '<p onclick="steal()">Great <script>alert("xss")</script><strong>event</strong></p>',
+        userId: testUserId,
+      });
+
+      const saved = getEventFeedback(testEventId);
+
+      expect(saved).toHaveLength(1);
+      expect(saved[0].comment).toBe('<p>Great <strong>event</strong></p>');
+      expect(saved[0].comment).not.toContain('onclick');
+      expect(saved[0].comment).not.toContain('<script>');
+    });
   });
 
   describe('getAverageRating', () => {
@@ -151,6 +176,15 @@ describe('Feedback Utils', () => {
       expect(stats.notRecommendCount).toBe(1);
       expect(stats.percentage).toBe(67);
     });
+
+    it('should return 0 percentage when no feedback exists (avoids NaN)', () => {
+      const stats = getRecommendationStats(testEventId);
+      expect(stats).toEqual({
+        recommendCount: 0,
+        notRecommendCount: 0,
+        percentage: 0,
+      });
+    });
   });
 
   describe('getTagStats', () => {
@@ -169,6 +203,35 @@ describe('Feedback Utils', () => {
       expect(stats['Great Speaker']).toBe(2);
       expect(stats['Well Organized']).toBe(1);
       expect(stats['Good Food']).toBe(1);
+    });
+
+    it('should handle undefined or null tags array without throwing error', () => {
+      saveFeedback(testEventId, {
+        rating: 5,
+        userId: 'user1',
+      }); // tags is undefined
+
+      saveFeedback(testEventId, {
+        rating: 4,
+        tags: null,
+        userId: 'user2',
+      }); // tags is null
+
+      saveFeedback(testEventId, {
+        rating: 3,
+        tags: ['Great Speaker'],
+        userId: 'user3',
+      });
+
+      const stats = getTagStats(testEventId);
+      expect(stats).toEqual({
+        'Great Speaker': 1,
+      });
+    });
+
+    it('should return empty object when event has no feedback', () => {
+      const stats = getTagStats('empty-event');
+      expect(stats).toEqual({});
     });
   });
 
@@ -235,6 +298,28 @@ describe('Feedback Utils', () => {
     });
   });
 
+  describe('sanitizeCSVCell', () => {
+    it('should wrap basic strings in double quotes', () => {
+      expect(sanitizeCSVCell('hello')).toBe('"hello"');
+    });
+
+    it('should return empty double quotes for null or undefined', () => {
+      expect(sanitizeCSVCell(null)).toBe('""');
+      expect(sanitizeCSVCell(undefined)).toBe('""');
+    });
+
+    it('should sanitize formula injection triggers (=, +, -, @, \\t, \\r)', () => {
+      expect(sanitizeCSVCell('=SUM(1,2)')).toBe(' "\'=SUM(1,2)"');
+      expect(sanitizeCSVCell('+12345')).toBe(' "\'+12345"');
+      expect(sanitizeCSVCell('-12345')).toBe(' "\'-12345"');
+      expect(sanitizeCSVCell('@ADMIN')).toBe(' "\'@ADMIN"');
+    });
+
+    it('should escape internal double quotes properly', () => {
+      expect(sanitizeCSVCell('Hello "World"')).toBe('"Hello ""World"""');
+    });
+  });
+
   describe('exportFeedbackAsCSV', () => {
     it('should export feedback as CSV', () => {
       saveFeedback(testEventId, {
@@ -256,6 +341,178 @@ describe('Feedback Utils', () => {
     it('should handle empty feedback', () => {
       const csv = exportFeedbackAsCSV(testEventId);
       expect(csv).toBe('');
+    });
+
+    it('should sanitize formula injection triggers in export', () => {
+      saveFeedback(testEventId, {
+        rating: 5,
+        comment: '=CMD|\' /C calc\'!A0',
+        tags: ['+DangerTag'],
+        userId: 'user1',
+      });
+
+      const csv = exportFeedbackAsCSV(testEventId);
+      expect(csv).toContain('\'=CMD|\' /C calc\'!A0');
+      expect(csv).toContain('\'+DangerTag');
+    });
+
+    it('should escape internal double quotes and wrap cells in quotes', () => {
+      saveFeedback(testEventId, {
+        rating: 4,
+        comment: 'She said "Awesome!" to everyone',
+        userId: 'user1',
+      });
+
+      const csv = exportFeedbackAsCSV(testEventId);
+      expect(csv).toContain('"She said ""Awesome!"" to everyone"');
+    });
+  });
+
+  describe('getEventFeedback with options', () => {
+    it('should return array when no options provided (backward compatible)', () => {
+      saveFeedback(testEventId, { rating: 5, userId: 'user1' });
+      saveFeedback(testEventId, { rating: 4, userId: 'user2' });
+
+      const result = getEventFeedback(testEventId);
+      expect(Array.isArray(result)).toBe(true);
+      expect(result).toHaveLength(2);
+    });
+
+    describe('Filtering', () => {
+      it('should filter by rating', () => {
+        saveFeedback(testEventId, { rating: 5, userId: 'user1' });
+        saveFeedback(testEventId, { rating: 4, userId: 'user2' });
+        saveFeedback(testEventId, { rating: 5, userId: 'user3' });
+
+        const result = getEventFeedback(testEventId, { filterByRating: 5 });
+        expect(result).toHaveLength(2);
+        expect(result.every(f => f.rating === 5)).toBe(true);
+      });
+
+      it('should return empty array when no feedback matches filter', () => {
+        saveFeedback(testEventId, { rating: 5, userId: 'user1' });
+        saveFeedback(testEventId, { rating: 4, userId: 'user2' });
+
+        const result = getEventFeedback(testEventId, { filterByRating: 3 });
+        expect(result).toHaveLength(0);
+      });
+
+      it('should ignore filterByRating when undefined', () => {
+        saveFeedback(testEventId, { rating: 5, userId: 'user1' });
+        saveFeedback(testEventId, { rating: 4, userId: 'user2' });
+
+        const result = getEventFeedback(testEventId, { filterByRating: undefined });
+        expect(result).toHaveLength(2);
+      });
+    });
+
+    describe('Sorting', () => {
+      it('should sort by createdAt descending by default', () => {
+        saveFeedback(testEventId, { rating: 5, userId: 'user1' });
+        saveFeedback(testEventId, { rating: 4, userId: 'user2' });
+
+        const result = getEventFeedback(testEventId, {});
+        expect(result).toHaveLength(2);
+        expect(result[0].createdAt >= result[1].createdAt).toBe(true);
+      });
+
+      it('should sort by rating ascending', () => {
+        saveFeedback(testEventId, { rating: 3, userId: 'user1' });
+        saveFeedback(testEventId, { rating: 5, userId: 'user2' });
+        saveFeedback(testEventId, { rating: 1, userId: 'user3' });
+
+        const result = getEventFeedback(testEventId, { sortBy: 'rating', sortOrder: 'asc' });
+        expect(result[0].rating).toBe(1);
+        expect(result[1].rating).toBe(3);
+        expect(result[2].rating).toBe(5);
+      });
+
+      it('should sort by rating descending', () => {
+        saveFeedback(testEventId, { rating: 3, userId: 'user1' });
+        saveFeedback(testEventId, { rating: 5, userId: 'user2' });
+        saveFeedback(testEventId, { rating: 1, userId: 'user3' });
+
+        const result = getEventFeedback(testEventId, { sortBy: 'rating', sortOrder: 'desc' });
+        expect(result[0].rating).toBe(5);
+        expect(result[1].rating).toBe(3);
+        expect(result[2].rating).toBe(1);
+      });
+
+      it('should sort by updatedAt', () => {
+        saveFeedback(testEventId, { rating: 5, userId: 'user1' });
+        saveFeedback(testEventId, { rating: 4, userId: 'user2' });
+
+        const result = getEventFeedback(testEventId, { sortBy: 'updatedAt', sortOrder: 'desc' });
+        expect(result).toHaveLength(2);
+        expect(result[0].updatedAt >= result[1].updatedAt).toBe(true);
+      });
+    });
+
+    describe('Pagination', () => {
+      it('should paginate results', () => {
+        for (let i = 1; i <= 5; i++) {
+          saveFeedback(testEventId, { rating: i, userId: `user${i}` });
+        }
+
+        const result = getEventFeedback(testEventId, { page: 1, limit: 2 });
+        expect(result.data).toHaveLength(2);
+        expect(result.total).toBe(5);
+        expect(result.page).toBe(1);
+        expect(result.totalPages).toBe(3);
+      });
+
+      it('should return correct page', () => {
+        for (let i = 1; i <= 5; i++) {
+          saveFeedback(testEventId, { rating: i, userId: `user${i}` });
+        }
+
+        const result = getEventFeedback(testEventId, { page: 2, limit: 2 });
+        expect(result.data).toHaveLength(2);
+        expect(result.page).toBe(2);
+        expect(result.total).toBe(5);
+      });
+
+      it('should return last page with remaining items', () => {
+        for (let i = 1; i <= 5; i++) {
+          saveFeedback(testEventId, { rating: i, userId: `user${i}` });
+        }
+
+        const result = getEventFeedback(testEventId, { page: 3, limit: 2 });
+        expect(result.data).toHaveLength(1);
+        expect(result.page).toBe(3);
+        expect(result.total).toBe(5);
+      });
+
+      it('should handle page out of range', () => {
+        for (let i = 1; i <= 3; i++) {
+          saveFeedback(testEventId, { rating: i, userId: `user${i}` });
+        }
+
+        const result = getEventFeedback(testEventId, { page: 10, limit: 2 });
+        expect(result.data).toHaveLength(0);
+        expect(result.page).toBe(10);
+        expect(result.total).toBe(3);
+      });
+
+      it('should combine filtering, sorting, and pagination', () => {
+        saveFeedback(testEventId, { rating: 5, userId: 'user1' });
+        saveFeedback(testEventId, { rating: 4, userId: 'user2' });
+        saveFeedback(testEventId, { rating: 5, userId: 'user3' });
+        saveFeedback(testEventId, { rating: 3, userId: 'user4' });
+        saveFeedback(testEventId, { rating: 5, userId: 'user5' });
+
+        const result = getEventFeedback(testEventId, {
+          filterByRating: 5,
+          sortBy: 'rating',
+          sortOrder: 'desc',
+          page: 1,
+          limit: 2
+        });
+
+        expect(result.data).toHaveLength(2);
+        expect(result.total).toBe(3);
+        expect(result.data.every(f => f.rating === 5)).toBe(true);
+      });
     });
   });
 });

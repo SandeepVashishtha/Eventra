@@ -17,7 +17,7 @@ const FilterBadge = ({
       border: "border-gray-200 dark:border-gray-700",
       text: "text-gray-800 dark:text-gray-100",
       button:
-        "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300",
+        "text-gray-500 dark:text-gray-200 hover:text-gray-700 dark:hover:text-white",
     },
     primary: {
       bg: "bg-indigo-50 dark:bg-indigo-900/30",
