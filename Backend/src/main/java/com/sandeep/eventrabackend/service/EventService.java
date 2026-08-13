@@ -577,10 +577,7 @@ public class EventService {
                                 && previousCapacity != null
                                 && request.getCapacity() > previousCapacity;
                 if (capacityIncreased) {
-                        int freedSeats = request.getCapacity() - previousCapacity;
-                        for (int i = 0; i < freedSeats; i++) {
-                                promoteWaitlistAfterVacancy(saved.getId());
-                        }
+                        promoteWaitlistAfterVacancy(saved.getId());
                         saved = eventRepository.findById(saved.getId()).orElse(saved);
                 }
 
@@ -1306,7 +1303,11 @@ public class EventService {
                 Event event = eventRepository.findByIdWithLock(eventId)
                                 .orElseThrow(() -> new EventNotFoundException(
                                                 "Event not found with id: " + eventId));
+                int safetyCounter = 0;
                 while (event.getCapacity() == null || event.getRegisteredCount() < event.getCapacity()) {
+                        if (safetyCounter++ >= 1000) {
+                                break;
+                        }
                         RegistrationResponse promoted = promoteFirstWaitingUser(event);
                         if (promoted == null) {
                                 break;
