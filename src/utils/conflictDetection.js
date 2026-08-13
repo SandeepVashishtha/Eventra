@@ -101,7 +101,17 @@ const parseEventStartUTC = (event, tz) => {
 export const getEventUTCRange = (event, fallbackDuration = 60, timezone) => {
   if (!event) return null;
 
-  const tz = event.timezone || event.timeZone || timezone || getUserTimezone();
+  // Prefer the event's OWN timezone (explicit field, or ICS TZID) over any
+  // caller-supplied fallback and over the viewer's browser timezone. A
+  // wall-clock date+time pair must be interpreted in the event's timezone, not
+  // the viewer's, otherwise cross-timezone overlaps are computed incorrectly.
+  const tz =
+    event.timezone ||
+    event.timeZone ||
+    event.tzid ||
+    event.icsTimezone ||
+    timezone ||
+    getUserTimezone();
   const startMs = parseEventStartUTC(event, tz);
 
   if (startMs === null) return null;
