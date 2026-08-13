@@ -2,10 +2,12 @@ package com.sandeep.eventrabackend.controller;
 
 import com.sandeep.eventrabackend.model.Event;
 import com.sandeep.eventrabackend.model.EventRegistration;
+import com.sandeep.eventrabackend.model.EventRole;
 import com.sandeep.eventrabackend.model.TicketCheckIn;
 import com.sandeep.eventrabackend.repository.EventRegistrationRepository;
 import com.sandeep.eventrabackend.repository.EventRepository;
 import com.sandeep.eventrabackend.repository.TicketCheckInRepository;
+import com.sandeep.eventrabackend.service.EventRoleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -15,7 +17,9 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -44,6 +48,19 @@ public class TicketController {
     private final EventRegistrationRepository eventRegistrationRepository;
     private final EventRepository eventRepository;
     private final TicketCheckInRepository ticketCheckInRepository;
+    private final EventRoleService eventRoleService;
+
+    private void requireEventAuthorization(Long eventId, Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new AccessDeniedException("Authentication required");
+        }
+        String userEmail = authentication.getName();
+        try {
+            eventRoleService.requireRole(eventId, userEmail, EventRole.ORGANIZER);
+        } catch (Exception e) {
+            throw new AccessDeniedException("You are not authorized to manage tickets for this event");
+        }
+    }
 
     @PostMapping("/validate")
     @Operation(summary = "Validate a ticket",
@@ -56,7 +73,8 @@ public class TicketController {
                              "alreadyCheckedIn": false, "message": "Ticket is valid"}"""))),
             @ApiResponse(responseCode = "403", description = "Forbidden - organizer/admin access required")
     })
-    public ResponseEntity<Map<String, Object>> validateTicket(@RequestBody Map<String, Object> payload) {
+    public ResponseEntity<Map<String, Object>> validateTicket(@RequestBody Map<String, Object> payload,
+                                                              Authentication authentication) {
         Long eventId = asLong(payload.get("eventId"));
         Long registrationId = asLong(payload.get("ticketId"));
 
@@ -64,6 +82,8 @@ public class TicketController {
             return ResponseEntity.ok(result(false, null, null, false,
                     "ticketId and eventId are required."));
         }
+
+        requireEventAuthorization(eventId, authentication);
 
         Optional<EventRegistration> registration =
                 eventRegistrationRepository.findById(registrationId);
@@ -104,7 +124,8 @@ public class TicketController {
                              "message": "Check-in recorded"}"""))),
             @ApiResponse(responseCode = "403", description = "Forbidden - organizer/admin access required")
     })
-    public ResponseEntity<Map<String, Object>> checkIn(@RequestBody Map<String, Object> payload) {
+    public ResponseEntity<Map<String, Object>> checkIn(@RequestBody Map<String, Object> payload,
+                                                       Authentication authentication) {
         Long eventId = asLong(payload.get("eventId"));
         Long registrationId = asLong(payload.get("ticketId"));
 
@@ -112,6 +133,8 @@ public class TicketController {
             return ResponseEntity.ok(result(false, null, null, false,
                     "ticketId and eventId are required."));
         }
+
+        requireEventAuthorization(eventId, authentication);
 
         Optional<EventRegistration> registration =
                 eventRegistrationRepository.findById(registrationId);
