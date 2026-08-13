@@ -426,7 +426,7 @@ export const setQueue = async (newQueue) => {
     } else {
       localStorage.setItem(QUEUE_KEY, JSON.stringify(newQueue));
     }
-  }
+  } catch (err) {}
 
   try {
     const db = await openDB();
