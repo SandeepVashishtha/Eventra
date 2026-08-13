@@ -297,6 +297,11 @@ export const pushToQueue = async (item, userId = null) => {
     sessionId: ensureSessionSnapshot(userId),
   };
 
+  const idempotencyKey =
+    item.idempotencyKey ||
+    `${actionItem.actionType}:${actionItem.eventId}:${actionItem.userId}:${actionItem.id}`;
+  actionItem.idempotencyKey = idempotencyKey;
+
   const serialisedPayload = JSON.stringify(actionItem.payload);
   if (serialisedPayload.length > MAX_PAYLOAD_BYTES) {
     logger.warn(
@@ -318,8 +323,19 @@ export const pushToQueue = async (item, userId = null) => {
     return false;
   }
   const isDuplicate = queue.some((existing) => {
-    if (actionItem.idempotencyKey && existing.idempotencyKey) {
-      return existing.idempotencyKey === actionItem.idempotencyKey;
+    if (actionItem.idempotencyKey) {
+      if (existing.idempotencyKey) {
+        return existing.idempotencyKey === actionItem.idempotencyKey;
+      }
+      // Primary-key dedup: only treat a missing-key existing item as a
+      // duplicate when its composite identity matches ours.
+      if (
+        existing.eventId === actionItem.eventId &&
+        existing.userId === actionItem.userId &&
+        existing.actionType === actionItem.actionType
+      ) {
+        return true;
+      }
     }
 
     // SECURITY (Issue #11074): offline check-ins must dedupe per attendee
