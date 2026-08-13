@@ -593,14 +593,28 @@ public class PaymentPlanService {
         metadata.put("total_installments", String.valueOf(payment.getTotalInstallments()));
         metadata.put("retry_attempt", "true");
         
-        PaymentIntent paymentIntent = stripeService.createPaymentIntentWithoutConfirmation(
-                paymentPlan.getStripeCustomerId(),
-                amountCents,
-                payment.getCurrency().toLowerCase(),
-                "Retry payment for installment " + payment.getInstallmentNumber() + 
-                        " of " + payment.getTotalInstallments(),
-                metadata
-        );
+        PaymentIntent paymentIntent;
+        try {
+            paymentIntent = stripeService.createPaymentIntentWithoutConfirmation(
+                    paymentPlan.getStripeCustomerId(),
+                    amountCents,
+                    payment.getCurrency().toLowerCase(),
+                    "Retry payment for installment " + payment.getInstallmentNumber() + 
+                            " of " + payment.getTotalInstallments(),
+                    metadata
+            );
+        } catch (StripeException e) {
+            payment.setStatus("FAILED");
+            payment.setFailedAt(LocalDateTime.now());
+            payment.setFailureReason("Retry failed: " + e.getMessage());
+            paymentRepository.save(payment);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", "Payment retry failed: " + e.getMessage());
+            response.put("paymentId", payment.getId());
+            return response;
+        }
         
         // Update payment record
         payment.setStripePaymentIntentId(paymentIntent.getId());
