@@ -5,6 +5,9 @@ import ProtectedRoute from "../auth/ProtectedRoute";
 import ErrorBoundary from "../common/ErrorBoundary";
 import { ROLES, PERMISSIONS } from "config/roles";
 
+// Speaker Green Room components
+const SpeakerGreenRoom = lazy(() => import("../events/SpeakerGreenRoom"));
+
 // 🔥 FIX: Removed all duplicate const declarations that were causing fatal SyntaxErrors
 const NotificationSettings = lazy(() => import("../../Pages/NotificationSettings"));
 const NotificationCenter = lazy(() => import("../../Pages/Notifications/NotificationCenter"));
@@ -243,6 +246,15 @@ export const getProtectedRoutes = () => [
     element={
       <ProtectedRoute>
         {withModuleBoundary(<VirtualVenueWalkthrough />, "Virtual Venue Walkthrough")}
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/events/:eventId/green-room"
+    path="/events/:eventId/green-room"
+    element={
+      <ProtectedRoute requiredRoles={[ROLES.SPEAKER, ROLES.ADMIN, ROLES.ORGANIZER, ROLES.OWNER, ROLES.SUPER_ADMIN]}>
+        {withModuleBoundary(<SpeakerGreenRoom />, "Speaker Green Room")}
       </ProtectedRoute>
     }
   />,
