@@ -1,7 +1,7 @@
 import useUserPreferences from "hooks/useUserPreferences";
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Sun, MousePointer, Bell, ShieldCheck, ArrowRight, Key, Eye, EyeOff, Clipboard, Download, ShieldAlert, RefreshCw, SlidersHorizontal } from "lucide-react";
+import { Sun, MousePointer, Bell, ShieldCheck, ArrowRight, Key, Eye, EyeOff, Clipboard, Download, ShieldAlert, RefreshCw, SlidersHorizontal, Wifi, WifiOff } from "lucide-react";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import { toast } from "react-toastify";
 import KeyboardShortcutsHelp from "../components/accessibility/KeyboardShortcutsHelp";
@@ -18,6 +18,8 @@ const Settings = () => {
   const setNotificationsEnabled = (v) => setPreference("notifications", v);
   const privacyMode = preferences.privacyMode;
   const setPrivacyMode = (v) => setPreference("privacyMode", v);
+  const lowBandwidthMode = preferences.lowBandwidthMode;
+  const setLowBandwidthMode = (v) => setPreference("lowBandwidthMode", v);
 
   const handleCursorToggle = () => {
     const next = cursorEnabled === "off" ? "on" : "off";
@@ -209,6 +211,39 @@ const Settings = () => {
               </button>
               <p className="text-sm text-slate-500 dark:text-slate-400">
                 Privacy mode keeps your experience secure by limiting extra tracking and personalization.
+              </p>
+            </div>
+          </article>
+
+          {/* Low Bandwidth Mode */}
+          <article className="rounded-3xl border border-slate-200/70 dark:border-slate-700/90 bg-card-bg/70 p-6 shadow-sm">
+            <div className="flex items-center gap-3 mb-4 text-slate-900 dark:text-slate-100">
+              <Wifi className="w-6 h-6 text-amber-500" aria-hidden="true" />
+              <div>
+                <h2 className="text-lg font-semibold">Low Bandwidth Mode</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Optimize for crowded festival environments with slow connections.
+                </p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={() => setLowBandwidthMode((prev) => !prev)}
+                aria-label={lowBandwidthMode ? "Disable low bandwidth mode" : "Enable low bandwidth mode"}
+                aria-pressed={!!lowBandwidthMode}
+                className="w-full inline-flex items-center justify-between rounded-2xl border border-slate-200 dark:border-slate-700 bg-bg px-4 py-3 text-left text-sm font-medium text-slate-800 dark:text-slate-100 hover:border-amber-400 hover:bg-amber-50 dark:hover:bg-slate-900 transition"
+              >
+                <span className="flex items-center gap-3">
+                  {lowBandwidthMode ? <WifiOff className="w-5 h-5 text-amber-500" aria-hidden="true" /> : <Wifi className="w-5 h-5 text-amber-500" aria-hidden="true" />}
+                  {lowBandwidthMode ? "Low Bandwidth Mode: Enabled" : "Low Bandwidth Mode: Disabled"}
+                </span>
+                <ArrowRight className="w-4 h-4 text-slate-500" aria-hidden="true" />
+              </button>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                When enabled, images are replaced with placeholders, websockets use long-polling, 
+                and only raw JSON payloads are fetched and heavily cached. Ideal for outdoor festivals 
+                where cellular towers are overwhelmed.
               </p>
             </div>
           </article>

@@ -7,6 +7,7 @@ import "./styles/reduced-motion.css";
 import "./styles/print.css";
 import { toast } from "react-toastify";
 import ScrollRestoration from "./components/ScrollRestoration";
+import { initializeLowBandwidthMode } from "./utils/lowBandwidthMode";
 // Critical path - loaded eagerly (needed before first paint)
 import Navbar from "./components/navbar/Navbar";
 import OfflineBanner from "./components/common/OfflineBanner";
@@ -74,6 +75,11 @@ function App() {
   const location = useLocation();
   const isDashboardOrAdmin = location?.pathname === "/dashboard" || location?.pathname === "/admin";
   const isHomePage = location?.pathname === "/";
+  
+  // Initialize low bandwidth mode and sync with service worker
+  useEffect(() => {
+    initializeLowBandwidthMode();
+  }, []);
   const pageLoader = (
     <div className="flex items-center justify-center min-h-screen text-gray-500">
       {t("app.loading")}
