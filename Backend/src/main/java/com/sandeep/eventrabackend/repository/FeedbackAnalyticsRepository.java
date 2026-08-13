@@ -6,19 +6,23 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 
 @Repository
 public interface FeedbackAnalyticsRepository extends JpaRepository<Feedback, Long> {
 
-    @Query("SELECT AVG(f.rating) FROM Feedback f")
-    Double findOverallAverageRating();
+    // Scoped variants accept a nullable collection of event IDs: null = global,
+    // non-null = restrict to those events (e.g. a caller's accessible events).
+
+    @Query("SELECT AVG(f.rating) FROM Feedback f WHERE (:eventIds IS NULL OR f.event.id IN :eventIds)")
+    Double findOverallAverageRating(@Param("eventIds") Collection<Long> eventIds);
 
     @Query("SELECT AVG(f.rating) FROM Feedback f WHERE f.event.id IN :eventIds")
     Double findAverageRatingForEvents(@Param("eventIds") java.util.Collection<Long> eventIds);
 
-    @Query("SELECT COUNT(f) FROM Feedback f")
-    long countTotalFeedback();
+    @Query("SELECT COUNT(f) FROM Feedback f WHERE (:eventIds IS NULL OR f.event.id IN :eventIds)")
+    long countTotalFeedback(@Param("eventIds") Collection<Long> eventIds);
 
     // Returns: [eventId, eventTitle, avgRating, feedbackCount]
     @Query("""
@@ -27,10 +31,11 @@ public interface FeedbackAnalyticsRepository extends JpaRepository<Feedback, Lon
                AVG(f.rating),
                COUNT(f)
         FROM Feedback f
+        WHERE (:eventIds IS NULL OR f.event.id IN :eventIds)
         GROUP BY f.event.id, f.event.title
         ORDER BY AVG(f.rating) DESC
         """)
-    List<Object[]> findPerEventSummary();
+    List<Object[]> findPerEventSummary(@Param("eventIds") Collection<Long> eventIds);
 
     // Returns: [rating(1–5), count]
     @Query("""
