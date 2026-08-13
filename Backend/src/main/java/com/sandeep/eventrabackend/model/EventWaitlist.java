@@ -46,8 +46,12 @@ public class EventWaitlist {
     @Column(name = "joined_at", nullable = false, updatable = false)
     private LocalDateTime joinedAt;
 
+    public static final String STATUS_WAITING = "WAITING";
+    public static final String STATUS_CANCELLED = "CANCELLED";
+    public static final String STATUS_EVENT_CANCELLED = "EVENT_CANCELLED";
+
     @Column(nullable = false, length = 30)
-    private String status = "WAITING";
+    private String status = STATUS_WAITING;
 
     @Column(name = "promoted_at")
     private LocalDateTime promotedAt;

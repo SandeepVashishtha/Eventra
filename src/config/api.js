@@ -1,9 +1,9 @@
 import axios from "axios";
-import { ENV } from "./env";
-import { syncServerTimeFromHeader } from "../utils/timeSync";
-import { createIntegrityHeader } from "../utils/security/requestIntegrity";
+import { ENV } from "./env.js";
+import { syncServerTimeFromHeader } from "../utils/timeSync.js";
+import { createIntegrityHeader } from "../utils/security/requestIntegrity.js";
 import { ApiError, RateLimitError } from "./api/errors.js";
-import { setupRequestInterceptor, setupResponseInterceptor, setOnRequiresReauthHandler, setAuthToken as setInterceptorAuthToken, setRefreshToken as setInterceptorRefreshToken } from "./api/interceptors.js";
+import { setupRequestInterceptor, setupResponseInterceptor, setOnRequiresReauthHandler, setReauthRequired, setAuthToken as setInterceptorAuthToken, setRefreshToken as setInterceptorRefreshToken } from "./api/interceptors.js";
 import { API_BASE_URL, validateBackendConfig } from "./backendConfig.js";
 
 // ---------------------------------------------------------------------------
@@ -51,6 +51,7 @@ export const setRequiresReauthHandler = (handler) => {
   onRequiresReauth = handler;
   setOnRequiresReauthHandler(handler);
 };
+export { setReauthRequired };
 export const setAuthToken = (token) => {
   _authToken = token;
   setInterceptorAuthToken(token);
@@ -201,6 +202,7 @@ export const API_ENDPOINTS = {
     REGISTER: (id) => buildApiUrl(`/events/${id}/register`),
     CANCEL_REGISTRATION: (id) => buildApiUrl(`/events/${id}/registration`),
     CANCEL: (id) => buildApiUrl(`/events/${id}/cancel`),
+    ARCHIVE: (id) => buildApiUrl(`/events/${id}/archive`),
     AVAILABILITY: (id) => buildApiUrl(`/events/${id}/availability`),
     ATTENDEES: (id) => buildApiUrl(`/events/${id}/attendees`),
 

@@ -193,13 +193,6 @@ export const getRouteSearchResults = (items, query, keys, options = {}) => {
   const { stripStopwords = false, limit, ...fuseOptions } = options;
   const tokens = getSearchTokens(query, stripStopwords);
 
-  // Check cache hit
-  const cacheKey = globalSearchCache.generateKey(query, keys, filters, options);
-  if (enableCache) {
-    const cachedResults = globalSearchCache.get(cacheKey);
-    if (cachedResults) return cachedResults;
-  }
-
   const normalizedQuery = tokens.join(" ");
   const fuse = getMemoizedFuseInstance(items, keys, fuseOptions);
   const fuseResults = fuse.search(query);
@@ -218,8 +211,6 @@ export const getRouteSearchResults = (items, query, keys, options = {}) => {
   items.forEach((item) => {
     if (matchedMap.has(item)) return;
 
-  filteredItems.forEach((item) => {
-    const fuseData = fuseMatchedMap.get(item);
     const searchableText = getSearchableText(item, keys);
     const containsFullQuery = searchableText.includes(normalizedQuery);
     const matchesAllTokens = tokens.every((token) => searchableText.includes(token));

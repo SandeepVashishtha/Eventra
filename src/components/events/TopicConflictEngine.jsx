@@ -174,7 +174,7 @@ const TopicConflictEngine = () => {
                               {speaker.status}
                             </span>
                           </div>
-                          <p className="text-xs text-slate-400 italic">"{speaker.talk}"</p>
+                          <p className="text-xs text-slate-400 italic">&quot;{speaker.talk}&quot;</p>
                         </div>
                       ))}
                     </div>

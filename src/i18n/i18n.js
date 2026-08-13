@@ -19,7 +19,7 @@ i18n
     supportedLngs: ["en", "hi", "te", "es"],
     fallbackLng: "en",
     interpolation: {
-      escapeValue: false,
+      escapeValue: true,
     },
     detection: {
       order: ["localStorage", "navigator"],

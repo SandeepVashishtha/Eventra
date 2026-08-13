@@ -133,14 +133,27 @@ const useEventListing = () => {
       // Discard stale responses from earlier requests
       if (requestId !== latestRequestRef.current) return;
 
-      const responseData = response?.data || {};
+      // Guard against a null/undefined response so an unexpected or empty API
+      // reply degrades gracefully instead of silently rendering an empty list.
+      if (!response || typeof response !== "object") {
+        setEvents([]);
+        setServerPaged(false);
+        setLoadError("Failed to load events. Please try again later.");
+        return;
+      }
 
-      const isPaged = Array.isArray(responseData.content);
-      const apiEvents = isPaged
+      const responseData = response.data || {};
+
+      const rawEvents = Array.isArray(responseData.content)
         ? responseData.content
         : Array.isArray(responseData)
           ? responseData
           : [];
+
+      // Guard against a malformed API payload where `content` (or the whole
+      // response body) is present but not an array — otherwise the `.map()`
+      // below would throw and crash the listing on a bad response.
+      const apiEvents = Array.isArray(rawEvents) ? rawEvents : [];
 
       const normalizedEvents = apiEvents.map(normalizeEventItem);
       setEvents(normalizedEvents);
@@ -406,6 +419,7 @@ const useEventListing = () => {
     setViewMode,
     setAdvancedFilters,
     setIsAdvancedFiltersOpen,
+    setHighlightedEventIds,
   };
 };
 
