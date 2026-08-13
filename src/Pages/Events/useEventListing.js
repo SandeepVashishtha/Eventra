@@ -419,6 +419,7 @@ const useEventListing = () => {
     setViewMode,
     setAdvancedFilters,
     setIsAdvancedFiltersOpen,
+    setHighlightedEventIds,
   };
 };
 

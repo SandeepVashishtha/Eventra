@@ -214,7 +214,7 @@ const EventRegistration = () => {
         }
       } catch (error) {
         if (isCancelled) return;
-        console.error("Failed to load event details:", error);
+        logger.error("Failed to load event details:", error);
         const cached = getCachedEventDetail(eventId);
         if (cached?.event) {
           applyLoadedEvent(
@@ -715,14 +715,14 @@ const EventRegistration = () => {
           </motion.div>
 
           <h2 className="text-3xl font-extrabold text-transparent bg-clip-text bg-linear-to-t from-indigo-600 to-pink-600 dark:from-indigo-400 dark:to-pink-400 mb-2">
-         {actionState?.onWaitlist
-           ? t("eventRegistration.successWaitlistTitle")
-           : t("eventRegistration.successConfirmedTitle")}
-         </Typography>
-       </Stack>
-       {actionState?.onWaitlist
-         ? t("eventRegistration.successWaitlistDesc", { position: waitlistPosition })
-         : t("eventRegistration.successConfirmedDesc")}
+            {actionState?.onWaitlist
+              ? t("eventRegistration.successWaitlistTitle")
+              : t("eventRegistration.successConfirmedTitle")}
+          </h2>
+          <p className="text-slate-600 dark:text-slate-400 text-sm mb-6 max-w-sm mx-auto">
+            {actionState?.onWaitlist
+              ? t("eventRegistration.successWaitlistDesc", { position: waitlistPosition })
+              : t("eventRegistration.successConfirmedDesc")}
           </p>
 
           <div className="bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200/40 dark:border-slate-800/50 rounded-3xl p-5 mb-8 text-left">
