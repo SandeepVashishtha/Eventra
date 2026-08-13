@@ -10,6 +10,7 @@ import com.stripe.exception.StripeException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -74,14 +75,15 @@ public class PaymentController {
     @PostMapping("/initialize/{registrationId}")
     @PreAuthorize("hasAnyRole('USER', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> initializeStripePayment(
+            Authentication authentication,
             @PathVariable Long registrationId,
             @RequestParam(required = false) String email,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String phone) {
-        
+
         try {
             Map<String, String> result = paymentPlanService.initializeStripePayment(
-                    registrationId, email, name, phone);
+                    registrationId, authentication.getName(), email, name, phone);
             
             return ResponseEntity.ok(result);
             

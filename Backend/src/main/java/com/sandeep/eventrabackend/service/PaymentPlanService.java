@@ -4,7 +4,9 @@ import com.sandeep.eventrabackend.model.*;
 import com.sandeep.eventrabackend.repository.EventRegistrationRepository;
 import com.sandeep.eventrabackend.repository.PaymentPlanRepository;
 import com.sandeep.eventrabackend.repository.PaymentRepository;
+import com.sandeep.eventrabackend.repository.UserRepository;
 import com.stripe.exception.StripeException;
+import org.springframework.security.access.AccessDeniedException;
 import com.stripe.model.Customer;
 import com.stripe.model.PaymentIntent;
 import com.stripe.model.PaymentMethod;
@@ -23,15 +25,18 @@ public class PaymentPlanService {
     private final PaymentRepository paymentRepository;
     private final EventRegistrationRepository eventRegistrationRepository;
     private final StripeService stripeService;
+    private final UserRepository userRepository;
 
     public PaymentPlanService(PaymentPlanRepository paymentPlanRepository,
                               PaymentRepository paymentRepository,
                               EventRegistrationRepository eventRegistrationRepository,
-                              StripeService stripeService) {
+                              StripeService stripeService,
+                              UserRepository userRepository) {
         this.paymentPlanRepository = paymentPlanRepository;
         this.paymentRepository = paymentRepository;
         this.eventRegistrationRepository = eventRegistrationRepository;
         this.stripeService = stripeService;
+        this.userRepository = userRepository;
     }
 
     // Create a new payment plan for installment payments
@@ -155,24 +160,40 @@ public class PaymentPlanService {
     @Transactional
     public Map<String, String> initializeStripePayment(
             Long registrationId,
+            String authenticatedEmail,
             String email,
             String name,
             String phone) throws StripeException {
-        
+
+        User currentUser = userRepository.findByEmail(authenticatedEmail)
+                .orElseThrow(() -> new AccessDeniedException("Authenticated user not found"));
+
         PaymentPlan paymentPlan = paymentPlanRepository.findByRegistration_Id(registrationId)
                 .orElseThrow(() -> new IllegalArgumentException("Payment plan not found"));
-        
+
         EventRegistration registration = paymentPlan.getRegistration();
-        
+
+        // Enforce object-level authorization: the authenticated user must own the registration
+        if (!registration.getUser().getId().equals(currentUser.getId())) {
+            throw new AccessDeniedException(
+                    "You are not authorized to initialize payment for this registration");
+        }
+
+        // Override request-controlled values with the authenticated user's verified details
+        String customerEmail = currentUser.getEmail();
+        String customerName = ((currentUser.getFirstName() != null ? currentUser.getFirstName() : "") + " "
+                + (currentUser.getLastName() != null ? currentUser.getLastName() : "")).trim();
+        String customerPhone = phone;
+
         // Create metadata
         Map<String, String> metadata = new HashMap<>();
         metadata.put("registration_id", String.valueOf(registrationId));
         metadata.put("event_id", String.valueOf(registration.getEvent().getId()));
         metadata.put("user_id", String.valueOf(registration.getUser().getId()));
         metadata.put("payment_plan_id", String.valueOf(paymentPlan.getId()));
-        
+
         // Create Stripe customer
-        Customer customer = stripeService.createCustomer(email, name, phone, metadata);
+        Customer customer = stripeService.createCustomer(customerEmail, customerName, customerPhone, metadata);
         
         // Update payment plan with Stripe customer ID
         paymentPlan.setStripeCustomerId(customer.getId());
