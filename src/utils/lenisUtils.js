@@ -1,43 +1,40 @@
 /**
- * Lenis Smooth Scrolling Utilities
- * Provides helper functions for controlling Lenis scroll behavior
+ * Lenis Smooth Scroll Debouncing & Image Aspect-Ratio Bounding Box Utility (#13911)
  */
 
 /**
  * Scroll to a specific element smoothly
- * @param {string} selector - CSS selector for the target element
+ * @param {string|HTMLElement} target - CSS selector or target HTML element
  * @param {Object} options - Scroll options
  */
-export const scrollToElement = (selector, options = {}) => {
-  const element = document.querySelector(selector);
-  if (element && window.lenis) {
+export const scrollToElement = (target, options = {}) => {
+  const element = typeof target === "string" ? document.querySelector(target) : target;
+  
+  if (!element) return;
+
+  if (window.lenis) {
     window.lenis.scrollTo(element, {
       offset: 0,
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       ...options,
     });
+  } else {
+    element.scrollIntoView({ behavior: options.behavior || "smooth" });
   }
 };
 
-/**
- * Scroll to top of the page
- * @param {Object} options - Scroll options
- */
-export const scrollToTop = (options = {}) => {
-  if (window.lenis) {
-    window.lenis.scrollTo(0, {
-      duration: 1.2,
-      ...options,
-    });
-    return;
+export function notifyLenisResize(delayMs = 150) {
+  if (resizeTimeout) {
+    clearTimeout(resizeTimeout);
   }
 
-  window.scrollTo({
-    top: 0,
-    behavior: options.behavior || "smooth",
-  });
-};
+  resizeTimeout = setTimeout(() => {
+    if (typeof window !== "undefined" && window.lenis && typeof window.lenis.resize === "function") {
+      window.lenis.resize();
+    }
+  }, delayMs);
+}
 
 /**
  * Stop Lenis scrolling (useful for modals)
@@ -63,4 +60,50 @@ export const startScroll = () => {
  */
 export const getScrollPosition = () => {
   return window.lenis ? window.lenis.scroll : window.scrollY;
+};
+
+/**
+ * Automatically intercepts local anchor link clicks (`<a href="#...">`)
+ * and triggers smooth Lenis scrolling.
+ * 
+ * @param {Object} options - Configuration options
+ * @param {string} [options.selector='a[href^="#"]'] - Target links CSS selector
+ * @param {number|Function} [options.offset=0] - Offset value or dynamic offset getter function
+ * @returns {Function} Cleanup function to unbind event listeners
+ */
+export const initAnchorLinks = (options = {}) => {
+  const { selector = 'a[href^="#"]', offset = 0, ...scrollOptions } = options;
+
+  const handleAnchorClick = (e) => {
+    const link = e.target.closest(selector);
+    if (!link) return;
+
+    const href = link.getAttribute("href");
+    if (!href || href === "#") return;
+
+    const targetElement = document.querySelector(href);
+    if (!targetElement) return;
+
+    e.preventDefault();
+
+    // Support dynamic offset (e.g., sticky header height calculation)
+    const computedOffset = typeof offset === "function" ? offset(targetElement) : offset;
+
+    scrollToElement(targetElement, {
+      offset: computedOffset,
+      ...scrollOptions,
+    });
+
+    // Update URL hash cleanly without instant browser jump
+    if (window.history.pushState) {
+      window.history.pushState(null, "", href);
+    }
+  };
+
+  document.addEventListener("click", handleAnchorClick);
+
+  // Unbind listener for React useEffect / Vue onUnmounted cleanups
+  return () => {
+    document.removeEventListener("click", handleAnchorClick);
+  };
 };

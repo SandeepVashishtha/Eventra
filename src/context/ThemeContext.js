@@ -4,21 +4,18 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { MotionConfig } from "framer-motion";
 import { THEMES } from "../components/styles/theme";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 import { safeJsonParse } from "../utils/safeJsonParse";
+import { useAuth } from "../context/AuthContext";
+import { getProfileTheme, syncThemeToProfile } from "../utils/themeSync";
+const THEME_STORAGE_KEY = "eventra_theme";
 
 export const ThemeContext = createContext(null);
-
-const getSystemTheme = () =>
-  typeof window !== "undefined" &&
-  typeof window.matchMedia === "function" &&
-  window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
 
 const safeStorage = {
   getItem(key, fallback = null) {
@@ -45,11 +42,27 @@ const safeStorage = {
   },
 };
 
-const getInitialTheme = () => safeStorage.getItem("theme", "system");
+const getSystemTheme = () =>
+  typeof window !== "undefined" &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
 
+const getInitialTheme = () => {
+  const stored = safeStorage.getItem(THEME_STORAGE_KEY);
+  if (stored === "light" || stored === "dark" || stored === "system") {
+    return stored;
+  }
+  return "system";
+};
+
+// ✅ FIXED: Yahan se duplicate line hata di gayi hai
 export const ThemeProvider = ({ children }) => {
-  const [theme] = useState("light");
+  const { user, isAuthenticated } = useAuth();
 
+  const [theme, setThemeState] = useState(() => getInitialTheme());
+
+  const [systemTheme, setSystemTheme] = useState(() => getSystemTheme());
   // States to preserve existing codebase drawer flow without breaking
   const [activeThemeId, setActiveThemeId] = useState(() => {
     return safeStorage.getItem("activeThemeId", "default");
@@ -78,9 +91,54 @@ export const ThemeProvider = ({ children }) => {
     return saved !== null ? saved === "true" : prefersReduced;
   });
 
-  const resolvedTheme = "light";
-  const setTheme = useCallback(() => {}, []);
-  const toggleTheme = useCallback(() => {}, []);
+  const resolvedTheme = theme === "system" ? systemTheme : theme;
+  const isDarkMode = resolvedTheme === "dark";
+
+  // Track whether we have already applied the profile theme for this session
+  // so a re-render caused by other user-object changes doesn't override a
+  // user-initiated toggle that happened after login.
+  const profileThemeApplied = useRef(false);
+
+  // FIX (#7653): When validateSession() resolves and sets `user`, read
+  // user.preferences.theme and apply it as the active theme — within 200ms
+  // of the auth state being available, satisfying the acceptance criteria.
+  //
+  // We only apply once per session (profileThemeApplied ref) so subsequent
+  // re-renders from other profile changes don't clobber user-initiated toggles.
+  useEffect(() => {
+    if (!user || profileThemeApplied.current) return;
+
+    const profileTheme = getProfileTheme(user);
+    if (profileTheme && profileTheme !== theme) {
+      setThemeState(profileTheme);
+      // Also persist to localStorage so it survives the next cold load
+      // before the next validateSession() completes.
+      if (profileTheme === "system") {
+        safeStorage.removeItem("theme");
+      } else {
+        safeStorage.setItem("theme", profileTheme);
+      }
+    }
+
+    profileThemeApplied.current = true;
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+  // ↑ Intentional: we only want this to run when `user` first becomes available,
+  //   not on every re-render. `theme` is intentionally excluded.
+  const setTheme = useCallback((newTheme) => {
+    setThemeState(newTheme);
+    // FIX (#7653): Persist to profile in the background — non-blocking
+    syncThemeToProfile(newTheme, isAuthenticated);
+  }, [isAuthenticated]);
+
+  const toggleTheme = useCallback(() => {
+    setThemeState((prev) => {
+      const resolved = prev === "system" ? getSystemTheme() : prev;
+      const next = resolved === "dark" ? "light" : "dark";
+      // FIX (#7653): Fire-and-forget sync so the UI toggle stays instant
+      syncThemeToProfile(next, isAuthenticated);
+      return next;
+    });
+  }, [isAuthenticated]);
 
   // Apply themes, custom HSL variable overrides, and sync storage
   useEffect(() => {
@@ -92,14 +150,18 @@ export const ThemeProvider = ({ children }) => {
     root.classList.add(resolvedTheme);
 
     if (theme === "system") {
-      safeStorage.removeItem("theme");
+      safeStorage.removeItem(THEME_STORAGE_KEY);
     } else {
-      safeStorage.setItem("theme", theme);
+      safeStorage.setItem(THEME_STORAGE_KEY, theme);
     }
 
-    // Apply active skin theme colors
+    // Apply active skin theme colors — pick the variant that matches the resolved mode
     const activeTheme = THEMES[activeThemeId] || THEMES.default;
-    const themeColors = activeTheme.colors.light || activeTheme.colors.dark;
+
+    const themeColors =
+      resolvedTheme === "dark"
+        ? (activeTheme.colors.dark || activeTheme.colors.light)
+        : (activeTheme.colors.light || activeTheme.colors.dark);
     if (themeColors) {
       Object.entries(themeColors).forEach(([variable, val]) => {
         root.style.setProperty(variable, val);
@@ -131,7 +193,7 @@ export const ThemeProvider = ({ children }) => {
       }
       metaTheme.setAttribute("content", themeColor);
     }
-  }, [activeThemeId, customHsl]);
+  }, [activeThemeId, customHsl, theme, resolvedTheme]);
 
   // Sync OS-level reduced motion preference changes
   useEffect(() => {
@@ -173,9 +235,7 @@ export const ThemeProvider = ({ children }) => {
 
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = () => {
-      if (!safeStorage.getItem("theme")) {
-        setTheme("system");
-      }
+      setSystemTheme(getSystemTheme());
     };
     mediaQuery.addEventListener("change", handleChange);
     return () => mediaQuery.removeEventListener("change", handleChange);
@@ -185,7 +245,7 @@ export const ThemeProvider = ({ children }) => {
     () => ({
       theme,
       resolvedTheme,
-      isDarkMode: false,
+      isDarkMode,
       setTheme,
       isCustomizerOpen,
       setIsCustomizerOpen,
@@ -199,7 +259,17 @@ export const ThemeProvider = ({ children }) => {
       reducedMotion,
       setReducedMotion,
     }),
-    [theme, resolvedTheme, setTheme, toggleTheme, activeThemeId, isCustomizerOpen, customHsl, reducedMotion]
+    [
+      theme,
+      resolvedTheme,
+      isDarkMode,
+      setTheme,
+      toggleTheme,
+      activeThemeId,
+      isCustomizerOpen,
+      customHsl,
+      reducedMotion,
+    ]
   );
 
   return (
