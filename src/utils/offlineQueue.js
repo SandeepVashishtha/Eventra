@@ -299,6 +299,7 @@ export const pushToQueue = async (item, userId = null) => {
     priority: item.priority || "MEDIUM", // 'HIGH' | 'MEDIUM' | 'LOW'
     actionType: item.actionType || "REGISTER_EVENT",
     eventId: item.eventId || null,
+    idempotencyKey: item.idempotencyKey || null,
     payload: item.payload || {},
     endpoint: item.endpoint || null,
     userId: userId || null,
