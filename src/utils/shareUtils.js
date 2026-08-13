@@ -2,6 +2,17 @@ import { ENV } from "../config/env.js";
 
 const DEFAULT_EVENT_SHARE_HOST = "sandeepvashishtha.tech";
 
+const isSafeUrl = (url) => {
+  if (!url || typeof url !== "string") return false;
+  if (url.startsWith("/")) return true;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
 /**
  * Sharing utility functions for Eventra
  * These functions generate URLs for sharing content across various platforms
@@ -192,10 +203,10 @@ export const generateSharingUrl = (shareData = {}, platform = "") => {
       return `sms:?&body=${encodedTitle}%20${encodedUrl}`;
 
     case "copy":
-      return url;
+      return isSafeUrl(url) ? url : "";
 
     default:
-      return url;
+      return isSafeUrl(url) ? url : "";
   }
 };
 
