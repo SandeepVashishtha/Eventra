@@ -15,6 +15,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -154,12 +156,21 @@ public class TicketController {
                     "This ticket has already been checked in."));
         }
 
-        ticketCheckInRepository.save(TicketCheckIn.builder()
-                .eventId(eventId)
-                .registrationId(registrationId)
-                .attendeeName(displayName(reg))
-                .checkedInBy(payload.get("checkedInBy") != null ? String.valueOf(payload.get("checkedInBy")) : null)
-                .build());
+        // Two concurrent scans can both pass the exists() check above and race to insert
+        // the same (event, registration) row; the unique constraint then rejects the loser.
+        // Flush eagerly so the violation surfaces here and is mapped to a friendly 409.
+        try {
+            ticketCheckInRepository.saveAndFlush(TicketCheckIn.builder()
+                    .eventId(eventId)
+                    .registrationId(registrationId)
+                    .attendeeName(displayName(reg))
+                    .checkedInBy(payload.get("checkedInBy") != null ? String.valueOf(payload.get("checkedInBy")) : null)
+                    .build());
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(
+                    result(true, displayName(reg), registrationId, true,
+                            "This ticket has already been checked in."));
+        }
 
         Map<String, Object> response = result(true, displayName(reg), registrationId, false,
                 "Check-in recorded successfully.");
