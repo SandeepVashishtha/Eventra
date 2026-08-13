@@ -145,25 +145,19 @@ export const useMultiTrackSchedule = (eventId) => {
    * Add new track
    */
   const addTrack = useCallback(async (trackData) => {
-    const optimisticId = `track-${Date.now()}`;
     try {
       const newTrack = {
-        id: optimisticId,
+        id: `track-${Date.now()}`,
         ...trackData,
         createdAt: new Date().toISOString(),
       };
       dispatch({ type: 'ADD_TRACK', payload: newTrack });
       
       // Save to server
-      const created = await scheduleService.addTrack(eventId, { ...trackData, id: optimisticId });
-      const saved = created?.data ?? created;
-      if (saved?.id && saved.id !== optimisticId) {
-        dispatch({ type: 'UPDATE_TRACK', payload: { id: optimisticId, updates: { id: saved.id } } });
-      }
+      await scheduleService.addTrack(eventId, trackData);
       
-      return saved || newTrack;
+      return newTrack;
     } catch (error) {
-      dispatch({ type: 'REMOVE_TRACK', payload: optimisticId });
       dispatch({ type: 'SET_ERROR', payload: error.message });
       throw error;
     }
@@ -209,10 +203,9 @@ export const useMultiTrackSchedule = (eventId) => {
    * Add session to schedule
    */
   const addSession = useCallback(async (sessionData) => {
-    const optimisticId = `session-${Date.now()}`;
     try {
       const newSession = {
-        id: optimisticId,
+        id: `session-${Date.now()}`,
         ...sessionData,
         createdAt: new Date().toISOString(),
         attendeeIds: [],
@@ -224,15 +217,10 @@ export const useMultiTrackSchedule = (eventId) => {
       updateValidation([...state.tracks], [...state.sessions, newSession]);
       
       // Save to server
-      const created = await scheduleService.addSession(eventId, { ...sessionData, id: optimisticId });
-      const saved = created?.data ?? created;
-      if (saved?.id && saved.id !== optimisticId) {
-        dispatch({ type: 'UPDATE_SESSION', payload: { id: optimisticId, updates: { id: saved.id } } });
-      }
+      await scheduleService.addSession(eventId, sessionData);
       
-      return saved || newSession;
+      return newSession;
     } catch (error) {
-      dispatch({ type: 'REMOVE_SESSION', payload: optimisticId });
       dispatch({ type: 'SET_ERROR', payload: error.message });
       throw error;
     }

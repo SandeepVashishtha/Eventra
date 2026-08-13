@@ -75,21 +75,6 @@ export const downloadSessionBackup = ({
   return { filename, count: normalizeMultiSessions(sessions).length };
 };
 
-const DANGEROUS_KEYS = new Set(["__proto__", "constructor", "prototype"]);
-
-const sanitizeObject = (obj) => {
-  if (!obj || typeof obj !== "object") return obj;
-  if (Array.isArray(obj)) return obj.map(sanitizeObject);
-
-  const clean = {};
-  for (const key of Object.keys(obj)) {
-    if (!DANGEROUS_KEYS.has(key)) {
-      clean[key] = typeof obj[key] === "object" ? sanitizeObject(obj[key]) : obj[key];
-    }
-  }
-  return clean;
-};
-
 const getStringByteSize = (value) => {
   if (typeof Blob !== "undefined") {
     return new Blob([value]).size;
@@ -107,8 +92,7 @@ export const parseSessionBackupJson = (rawJson) => {
   }
 
   try {
-    const parsed = JSON.parse(rawJson);
-    return validateSessionBackup(sanitizeObject(parsed));
+    return validateSessionBackup(JSON.parse(rawJson));
   } catch {
     return { ok: false, error: "Backup file is not valid JSON." };
   }

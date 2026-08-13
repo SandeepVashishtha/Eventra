@@ -82,18 +82,12 @@ const upsertHistoryItem = (items, key, patch = {}, now = Date.now(), increment =
   if (!key) return items;
 
   const nowMs = getNowMs(now);
-  const existingIndex = items.findIndex((item) => item.key === key);
-  if (existingIndex !== -1) {
-    const existing = items[existingIndex];
-    const updatedItem = {
-      ...existing,
-      count: (existing.count || 0) + increment,
-      lastUsed: nowMs,
-      ...patch,
-    };
-    const nextItems = [...items];
-    nextItems[existingIndex] = updatedItem;
-    return sortHistoryItems(nextItems).slice(0, MAX_HISTORY_ITEMS);
+  const existing = items.find((item) => item.key === key);
+  if (existing) {
+    existing.count = (existing.count || 0) + increment;
+    existing.lastUsed = nowMs;
+    Object.assign(existing, patch);
+    return sortHistoryItems(items).slice(0, MAX_HISTORY_ITEMS);
   }
 
   return sortHistoryItems([
@@ -107,34 +101,6 @@ const upsertHistoryItem = (items, key, patch = {}, now = Date.now(), increment =
     },
   ]).slice(0, MAX_HISTORY_ITEMS);
 };
-
-export const addSearchSuggestion = (history = [], query, maxItems = MAX_HISTORY_ITEMS) => {
-  if (history && !Array.isArray(history) && typeof history === "object" && Array.isArray(history.searches)) {
-    return {
-      ...history,
-      searches: addSearchSuggestion(history.searches, query, maxItems),
-    };
-  }
-
-  const historyArray = Array.isArray(history) ? history : [];
-  if (!query) return [...historyArray];
-
-  const queryStr = typeof query === "string" ? query : query?.label || query?.query || query?.key || "";
-  const trimmed = String(queryStr).trim();
-  if (!trimmed) return [...historyArray];
-
-  const normalizedNew = normalizeSuggestionText(trimmed);
-
-  const filtered = historyArray.filter((item) => {
-    const itemStr = typeof item === "string" ? item : item?.label || item?.query || item?.key || "";
-    return normalizeSuggestionText(itemStr) !== normalizedNew;
-  });
-
-  const newItem = typeof query === "object" && query !== null ? { ...query } : trimmed;
-
-  return [newItem, ...filtered].slice(0, maxItems);
-};
-
 
 export const normalizeSuggestionHistory = (history = {}) => {
   const empty = createEmptyHistory();

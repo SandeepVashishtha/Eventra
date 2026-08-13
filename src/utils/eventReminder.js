@@ -218,10 +218,7 @@ export const scheduleReminder = (title, delay, options = {}) => {
     const currentDelay = Math.min(remainingDelay, MAX_TIMEOUT_DELAY);
     const timeoutId = setTimeout(() => {
       if (remainingDelay > MAX_TIMEOUT_DELAY) {
-        // Guard: skip scheduling the next chunk if the reminder was cancelled
-        if (activeReminders.has(reminderId)) {
-          scheduleTimeout(remainingDelay - MAX_TIMEOUT_DELAY);
-        }
+        scheduleTimeout(remainingDelay - MAX_TIMEOUT_DELAY);
       } else {
         sendNotification("⏰ Event Reminder", {
           body,

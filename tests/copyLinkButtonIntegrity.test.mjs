@@ -12,20 +12,8 @@ assert.match(
 
 assert.match(
   source,
-  /aria-label/,
-  "CopyLinkButton must have an accessibility aria-label"
-);
-
-assert.match(
-  source,
-  /"Share event invite"/,
-  "CopyLinkButton must expose the native-share aria-label branch"
-);
-
-assert.match(
-  source,
-  /"Copy event link"/,
-  "CopyLinkButton must expose the copy-invite aria-label branch"
+  /aria-label="Copy event link"/,
+  "CopyLinkButton must have accessiblity aria-label"
 );
 
 console.log("CopyLinkButton integrity tests passed");

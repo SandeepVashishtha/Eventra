@@ -74,7 +74,7 @@ describe('Guard Component', () => {
     it('renders fallback when user has none of the requireRoles', () => {
       useAuthMock.mockReturnValue({
         ...MOCK_AUTH_METHODS,
-        hasAnyRole: () => false,
+        hasAnyRole: (...roles) => false,
       });
 
       render(
@@ -154,7 +154,7 @@ describe('Guard Component', () => {
     it('renders fallback when user lacks required permission (ANY logic)', () => {
       useAuthMock.mockReturnValue({
         ...MOCK_AUTH_METHODS,
-        hasAnyPermission: () => false,
+        hasAnyPermission: (...perms) => false,
       });
 
       render(
@@ -332,7 +332,7 @@ describe('Guard Component', () => {
       useAuthMock.mockReturnValue(null);
       const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-      render(
+      const { container } = render(
         <Guard fallback={<div data-testid="no-auth-fallback">No Auth</div>}>
           <div>Content</div>
         </Guard>

@@ -2,15 +2,13 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import useReducedMotion from 'hooks/useReducedMotion';
 
-const assessStrength = (password, minLength = 8, requireSpecialChar = true) => {
+const assessStrength = (password) => {
   const criteria = [
-    { label: `At least ${minLength} characters`, met: password ? password.length >= minLength : false },
+    { label: "At least 8 characters", met: password ? password.length >= minLength : false },
     { label: "Contains a number", met: password ? /\d/.test(password) : false },
     { label: "Contains uppercase letter", met: password ? /[A-Z]/.test(password) : false },
     { label: "Contains lowercase letter", met: password ? /[a-z]/.test(password) : false },
-    ...(requireSpecialChar
-      ? [{ label: "Contains special character", met: password ? /[^A-Za-z0-9]/.test(password) : false }]
-      : [])
+    { label: "Contains special character", met: password ? /[^A-Za-z0-9]/.test(password) : false }
   ];
 
   const criteriaMet = criteria.filter(c => c.met).length;
@@ -18,10 +16,10 @@ const assessStrength = (password, minLength = 8, requireSpecialChar = true) => {
   let score;
   let feedback;
 
-  if (criteriaMet === criteria.length) {
+  if (criteriaMet === 5) {
     score = 3;
     feedback = 'Excellent! Your password is secure and meets all criteria.';
-  } else if (criteriaMet >= criteria.length - 1) {
+  } else if (criteriaMet === 4) {
     score = 2;
     feedback = 'Almost there! Add a special character for full strength.';
   } else if (criteriaMet >= 3) {
@@ -37,7 +35,7 @@ const assessStrength = (password, minLength = 8, requireSpecialChar = true) => {
 
 const PasswordStrengthIndicator = ({ password, minLength = 8, requireSpecialChar = true }) => {
   const prefersReducedMotion = useReducedMotion();
-  const { score, feedback, criteriaMet, criteria } = assessStrength(password, minLength, requireSpecialChar);
+  const { score, feedback, criteriaMet, criteria } = assessStrength(password);
 
   const getBarColorClass = (currentScore) => {
     switch (currentScore) {

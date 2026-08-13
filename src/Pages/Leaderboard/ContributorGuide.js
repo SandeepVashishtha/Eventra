@@ -139,8 +139,8 @@ const ContributorGuide = () => {
       }
       setCopied(id);
       setTimeout(() => setCopied(""), 2000);
-    } catch {
-      // Copy failed silently without console warning
+    } catch (err) {
+      console.warn("Failed to copy command:", err);
     }
   };
 

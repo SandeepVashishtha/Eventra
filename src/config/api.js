@@ -1,7 +1,7 @@
 import axios from "axios";
-import { ENV } from "./env.js";
-import { syncServerTimeFromHeader } from "../utils/timeSync.js";
-import { createIntegrityHeader } from "../utils/security/requestIntegrity.js";
+import { ENV } from "./env";
+import { syncServerTimeFromHeader } from "../utils/timeSync";
+import { createIntegrityHeader } from "../utils/security/requestIntegrity";
 import { ApiError, RateLimitError } from "./api/errors.js";
 import { setupRequestInterceptor, setupResponseInterceptor, setOnRequiresReauthHandler, setReauthRequired, setAuthToken as setInterceptorAuthToken, setRefreshToken as setInterceptorRefreshToken } from "./api/interceptors.js";
 import { API_BASE_URL, validateBackendConfig } from "./backendConfig.js";
@@ -193,7 +193,6 @@ export const API_ENDPOINTS = {
     GOOGLE: buildApiUrl("/auth/google"),
     REAUTH: buildApiUrl("/auth/reauth"),
     GITHUB: buildApiUrl("/auth/github"),
-    CLAIM_GUEST_ACCOUNT: buildApiUrl("/auth/guest/claim"),
   },
   EVENTS: {
     CREATE: buildApiUrl("/events/create"),
@@ -201,7 +200,6 @@ export const API_ENDPOINTS = {
     LIST: buildApiUrl("/events"),
     DETAIL: (id) => buildApiUrl(`/events/${id}`),
     REGISTER: (id) => buildApiUrl(`/events/${id}/register`),
-    GUEST_REGISTER: (id) => buildApiUrl(`/events/${id}/register/guest`),
     CANCEL_REGISTRATION: (id) => buildApiUrl(`/events/${id}/registration`),
     CANCEL: (id) => buildApiUrl(`/events/${id}/cancel`),
     ARCHIVE: (id) => buildApiUrl(`/events/${id}/archive`),
@@ -382,7 +380,7 @@ export const apiUtils = {
 
 export default API;
 
-export { ApiError, RateLimitError, normalizeApiError, getApiErrorStatus, getApiErrorMessage };
+export { ApiError, RateLimitError, normalizeApiError };
 
 // Centralized configuration cache store for fallback endpoints
 export const apiConfigCache = {

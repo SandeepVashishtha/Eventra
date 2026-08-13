@@ -1,36 +1,24 @@
 import CryptoJS from "crypto-js";
 
 /**
- * Retrieves or initializes a browser-persistent salt scoped to a namespace.
- *
- * The salt is intentionally NOT a single global value shared by every
- * namespace. A global salt persisted in localStorage acted as a universal
- * oracle: anyone who could read localStorage could recompute
- * `SHA256(namespace:userId:salt)` for a guessed userId and reverse every
- * opaque key at once. Scoping the salt per namespace removes that global
- * linkability / reversibility while still keeping keys stable within a
- * namespace across reloads.
- *
+ * Retrieves or initializes a browser-persistent salt to prevent cross-user linkability.
  * Uses a fallback if localStorage is unavailable (e.g. during SSR/Node environment).
  *
- * @param {string} namespace - The storage namespace.
- * @returns {string} The namespace-scoped salt.
+ * @returns {string} The salt.
  */
-const getSalt = (namespace) => {
-  const fallback = `fallback-salt:${namespace || "default"}`;
-  if (typeof window === "undefined") return fallback;
+const getSalt = () => {
+  if (typeof window === "undefined") return "fallback-salt";
   try {
-    const storageKey = `eventra:storage-key-salt:${namespace || "default"}`;
-    let salt = localStorage.getItem(storageKey);
+    let salt = localStorage.getItem("eventra:storage-key-salt");
     if (!salt) {
-      salt = typeof crypto !== "undefined" && crypto.randomUUID
-        ? crypto.randomUUID()
-        : `${namespace || "default"}-${Math.random().toString(36).substring(2)}${Date.now().toString(36)}`;
-      localStorage.setItem(storageKey, salt);
+      salt = typeof crypto !== "undefined" && crypto.randomUUID 
+        ? crypto.randomUUID() 
+        : Math.random().toString(36).substring(2) + Date.now().toString(36);
+      localStorage.setItem("eventra:storage-key-salt", salt);
     }
     return salt;
   } catch {
-    return fallback;
+    return "fallback-salt";
   }
 };
 
@@ -54,7 +42,7 @@ export const getOpaqueKey = (namespace, userId) => {
     return `${namespace}_${userId}`;
   }
 
-  const salt = getSalt(namespace);
+  const salt = getSalt();
   const hash = CryptoJS.SHA256(`${namespace}:${userId}:${salt}`).toString();
   return `${namespace}_${hash}`;
 };

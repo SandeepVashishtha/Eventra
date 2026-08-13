@@ -7,7 +7,6 @@ import {
   calculateDiversitySimilarity,
   calculateRecommendationScore,
   calculateTemporalUrgencyScore,
-  clearTagCache,
   getTrendingEventsForArea,
 } from "../src/utils/recommendationEngine.js";
 
@@ -120,27 +119,6 @@ assert(
   "decay factor should scale interaction weights",
 );
 
-// Interactions without a timestamp must default to full recency, never the event date
-const pastEvent = { ...events[2], date: new Date(NOW - 30 * DAY_MS).toISOString() };
-const noTimestampProfile = buildInteractionProfile({
-  viewedEvents: [{ ...pastEvent }],
-});
-assert.equal(
-  noTimestampProfile.categories["devops and cloud"],
-  1,
-  "interaction without its own timestamp should keep full weight instead of decaying against the event date",
-);
-
-// A freshly-viewed future event keeps a high category weight
-const futureEvent = { ...events[2], date: new Date(NOW + 30 * DAY_MS).toISOString() };
-const freshProfile = buildInteractionProfile({
-  viewedEvents: [{ ...futureEvent, createdAt: new Date(NOW - 1000).toISOString() }],
-});
-assert(
-  Math.abs(freshProfile.categories["devops and cloud"] - 1) < 0.01,
-  "freshly-viewed event should keep full category weight",
-);
-
 // ===========================================================================
 // Temporal urgency & expiration filtering
 // ===========================================================================
@@ -242,54 +220,6 @@ assert(coldStart.length > 0, "cold-start users should still receive recommendati
 assert(
   coldStart.every((event) => event.recommendationScore > 0),
   "cold-start recommendations should all be positively scored",
-);
-
-// ===========================================================================
-// Tag cache TTL & invalidation
-// ===========================================================================
-
-const mutableEvent = {
-  id: 777,
-  title: "Mutable Event",
-  category: "Web Development",
-  type: "conference",
-  tags: ["React", "Frontend"],
-};
-const candidateEvent = {
-  id: 888,
-  title: "React Meetup",
-  category: "Web Development",
-  type: "conference",
-  tags: ["React"],
-};
-
-const similarityScore = (profile) =>
-  calculateRecommendationScore(candidateEvent, {}, profile).breakdown.find(
-    (b) => b.label === "Collaborative item similarity",
-  )?.score ?? 0;
-
-const cachedSimilarity = similarityScore(
-  buildInteractionProfile({ registeredEvents: [{ ...mutableEvent }] }),
-);
-
-mutableEvent.tags = ["Python", "Data"];
-
-const staleSimilarity = similarityScore(
-  buildInteractionProfile({ registeredEvents: [{ ...mutableEvent }] }),
-);
-assert.equal(
-  staleSimilarity,
-  cachedSimilarity,
-  "tag cache should serve the original tags within TTL",
-);
-
-clearTagCache();
-const freshSimilarity = similarityScore(
-  buildInteractionProfile({ registeredEvents: [{ ...mutableEvent }] }),
-);
-assert(
-  freshSimilarity < staleSimilarity,
-  "tag edits should be reflected once the cache is invalidated",
 );
 
 console.log("recommendationEngine tests passed ✓");

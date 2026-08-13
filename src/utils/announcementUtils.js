@@ -146,7 +146,7 @@ export const searchAnnouncements = (
 
   return announcements.filter(
     (item) =>
-      (typeof item.title === "string" && item.title.toLowerCase().includes(keyword)) ||
-      (typeof item.message === "string" && item.message.toLowerCase().includes(keyword))
+      item.title.toLowerCase().includes(keyword) ||
+      item.message.toLowerCase().includes(keyword)
   );
 };

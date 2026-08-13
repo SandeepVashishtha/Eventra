@@ -56,8 +56,10 @@ public class QAStreamController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         if (!q.addVoter(authentication.getName())) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .build();
         }
+        q.setUpvotes(q.getUpvotes() + 1);
         return ResponseEntity.ok(q);
     }
 

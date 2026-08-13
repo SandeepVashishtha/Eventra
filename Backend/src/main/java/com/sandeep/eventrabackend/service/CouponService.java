@@ -48,8 +48,6 @@ public class CouponService implements ApplicationRunner {
 
     @Transactional
     public boolean redeemCoupon(String code) {
-        if (code == null) return false;
-        code = code.trim().toUpperCase();
         ReentrantLock lock = locks.computeIfAbsent(code, k -> new ReentrantLock());
         boolean acquired;
         try {
@@ -82,8 +80,6 @@ public class CouponService implements ApplicationRunner {
 
     @Transactional(readOnly = true)
     public int getRemainingUses(String code) {
-        if (code == null) return 0;
-        code = code.trim().toUpperCase();
         return couponInventoryRepository.findById(code)
                 .map(CouponInventory::getRemaining)
                 .orElse(0);

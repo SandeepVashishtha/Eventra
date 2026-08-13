@@ -1,8 +1,7 @@
 import { apiUtils, API_ENDPOINTS } from "../config/api";
-import { getApiErrorMessage } from "../config/api/errors.js";
 
 const handleError = (error, fallbackMessage) => {
-  const message = getApiErrorMessage(error) || fallbackMessage;
+  const message = error.response?.data?.message || error.message || fallbackMessage;
   throw new Error(message);
 };
 

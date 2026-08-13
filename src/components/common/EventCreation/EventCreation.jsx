@@ -3,13 +3,12 @@ import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
-import { Download, Calendar, Globe, Link2, Plus, Table } from "lucide-react";
+import { Download, Calendar, Globe, Link2, Plus } from "lucide-react";
 import { logger } from "../../../utils/logger";
 import useReducedMotion from "../../../hooks/useReducedMotion";
 import TicketsStep from "./components/TicketsStep";
 import GeneralInfoStep from "./components/GeneralInfoStep";
 import { exportAttendeesToCSV } from "../../../utils/exportCsv";
-import { exportAttendeesToGoogleSheets } from "../../../utils/exportGoogleSheets";
 import PreviewStep from "./components/PreviewStep";
 import RestoreDraftModal from "./components/RestoreDraftModal";
 import GuidelinesSection from "./components/GuidelinesSection";
@@ -47,7 +46,7 @@ const EventCreation = () => {
   const location = useLocation();
 
   const [currentStep, setCurrentStep] = useState(CREATION_STEPS.FORM);
-  const [formData, setFormData] = useState(initialFormData());
+  const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
   const [newTag, setNewTag] = useState("");
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
@@ -342,7 +341,7 @@ const EventCreation = () => {
   }, [formData]);
 
   const resetForm = () => {
-    setFormData(initialFormData());
+    setFormData(initialFormData);
     setErrors({});
     localStorage.removeItem(DRAFT_KEY);
     setNewTag("");
@@ -448,7 +447,7 @@ const EventCreation = () => {
 
       {currentStep === CREATION_STEPS.FORM ? (
         <>
-          <div className="w-full max-w-4xl flex justify-end mb-6 gap-4">
+          <div className="w-full max-w-4xl flex justify-end mb-6">
             <button
               onClick={() => {
                 exportAttendeesToCSV(mockAttendees, "event-attendees.csv");
@@ -458,22 +457,6 @@ const EventCreation = () => {
             >
               <Download size={18} />
               Download CSV
-            </button>
-            <button
-              onClick={async () => {
-                const result = await exportAttendeesToGoogleSheets(mockAttendees, "Eventra Attendees");
-                if (result.success) {
-                  toast.success("Exported to Google Sheets successfully!");
-                } else if (result.reason === 'empty') {
-                  toast.warning("No attendees to export");
-                } else {
-                  toast.error(result.error || "Failed to export to Google Sheets");
-                }
-              }}
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-blue-500 hover:bg-blue-600 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-300"
-            >
-              <Table size={18} />
-              Export to Sheets
             </button>
           </div>
 
@@ -521,7 +504,7 @@ const EventCreation = () => {
                 handleInputChange={handleInputChange}
                 errors={errors}
                 prefersReducedMotion={prefersReducedMotion}
-                todayString={todayString()}
+                todayString={todayString}
               />
               {/* Event Duration Type */}
               <motion.div
@@ -604,7 +587,7 @@ const EventCreation = () => {
                       name="startDate"
                       value={formData.startDate}
                       onChange={handleInputChange}
-                      min={todayString()}
+                      min={todayString}
                       className={`w-full border ${
                         errors.startDate ? "border-red-500" : "border-gray-300 dark:border-gray-600"
                       } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
@@ -624,7 +607,7 @@ const EventCreation = () => {
                       name="endDate"
                       value={formData.endDate}
                       onChange={handleInputChange}
-                      min={formData.startDate || todayString()}
+                      min={formData.startDate || todayString}
                       className={`w-full border ${
                         errors.endDate ? "border-red-500" : "border-gray-300 dark:border-gray-600"
                       } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
@@ -694,7 +677,7 @@ const EventCreation = () => {
                       name="date"
                       value={formData.date}
                       onChange={handleInputChange}
-                      min={todayString()}
+                      min={todayString}
                       className={`w-full border ${
                         errors.date ? "border-red-500" : "border-gray-300 dark:border-gray-600"
                       } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}

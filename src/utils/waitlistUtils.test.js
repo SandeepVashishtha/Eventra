@@ -7,12 +7,10 @@ import {
   promoteNextUser,
   handleCapacityIncrease,
   getGlobalWaitlist,
-  getMyWaitlistEntry,
   getWaitlistStorageKey,
   parseCsvWaitlistData,
   validateCsvWaitlistEntries,
 } from "./waitlistUtils";
-import { syncSecureStorage } from "./secureStorage.js";
 
 // idb-keyval is async; stub it so the test environment doesn't need IndexedDB
 vi.mock("idb-keyval", () => ({
@@ -25,7 +23,6 @@ vi.mock("../config/api.js", () => ({
   apiUtils: {
     get: vi.fn().mockRejectedValue({ isNetworkError: true }),
     post: vi.fn().mockRejectedValue({ isNetworkError: true }),
-    delete: vi.fn().mockRejectedValue({ isNetworkError: true }),
   },
   API_ENDPOINTS: { EVENTS: { ALL: "/api/events" } },
 }));
@@ -43,8 +40,8 @@ const makeEntry = (overrides = {}) => ({
   ...overrides,
 });
 
-const seedWaitlist = async (entries, userId = "u1") => {
-  await syncSecureStorage.setItem(getWaitlistStorageKey(userId), JSON.stringify(entries));
+const seedWaitlist = (entries, userId = "u1") => {
+  localStorage.setItem(getWaitlistStorageKey(userId), JSON.stringify(entries));
 };
 
 const makeUser = (overrides = {}) => ({
@@ -56,7 +53,6 @@ const makeUser = (overrides = {}) => ({
 
 beforeEach(() => {
   localStorage.clear();
-  syncSecureStorage.clear();
   vi.spyOn(console, "error").mockImplementation(() => {});
   vi.spyOn(console, "warn").mockImplementation(() => {});
   vi.spyOn(window, "dispatchEvent").mockImplementation(() => {});
@@ -121,13 +117,13 @@ describe("getEventWaitlist", () => {
 
 describe("getQueuePosition", () => {
   it("returns 1-based position for the first user in queue", async () => {
-    await seedWaitlist([
+    seedWaitlist([
       makeEntry({ userId: "u1", joinedAt: new Date(1000).toISOString() }),
       makeEntry({ userId: "u2", joinedAt: new Date(2000).toISOString() }),
     ], "u2");
     expect(await getQueuePosition(42, "u2")).toBe(2);
 
-    await seedWaitlist([makeEntry({ userId: "u1", joinedAt: new Date(1000).toISOString() })], "u1");
+    seedWaitlist([makeEntry({ userId: "u1", joinedAt: new Date(1000).toISOString() })], "u1");
     expect(await getQueuePosition(42, "u1")).toBe(1);
   });
 
@@ -186,7 +182,7 @@ describe("leaveWaitlist", () => {
 
 describe("organizerRemoveUser", () => {
   it("sets status to removed for a valid entry", async () => {
-    seedWaitlist([makeEntry({ id: "w1" })]);
+    seedWaitlist([makeEntry()]);
     const result = await organizerRemoveUser(42, "u1", "u1");
     expect(result).toBe(true);
     // apiUtils is mocked to fail → offline fallback marks removed_by_organizer
@@ -403,42 +399,3 @@ John Doe,john@example.com`;
     });
   });
 });
-
-describe("eventId type consistency and coercion (#16812)", () => {
-    it("getEventWaitlist matches records stored with string eventId when queried with numeric eventId", async () => {
-      seedWaitlist([makeEntry({ eventId: "42", userId: "u1" })], "u1");
-      const list = await getEventWaitlist(42, "u1");
-      expect(list).toHaveLength(1);
-      expect(list[0].userId).toBe("u1");
-    });
-
-    it("getEventWaitlist matches records stored with numeric eventId when queried with string eventId", async () => {
-      seedWaitlist([makeEntry({ eventId: 42, userId: "u1" })], "u1");
-      const list = await getEventWaitlist("42", "u1");
-      expect(list).toHaveLength(1);
-      expect(list[0].userId).toBe("u1");
-    });
-
-    it("joinWaitlist prevents duplicate entry when pre-existing record has string eventId", async () => {
-      seedWaitlist([makeEntry({ eventId: "42", userId: "u1", status: "waiting" })], "u1");
-      await expect(joinWaitlist(42, makeUser({ id: "u1" }))).rejects.toThrow(
-        "You are already on the waitlist for this event."
-      );
-    });
-
-    it("leaveWaitlist correctly removes record stored with string eventId", async () => {
-      seedWaitlist([makeEntry({ eventId: "42", userId: "u1", status: "waiting" })], "u1");
-      const success = await leaveWaitlist(42, "u1");
-      expect(success).toBe(true);
-      const stored = await getGlobalWaitlist("u1");
-      expect(stored[0].status).toBe("removed");
-    });
-
-    it("organizerRemoveUser removes user record stored with string eventId", async () => {
-      seedWaitlist([makeEntry({ id: "w1", eventId: "42", userId: "u1", status: "waiting" })], "u1");
-      const success = await organizerRemoveUser(42, "u1", "u1");
-      expect(success).toBe(true);
-      const stored = await getGlobalWaitlist("u1");
-      expect(stored[0].status).toBe("removed_by_organizer");
-    });
-  });

@@ -60,8 +60,6 @@ import java.time.LocalDateTime;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Locale;
@@ -96,9 +94,6 @@ public class EventService {
         /** Maximum number of automatic retries on optimistic-lock conflict. */
         private static final int MAX_REGISTRATION_RETRIES = 3;
 
-        /** Safety cap so waitlist promotion can never loop without bound. */
-        private static final int MAX_PROMOTIONS_PER_CALL = 50;
-
         private static final Set<String> ALLOWED_SORT_PROPERTIES = Set.of("eventDate", "title", "id");
 
         private static final Map<String, String> SORT_ALIASES = Map.of(
@@ -106,22 +101,6 @@ public class EventService {
                         "eventdate", "eventDate",
                         "title", "title",
                         "id", "id");
-
-        /**
-         * Allowlist for the public listing {@code status} filter. Restricts the
-         * public endpoint to timing/lifecycle labels that are safe to expose so
-         * callers cannot request internal states (e.g. DRAFT, ARCHIVED, INTERNAL)
-         * via the filter.
-         */
-        private static final Set<String> ALLOWED_PUBLIC_STATUSES = Set.of(
-                        "PUBLISHED", "UPCOMING", "ONGOING", "COMPLETED",
-                        "LIVE", "PAST", "ENDED", "CANCELLED", "CANCELED", "SCHEDULED");
-
-        /** Maximum page index accepted by the public listing (DoS guard). */
-        private static final int MAX_EVENTS_PAGE = 1000;
-
-        /** Maximum length (chars) of the public listing search term. */
-        private static final int MAX_EVENTS_SEARCH_LENGTH = 200;
 
         private final EventRepository eventRepository;
         private final EventRegistrationRepository eventRegistrationRepository;
@@ -133,7 +112,6 @@ public class EventService {
         private final UserRepository userRepository;
         private final EventRoleService eventRoleService;
         private final EventStreamService eventStreamService;
-        private final StripeService stripeService;
 
         public EventService(
                         EventRepository eventRepository,
@@ -145,8 +123,7 @@ public class EventService {
                         EventRoleAuditLogRepository eventRoleAuditLogRepository,
                         UserRepository userRepository,
                         EventRoleService eventRoleService,
-                        EventStreamService eventStreamService,
-                        StripeService stripeService) {
+                        EventStreamService eventStreamService) {
                 this.eventRepository = eventRepository;
                 this.eventRegistrationRepository = eventRegistrationRepository;
                 this.eventWaitlistRepository = eventWaitlistRepository;
@@ -157,7 +134,6 @@ public class EventService {
                 this.userRepository = userRepository;
                 this.eventRoleService = eventRoleService;
                 this.eventStreamService = eventStreamService;
-                this.stripeService = stripeService;
         }
 
         /**
@@ -169,6 +145,10 @@ public class EventService {
          * @throws EventNotFoundException if no event with {@code id} exists
          */
         public EventAvailabilityResponse getEventAvailability(Long id) {
+                return getEventAvailability(id, null);
+        }
+
+        public EventAvailabilityResponse getEventAvailability(Long id, String userEmail) {
                 Event event = requirePublicEvent(id);
 
                 Integer capacity = event.getCapacity();
@@ -180,12 +160,22 @@ public class EventService {
 
                 boolean isFull = (capacity != null) && (registeredCount >= capacity);
 
+                Integer waitlistPosition = null;
+                if (userEmail != null) {
+                        waitlistPosition = eventWaitlistRepository
+                                        .findByEvent_IdAndUser_EmailAndStatus(id, userEmail, "WAITING")
+                                        .map(EventWaitlist::getPosition)
+                                        .orElse(null);
+                }
+
                 return EventAvailabilityResponse.builder()
                                 .capacity(capacity)
                                 .registeredCount(registeredCount)
                                 .spotsLeft(spotsLeft)
                                 .isFull(isFull)
                                 .eventPassed(event.isEventPast())
+                                .waitlistPosition(waitlistPosition)
+                                .waitlisted(waitlistPosition != null)
                                 .build();
         }
 
@@ -231,24 +221,7 @@ public class EventService {
                         String search,
                         List<String> statuses,
                         String sort) {
-                if (statuses != null) {
-                        for (String raw : statuses) {
-                                if (raw == null) {
-                                        continue;
-                                }
-                                String status = raw.trim().toUpperCase(Locale.ROOT);
-                                if (!status.isEmpty() && !ALLOWED_PUBLIC_STATUSES.contains(status)) {
-                                        throw new IllegalArgumentException(
-                                                        "Invalid status filter '" + raw + "'. Allowed values: "
-                                                                        + String.join(", ", ALLOWED_PUBLIC_STATUSES));
-                                }
-                        }
-                }
-                if (search != null && search.length() > MAX_EVENTS_SEARCH_LENGTH) {
-                        throw new IllegalArgumentException(
-                                        "Search term must not exceed " + MAX_EVENTS_SEARCH_LENGTH + " characters");
-                }
-                int safePage = Math.min(Math.max(0, page), MAX_EVENTS_PAGE);
+                int safePage = Math.max(0, page);
                 int safeSize = (size <= 0) ? 20 : Math.min(size, 100);
                 Pageable pageable = PageRequest.of(safePage, safeSize, resolveSort(sort));
                 Specification<Event> spec = EventSpecifications.publicListing(search, statuses);
@@ -275,12 +248,6 @@ public class EventService {
                         direction = Sort.Direction.ASC;
                 }
                 return Sort.by(direction, mapped);
-        }
-
-        private void validateTitle(String title) {
-                if (title == null || title.trim().length() < 3 || title.trim().length() > 100) {
-                        throw new IllegalArgumentException("Title must be between 3 and 100 characters.");
-                }
         }
 
         /**
@@ -428,16 +395,54 @@ public class EventService {
          * @return List of events matching the search criteria
          */
         @Transactional(readOnly = true)
-        public Page<EventResponse> searchEvents(String search, String category, String startDate, String endDate,
-                        Boolean free, Pageable pageable) {
-                // Push all filtering down to the database via a dynamic Specification.
-                Specification<Event> spec = Specification
-                                .where(EventSpecifications.isPublic())
-                                .and(EventSpecifications.notCancelled())
-                                .and(EventSpecifications.searchContains(search))
-                                .and(EventSpecifications.categoryEquals(category))
-                                .and(EventSpecifications.eventDateAfter(startDate))
-                                .and(EventSpecifications.eventDateBefore(endDate));
+        public List<EventResponse> searchEvents(String search, String category, String startDate, String endDate,
+                        Boolean free) {
+                List<Event> events;
+
+                // Build query based on search criteria
+                if (search != null && !search.trim().isEmpty()) {
+                        // Full-text search on title and description
+                        events = eventRepository.findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
+                                        search, search);
+                } else {
+                        events = eventRepository.findAll();
+                }
+
+                // Apply additional filters
+                if (category != null && !category.trim().isEmpty()) {
+                        List<Event> filteredEvents = events.stream()
+                                        .filter(event -> category.equals(event.getCategory()))
+                                        .collect(Collectors.toList());
+                        events = filteredEvents;
+                }
+
+                if (startDate != null && !startDate.trim().isEmpty()) {
+                        LocalDateTime startDateTime;
+                        try {
+                                startDateTime = LocalDateTime.parse(startDate);
+                        } catch (Exception e) {
+                                throw new IllegalArgumentException("Invalid startDate parameter: " + startDate);
+                        }
+                        List<Event> filteredEvents = events.stream()
+                                        .filter(event -> event.getEventDate() != null &&
+                                                        !event.getEventDate().isBefore(startDateTime))
+                                        .collect(Collectors.toList());
+                        events = filteredEvents;
+                }
+
+                if (endDate != null && !endDate.trim().isEmpty()) {
+                        LocalDateTime endDateTime;
+                        try {
+                                endDateTime = LocalDateTime.parse(endDate);
+                        } catch (Exception e) {
+                                throw new IllegalArgumentException("Invalid endDate parameter: " + endDate);
+                        }
+                        List<Event> filteredEvents = events.stream()
+                                        .filter(event -> event.getEventDate() != null &&
+                                                        !event.getEventDate().isAfter(endDateTime))
+                                        .collect(Collectors.toList());
+                        events = filteredEvents;
+                }
 
                 // Events do not currently model price, so a free filter cannot be applied.
                 // Do not use capacity as a proxy for price.
@@ -445,26 +450,11 @@ public class EventService {
                         // Intentionally no-op until pricing data is available.
                 }
 
-                Page<Event> page = eventRepository.findAll(spec, pageable);
-                return page.map(this::toPublicEventResponse);
-        }
-
-        /**
-         * Calculates total event count per category directly in the database (Issue #16693).
-         * Uses database GROUP BY aggregation to avoid loading all Event entities into memory.
-         *
-         * @return Map of category names to event counts
-         */
-        @Transactional(readOnly = true)
-        public Map<String, Long> getEventCountByCategory() {
-                List<Object[]> results = eventRepository.countEventsByCategory();
-                Map<String, Long> categoryCounts = new LinkedHashMap<>();
-                for (Object[] row : results) {
-                        if (row[0] != null) {
-                                categoryCounts.put((String) row[0], ((Number) row[1]).longValue());
-                        }
-                }
-                return categoryCounts;
+                return events.stream()
+                                .filter(Event::isPublic)
+                                .filter(event -> !"CANCELLED".equals(event.getStatus()))
+                                .map(this::toPublicEventResponse)
+                                .collect(Collectors.toList());
         }
 
         /**
@@ -498,16 +488,12 @@ public class EventService {
                 Event event = new Event();
                 validateEventCategory(request.getCategory());
                 validateEventCategories(request.getCategories());
-                validateTitle(request.getTitle());
                 event.setTitle(request.getTitle());
-                validateDescription(request.getDescription());
                 event.setDescription(request.getDescription());
-                validateLocation(request.getLocation());
                 event.setLocation(request.getLocation());
                 event.setEventDate(request.getEventDate());
                 event.setCapacity(request.getCapacity());
                 event.setImageUrl(request.getImageUrl());
-                validateEventTags(request.getTags());
                 event.setCategory(request.getCategory());
                 if (request.getCategories() != null) {
                     event.setCategories(new HashSet<>(request.getCategories()));
@@ -561,17 +547,10 @@ public class EventService {
                 validateEventCategory(request.getCategory());
                 validateEventCategories(request.getCategories());
 
-                validateTitle(request.getTitle());
                 event.setTitle(request.getTitle());
-                if (request.getLocation() != null) {
-                        validateLocation(request.getLocation());
-                }
+                event.setDescription(request.getDescription());
                 event.setLocation(request.getLocation());
                 event.setEventDate(request.getEventDate());
-                if (request.getDescription() != null) {
-                        validateDescription(request.getDescription());
-                        event.setDescription(request.getDescription());
-                }
                 if (request.getCapacity() != null) {
                         event.setCapacity(request.getCapacity());
                 }
@@ -581,7 +560,6 @@ public class EventService {
                 if (request.getImageUrl() != null) {
                         event.setImageUrl(request.getImageUrl());
                 }
-                validateEventTags(request.getTags());
                 if (request.getCategory() != null) {
                         event.setCategory(request.getCategory());
                 }
@@ -666,9 +644,7 @@ public class EventService {
                 eventRoleService.requireRole(id, userEmail, EventRole.ORGANIZER);
 
                 if ("CANCELLED".equals(event.getStatus())) {
-                        // Idempotency guard: calling cancel twice must not re-send
-                        // notifications or re-process refunds.
-                        return toEventResponse(event);
+                        throw new RegistrationConflictException("Event is already cancelled.");
                 }
 
                 String refundPolicy = request.getRefundPolicy() == null
@@ -764,8 +740,7 @@ public class EventService {
                                 .map(registration -> registration.getUser().getEmail())
                                 .forEach(emails::add);
                 eventWaitlistRepository
-                                .findByEvent_IdAndStatusOrderByPositionAscJoinedAtAsc(eventId,
-                                                EventWaitlist.STATUS_EVENT_CANCELLED)
+                                .findByEvent_IdAndStatusOrderByPositionAscJoinedAtAsc(eventId, "CANCELLED")
                                 .stream()
                                 .map(entry -> entry.getUser().getEmail())
                                 .forEach(emails::add);
@@ -774,47 +749,23 @@ public class EventService {
 
         private void notifyCancellation(Event event, String reason) {
                 String message = event.getTitle() + " has been cancelled. Reason: " + reason;
-                String refundPolicy = event.getRefundPolicy();
-                Integer refundPercent = event.getRefundPercent();
-                boolean refundDue = refundPolicy != null
-                                && !"NONE".equalsIgnoreCase(refundPolicy);
 
                 eventRegistrationRepository.findByEvent_IdAndStatus(event.getId(), "CONFIRMED")
-                                .forEach(registration -> {
-                                        notificationRepository.save(Notification.builder()
-                                                        .user(registration.getUser())
-                                                        .title("Event cancelled")
-                                                        .message(message)
-                                                        .build());
-
-                                        if (refundDue
-                                                        && registration.isPaymentCompleted()
-                                                        && registration.getStripePaymentIntentId() != null) {
-                                                try {
-                                                        stripeService.refundPayment(
-                                                                        registration.getStripePaymentIntentId(),
-                                                                        refundPolicy,
-                                                                        refundPercent);
-                                                } catch (Exception e) {
-                                                        log.error(
-                                                                        "Failed to refund payment for registration {} on cancelled event {}: {}",
-                                                                        registration.getId(),
-                                                                        event.getId(),
-                                                                        e.getMessage());
-                                                }
-                                        }
-                                });
+                                .forEach(registration -> notificationRepository.save(Notification.builder()
+                                                .user(registration.getUser())
+                                                .title("Event cancelled")
+                                                .message(message)
+                                                .build()));
 
                 eventWaitlistRepository
-                                .findByEvent_IdAndStatusOrderByPositionAscJoinedAtAsc(event.getId(),
-                                                EventWaitlist.STATUS_WAITING)
+                                .findByEvent_IdAndStatusOrderByPositionAscJoinedAtAsc(event.getId(), "WAITING")
                                 .forEach(entry -> {
                                         notificationRepository.save(Notification.builder()
                                                         .user(entry.getUser())
                                                         .title("Event cancelled")
                                                         .message(message)
                                                         .build());
-                                        entry.setStatus(EventWaitlist.STATUS_EVENT_CANCELLED);
+                                        entry.setStatus("CANCELLED");
                                         eventWaitlistRepository.save(entry);
                                 });
         }
@@ -1003,35 +954,14 @@ public class EventService {
                 
                 CsvWaitlistImportResponse response = new CsvWaitlistImportResponse();
                 response.setTotalProcessed(entries.size());
-
+                
                 int successfulImports = 0;
                 int failedImports = 0;
-
-                // Deduplicate entries by email (case-insensitive) within the same
-                // CSV so a repeated email doesn't cause a unique-constraint
-                // violation. Keep the first occurrence (preserving original order)
-                // and record each duplicate as a failure.
-                LinkedHashMap<String, CsvWaitlistImportRequest.CsvWaitlistEntry> uniqueEntries = new LinkedHashMap<>();
-                for (int idx = 0; idx < entries.size(); idx++) {
-                        CsvWaitlistImportRequest.CsvWaitlistEntry entry = entries.get(idx);
-                        String key = entry.getEmail() == null ? "" : entry.getEmail().toLowerCase().trim();
-                        if (uniqueEntries.containsKey(key)) {
-                                response.addFailure(new CsvWaitlistImportResponse.ImportFailure(
-                                                idx, entry.getEmail(), "Duplicate email within CSV import"));
-                                failedImports++;
-                        } else {
-                                uniqueEntries.put(key, entry);
-                        }
-                }
-
-                // Sort unique entries by timestamp to maintain fair queuing (oldest first)
-                List<CsvWaitlistImportRequest.CsvWaitlistEntry> sortedEntries = uniqueEntries.values().stream()
-                                .sorted(Comparator.comparing(
-                                                e -> e.getTimestamp() == null
-                                                                ? LocalDateTime.now()
-                                                                : parseTimestamp(e.getTimestamp()),
-                                                LocalDateTime::compareTo))
-                                .toList();
+                
+                // Sort entries by timestamp to maintain fair queuing (oldest first)
+                List<CsvWaitlistImportRequest.CsvWaitlistEntry> sortedEntries = entries.stream()
+                        .sorted((a, b) -> a.getTimestamp().compareTo(b.getTimestamp()))
+                        .toList();
                 
                 // Get current max position for this event
                 int currentMaxPosition = eventWaitlistRepository.findMaxPositionByEventId(eventId);
@@ -1235,14 +1165,6 @@ public class EventService {
                                                 eventId,
                                                 attempt,
                                                 MAX_REGISTRATION_RETRIES);
-                        } catch (org.springframework.dao.PessimisticLockingFailureException ex) {
-                                lastConflict = ex;
-
-                                log.warn(
-                                                "Pessimistic lock conflict on event {} (attempt {}/{})",
-                                                eventId,
-                                                attempt,
-                                                MAX_REGISTRATION_RETRIES);
                         }
                 }
 
@@ -1302,12 +1224,12 @@ public class EventService {
                         }
                 }
 
-                // Capacity guard. The event row is held under a pessimistic write
-                // lock (findByIdWithLock) for the whole transaction, so this
-                // in-memory check is safe against concurrent registrations and
-                // keeps the increment atomic with the registration save below.
+                // FIX (#13914): atomic capacity guard. The single UPDATE
+                // increments registeredCount only while a seat is free (row
+                // count 1), so two concurrent registrations cannot both pass an
+                // in-memory check and overshoot capacity. Row count 0 => full.
                 if (event.getCapacity() != null
-                                && event.getRegisteredCount() >= event.getCapacity()) {
+                                && eventRepository.incrementRegisteredCountAtomically(eventId) == 0) {
 
                         throw new EventFullException(
                                         "Event is already full. Capacity: " + event.getCapacity());
@@ -1327,10 +1249,8 @@ public class EventService {
                         throw mapRegistrationIntegrityViolation(ex, seatId);
                 }
 
-                // Increment in memory and persist within the same transaction as
-                // the registration so the two either both commit or both roll
-                // back (no orphaned capacity increment, #16175).
-                event.setRegisteredCount(event.getRegisteredCount() + 1);
+                event.setRegisteredCount((int) eventRegistrationRepository
+                                .countByEvent_IdAndStatus(eventId, "CONFIRMED"));
                 Event saved = eventRepository.save(event);
 
                 broadcastAvailability(saved);
@@ -1386,45 +1306,31 @@ public class EventService {
                 Event event = eventRepository.findByIdWithLock(eventId)
                                 .orElseThrow(() -> new EventNotFoundException(
                                                 "Event not found with id: " + eventId));
-
-                int freeSeats = (event.getCapacity() == null)
-                                ? Integer.MAX_VALUE
-                                : event.getCapacity() - event.getRegisteredCount();
-                int promotionsRemaining = Math.min(freeSeats, MAX_PROMOTIONS_PER_CALL);
-
-                // Query waiting entries ONCE; the event is already pessimistically locked,
-                // so no separate per-entry lock is needed inside the loop.
-                List<EventWaitlist> waiting = eventWaitlistRepository
-                                .findByEvent_IdAndStatusOrderByPositionAscJoinedAtAsc(eventId, "WAITING");
-
-                for (EventWaitlist entry : waiting) {
-                        if (promotionsRemaining <= 0) {
+                while (event.getCapacity() == null || event.getRegisteredCount() < event.getCapacity()) {
+                        RegistrationResponse promoted = promoteFirstWaitingUser(event);
+                        if (promoted == null) {
                                 break;
                         }
-                        if (event.getCapacity() != null
-                                        && event.getRegisteredCount() >= event.getCapacity()) {
-                                break;
-                        }
+                        event.setRegisteredCount((int) eventRegistrationRepository
+                                        .countByEvent_IdAndStatus(eventId, "CONFIRMED"));
+                }
+        }
+
+        private RegistrationResponse promoteFirstWaitingUser(Event event) {
+                if (event.getCapacity() != null && event.getRegisteredCount() >= event.getCapacity()) {
+                        return null;
+                }
+
+                for (EventWaitlist entry : eventWaitlistRepository.findWaitingByEventIdWithLock(event.getId())) {
                         if (eventRegistrationRepository.existsByEvent_IdAndUser_Email(
                                         event.getId(), entry.getUser().getEmail())) {
                                 entry.setStatus("REMOVED");
                                 eventWaitlistRepository.save(entry);
                                 continue;
                         }
-                        promoteEntry(event, entry);
-                        // Track occupancy in-memory instead of re-querying the DB each iteration.
-                        event.setRegisteredCount(event.getRegisteredCount() + 1);
-                        promotionsRemaining--;
+                        return promoteEntry(event, entry);
                 }
-
-                eventRepository.save(event);
-                broadcastAvailability(event);
-        }
-
-        private void validateLocation(String location) {
-                if (location == null || location.trim().length() < 3 || location.trim().length() > 150) {
-                        throw new IllegalArgumentException("Location must be between 3 and 150 characters.");
-                }
+                return null;
         }
 
         private RegistrationResponse promoteEntry(Event event, EventWaitlist entry) {
@@ -1437,6 +1343,12 @@ public class EventService {
                 registration.setStatus("CONFIRMED");
                 registration = eventRegistrationRepository.save(registration);
 
+                event.setRegisteredCount((int) eventRegistrationRepository
+                                .countByEvent_IdAndStatus(event.getId(), "CONFIRMED"));
+                Event saved = eventRepository.save(event);
+
+                broadcastAvailability(saved);
+
                 entry.setStatus("PROMOTED");
                 entry.setPromotedAt(LocalDateTime.now());
                 eventWaitlistRepository.save(entry);
@@ -1444,17 +1356,17 @@ public class EventService {
                 notificationRepository.save(Notification.builder()
                                 .user(user)
                                 .title("Waitlist spot opened")
-                                .message("A spot opened for " + event.getTitle()
+                                .message("A spot opened for " + saved.getTitle()
                                                 + ". You have been automatically registered.")
                                 .build());
 
-                Integer spotsRemaining = (event.getCapacity() == null)
+                Integer spotsRemaining = (saved.getCapacity() == null)
                                 ? null
-                                : Math.max(0, event.getCapacity() - event.getRegisteredCount());
+                                : Math.max(0, saved.getCapacity() - saved.getRegisteredCount());
 
                 return RegistrationResponse.builder()
-                                .eventId(event.getId())
-                                .eventTitle(event.getTitle())
+                                .eventId(saved.getId())
+                                .eventTitle(saved.getTitle())
                                 .userEmail(user.getEmail())
                                 .registeredAt(registration.getRegisteredAt())
                                 .spotsRemaining(spotsRemaining)
@@ -1540,6 +1452,8 @@ public class EventService {
                                 .spotsLeft(spotsLeft)
                                 .isFull(isFull)
                                 .eventPassed(event.isEventPast())
+                                .waitlistPosition(null)
+                                .waitlisted(false)
                                 .build();
         }
 
@@ -1566,15 +1480,6 @@ public class EventService {
                                 .build();
         }
 
-        private void validateEventTags(java.util.Set<String> tags) {
-                if (tags == null) return;
-                for (String tag : tags) {
-                        if (tag == null || tag.length() < 2 || tag.length() > 30 || !tag.matches("^[a-zA-Z0-9-]+$")) {
-                                throw new IllegalArgumentException("Invalid tag format: " + tag);
-                        }
-                }
-        }
-
         /**
          * Public catalog responses must not expose organizer user IDs or internal
          * cancellation notes (Issue #13603).
@@ -1584,12 +1489,6 @@ public class EventService {
                 response.setOwnerId(null);
                 response.setCancellationReason(null);
                 return response;
-        }
-
-        private void validateDescription(String desc) {
-                if (desc == null || desc.trim().length() < 10 || desc.trim().length() > 2000) {
-                        throw new IllegalArgumentException("Description must be between 10 and 2000 characters.");
-                }
         }
 
         private WaitlistResponse toWaitlistResponse(EventWaitlist entry) {
@@ -1660,19 +1559,16 @@ public class EventService {
         public String buildIcsFeed(Long eventId) {
                 Event event = requirePublicEvent(eventId);
 
-                java.time.ZoneId eventZone = resolveEventZone(event.getTimezone());
-                java.time.ZonedDateTime start = event.getEventDate() != null
-                                ? event.getEventDate().atZone(eventZone)
-                                : java.time.ZonedDateTime.now(eventZone);
+                java.time.Instant start = event.getEventDate() != null
+                                ? event.getEventDate().atZone(java.time.ZoneId.systemDefault()).toInstant()
+                                : java.time.Instant.now();
                 // Default duration is 2 hours when no end date was persisted.
-                java.time.ZonedDateTime end = (event.getEndDate() != null
-                                ? event.getEndDate().atZone(eventZone)
+                java.time.Instant end = (event.getEndDate() != null
+                                ? event.getEndDate().atZone(java.time.ZoneId.systemDefault()).toInstant()
                                 : start.plus(java.time.Duration.ofHours(2)));
                 java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter
                                 .ofPattern("yyyyMMdd'T'HHmmss'Z'")
                                 .withZone(java.time.ZoneOffset.UTC);
-                java.time.format.DateTimeFormatter zonedFmt = java.time.format.DateTimeFormatter
-                                .ofPattern("yyyyMMdd'T'HHmmss");
 
                 String summary = escapeIcs(event.getTitle() != null ? event.getTitle() : "Eventra Event");
                 String description = escapeIcs(event.getDescription() != null ? event.getDescription() : "");
@@ -1687,24 +1583,13 @@ public class EventService {
                                 + "BEGIN:VEVENT\r\n"
                                 + "UID:" + uid + "\r\n"
                                 + "DTSTAMP:" + fmt.format(java.time.Instant.now()) + "\r\n"
-                                + "DTSTART;TZID=" + eventZone.getId() + ":" + zonedFmt.format(start) + "\r\n"
-                                + "DTEND;TZID=" + eventZone.getId() + ":" + zonedFmt.format(end) + "\r\n"
+                                + "DTSTART:" + fmt.format(start) + "\r\n"
+                                + "DTEND:" + fmt.format(end) + "\r\n"
                                 + "SUMMARY:" + summary + "\r\n"
                                 + "DESCRIPTION:" + description + "\r\n"
                                 + "LOCATION:" + location + "\r\n"
                                 + "END:VEVENT\r\n"
                                 + "END:VCALENDAR\r\n";
-        }
-
-        private static java.time.ZoneId resolveEventZone(String timezone) {
-                if (timezone != null && !timezone.isBlank()) {
-                        try {
-                                return java.time.ZoneId.of(timezone, java.time.ZoneId.SHORT_IDS);
-                        } catch (java.time.DateTimeException ignored) {
-                                // fall through to UTC
-                        }
-                }
-                return java.time.ZoneId.of("UTC");
         }
 
         private static String escapeIcs(String value) {
