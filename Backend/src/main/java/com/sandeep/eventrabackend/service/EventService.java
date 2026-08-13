@@ -60,6 +60,7 @@ import java.time.LocalDateTime;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -989,7 +990,11 @@ public class EventService {
 
                 // Sort unique entries by timestamp to maintain fair queuing (oldest first)
                 List<CsvWaitlistImportRequest.CsvWaitlistEntry> sortedEntries = uniqueEntries.values().stream()
-                                .sorted((a, b) -> a.getTimestamp().compareTo(b.getTimestamp()))
+                                .sorted(Comparator.comparing(
+                                                e -> e.getTimestamp() == null
+                                                                ? LocalDateTime.now()
+                                                                : parseTimestamp(e.getTimestamp()),
+                                                LocalDateTime::compareTo))
                                 .toList();
                 
                 // Get current max position for this event
