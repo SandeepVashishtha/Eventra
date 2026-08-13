@@ -34,7 +34,7 @@ export const publishAnnouncement = (announcement) => {
   const announcements = getAnnouncements();
 
   const newAnnouncement = {
-    id: Date.now(),
+    id: Date.now() + "-" + Math.random().toString(36).slice(2, 9),
     ...announcement,
     isPublished: true,
     createdAt: new Date().toISOString(),
@@ -54,7 +54,7 @@ export const scheduleAnnouncement = (announcement) => {
   const announcements = getAnnouncements();
 
   const scheduled = {
-    id: Date.now(),
+    id: Date.now() + "-" + Math.random().toString(36).slice(2, 9),
     ...announcement,
     isPublished: false,
   };
