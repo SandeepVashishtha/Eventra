@@ -17,6 +17,18 @@ public class Event {
     private String description;
     private String location;
     private LocalDateTime eventDate;
+
+    /**
+     * Optional end date/time for the event schedule. Persisted so the end time
+     * chosen by the organizer survives reload (issue #14603).
+     */
+    private LocalDateTime endDate;
+
+    /**
+     * IANA timezone (e.g. "America/New_York") or short alias (e.g. "EST") the
+     * event times are expressed in. Falls back to UTC when not set.
+     */
+    private String timezone;
     private boolean isPublic = true;
 
     /**
@@ -32,8 +44,8 @@ public class Event {
     private Integer capacity;
 
     /**
-     * Current number of confirmed registrations — kept in sync with
-     * attendees.size().
+     * Current number of confirmed registrations — derived from event_registrations
+     * (status = CONFIRMED) and updated on register / cancel / promote / user delete.
      */
     private int registeredCount = 0;
 
@@ -56,6 +68,15 @@ public class Event {
      * Valid values: Tech, Art, Music, Sports, Education, Networking, Other
      */
     private String category;
+
+    /**
+     * Multiple categories for the event to enable better discovery and filtering.
+     * Organizers can select up to 3 predefined categories.
+     */
+    @ElementCollection
+    @CollectionTable(name = "event_categories", joinColumns = @JoinColumn(name = "event_id"))
+    @Column(name = "category")
+    private Set<String> categories = new HashSet<>();
 
     /**
      * Tags for the event to enable granular filtering and search.
@@ -95,11 +116,6 @@ public class Event {
      */
     @Version
     private Long version;
-
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "event_attendees", joinColumns = @JoinColumn(name = "event_id"), inverseJoinColumns = @JoinColumn(name = "user_id"), uniqueConstraints = @UniqueConstraint(columnNames = {
-            "event_id", "user_id" }))
-    private Set<User> attendees = new HashSet<>();
 
     // ── Helpers ─────────────────────────────────────────────────────────────
 
@@ -152,6 +168,22 @@ public class Event {
 
     public void setEventDate(LocalDateTime eventDate) {
         this.eventDate = eventDate;
+    }
+
+    public LocalDateTime getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(LocalDateTime endDate) {
+        this.endDate = endDate;
+    }
+
+    public String getTimezone() {
+        return timezone;
+    }
+
+    public void setTimezone(String timezone) {
+        this.timezone = timezone;
     }
 
     public boolean isPublic() {
@@ -234,14 +266,6 @@ public class Event {
         this.version = version;
     }
 
-    public Set<User> getAttendees() {
-        return attendees;
-    }
-
-    public void setAttendees(Set<User> attendees) {
-        this.attendees = attendees;
-    }
-
     public String getImageUrl() {
         return imageUrl;
     }
@@ -258,11 +282,35 @@ public class Event {
         this.category = category;
     }
 
+    public Set<String> getCategories() {
+        return categories;
+    }
+
+    public void setCategories(Set<String> categories) {
+        if (categories != null && categories.size() > 3) {
+            throw new IllegalArgumentException("An event can have at most 3 categories.");
+        }
+        this.categories = categories;
+    }
+
+    public void addCategory(String category) {
+        if (this.categories.size() < 3) {
+            this.categories.add(category);
+        }
+    }
+
+    public void removeCategory(String category) {
+        this.categories.remove(category);
+    }
+
     public Set<String> getTags() {
         return tags;
     }
 
     public void setTags(Set<String> tags) {
+        if (tags != null && tags.size() > 10) {
+            throw new IllegalArgumentException("An event can have at most 10 tags.");
+        }
         this.tags = tags;
     }
 

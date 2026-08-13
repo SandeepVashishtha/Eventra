@@ -6,6 +6,8 @@ export const getLastUpdated = (date) => {
 
   const seconds = Math.floor((now - updated) / 1000);
 
+  if (seconds < 0) return "Just now";
+
   const minutes = Math.floor(seconds / 60);
 
   const hours = Math.floor(minutes / 60);

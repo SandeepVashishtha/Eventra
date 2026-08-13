@@ -2,12 +2,12 @@ import useWindowSize from "hooks/useWindowSize";
 import { GitBranch, ChevronLeft, ChevronRight } from "lucide-react";
 import { FaMedal, FaCodeBranch, FaUserFriends, FaBuilding, FaMapMarkerAlt, FaGithub, FaExternalLinkAlt } from "react-icons/fa";
 import { useState, useEffect, useCallback, useRef, memo } from "react";
-import useReducedMotion from "../hooks/useReducedMotion.js";
+import useReducedMotion from "../../../hooks/useReducedMotion";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { fetchWithTimeout } from "../utils/fetchWithTimeout";
-import { ContributorCardSkeleton } from "../components/common/SkeletonLoaders";
-import { safeJsonParse } from "../utils/safeJsonParse";
+import { fetchWithTimeout } from "../../../utils/fetchWithTimeout";
+import { ContributorCardSkeleton } from "../../../components/common/SkeletonLoaders";
+import { safeJsonParse } from "../../../utils/safeJsonParse";
 
 // GitHub repo
 const GITHUB_REPO = "sandeepvashishtha/Eventra";
@@ -298,7 +298,7 @@ const Contributors = () => {
           <button
             onClick={prevSlide}
             // UPDATED: Arrow button styles
-            className="absolute left-0 top-[35%] -translate-y-1/2 -translate-x-4 z-10 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 transition-all duration-300 border border-gray-200 dark:border-gray-700"
+            className="absolute left-0 top-[35%] -translate-y-1/2 -translate-x-4 z-10 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 hover:scale-110 transition-all duration-300 border border-gray-200 dark:border-gray-700"
             disabled={loading || currentIndex === 0}
             aria-label="Previous slide">
             {/* UPDATED: Arrow icon color */}
@@ -308,7 +308,7 @@ const Contributors = () => {
           <button
             onClick={nextSlide}
             // UPDATED: Arrow button styles
-            className="absolute right-0 top-[35%] -translate-y-1/2 translate-x-4 z-10 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 transition-all duration-300 border border-gray-200 dark:border-gray-700"
+            className="absolute right-0 top-[35%] -translate-y-1/2 translate-x-4 z-10 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 hover:scale-110 transition-all duration-300 border border-gray-200 dark:border-gray-700"
             disabled={loading || currentIndex + itemsPerView >= contributors.length}
             aria-label="Next slide"
           >
@@ -402,21 +402,21 @@ const Contributors = () => {
                       <div className="flex flex-col items-center bg-white/60 dark:bg-gray-700/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
                         <FaCodeBranch className="text-gray-900 dark:text-indigo-400 mb-1" />
                         <span className="font-semibold">{c.public_repos}</span>
-                        <span className="text-xs text-gray-600 dark:text-gray-400">
+                        <span className="text-xs text-gray-600 dark:text-gray-200">
                           Repos
                         </span>
                       </div>
                       <div className="flex flex-col items-center bg-white/60 dark:bg-gray-700/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
                         <FaUserFriends className="text-gray-900 dark:text-indigo-400 mb-1" />
                         <span className="font-semibold">{c.followers}</span>
-                        <span className="text-xs text-gray-600 dark:text-gray-400">
+                        <span className="text-xs text-gray-600 dark:text-gray-200">
                           Followers
                         </span>
                       </div>
                       <div className="flex flex-col items-center bg-white/60 dark:bg-gray-700/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
                         <GitBranch className="text-gray-900 dark:text-indigo-400 mb-1 w-4 h-4" />
                         <span className="font-semibold">{c.contributions}</span>
-                        <span className="text-xs text-gray-600 dark:text-gray-400">
+                        <span className="text-xs text-gray-600 dark:text-gray-200">
                           Contribs
                         </span>
                       </div>
@@ -489,7 +489,7 @@ const Contributors = () => {
             </Link>
             <Link
               to="/contributorguide"
-              className="inline-flex items-center justify-center gap-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-8 py-3 w-full sm:w-auto rounded-full font-semibold shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105 transition-all duration-300 ease-out"
+              className="inline-flex items-center justify-center gap-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-8 py-3 w-full sm:w-auto rounded-full font-semibold shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 hover:scale-105 transition-all duration-300 ease-out"
             >
               <span>Guide</span>
               <FaExternalLinkAlt className="text-sm" />

@@ -1,11 +1,16 @@
-import { useState, useEffect, useCallback, useMemo, useActionState } from "react";
+import { useState, useEffect, useCallback, useMemo, useActionState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 // Calendar URL helpers — import from the timezone-aware utility instead of
 // using the old inline implementations (which were UTC-blind and hardcoded
 // a 1-hour event duration — fixed in issue #2015).
-import { getGoogleCalendarUrl, getOutlookCalendarUrl, getYahooCalendarUrl, generateIcsFileBlobUrl, getWebcalSubscriptionUrl } from "utils/calendarUrlUtils";
+import {
+  getGoogleCalendarUrl,
+  getOutlookCalendarUrl,
+  getYahooCalendarUrl,
+  generateIcsFileBlobUrl,
+  getWebcalSubscriptionUrl,
+} from "utils/calendarUrlUtils";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
-import hackathonsData from "../Hackathons/hackathonMockData.json";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import {
@@ -29,7 +34,7 @@ import {
 } from "utils/eventAvailabilityUtils.mjs";
 import { useFormValidation } from "hooks/useFormValidation";
 import SpatialSeatSelector from "components/events/SpatialSeatSelector";
-import { getEventStatus, isEventRegistrationClosed } from "utils/eventUtils";
+import { getEventStatus, isEventRegistrationClosed, normalizeEvent } from "utils/eventUtils";
 import { checkRegistrationConflict, suggestAlternativeEvents } from "utils/conflictDetection";
 import { useAuth } from "context/AuthContext";
 import { useMyEvents } from "context/MyEventsContext";
@@ -39,10 +44,18 @@ import CalendarView from "components/CalendarView";
 import EventConflictModal from "components/EventConflictModal";
 import AskTheOrganizer from "components/events/AskTheOrganizer";
 import ConfettiCanvas from "components/common/ConfettiCanvas";
-import { SkeletonEventCard, WaitlistSkeleton, WaitlistPositionSkeleton } from "components/common/SkeletonLoaders";
+import {
+  SkeletonEventCard,
+  WaitlistSkeleton,
+  WaitlistPositionSkeleton,
+} from "components/common/SkeletonLoaders";
 import { logger } from "utils/logger";
 import { validate } from "../../validation";
-import { getCacheAgeLabel, getCachedEventDetail, saveCachedEventDetail } from "utils/offlineEventCache";
+import {
+  getCacheAgeLabel,
+  getCachedEventDetail,
+  saveCachedEventDetail,
+} from "utils/offlineEventCache";
 import { pushToQueue } from "utils/offlineQueue";
 
 const MAX_NOTES_CHARS = 500;
@@ -58,11 +71,24 @@ const generateSecureUUID = () => {
     return crypto.randomUUID();
   }
   if (typeof crypto !== "undefined" && crypto.getRandomValues) {
-    return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
-      (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+    return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c) =>
+      (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16)
     );
   }
   throw new Error("Secure random number generation is not supported in this browser.");
+};
+
+// Build a STABLE idempotency key for the same event+user+payload so that
+// repeated submits (online or offline) collapse into a single action. This is
+// what lets the offline queue dedupe REGISTER_EVENT / JOIN_WAITLIST per
+// event+user instead of enqueuing duplicates when the user taps submit twice.
+const makeRegistrationIdempotencyKey = (actionType, eventId, userId, payload) => {
+  const payloadString = JSON.stringify(payload || {});
+  let hash = 0;
+  for (let i = 0; i < payloadString.length; i += 1) {
+    hash = (hash * 31 + payloadString.charCodeAt(i)) | 0;
+  }
+  return `${String(actionType).toLowerCase()}-${eventId}-${userId}-${(hash >>> 0)}`;
 };
 
 const getRegistrationFailureMessage = (error) => {
@@ -112,11 +138,14 @@ const EventRegistration = () => {
     suggestions: [],
   });
 
-  const validationRules = useMemo(() => ({
-    fullName: validate.fullName,
-    email: validate.email,
-    phone: validate.phone,
-  }), []);
+  const validationRules = useMemo(
+    () => ({
+      fullName: validate.fullName,
+      email: validate.email,
+      phone: validate.phone,
+    }),
+    []
+  );
 
   const {
     values: formData,
@@ -127,21 +156,25 @@ const EventRegistration = () => {
     handleBlur,
     validateAll,
     setValues,
-  } = useFormValidation(
-    {
-      fullName: "",
-      email: "",
-      phone: "",
-      organization: "",
-      designation: "",
-      additionalInfo: "",
-      priority: "Medium",
-      showProfileInAttendeeDirectory: false,
-    }
-  );
+  } = useFormValidation({
+    fullName: "",
+    email: "",
+    phone: "",
+    organization: "",
+    designation: "",
+    additionalInfo: "",
+    priority: "Medium",
+    showProfileInAttendeeDirectory: false,
+  });
+
+  // Keep a stable ref to the latest setValues so it can be used inside the
+  // event-loading effect without being listed as an unstable dependency.
+  const setValuesRef = useRef(setValues);
+  setValuesRef.current = setValues;
   // Load event data from backend API
   useEffect(() => {
     let isCancelled = false;
+    const controller = new AbortController();
 
     const applyLoadedEvent = (nextEvent) => {
       if (!isCancelled) {
@@ -151,7 +184,7 @@ const EventRegistration = () => {
 
     const prefillAuthenticatedUser = () => {
       if (!isCancelled && isAuthenticated() && user) {
-        setValues((prev) => ({
+        setValuesRef.current((prev) => ({
           ...prev,
           fullName: user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim() || "",
           email: user.email || "",
@@ -162,36 +195,18 @@ const EventRegistration = () => {
     const loadEvent = async () => {
       setLoading(true);
 
-      const isHackathonPath = location.pathname.startsWith("/register");
-      if (isHackathonPath) {
-        const foundMock = hackathonsData.find((item) => String(item.id) === String(eventId));
-        if (foundMock) {
-          applyLoadedEvent({
-            ...foundMock,
-            date: foundMock.startDate,
-            time: "10:00 AM",
-            image:
-              "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=800",
-            attendees: foundMock.participants,
-            maxAttendees: 1500,
-            status: foundMock.status,
-          });
-          if (!isCancelled) setLoading(false);
-          prefillAuthenticatedUser();
-          return;
-        }
-      }
-
       try {
-        const response = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
+        const response = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId), {
+          signal: controller.signal,
+        });
 
         if (response.status === 200 && response.data) {
           if (isCancelled) return;
 
-          const fetchedEvent = {
+          const fetchedEvent = normalizeEvent({
             ...response.data,
             status: getEventStatus(response.data),
-          };
+          });
           applyLoadedEvent(fetchedEvent);
           saveCachedEventDetail(fetchedEvent);
 
@@ -199,34 +214,24 @@ const EventRegistration = () => {
         }
       } catch (error) {
         if (isCancelled) return;
-        console.error("Failed to load event details:", error);
+        logger.error("Failed to load event details:", error);
         const cached = getCachedEventDetail(eventId);
         if (cached?.event) {
-          applyLoadedEvent({
-            ...cached.event,
-            status: getEventStatus(cached.event),
-            cacheInfo: {
-              cachedAt: cached.cachedAt,
-              label: getCacheAgeLabel(cached.cachedAt),
-            },
-          });
+          applyLoadedEvent(
+            normalizeEvent({
+              ...cached.event,
+              status: getEventStatus(cached.event),
+              cacheInfo: {
+                cachedAt: cached.cachedAt,
+                label: getCacheAgeLabel(cached.cachedAt),
+              },
+            })
+          );
 
-          toast.warning(t("eventRegistration.toastShowingCached", { label: getCacheAgeLabel(cached.cachedAt) }));
+          toast.warning(
+            t("eventRegistration.toastShowingCached", { label: getCacheAgeLabel(cached.cachedAt) })
+          );
           return;
-        }
-
-        const foundMock = hackathonsData.find((item) => String(item.id) === String(eventId));
-        if (foundMock) {
-          applyLoadedEvent({
-            ...foundMock,
-            date: foundMock.startDate,
-            time: "10:00 AM",
-            image:
-              "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=800",
-            attendees: foundMock.participants,
-            maxAttendees: 1500,
-            status: foundMock.status,
-          });
         }
       } finally {
         if (!isCancelled) setLoading(false);
@@ -236,9 +241,10 @@ const EventRegistration = () => {
     loadEvent();
     return () => {
       isCancelled = true;
+      controller.abort();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventId, user, isAuthenticated, setValues, location.pathname]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventId, user, isAuthenticated]);
 
   const refreshEventAvailability = useCallback(async (id) => {
     try {
@@ -247,9 +253,7 @@ const EventRegistration = () => {
       if (response.status === 200 && response.data) {
         const normalized = normalizeEventAvailability(response.data);
 
-        setEvent((prev) =>
-          prev ? mergeAvailabilityIntoEvent(prev, response.data) : prev
-        );
+        setEvent((prev) => (prev ? mergeAvailabilityIntoEvent(prev, response.data) : prev));
 
         return normalized;
       }
@@ -259,22 +263,34 @@ const EventRegistration = () => {
     return null;
   }, []);
 
-  const checkEventCapacity = useCallback(async (id, currentEvent) => {
-    const latestAvailability = await refreshEventAvailability(id);
+  const checkEventCapacity = useCallback(
+    async (id, currentEvent) => {
+      const latestAvailability = await refreshEventAvailability(id);
 
-    if (latestAvailability) {
-      return latestAvailability.isFull;
-    }
+      if (latestAvailability) {
+        return latestAvailability.isFull;
+      }
 
-    return isEventAtCapacity(currentEvent);
-  }, [refreshEventAvailability]);
+      return isEventAtCapacity(currentEvent);
+    },
+    [refreshEventAvailability]
+  );
 
   const checkAndHandleConflicts = useCallback(async () => {
     const conflictCheck = checkRegistrationConflict(event, myEvents);
     if (conflictCheck.hasConflict) {
       try {
-        const res = await apiUtils.get(API_ENDPOINTS.EVENTS.LIST);
-        const realEvents = res.status === 200 ? res.data : [];
+        const around =
+          event.eventDate || event.date || event.startDate || undefined;
+        const params = new URLSearchParams();
+        if (event?.id != null) params.set("excludeId", String(event.id));
+        if (around) params.set("around", around);
+        params.set("windowDays", "14");
+        params.set("limit", "20");
+        const res = await apiUtils.get(
+          `${API_ENDPOINTS.EVENTS.ALTERNATIVES}?${params.toString()}`
+        );
+        const realEvents = Array.isArray(res?.data) ? res.data : [];
         const suggestions = suggestAlternativeEvents(event, realEvents, myEvents);
         setConflictData({
           conflicts: conflictCheck.conflicts,
@@ -305,13 +321,20 @@ const EventRegistration = () => {
 
     setShowConflictModal(false);
 
-    // Re-check capacity immediately before the POST (TOCTOU)
+    // Re-check capacity immediately before the POST (TOCTOU) using a SINGLE
+    // source of truth: the fresh capacity-check response. refreshEventAvailability
+    // already merges that response into the local `event` state, so `isEventFull`
+    // (derived from `event`) stays consistent with this check and the user is
+    // routed to the correct endpoint (waitlist when freshly full, register otherwise).
     let isFreshlyFull = false;
     try {
       const latestAvailability = await refreshEventAvailability(eventId);
-      isFreshlyFull = latestAvailability != null
-        ? latestAvailability.isFull
-        : (event ? event.attendees >= event.maxAttendees : false);
+      isFreshlyFull =
+        latestAvailability != null
+          ? latestAvailability.isFull
+          : event
+            ? event.attendees >= event.maxAttendees
+            : false;
     } catch {
       isFreshlyFull = event ? event.attendees >= event.maxAttendees : false;
     }
@@ -323,7 +346,7 @@ const EventRegistration = () => {
         const pos = await getQueuePosition(eventId, user.id);
         toast.success(t("eventRegistration.toastWaitlistSuccess"));
         clearSession();
-        return { success: true, error: null, waitlistPosition: pos };
+        return { success: true, error: null, waitlistPosition: pos, onWaitlist: true };
       } catch (err) {
         toast.error(err.message || t("eventRegistration.toastRegistrationError"));
         return { success: false, error: err.message, waitlistPosition: -1 };
@@ -331,10 +354,17 @@ const EventRegistration = () => {
     }
 
     const endpoint = API_ENDPOINTS.EVENTS?.REGISTER
-        ? API_ENDPOINTS.EVENTS.REGISTER(eventId)
-        : `/api/events/${eventId}/register`;
+      ? API_ENDPOINTS.EVENTS.REGISTER(eventId)
+      : `/api/events/${eventId}/register`;
 
-    const idempotencyKey = generateSecureUUID();
+    // Stable idempotency key for the same event+user+payload so repeated
+    // submits (online or offline) collapse into a single registration.
+    const idempotencyKey = makeRegistrationIdempotencyKey(
+      "REGISTER_EVENT",
+      eventId,
+      user.id,
+      formData
+    );
 
     // The selected seat travels with the registration so the server can
     // persist and atomically reserve it (format elementId:seatIndex).
@@ -363,7 +393,7 @@ const EventRegistration = () => {
       toast.success(t("eventRegistration.toastRegistrationSuccess"));
       addRegistration(event, formData, registrationId, qrToken);
       clearSession();
-      return { success: true, error: null, waitlistPosition: -1 };
+      return { success: true, error: null, waitlistPosition: -1, onWaitlist: false };
     } catch (error) {
       const failureMessage = getRegistrationFailureMessage(error);
 
@@ -375,6 +405,7 @@ const EventRegistration = () => {
       const isAlreadyRegistered = failureMessage === "You are already registered for this event.";
 
       if (isOfflineFailure) {
+        const actionType = isFreshlyFull ? "JOIN_WAITLIST" : "REGISTER_EVENT";
         const payload = isFreshlyFull
           ? {
               userId: user.id || user.email,
@@ -395,46 +426,67 @@ const EventRegistration = () => {
               showProfileInAttendeeDirectory: Boolean(formData.showProfileInAttendeeDirectory),
             };
 
+        // Stable idempotency key scoped to event+user+payload so repeated
+        // offline taps collapse into a single queued action.
+        const queueIdempotencyKey = makeRegistrationIdempotencyKey(
+          actionType,
+          eventId,
+          user.id,
+          payload
+        );
+
         const success = await pushToQueue(
           {
-            actionType: isFreshlyFull ? "JOIN_WAITLIST" : "REGISTER_EVENT",
+            actionType,
             endpoint,
             eventId: parseInt(eventId, 10),
-            idempotencyKey,
+            idempotencyKey: queueIdempotencyKey,
             payload,
           },
           user.id
         );
 
         if (success) {
-          const offlineRegId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `reg-offline-${Date.now()}`;
+          const offlineRegId =
+            typeof crypto !== "undefined" && crypto.randomUUID
+              ? crypto.randomUUID()
+              : `reg-offline-${Date.now()}`;
           addRegistration(event, formData, offlineRegId, "");
           clearSession();
           toast.warning(t("eventRegistration.toastNetworkQueued"), {
             autoClose: 4000,
           });
-          return { success: true, error: null, waitlistPosition: -1 };
+          return { success: true, error: null, waitlistPosition: -1, onWaitlist: isFreshlyFull };
         } else {
-          toast.error(
-            t("eventRegistration.toastOfflineQueueFull")
-          );
-          return { success: false, error: t("eventRegistration.toastOfflineQueueFull"), waitlistPosition: -1 };
+          toast.error(t("eventRegistration.toastOfflineQueueFull"));
+          return {
+            success: false,
+            error: t("eventRegistration.toastOfflineQueueFull"),
+            waitlistPosition: -1,
+          };
         }
       }
 
       if (isAlreadyRegistered) {
-        toast.success(isFreshlyFull ? t("eventRegistration.toastWaitlistSuccess") : t("eventRegistration.toastRegistrationSuccess"));
-        const existingRegId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `reg-existing-${Date.now()}`;
+        toast.success(
+          isFreshlyFull
+            ? t("eventRegistration.toastWaitlistSuccess")
+            : t("eventRegistration.toastRegistrationSuccess")
+        );
+        const existingRegId =
+          typeof crypto !== "undefined" && crypto.randomUUID
+            ? crypto.randomUUID()
+            : `reg-existing-${Date.now()}`;
         addRegistration(event, formData);
         clearSession();
         toast.info(failureMessage);
-        return { success: true, error: null, waitlistPosition: -1 };
+        return { success: true, error: null, waitlistPosition: -1, onWaitlist: isFreshlyFull };
       }
 
       toast.error(failureMessage);
       return { success: false, error: failureMessage, waitlistPosition: -1 };
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     eventId,
     event,
@@ -462,7 +514,7 @@ const EventRegistration = () => {
         return { success: false, error: "Login required", waitlistPosition: -1 };
       }
 
-      if (!validateAll()) {
+      if (!(await validateAll())) {
         toast.error(t("eventRegistration.toastValidationError"));
         return { success: false, error: "Validation failed", waitlistPosition: -1 };
       }
@@ -474,7 +526,10 @@ const EventRegistration = () => {
             const { getGlobalWaitlist } = await import("utils/waitlistUtils");
             const records = await getGlobalWaitlist(user.id);
             const onWaitlist = records.some(
-              (r) => r.userId === user.id && r.eventId === parseInt(eventId, 10) && r.status === "waiting"
+              (r) =>
+                r.userId === user.id &&
+                r.eventId === parseInt(eventId, 10) &&
+                r.status === "waiting"
             );
             if (onWaitlist) {
               toast.error(t("eventRegistration.toastAlreadyWaitlisted"));
@@ -495,27 +550,35 @@ const EventRegistration = () => {
     { success: false, error: null, waitlistPosition: -1 }
   );
 
-  const waitlistPosition = actionState?.waitlistPosition !== undefined ? actionState.waitlistPosition : -1;
+  const waitlistPosition =
+    actionState?.waitlistPosition !== undefined ? actionState.waitlistPosition : -1;
 
   // Handle conflict modal actions
   const handleConflictCancel = useCallback(() => {
     setShowConflictModal(false);
     toast.info(t("eventRegistration.toastConflictCancelled"));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleConflictProceed = useCallback(() => {
     formAction({ bypassConflict: true });
   }, [formAction]);
 
-  const handleSelectAlternative = useCallback((alternativeEvent) => {
-    setShowConflictModal(false);
-    navigate(`/events/${alternativeEvent.id}/register`);
-    toast.info(t("eventRegistration.toastRedirectingTo", { title: alternativeEvent.title }));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [navigate]);
+  const handleSelectAlternative = useCallback(
+    (alternativeEvent) => {
+      setShowConflictModal(false);
+      navigate(`/events/${alternativeEvent.id}/register`);
+      toast.info(t("eventRegistration.toastRedirectingTo", { title: alternativeEvent.title }));
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    },
+    [navigate]
+  );
 
-  const isEventFull = event ? event.attendees >= event.maxAttendees : false;
+  const isEventFull = event
+    ? typeof event.isFull === "boolean"
+      ? event.isFull
+      : event.attendees >= event.maxAttendees
+    : false;
   const status = getEventStatus(event);
   // const isPastEvent = status === "past" || status === "ended";
   const isCancelledEvent = status === "cancelled";
@@ -532,8 +595,10 @@ const EventRegistration = () => {
   if (!event) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900 px-4">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">{t("eventRegistration.notFoundTitle")}</h2>
-        <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+          {t("eventRegistration.notFoundTitle")}
+        </h2>
+        <p className="text-gray-600 dark:text-gray-200 mb-6 text-center max-w-md">
           {t("eventRegistration.notFoundDescription")}
         </p>
         <Link
@@ -553,7 +618,7 @@ const EventRegistration = () => {
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
           {t("eventRegistration.pastEventTitle")}
         </h2>
-        <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md">
+        <p className="text-gray-600 dark:text-gray-200 mb-6 text-center max-w-md">
           {isCancelledEvent
             ? "This event has been cancelled."
             : t("eventRegistration.pastEventDescription")}
@@ -568,7 +633,6 @@ const EventRegistration = () => {
       </div>
     );
   }
-
 
   // Show skeleton while joining the waitlist specifically
   if (isPending && isEventFull) {
@@ -590,6 +654,15 @@ const EventRegistration = () => {
     const webcalUrl = event.id ? getWebcalSubscriptionUrl(event.id) : generateIcsFileBlobUrl(event);
     const shareText = `I'm attending ${event.title} on Eventra! Join me there!`;
     const shareUrl = `${window.location.origin}/events/${event.id}`;
+
+    const successStartTime =
+      event.time ||
+      (event.date && !Number.isNaN(new Date(event.date).getTime())
+        ? new Date(event.date).toLocaleTimeString("en-US", {
+            hour: "numeric",
+            minute: "2-digit",
+          })
+        : "");
 
     const handleNativeShare = () => {
       if (navigator.share) {
@@ -642,20 +715,25 @@ const EventRegistration = () => {
           </motion.div>
 
           <h2 className="text-3xl font-extrabold text-transparent bg-clip-text bg-linear-to-t from-indigo-600 to-pink-600 dark:from-indigo-400 dark:to-pink-400 mb-2">
-            {isEventFull ? t("eventRegistration.successWaitlistTitle") : t("eventRegistration.successConfirmedTitle")}
+            {actionState?.onWaitlist
+              ? t("eventRegistration.successWaitlistTitle")
+              : t("eventRegistration.successConfirmedTitle")}
           </h2>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mb-6 max-w-md mx-auto leading-relaxed">
-            {isEventFull
+          <p className="text-slate-600 dark:text-slate-400 text-sm mb-6 max-w-sm mx-auto">
+            {actionState?.onWaitlist
               ? t("eventRegistration.successWaitlistDesc", { position: waitlistPosition })
               : t("eventRegistration.successConfirmedDesc")}
           </p>
 
           <div className="bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200/40 dark:border-slate-800/50 rounded-3xl p-5 mb-8 text-left">
-            <h3 title={event.title} className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-3 line-clamp-2 break-words wrap-break-word min-w-0">
+            <h3
+              title={event.title}
+              className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-3 line-clamp-2 break-words wrap-break-word min-w-0"
+            >
               {event.title}
             </h3>
 
-            <div className="space-y-2.5 text-xs text-gray-600 dark:text-gray-400">
+            <div className="space-y-2.5 text-xs text-gray-600 dark:text-gray-200">
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-indigo-500" />
                 <span>
@@ -670,7 +748,7 @@ const EventRegistration = () => {
 
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-pink-500" />
-                <span>{event.time}</span>
+                <span>{successStartTime}</span>
               </div>
 
               <div className="flex items-center gap-2">
@@ -719,14 +797,17 @@ const EventRegistration = () => {
                 Yahoo
               </a>
               <a
-                href={webcalUrl || '#'}
+                href={webcalUrl || "#"}
                 {...(event.id
                   ? {}
-                  : { download: event.title ? `${event.title}.ics` : 'event.ics' }
-                )}
+                  : { download: event.title ? `${event.title}.ics` : "event.ics" })}
                 className="flex-1 min-w-30 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
-                <svg className="w-4 h-4 text-slate-600 dark:text-slate-400" viewBox="0 0 24 24" fill="currentColor">
+                <svg
+                  className="w-4 h-4 text-slate-600 dark:text-slate-400"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
                   <path d="M19 3h-14c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14h-4v-4h-2l4-4 4 4h-2v4z" />
                 </svg>
                 Apple / ICS
@@ -805,10 +886,12 @@ const EventRegistration = () => {
       <div className="max-w-4xl mx-auto">
         <Link
           to={isHackathonPath ? "/hackathons" : "/events"}
-          className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white mb-6 transition-colors"
+          className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-200 hover:text-black dark:hover:text-white mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          {isHackathonPath ? t("eventRegistration.backToHackathons") : t("eventRegistration.backToEvents")}
+          {isHackathonPath
+            ? t("eventRegistration.backToHackathons")
+            : t("eventRegistration.backToEvents")}
         </Link>
 
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden">
@@ -821,7 +904,12 @@ const EventRegistration = () => {
             />
             <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent"></div>
             <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-              <h1 title={event.title} className="text-3xl font-bold mb-2 break-words wrap-break-word">{event.title}</h1>
+              <h1
+                title={event.title}
+                className="text-3xl font-bold mb-2 break-words wrap-break-word"
+              >
+                {event.title}
+              </h1>
               <div className="flex flex-wrap gap-4 text-sm">
                 <span className="flex items-center gap-1">
                   <Calendar className="w-4 h-4" />
@@ -854,14 +942,21 @@ const EventRegistration = () => {
             {event?.hasSeatSelection && (
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">🪑 Select Your Seat</h3>
-                  {selectedSeat && <span className="text-sm text-emerald-600 font-medium">✓ Seat selected</span>}
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    🪑 Select Your Seat
+                  </h3>
+                  {selectedSeat && (
+                    <span className="text-sm text-emerald-600 font-medium">✓ Seat selected</span>
+                  )}
                 </div>
                 {showSeatSelector ? (
                   <SpatialSeatSelector
                     eventId={event.id}
                     currentUser={user?.firstName + " " + user?.lastName}
-                    onSeatSelect={(seat) => { setSelectedSeat(seat); setShowSeatSelector(false); }}
+                    onSeatSelect={(seat) => {
+                      setSelectedSeat(seat);
+                      setShowSeatSelector(false);
+                    }}
                   />
                 ) : (
                   <button
@@ -869,7 +964,9 @@ const EventRegistration = () => {
                     onClick={() => setShowSeatSelector(true)}
                     className="w-full py-3 border-2 border-dashed border-indigo-300 dark:border-indigo-700 rounded-xl text-indigo-600 dark:text-indigo-400 font-medium hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all"
                   >
-                    {selectedSeat ? `Change seat (currently: ${selectedSeat.label || "Selected"}` : "Browse & Select a Seat →"}
+                    {selectedSeat
+                      ? `Change seat (currently: ${selectedSeat.label || "Selected"}`
+                      : "Browse & Select a Seat →"}
                   </button>
                 )}
               </div>
@@ -905,7 +1002,11 @@ const EventRegistration = () => {
                   />
                 </div>
                 {errors.fullName && touched.fullName && (
-                  <p id="registration-fullName-error" role="alert" className="text-red-500 text-sm mt-1">
+                  <p
+                    id="registration-fullName-error"
+                    role="alert"
+                    className="text-red-500 text-sm mt-1"
+                  >
                     {errors.fullName}
                   </p>
                 )}
@@ -937,7 +1038,11 @@ const EventRegistration = () => {
                   />
                 </div>
                 {errors.email && touched.email && (
-                  <p id="registration-email-error" role="alert" className="text-red-500 text-sm mt-1">
+                  <p
+                    id="registration-email-error"
+                    role="alert"
+                    className="text-red-500 text-sm mt-1"
+                  >
                     {errors.email}
                   </p>
                 )}
@@ -969,7 +1074,11 @@ const EventRegistration = () => {
                   />
                 </div>
                 {errors.phone && touched.phone && (
-                  <p id="registration-phone-error" role="alert" className="text-red-500 text-sm mt-1">
+                  <p
+                    id="registration-phone-error"
+                    role="alert"
+                    className="text-red-500 text-sm mt-1"
+                  >
                     {errors.phone}
                   </p>
                 )}
@@ -1046,7 +1155,11 @@ const EventRegistration = () => {
                   htmlFor="additionalInfo"
                   className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                 >
-                  {t("eventRegistration.formAdditionalInfo") /* Additional Information (Optional) */}
+                  {
+                    t(
+                      "eventRegistration.formAdditionalInfo"
+                    ) /* Additional Information (Optional) */
+                  }
                 </label>
                 <textarea
                   id="additionalInfo"
@@ -1089,8 +1202,9 @@ const EventRegistration = () => {
                     <Eye className="h-4 w-4" />
                     Show my profile on the attendee list for this event.
                   </span>
-                  <span className="mt-1 block text-xs text-gray-500 dark:text-gray-400">
-                    Your name, username, headline, LinkedIn, and GitHub can be seen by registered attendees only.
+                  <span className="mt-1 block text-xs text-gray-500 dark:text-gray-200">
+                    Your name, username, headline, LinkedIn, and GitHub can be seen by registered
+                    attendees only.
                   </span>
                 </span>
               </label>
@@ -1100,7 +1214,7 @@ const EventRegistration = () => {
                 <button
                   type="button"
                   onClick={() => window.history.back()}
-                  className="flex-1 px-6 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+                  className="flex-1 px-6 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors font-medium"
                 >
                   {t("eventRegistration.formCancel")}
                 </button>
@@ -1115,7 +1229,9 @@ const EventRegistration = () => {
                   {isPending ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      {isEventFull ? t("eventRegistration.formJoiningWaitlist") : t("eventRegistration.formRegistering")}
+                      {isEventFull
+                        ? t("eventRegistration.formJoiningWaitlist")
+                        : t("eventRegistration.formRegistering")}
                     </>
                   ) : isEventFull ? (
                     t("eventRegistration.formJoinWaitlist")

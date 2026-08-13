@@ -1,9 +1,9 @@
 import axios from "axios";
-import { ENV } from "./env";
-import { syncServerTimeFromHeader } from "../utils/timeSync";
-import { createIntegrityHeader } from "../utils/security/requestIntegrity";
+import { ENV } from "./env.js";
+import { syncServerTimeFromHeader } from "../utils/timeSync.js";
+import { createIntegrityHeader } from "../utils/security/requestIntegrity.js";
 import { ApiError, RateLimitError } from "./api/errors.js";
-import { setupRequestInterceptor, setupResponseInterceptor, setOnRequiresReauthHandler } from "./api/interceptors.js";
+import { setupRequestInterceptor, setupResponseInterceptor, setOnRequiresReauthHandler, setReauthRequired, setAuthToken as setInterceptorAuthToken, setRefreshToken as setInterceptorRefreshToken } from "./api/interceptors.js";
 import { API_BASE_URL, validateBackendConfig } from "./backendConfig.js";
 
 // ---------------------------------------------------------------------------
@@ -51,8 +51,14 @@ export const setRequiresReauthHandler = (handler) => {
   onRequiresReauth = handler;
   setOnRequiresReauthHandler(handler);
 };
+export { setReauthRequired };
 export const setAuthToken = (token) => {
   _authToken = token;
+  setInterceptorAuthToken(token);
+};
+
+export const setRefreshToken = (token) => {
+  setInterceptorRefreshToken(token);
 };
 
 /**
@@ -144,6 +150,17 @@ API.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+API.interceptors.response.use(
+  (response) => {
+    const headerValue = response.headers.get("x-server-time") || response.headers.get("date");
+    if (headerValue) {
+      syncServerTimeFromHeader(headerValue);
+    }
+    return response;
+  },
+  (error) => Promise.reject(error)
+);
+
 setupRequestInterceptor(API, {
   isDev,
   buildApiUrl,
@@ -155,6 +172,11 @@ setupResponseInterceptor(API, {
   timeoutMs: REQUEST_TIMEOUT_MS,
   getOnUnauthorized: () => onUnauthorized,
   getOnRequiresReauth: () => onRequiresReauth,
+  setAuthToken: (token) => {
+    _authToken = token;
+    setInterceptorAuthToken(token);
+  },
+  setRefreshToken: setInterceptorRefreshToken,
 });
 
 // ---------------------------------------------------------------------------
@@ -170,6 +192,7 @@ export const API_ENDPOINTS = {
     RESET_PASSWORD: buildApiUrl("/auth/reset-password"),
     REFRESH: buildApiUrl("/auth/refresh"),
     GOOGLE: buildApiUrl("/auth/google"),
+    REAUTH: buildApiUrl("/auth/reauth"),
     GITHUB: buildApiUrl("/auth/github"),
   },
   EVENTS: {
@@ -178,13 +201,19 @@ export const API_ENDPOINTS = {
     LIST: buildApiUrl("/events"),
     DETAIL: (id) => buildApiUrl(`/events/${id}`),
     REGISTER: (id) => buildApiUrl(`/events/${id}/register`),
+    CANCEL_REGISTRATION: (id) => buildApiUrl(`/events/${id}/registration`),
     CANCEL: (id) => buildApiUrl(`/events/${id}/cancel`),
+    ARCHIVE: (id) => buildApiUrl(`/events/${id}/archive`),
     AVAILABILITY: (id) => buildApiUrl(`/events/${id}/availability`),
     ATTENDEES: (id) => buildApiUrl(`/events/${id}/attendees`),
+
+    ROLES: (id) => buildApiUrl(`/events/${id}/roles`),
+    ROLE_AUDIT: (id) => buildApiUrl(`/events/${id}/roles/audit`),
 
     REGISTRANTS: (id) => buildApiUrl(`/events/${id}/registrants`),
     WAITLIST: (id) => buildApiUrl(`/events/${id}/waitlist`),
     SCHEDULE: (id) => buildApiUrl(`/events/${id}/schedule`),
+    ALTERNATIVES: buildApiUrl("/events/alternatives"),
     // Convenience helper — appends ?page=&size= for callers that build the
     // URL manually rather than going through eventFetchUtils.buildPaginatedUrl.
     PAGINATED: (page, size) => buildApiUrl(`/events?page=${page}&size=${size}`),
@@ -212,6 +241,7 @@ export const API_ENDPOINTS = {
     LIST: buildApiUrl("/hackathons"),
     DETAIL: (id) => buildApiUrl(`/hackathons/${id}`),
     HOST: buildApiUrl("/hackathons"),
+    REGISTER: (id) => buildApiUrl(`/hackathons/${id}/register`),
   },
   NOTIFICATIONS: {
     BASE: buildApiUrl("/notifications"),
@@ -219,15 +249,19 @@ export const API_ENDPOINTS = {
     READ: (id) => (id ? buildApiUrl(`/notifications/${id}/read`) : ""),
     DELETE: (id) => (id ? buildApiUrl(`/notifications/${id}`) : ""),
     READ_ALL: buildApiUrl("/notifications/read-all"),
-    PREFERENCES: buildApiUrl("/notifications/preferences"),
+    PREFERENCES: buildApiUrl("/users/preferences"),
     PUSH_SUBSCRIBE: buildApiUrl("/notifications/push-subscriptions"),
     PUSH_UNSUBSCRIBE: buildApiUrl("/notifications/push-subscriptions/unsubscribe"),
+    TEST_EMAIL: buildApiUrl("/notifications/send-test-email"),
+    SAVE_TEMPLATE: buildApiUrl("/notifications/save-template"),
+    GET_TEMPLATE: (eventId, templateType) => buildApiUrl(`/notifications/templates/${eventId}/${templateType}`),
   },
   USERS: {
     PROFILE: buildApiUrl("/users/profile"),
     ACHIEVEMENTS: buildApiUrl("/users/achievements"),
     // (#7653) Endpoint for persisting user preferences (theme, etc.) across devices
     PREFERENCES: buildApiUrl("/users/preferences"),
+    CHANGE_PASSWORD: buildApiUrl("/users/change-password"),
   },
   ANALYTICS: {
     SUMMARY: buildApiUrl("/analytics/summary"),
@@ -253,6 +287,7 @@ export const API_ENDPOINTS = {
     JOIN: buildApiUrl("/waitlist/join"),
     LEAVE: (id) => buildApiUrl(`/waitlist/${id}/leave`),
     STATUS: (id) => buildApiUrl(`/waitlist/${id}/status`),
+    IMPORT_CSV: (id) => buildApiUrl(`/events/${id}/waitlist/import`),
   },
   FEEDBACK: {
     BASE: buildApiUrl("/feedback"),
@@ -273,6 +308,7 @@ export const API_ENDPOINTS = {
     USERNAME: (username) => buildApiUrl(`/validate/username/${encodeURIComponent(username)}`),
     PHONE: buildApiUrl("/validate/phone"),
   },
+  CONTACT: buildApiUrl("/contact"),
 };
 
 /**

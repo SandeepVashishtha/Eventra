@@ -216,7 +216,7 @@ const SessionRecovery = () => {
               <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
                 Recovery Sessions
               </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-sm text-gray-600 dark:text-gray-200 mb-4">
                 We found {visibleRecoverySessions.length} recoverable draft{visibleRecoverySessions.length === 1 ? '' : 's'} across local and cloud storage.
               </p>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center mb-4">
@@ -359,8 +359,8 @@ const SessionRecovery = () => {
                           ) : (
                             <p className="font-semibold text-gray-900 dark:text-white truncate">{session.name}</p>
                           )}
-                          <p className="capitalize text-xs text-gray-500 dark:text-gray-400">{label} • {session.source || 'local'}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <p className="capitalize text-xs text-gray-500 dark:text-gray-200">{label} • {session.source || 'local'}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-200">
                             Updated {Number.isNaN(updated.getTime()) ? 'recently' : updated.toLocaleString()}
                           </p>
                           </div>
@@ -404,7 +404,7 @@ const SessionRecovery = () => {
               <button
                 type="button"
                 onClick={dismissRecoveryPrompt}
-                className="mt-4 text-sm font-semibold text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"
+                className="mt-4 text-sm font-semibold text-gray-500 hover:text-gray-800 dark:text-gray-200 dark:hover:text-white"
               >
                 Not now
               </button>
@@ -442,7 +442,7 @@ const SessionRecovery = () => {
               <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
                 Resume where you left off?
               </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-sm text-gray-600 dark:text-gray-200 mb-4">
                 We found a session from {timeSinceSession === 0 ? 'just now' : `${timeSinceSession} minute${timeSinceSession > 1 ? 's' : ''} ago`}.
                 Would you like to restore your previous activity?
               </p>

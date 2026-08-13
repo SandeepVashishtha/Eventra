@@ -1,4 +1,20 @@
 const STORAGE_KEY = "eventra_waitlist";
+const PROMOTION_LOCKS_KEY = "eventra_promotion_sync_locks";
+
+const getPromotionLocks = () => {
+  try {
+    const data = localStorage.getItem(PROMOTION_LOCKS_KEY);
+    return data ? JSON.parse(data) : {};
+  } catch {
+    return {};
+  }
+};
+
+const savePromotionLocks = (locks) => {
+  try {
+    localStorage.setItem(PROMOTION_LOCKS_KEY, JSON.stringify(locks));
+  } catch {}
+};
 
 /**
  * Get complete waitlist
@@ -102,9 +118,12 @@ export const promoteNextUser = (eventId) => {
 
   if (index === -1) return null;
 
+  const promotionToken = `prom-token-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+
   queue[index] = {
     ...queue[index],
     status: "promoted",
+    promotionToken,
     promotedAt: new Date().toISOString(),
     confirmationDeadline: new Date(
       Date.now() + 24 * 60 * 60 * 1000
@@ -117,14 +136,25 @@ export const promoteNextUser = (eventId) => {
 };
 
 /**
- * Confirm promoted registration
+ * Confirm promoted registration with Service Worker Background Sync Mutex Guard
  */
-export const confirmPromotion = (userId, eventId) => {
-  const queue = getQueue();
+export const confirmPromotionWithMutex = (userId, eventId, promotionToken) => {
+  const locks = getPromotionLocks();
 
+  // If promotion token already claimed or currently syncing, block duplicate execution
+  if (promotionToken && locks[promotionToken]) {
+    console.warn(`[WaitlistMutex] Blocked duplicate promotion sync for token: ${promotionToken}`);
+    return { success: false, duplicate: true };
+  }
+
+  if (promotionToken) {
+    locks[promotionToken] = { claimedAt: Date.now() };
+    savePromotionLocks(locks);
+  }
+
+  const queue = getQueue();
   const updated = queue.map((item) =>
-    item.userId === userId &&
-    item.eventId === eventId
+    item.userId === userId && item.eventId === eventId
       ? {
           ...item,
           status: "confirmed",
@@ -134,8 +164,12 @@ export const confirmPromotion = (userId, eventId) => {
   );
 
   saveQueue(updated);
+  return { success: true, updated };
+};
 
-  return updated;
+export const confirmPromotion = (userId, eventId) => {
+  const result = confirmPromotionWithMutex(userId, eventId, null);
+  return result.updated || getQueue();
 };
 
 /**
@@ -165,4 +199,5 @@ export const getQueuePosition = (userId, eventId) => {
  */
 export const clearWaitlist = () => {
   localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(PROMOTION_LOCKS_KEY);
 };

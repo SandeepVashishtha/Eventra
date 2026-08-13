@@ -1,3 +1,5 @@
+import { getRuntimeEnv } from "../../config/backendConfig/envDetector.js";
+
 const SECURITY_CONFIG_KEYS = {
   API_ENDPOINT: "VITE_API_URL",
   JWT_CONFIGURATION: "VITE_JWT_ENABLED",

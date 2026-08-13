@@ -1,10 +1,11 @@
+import useToast from "hooks/useToast";
 import React, { memo, useCallback, useId, useState } from "react";
 import { logger } from "utils/logger";
 import LazyImage from "components/common/LazyImage";
 import { formatLocalDateTime } from "utils/localDateTime";
 import ShareModal from "components/common/ShareModal";
 import StatusBadge from "components/common/StatusBadge";
-import { getEventStatus } from "utils/eventUtils";
+import { getEventStatus, getFomoStatus } from "utils/eventUtils";
 import SocialShareButtons from "components/common/SocialShareButtons";
 import AddToCalendar from "components/common/AddToCalendar";
 import { useMyEvents } from "context/MyEventsContext";
@@ -12,17 +13,34 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { BookmarkCheck, Bookmark, MapPin, Calendar, Clock, ArrowRight } from "lucide-react";
+import { categories, getCategoryByValue } from "constants/eventDefaults";
 
 import { isEventBookmarked, addBookmarkedEvent, removeBookmarkedEvent } from "utils/bookmarkUtils";
+import SeatsRemaining from "components/common/SeatsRemaining";
+import SellingFastBadge from "components/common/SellingFastBadge";
+import useEventAvailability from "hooks/useEventAvailability";
 
-const EventCard = ({ event, position }) => {
+const EventCard = ({ event, position, isHighlighted = false }) => {
   const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
   const [imageFailed, setImageFailed] = useState(false);
   const titleId = useId();
   const { isRegistered } = useMyEvents();
+  const { success, info } = useToast();
+
+  // Live, real-time seat availability for this event. Subscribes to the shared
+  // SSE stream and falls back to polling so seat counters stay fresh without a
+  // full page reload.
+  const { availability } = useEventAvailability(event.id, {
+    enabled: event.capacity != null && event.capacity > 0,
+  });
 
   const isUserRegistered = isRegistered(event.id);
   const computedStatus = getEventStatus(event);
+
+  // Calculate FOMO status for low inventory
+  const capacity = availability?.capacity ?? event.capacity;
+  const registeredCount = availability?.registeredCount ?? event.registeredCount ?? event.attendees?.length ?? 0;
+  const { isLowInventory, message: fomoMessage } = getFomoStatus(capacity, registeredCount);
 
   const eventImage = event.image || event.imageUrl || null;
   const eventDate = event.date || event.eventDate || event.startDate || null;
@@ -43,7 +61,7 @@ const EventCard = ({ event, position }) => {
       } else {
         addBookmarkedEvent({ ...event, status: computedStatus });
         setIsBookmarked(true);
-        toast.success("Event saved!", { toastId: `bookmark-${event.id}`, autoClose: 1800 });
+        success("Event saved!", { toastId: `bookmark-${event.id}` });
       }
     },
     [isBookmarked, event, computedStatus]
@@ -63,7 +81,7 @@ const EventCard = ({ event, position }) => {
         {eventImage && !imageFailed ? (
           <LazyImage
             src={eventImage}
-            alt=""
+            alt={event.title ? `${event.title} event cover` : "Event cover image"}
             className="absolute inset-0 w-full h-full"
             imgClassName="object-cover w-full h-full opacity-90 group-hover:scale-102 transition-transform duration-700"
             onError={() => setImageFailed(true)}
@@ -78,13 +96,35 @@ const EventCard = ({ event, position }) => {
 
         {/* Overlay badges */}
         <div className="absolute top-4 left-4 flex flex-wrap gap-2">
-          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-black/40 backdrop-blur-md text-white border border-white/10">
-            {event.type || event.category || "Event"}
-          </span>
+          {/* Color-coded category badges */}
+          {event.categories && Array.isArray(event.categories) && event.categories.length > 0 ? (
+            event.categories.slice(0, 3).map((catValue) => {
+              const category = getCategoryByValue(catValue);
+              return category ? (
+                <span
+                  key={catValue}
+                  className={`inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider text-white shadow-md ${category.color}`}
+                  style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}
+                >
+                  {category.label}
+                </span>
+              ) : null;
+            })
+          ) : (
+            // Fallback for backward compatibility - single category
+            (event.category || event.type) && (
+              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-black/40 backdrop-blur-md text-white border border-white/10">
+                {event.category || event.type}
+              </span>
+            )
+          )}
           {isUserRegistered && (
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-500/90 text-white shadow-md">
               Registered
             </span>
+          )}
+          {isLowInventory && fomoMessage && (
+            <SellingFastBadge message={fomoMessage} />
           )}
         </div>
 
@@ -107,9 +147,9 @@ const EventCard = ({ event, position }) => {
       <div className="flex flex-col flex-1 p-5 sm:p-6">
         <h3
           id={titleId}
-          className="text-text font-bold text-lg sm:text-xl leading-snug mb-2 group-hover:text-primary transition-colors duration-200 line-clamp-2"
+          className="text-text font-bold text-lg sm:text-xl leading-snug mb-2 group-hover:text-primary transition-colors duration-200 line-clamp-2 break-words min-w-0"
         >
-          <Link to={`/events/${event.id}`}>{event.title}</Link>
+          <Link to={`/events/${event.id}`} title={event.title}>{event.title}</Link>
         </h3>
 
         <p className="text-text-light text-sm font-normal leading-relaxed mb-6 line-clamp-2">
@@ -127,6 +167,18 @@ const EventCard = ({ event, position }) => {
               </span>
             ))}
           </div>
+        )}
+
+        {/* Live seat availability indicator */}
+        {event.capacity != null && event.capacity > 0 && (
+          <SeatsRemaining
+            capacity={availability?.capacity ?? event.capacity}
+            registered={
+              availability?.registeredCount ?? event.registeredCount ?? event.attendees?.length ?? 0
+            }
+            compact
+            className="mb-4"
+          />
         )}
 
         <div className="flex flex-col gap-2 mt-auto border-t border-border pt-4 text-xs font-semibold text-text-light">

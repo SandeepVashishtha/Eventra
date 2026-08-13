@@ -144,7 +144,7 @@ const BulkCertificateGenerator = ({ eventName, eventDate, eventType, organizerNa
       <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3">
         <div>
           <h3 className="text-lg font-bold text-gray-900 dark:text-white">Certificate Generation & Distribution</h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{attendees.length} attendees loaded</p>
+          <p className="text-sm text-gray-500 dark:text-gray-200">{attendees.length} attendees loaded</p>
         </div>
       </div>
 

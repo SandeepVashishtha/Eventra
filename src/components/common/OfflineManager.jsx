@@ -85,7 +85,7 @@ const OfflineManager = ({ isOpen, onClose }) => {
                 </div>
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">Offline Sync</h2>
               </div>
-              <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full">
+              <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-full">
                 <X size={20} />
               </button>
             </div>

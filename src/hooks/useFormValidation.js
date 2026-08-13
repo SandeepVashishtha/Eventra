@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import useAsyncValidation from './useAsyncValidation';
+import { useState, useEffect, useCallback, useRef } from "react";
+import useAsyncValidation from "./useAsyncValidation";
 
 /**
  * useFormValidation
@@ -28,6 +28,7 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
   const validationRulesRef = useRef(validationRules);
   const initialStateRef = useRef(initialState);
   const optionsRef = useRef({ debounceMs, validateOnBlur });
+
   const [values, setValues] = useState(initialState);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
@@ -35,6 +36,16 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
   const [isValidating, setIsValidating] = useState(false);
 
   const valuesRef = useRef(initialState);
+  const {
+    asyncErrors,
+    asyncTouched,
+    isAsyncValidating,
+    isAnyAsyncValidating,
+    hasAsyncErrors,
+    validateAsync,
+    clearAsyncError,
+    cleanup: cleanupAsync,
+  } = useAsyncValidation(asyncValidators);
 
   useEffect(() => {
     validationRulesRef.current = validationRules;
@@ -70,7 +81,9 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
   }, [clearValidationTimer, cleanupAsync]);
 
   useEffect(() => {
-    return () => { clearValidationTimer(); };
+    return () => {
+      clearValidationTimer();
+    };
   }, [clearValidationTimer, debounceMs, validateOnBlur]);
 
   // ── Sync validation ────────────────────────────────────────────────────────
@@ -82,30 +95,33 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
     if (!validationRulesRef.current[name]) return null;
     const validator = validationRulesRef.current[name];
     let error;
-    if (typeof validator === 'function') {
+    if (typeof validator === "function") {
       error = validator(value, allValues);
-    } else if (typeof validator === 'object' && validator.validate) {
+    } else if (typeof validator === "object" && validator.validate) {
       error = validator.validate(value, allValues);
     }
-    if (error && typeof error.then === 'function') {
-      return error.then(resolved => resolved === true ? null : resolved);
+    if (error && typeof error.then === "function") {
+      return error.then((resolved) => (resolved === true ? null : resolved));
     }
     return error === true ? null : error;
   }, []);
 
-  // Validate all sync fields. Returns true when all pass.
-  const validateAll = useCallback(() => {
+  // Validate all fields (sync + async). Resolves async validator results so a
+  // pending Promise is never treated as a sync error.
+  const validateAll = useCallback(async () => {
     const newErrors = {};
     const newTouched = {};
     let isValid = true;
-    Object.keys(validationRulesRef.current).forEach((name) => {
-      newTouched[name] = true;
-      const error = validateField(name, values[name], values);
-      if (error) {
-        newErrors[name] = error;
-        isValid = false;
-      }
-    });
+    await Promise.all(
+      Object.keys(validationRulesRef.current).map(async (name) => {
+        newTouched[name] = true;
+        const error = await validateField(name, values[name], values);
+        if (error) {
+          newErrors[name] = error;
+          isValid = false;
+        }
+      })
+    );
     if (hasAsyncErrors) isValid = false;
     setTouched((prev) => ({ ...prev, ...newTouched }));
     setErrors(newErrors);
@@ -114,55 +130,61 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
   }, [values, validateField, hasAsyncErrors]);
 
   // ── Handlers ───────────────────────────────────────────────────────────────
-  const handleChange = useCallback((e) => {
-    const { name, value } = e.target;
+  const handleChange = useCallback(
+    (e) => {
+      const { name, value } = e.target;
 
-    setValues((prev) => ({ ...prev, [name]: value }));
-    setTouched((prev) => ({ ...prev, [name]: true }));
-    setErrors((prev) => ({ ...prev, [name]: null }));
+      setValues((prev) => ({ ...prev, [name]: value }));
+      setTouched((prev) => ({ ...prev, [name]: true }));
+      setErrors((prev) => ({ ...prev, [name]: null }));
 
-    // Trigger async validation if a validator is registered for this field
-    if (asyncValidators[name]) {
-      validateAsync(name, value);
-    }
+      // Trigger async validation if a validator is registered for this field
+      if (asyncValidators[name]) {
+        validateAsync(name, value);
+      }
 
-    if (!validationRulesRef.current[name]) return;
-    if (optionsRef.current.validateOnBlur) return;
+      if (!validationRulesRef.current[name]) return;
+      if (optionsRef.current.validateOnBlur) return;
 
-    setIsValidating(true);
-    clearValidationTimer();
-    const validationRun = validationRunRef.current + 1;
-    validationRunRef.current = validationRun;
+      setIsValidating(true);
+      clearValidationTimer();
+      const validationRun = validationRunRef.current + 1;
+      validationRunRef.current = validationRun;
 
-    timeoutRef.current = setTimeout(() => {
-      timeoutRef.current = null;
-      if (!isMountedRef.current || validationRunRef.current !== validationRun) return;
+      timeoutRef.current = setTimeout(() => {
+        timeoutRef.current = null;
+        if (!isMountedRef.current || validationRunRef.current !== validationRun) return;
 
-      setValues((prev) => {
-        const currentValues = { ...prev, [name]: value };
-        const error = validateField(name, value, currentValues);
-        if (isMountedRef.current && validationRunRef.current === validationRun) {
-          setErrors((errs) => ({ ...errs, [name]: error }));
-          setIsValidating(false);
-        }
-        return prev;
-      });
-    }, optionsRef.current.debounceMs);
-  }, [validateField, clearValidationTimer, validateAsync, asyncValidators]);
+        setValues((prev) => {
+          const currentValues = { ...prev, [name]: value };
+          const error = validateField(name, value, currentValues);
+          if (isMountedRef.current && validationRunRef.current === validationRun) {
+            setErrors((errs) => ({ ...errs, [name]: error }));
+            setIsValidating(false);
+          }
+          return prev;
+        });
+      }, optionsRef.current.debounceMs);
+    },
+    [validateField, clearValidationTimer, validateAsync, asyncValidators]
+  );
 
-  const handleBlur = useCallback((e) => {
-    const { name, value } = e.target;
-    setTouched((prev) => ({ ...prev, [name]: true }));
-    if (!validationRulesRef.current[name]) return;
-    const error = validateField(name, value, valuesRef.current);
-    setErrors((prev) => ({ ...prev, [name]: error }));
-  }, [validateField]);
+  const handleBlur = useCallback(
+    (e) => {
+      const { name, value } = e.target;
+      setTouched((prev) => ({ ...prev, [name]: true }));
+      if (!validationRulesRef.current[name]) return;
+      const error = validateField(name, value, valuesRef.current);
+      setErrors((prev) => ({ ...prev, [name]: error }));
+    },
+    [validateField]
+  );
 
   // ── Derived validity ───────────────────────────────────────────────────────
   useEffect(() => {
     const hasSyncErrors = Object.values(errors).some((error) => error !== null);
     const allRequiredFieldsSatisfied = Object.keys(validationRulesRef.current).every(
-      (key) => touched[key] || values[key] !== '',
+      (key) => touched[key] || values[key] !== ""
     );
     setIsFormValid(!hasSyncErrors && !hasAsyncErrors && allRequiredFieldsSatisfied);
   }, [errors, touched, values, hasAsyncErrors]);

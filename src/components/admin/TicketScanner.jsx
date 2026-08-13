@@ -195,7 +195,7 @@ export default function TicketScanner() {
     try {
       const updated = [entry, ...safeJsonParse(localStorage.getItem(HISTORY_CACHE_KEY), [])].slice(0, 50);
       localStorage.setItem(HISTORY_CACHE_KEY, JSON.stringify(updated));
-    } catch { /* ignore */ }
+    } catch { console.warn("[TicketScanner] Scan operation failed"); }
   }, []);
 
   const handleScanSuccess = async (decodedText) => {
@@ -220,13 +220,57 @@ export default function TicketScanner() {
       }
     } catch {
       if (decodedText.startsWith("eyJ") && decodedText.split(".").length === 3) {
-        const activeEvent = events.find(e => String(e.id) === String(selectedEventId));
-        ticketData = {
-          ticketId: decodedText,
-          eventId: selectedEventId,
-          userName: "Attendee",
-          eventName: activeEvent ? activeEvent.title : "Active Event"
-        };
+        try {
+          // JWT payloads are base64url (RFC 4648): '-'/'_' instead of '+'/'/'
+          // and no padding. Convert to standard base64 before atob.
+          const encodedPayload = decodedText.split(".")[1];
+          const b64 = encodedPayload
+            .replace(/-/g, "+")
+            .replace(/_/g, "/")
+            .padEnd(Math.ceil(encodedPayload.length / 4) * 4, "=");
+          const payload = JSON.parse(atob(b64));
+          const activeEvent = events.find(e => String(e.id) === String(selectedEventId));
+          const ticketEventId = payload.eventId || payload.event_id;
+          if (ticketEventId && String(ticketEventId) !== String(selectedEventId)) {
+            setScanResult({
+              status: "flagged",
+              message: "This ticket is for a different event.",
+              raw: decodedText,
+            });
+            toast.error("Security Alert: Ticket does not match selected event!");
+            addToHistory({
+              id: `flagged-${Date.now()}`,
+              ticketId: decodedText.slice(0, 20),
+              name: "Unknown",
+              event: activeEvent ? activeEvent.title : "Unknown",
+              status: "Flagged",
+              time: new Date().toISOString(),
+            });
+            return;
+          }
+          ticketData = {
+            ticketId: decodedText,
+            eventId: ticketEventId || selectedEventId,
+            userName: payload.userName || payload.name || "Attendee",
+            eventName: activeEvent ? activeEvent.title : "Active Event"
+          };
+        } catch {
+          setScanResult({
+            status: "flagged",
+            message: "Invalid ticket format.",
+            raw: decodedText,
+          });
+          toast.error("Security Alert: Invalid Ticket QR Code scanned!");
+          addToHistory({
+            id: `flagged-${Date.now()}`,
+            ticketId: decodedText.slice(0, 20),
+            name: "Unknown",
+            event: "Unknown",
+            status: "Flagged",
+            time: new Date().toISOString(),
+          });
+          return;
+        }
       } else {
         setScanResult({
           status: "flagged",
@@ -285,7 +329,7 @@ export default function TicketScanner() {
       await pushToQueue(
         {
           actionType: "TICKET_CHECK_IN",
-          ticketId,
+          ticketId: ticketData.ticketId,
           eventId: eventId || "unknown",
           endpoint: API_ENDPOINTS.TICKETS.CHECK_IN,
           payload: ticketData,
@@ -312,6 +356,24 @@ export default function TicketScanner() {
         ticketData.ticketId = result.registrationId || ticketId;
       }
 
+      if (!result.valid) {
+        setScanResult({
+          status: "flagged",
+          data: ticketData,
+          message: result.message || "This ticket is not valid for entry.",
+        });
+        toast.error(`Invalid Ticket: ${ticketData.userName}`);
+        addToHistory({
+          id: `invalid-${Date.now()}`,
+          ticketId: ticketData.ticketId,
+          name: ticketData.userName,
+          event: eventName,
+          status: "Flagged",
+          time: new Date().toISOString(),
+        });
+        return;
+      }
+
       if (result.alreadyCheckedIn) {
         setScanResult({
           status: "duplicate",
@@ -331,25 +393,7 @@ export default function TicketScanner() {
         return;
       }
 
-      if (!result.valid) {
-        setScanResult({
-          status: "flagged",
-          data: ticketData,
-          message: result.message || "This ticket is not valid for entry.",
-        });
-        toast.error(`Invalid Ticket: ${ticketData.userName}`);
-        addToHistory({
-          id: `invalid-${Date.now()}`,
-          ticketId: ticketData.ticketId,
-          name: ticketData.userName,
-          event: eventName,
-          status: "Flagged",
-          time: new Date().toISOString(),
-        });
-        return;
-      }
-
-      await recordCheckIn(ticketId, eventId, { validatedAt: new Date().toISOString() });
+      await recordCheckIn(ticketData.ticketId, eventId, { validatedAt: new Date().toISOString() });
 
       triggerScanFeedback("verified");
       setScanResult({
@@ -392,6 +436,8 @@ export default function TicketScanner() {
       return;
     }
 
+    setScanResult(null);
+
     const manualData = {
       ticketId: manualTicketId.trim().toUpperCase(),
       userName: manualAttendeeName.trim(),
@@ -414,6 +460,7 @@ export default function TicketScanner() {
     const option = e.target.options[idx];
     setManualEventId(option.value);
     setManualEventName(option.text);
+    setSelectedEventId(option.value);
   };
 
   return (
@@ -480,7 +527,13 @@ export default function TicketScanner() {
             <select
               id="active-event-select"
               value={selectedEventId}
-              onChange={(e) => setSelectedEventId(e.target.value)}
+              onChange={(e) => {
+                const idx = e.target.selectedIndex;
+                const option = e.target.options[idx];
+                setSelectedEventId(e.target.value);
+                setManualEventId(e.target.value);
+                setManualEventName(option?.text || "");
+              }}
               className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-350 focus:outline-none focus:border-indigo-500"
             >
               {events.length === 0 ? (

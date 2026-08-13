@@ -1,12 +1,15 @@
 import { memo, useRef, useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "context/AuthContext";
+import { useTheme } from "context/ThemeContext";
 import DesktopNavbar from "./DesktopNavbar";
 import MobileNavbar from "./MobileNavbar";
 import AuthButtons from "./AuthButtons";
 import ProfileMenu from "./ProfileMenu";
 import LanguageSelector from "../LanguageSelector";
 import NotificationBell from "../notifications/NotificationBell";
+import ThemeToggleButton from "../Layout/ThemeToggleButton";
+import ThemeCustomizer from "../Layout/ThemeCustomizer";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
 import useKeyboardShortcuts from "hooks/useKeyboardShortcuts";
 import { motion, useScroll, useSpring } from "framer-motion";
@@ -14,9 +17,9 @@ import { motion, useScroll, useSpring } from "framer-motion";
 const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const navRef = useRef(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [scrollProgress, setScrollProgress] = useState(0);
   const [scrolled, setScrolled] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
+  const { isDarkMode, toggleTheme, setIsCustomizerOpen } = useTheme();
   const authenticated = isAuthenticated();
   useBodyScrollLock(isMobileMenuOpen);
 
@@ -53,9 +56,6 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
       ticking = true;
       window.requestAnimationFrame(() => {
         const scrollTop = window.scrollY;
-        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-        const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-        setScrollProgress(progress);
         setScrolled(scrollTop > 12);
         ticking = false;
       });
@@ -121,6 +121,12 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             <div className="flex items-center justify-end gap-2 shrink-0">
               {/* Desktop CTAs & Profile */}
               <div className="hidden lg:flex items-center gap-2">
+                <ThemeToggleButton 
+                  isDarkMode={isDarkMode} 
+                  toggleTheme={toggleTheme} 
+                  isMobile={false} 
+                  setIsCustomizerOpen={setIsCustomizerOpen} 
+                />
                 <LanguageSelector compact />
                 {authenticated ? (
                   <>
@@ -142,7 +148,6 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
                 isOpen={isMobileMenuOpen}
                 setIsOpen={setIsMobileMenuOpen}
                 isAuthenticated={authenticated}
-                user={user}
                 logout={logout}
                 cursorEnabled={cursorEnabled}
                 toggleCursor={toggleCursor}
@@ -176,6 +181,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           }}
         />
       </nav>
+      <ThemeCustomizer />
     </>
   );
 };

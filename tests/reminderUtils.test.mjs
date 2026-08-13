@@ -275,4 +275,48 @@ assert.equal(
   "getReminderTriggerTime calculates correct timezone-aware trigger time"
 );
 
+// ── timezone persistence in stored reminder snapshots ─────────────────────────
+resetStorage();
+const tzSnapshotEvt = {
+  id: "evt-tz-snapshot",
+  title: "NY Event",
+  date: "2099-01-01",
+  time: "10:00",
+  timezone: "America/New_York",
+};
+const tzSnapshotResult = addReminder(tzSnapshotEvt, "1h");
+assert.equal(tzSnapshotResult.ok, true, "addReminder succeeds for a timezone event");
+assert.equal(
+  tzSnapshotResult.reminder.event.timezone,
+  "America/New_York",
+  "stored reminder snapshot retains the event timezone"
+);
+
+const liveInstant = getEventDateTime(tzSnapshotEvt).getTime();
+const snapshotInstant = getEventDateTime(tzSnapshotResult.reminder.event).getTime();
+assert.equal(
+  snapshotInstant,
+  liveInstant,
+  "getEventDateTime returns the same instant for the live event and the stored snapshot"
+);
+
+// Reminders stored before the timezone field existed must fall back to the
+// browser timezone without crashing.
+resetStorage();
+const legacySnapshot = {
+  id: "evt-legacy::1h",
+  eventId: "evt-legacy",
+  timing: "1h",
+  triggerAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+  event: { id: "evt-legacy", date: "2099-01-01", time: "10:00", title: "Legacy" },
+};
+window.localStorage.setItem(
+  "eventra_event_reminders",
+  JSON.stringify([legacySnapshot])
+);
+assert.ok(
+  getEventDateTime(getReminders()[0].event) instanceof Date,
+  "getEventDateTime resolves legacy snapshots without a timezone field"
+);
+
 console.log("All reminderUtils tests passed ✓");

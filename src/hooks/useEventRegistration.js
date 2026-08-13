@@ -18,9 +18,14 @@ import { createRateLimiter } from "../utils/rateLimiter";
  *   and opens a conflict-resolution modal when one is found.
  * - Checks live event capacity immediately before submission and notifies the
  *   user when the event is at full capacity.
- * - Uses a shared module-level `Map` lock (`registrationLocks` from
- *   `utils/registrationLocks`) and a ref
- *   (`isSubmittingRef`) to guard against duplicate concurrent submissions.
+ * - Uses a shared cross-tab lock (`registrationLocks` from
+ *   `utils/registrationLocks`, backed by a `localStorage` lease with a
+ *   10-minute expiry and a per-tab fast-path cache) plus a ref
+ *   (`isSubmittingRef`) to guard against duplicate concurrent submissions
+ *   within and across tabs.
+ * - Keeps the lease held while a registration is queued offline, so the same
+ *   event cannot be registered twice while the queue item is pending; the
+ *   lease auto-expires if the tab is closed before the queue drains.
  * - Falls back to an offline queue (`offlineQueue`) when a network/timeout
  *   error is detected, so the registration syncs automatically once
  *   connectivity is restored.
@@ -78,7 +83,12 @@ const useEventRegistration = (eventIdParam) => {
   });
 
   // React Compiler automatically memoizes these, no need for useMemo
-  const isEventFull = event ? event.attendees >= event.maxAttendees : false;
+  // EventResponse exposes `capacity`/`registeredCount`; keep the mock-data
+  // aliases (maxAttendees/attendees) as a fallback for hackathon paths.
+  const isEventFull = event
+    ? (event.capacity ?? event.maxAttendees ?? 0) > 0 &&
+      (event.registeredCount ?? event.attendees ?? 0) >= (event.capacity ?? event.maxAttendees ?? 0)
+    : false;
   const isPastEvent = event ? (getEventStatus(event) === "past" || getEventStatus(event) === "ended") : false;
 
   const validationRules = {
@@ -231,17 +241,17 @@ const useEventRegistration = (eventIdParam) => {
       const freshRes = await eventService.getEventDetails(id);
       if (freshRes.status === 200) {
         const freshEvent = freshRes.data;
-        const capacity = freshEvent.maxAttendees ?? 0;
-        const attendees = freshEvent.attendees ?? 0;
+        const capacity = freshEvent.capacity ?? freshEvent.maxAttendees ?? 0;
+        const attendees = freshEvent.registeredCount ?? freshEvent.attendees ?? 0;
         return capacity > 0 && attendees >= capacity;
       }
-      const capacity = currentEvent?.maxAttendees ?? 0;
-      const attendees = currentEvent?.attendees ?? 0;
+      const capacity = currentEvent?.capacity ?? currentEvent?.maxAttendees ?? 0;
+      const attendees = currentEvent?.registeredCount ?? currentEvent?.attendees ?? 0;
       return capacity > 0 && attendees >= capacity;
     } catch (error) {
       console.error("[checkEventCapacity] Failed to check capacity:", error);
-      const capacity = currentEvent?.maxAttendees ?? 0;
-      const attendees = currentEvent?.attendees ?? 0;
+      const capacity = currentEvent?.capacity ?? currentEvent?.maxAttendees ?? 0;
+      const attendees = currentEvent?.registeredCount ?? currentEvent?.attendees ?? 0;
       return capacity > 0 && attendees >= capacity;
     }
   }, []);
@@ -252,8 +262,15 @@ const useEventRegistration = (eventIdParam) => {
     const conflictCheck = checkRegistrationConflict(event, myEvents);
     if (conflictCheck.hasConflict) {
       try {
-        const res = await eventService.getAllEvents();
-        const realEvents = res.status === 200 ? res.data : [];
+        const around =
+          event.eventDate || event.date || event.startDate || undefined;
+        const res = await eventService.getAlternatives({
+          excludeId: event.id,
+          around,
+          windowDays: 14,
+          limit: 20,
+        });
+        const realEvents = Array.isArray(res?.data) ? res.data : [];
         const suggestions = suggestAlternativeEvents(event, realEvents, myEvents);
         setConflictData({
           conflicts: conflictCheck.conflicts,
@@ -302,7 +319,12 @@ const useEventRegistration = (eventIdParam) => {
 
     setShowConflictModal(false);
 
-    registrationLocks.set(eventId, true);
+    // Claim the cross-tab localStorage lease before any async work. If a
+    // concurrent tab won the race, do not start a duplicate submission.
+    if (!registrationLocks.set(eventId)) {
+      toast.error("Another registration is in progress for this event. Please wait.");
+      return;
+    }
     isSubmittingRef.current = true;
     setSubmitting(true);
 
@@ -312,6 +334,8 @@ const useEventRegistration = (eventIdParam) => {
       priority: formData.priority,
       eventId: parseInt(eventId, 10),
     };
+
+    let keepLockAfterSubmit = false;
 
     try {
       await eventService.registerForEvent(eventId, payload);
@@ -343,6 +367,9 @@ const useEventRegistration = (eventIdParam) => {
         );
 
         if (success) {
+          // Hold the lease until the queued registration is actually synced so
+          // a duplicate cannot be queued; the 10-minute expiry bounds the hold.
+          keepLockAfterSubmit = true;
           setRegistered(true);
           addRegistration(event, formData);
           clearSession();
@@ -368,7 +395,9 @@ const useEventRegistration = (eventIdParam) => {
 
       toast.error(failureMessage);
     } finally {
-      registrationLocks.delete(eventId);
+      if (!keepLockAfterSubmit) {
+        registrationLocks.delete(eventId);
+      }
       isSubmittingRef.current = false;
       setSubmitting(false);
     }
@@ -388,7 +417,7 @@ const useEventRegistration = (eventIdParam) => {
       return;
     }
 
-    if (!validateAll()) {
+    if (!(await validateAll())) {
       toast.error("Please fill in all required fields correctly");
       return;
     }

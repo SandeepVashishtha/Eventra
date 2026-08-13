@@ -110,7 +110,7 @@ const AnalyticsDossierAI = () => {
                <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
                  <div 
                    className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500 transition-all duration-1000 ease-out"
-                   style={{ width: \`\${progress}%\` }}
+                   style={{ width: `${progress}%` }}
                  ></div>
                </div>
              </div>

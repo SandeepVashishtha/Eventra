@@ -26,19 +26,73 @@ export const submitEventFeedback = async ({ eventId, rating, comment, tags = [] 
 };
 
 /**
- * Get all feedback for an event
+ * Get all feedback for an event with optional pagination, sorting, and filtering
  * @param {string} eventId - Event identifier
- * @returns {Array} Array of feedback objects
+ * @param {Object} options - Optional configuration object
+ * @param {number} options.filterByRating - Filter by specific rating (1-5)
+ * @param {string} options.sortBy - Field to sort by (default: 'createdAt')
+ * @param {string} options.sortOrder - Sort order ('asc' or 'desc', default: 'desc')
+ * @param {number} options.page - Page number for pagination (1-indexed)
+ * @param {number} options.limit - Items per page
+ * @returns {Array|Object} Array of feedback objects, or paginated object with { data, total, page, totalPages }
  */
-export const getEventFeedback = (eventId) => {
+export const getEventFeedback = (eventId, options = {}) => {
   if (typeof window === "undefined") return [];
   try {
     const allFeedback = safeJsonParse(localStorage.getItem(FEEDBACK_STORAGE_KEY), {});
-    const rawFeedback = allFeedback[eventId] || [];
-    return rawFeedback.map(f => ({
+    let rawFeedback = allFeedback[eventId] || [];
+
+    // Apply sanitization to all feedback
+    let list = rawFeedback.map(f => ({
       ...f,
       comment: f.comment ? sanitizeHtml(f.comment) : f.comment
     }));
+
+    // 1. Filtering
+    if (options.filterByRating !== undefined) {
+      list = list.filter((f) => f.rating === options.filterByRating);
+    }
+
+    // 2. Sorting
+    const sortBy = options.sortBy || 'createdAt';
+    const sortOrder = options.sortOrder === 'asc' ? 1 : -1;
+    
+    // Create a safe sorting function that handles missing fields
+    list.sort((a, b) => {
+      const aVal = a[sortBy];
+      const bVal = b[sortBy];
+      
+      // Handle undefined/missing values by sorting them to the end
+      if (aVal === undefined || aVal === null) return 1;
+      if (bVal === undefined || bVal === null) return -1;
+      
+      // Numeric comparison for rating
+      if (sortBy === 'rating') {
+        return (aVal - bVal) * sortOrder;
+      }
+      
+      // String comparison for other fields (createdAt, updatedAt, etc.)
+      if (aVal > bVal) return sortOrder;
+      if (aVal < bVal) return -sortOrder;
+      return 0;
+    });
+
+    // 3. Pagination
+    if (options.page && options.limit) {
+      const page = Math.max(1, options.page);
+      const limit = Math.max(1, options.limit);
+      const start = (page - 1) * limit;
+      const total = list.length;
+      
+      return {
+        data: list.slice(start, start + limit),
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+      };
+    }
+
+    return list;
   } catch (error) {
     console.warn("Error retrieving feedback:", error);
     return [];
@@ -50,10 +104,20 @@ export const getEventFeedback = (eventId) => {
  * @param {string} eventId - Event identifier
  * @param {Object} feedback - Feedback object { rating, comment, userId?, tags?, recommend? }
  * @returns {boolean} Success status
+ * @throws {Error} When rating is invalid (not a number or outside 1-5 range)
  */
 export const saveFeedback = (eventId, feedback) => {
   if (typeof window === "undefined") return false;
   try {
+    // Validate required fields
+    if (!eventId || !feedback || !feedback.userId) return false;
+
+    // Validate rating: must be a number between 1 and 5
+    const rating = Number(feedback.rating);
+    if (isNaN(rating) || rating < 1 || rating > 5) {
+      throw new Error('Rating must be a number between 1 and 5.');
+    }
+
     const allFeedback = safeJsonParse(localStorage.getItem(FEEDBACK_STORAGE_KEY), {});
     const rawList = allFeedback[eventId] || [];
 
@@ -61,17 +125,30 @@ export const saveFeedback = (eventId, feedback) => {
     const feedbackMap = new Map(rawList.map((f) => [f.userId, f]));
 
     const userId = feedback.userId || crypto.randomUUID();
-    const feedbackObject = {
+    const existingFeedback = feedbackMap.get(userId);
+    const now = new Date().toISOString();
+
+    // Normalize and sanitize feedback fields
+    const normalizedFeedback = {
       ...feedback,
       userId,
-      submittedAt: new Date().toISOString(),
+      rating,
+      comment: (feedback.comment || '').trim().slice(0, 1000),
+      tags: Array.isArray(feedback.tags) ? feedback.tags : [],
+      recommend: Boolean(feedback.recommend),
+      createdAt: existingFeedback ? existingFeedback.createdAt || existingFeedback.submittedAt || now : now,
+      updatedAt: now,
     };
 
-    feedbackMap.set(userId, feedbackObject);
+    feedbackMap.set(userId, normalizedFeedback);
     allFeedback[eventId] = Array.from(feedbackMap.values());
     localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(allFeedback));
     return true;
   } catch (error) {
+    // Re-throw validation errors so callers can handle them appropriately
+    if (error.message === 'Rating must be a number between 1 and 5.') {
+      throw error;
+    }
     console.warn("Error saving feedback:", error);
     return false;
   }
@@ -85,12 +162,12 @@ export const saveFeedback = (eventId, feedback) => {
  */
 export const hasUserSubmittedFeedback = (eventId, userId = null) => {
   try {
-    const feedback = getEventFeedback(eventId);
     if (!userId) {
-      return feedback.length > 0;
+      return false;
     }
-    const userIdSet = new Set(feedback.map((f) => f.userId));
-    return userIdSet.has(userId);
+    const feedback = getEventFeedback(eventId);
+    const userIdSet = new Set(feedback.map((f) => String(f.userId)));
+    return userIdSet.has(String(userId));
   } catch (error) {
     console.warn("Error checking feedback status:", error);
     return false;
@@ -198,28 +275,23 @@ export const getTopFeedbackTags = (eventId, limit = 5) => {
  */
 export const getRecommendationStats = (eventId) => {
   try {
-    const feedback = getEventFeedback(eventId);
-    const { recommendCount, notRecommendCount, total } = feedback.reduce(
-      (acc, f) => {
-        if (f.recommend === true) acc.recommendCount++;
-        else if (f.recommend === false) acc.notRecommendCount++;
-        if (f.recommend !== undefined) acc.total++;
-        return acc;
-      },
-      { recommendCount: 0, notRecommendCount: 0, total: 0 }
-    );
+    const feedbackList = getEventFeedback(eventId);
 
-    const percentage = total > 0 ? Math.round((recommendCount / total) * 100) : 0;
+    if (!feedbackList || feedbackList.length === 0) {
+      return { recommendCount: 0, notRecommendCount: 0, percentage: 0 };
+    }
+
+    const recommendCount = feedbackList.filter((f) => Boolean(f.recommend)).length;
+    const total = feedbackList.length;
 
     return {
       recommendCount,
-      notRecommendCount,
-      total,
-      percentage,
+      notRecommendCount: total - recommendCount,
+      percentage: Math.round((recommendCount / total) * 100),
     };
   } catch (error) {
-    console.warn("Error calculating recommendation stats:", error);
-    return { recommendCount: 0, notRecommendCount: 0, total: 0, percentage: 0 };
+    //console.error('Error calculating recommendation stats:', error);
+    return { recommendCount: 0, notRecommendCount: 0, percentage: 0 };
   }
 };
 
@@ -230,18 +302,22 @@ export const getRecommendationStats = (eventId) => {
  */
 export const getTagStats = (eventId) => {
   try {
-    const feedback = getEventFeedback(eventId);
-    const tagCounts = {};
+    const feedbackList = getEventFeedback(eventId);
+    const stats = {};
 
-    feedback.forEach((f) => {
-      if (f.tags && Array.isArray(f.tags)) {
+    if (!feedbackList || !Array.isArray(feedbackList)) {
+      return stats;
+    }
+
+    feedbackList.forEach((f) => {
+      if (Array.isArray(f.tags)) {
         f.tags.forEach((tag) => {
-          tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+          stats[tag] = (stats[tag] || 0) + 1;
         });
       }
     });
 
-    return tagCounts;
+    return stats;
   } catch (error) {
     console.warn("Error calculating tag stats:", error);
     return {};
@@ -249,29 +325,69 @@ export const getTagStats = (eventId) => {
 };
 
 /**
- * Delete feedback
+ * Delete feedback for a specific user from an event
  * @param {string} eventId - Event identifier
  * @param {string} userId - User identifier
  * @returns {boolean} Success status
  */
-export const deleteFeedback = (eventId, userId = null) => {
-  if (typeof window === "undefined") return false;
+export const deleteUserFeedback = (eventId, userId) => {
+  if (!eventId || !userId) {
+    throw new Error('Both eventId and userId are required to delete single user feedback.');
+  }
+
   try {
     const allFeedback = safeJsonParse(localStorage.getItem(FEEDBACK_STORAGE_KEY), {});
     const eventFeedback = allFeedback[eventId] || [];
 
-    if (userId) {
-      allFeedback[eventId] = eventFeedback.filter((f) => f.userId !== userId);
-    } else {
-      delete allFeedback[eventId];
-    }
+    allFeedback[eventId] = eventFeedback.filter((f) => f.userId !== userId);
 
     localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(allFeedback));
     return true;
   } catch (error) {
-    console.warn("Error deleting feedback:", error);
+    //console.error('Error deleting user feedback:', error);
     return false;
   }
+};
+
+/**
+ * Clear all feedback records for an entire event
+ * @param {string} eventId - Event identifier
+ * @returns {boolean} Success status
+ */
+export const clearEventFeedback = (eventId) => {
+  if (!eventId) {
+    throw new Error('eventId is required to clear event feedback.');
+  }
+
+  try {
+    const allFeedback = safeJsonParse(localStorage.getItem(FEEDBACK_STORAGE_KEY), {});
+
+    delete allFeedback[eventId];
+
+    localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(allFeedback));
+    return true;
+  } catch (error) {
+    //console.error('Error clearing event feedback:', error);
+    return false;
+  }
+};
+
+/**
+ * Helper to sanitize CSV cells against Formula Injection and escape special characters
+ * @param {any} value - Cell value to sanitize
+ * @returns {string} Sanitized and quote-wrapped CSV cell string
+ */
+export const sanitizeCSVCell = (value) => {
+  if (value === null || value === undefined) return '""';
+  let stringValue = String(value);
+
+  // Prevent CSV Formula Injection (Excel / Google Sheets trigger characters)
+  if (/^[=+\-@\t\r]/.test(stringValue)) {
+    stringValue = `'${stringValue}`;
+  }
+
+  // Escape internal double quotes and wrap value in double quotes
+  return `"${stringValue.replace(/"/g, '""')}"`;
 };
 
 /**
@@ -287,16 +403,17 @@ export const exportFeedbackAsCSV = (eventId) => {
       return '';
     }
 
-    const headers = ['Rating', 'Comment', 'Tags', 'Recommend', 'Submitted At'];
+    const headers = ['Rating', 'Comment', 'Tags', 'Recommend', 'Created At', 'Updated At'];
     const rows = feedback.map((f) => [
-      f.rating || '',
-      `"${(f.comment || '').replace(/"/g, '""')}"`,
-      (f.tags || []).join(';'),
-      f.recommend !== undefined ? (f.recommend ? 'Yes' : 'No') : '',
-      f.submittedAt ? new Date(f.submittedAt).toLocaleString() : '',
+      sanitizeCSVCell(f.rating),
+      sanitizeCSVCell(f.comment || ''),
+      sanitizeCSVCell(Array.isArray(f.tags) ? f.tags.join(';') : ''),
+      sanitizeCSVCell(f.recommend !== undefined ? (f.recommend ? 'Yes' : 'No') : ''),
+      sanitizeCSVCell(f.createdAt ? new Date(f.createdAt).toLocaleString() : ''),
+      sanitizeCSVCell(f.updatedAt ? new Date(f.updatedAt).toLocaleString() : ''),
     ]);
 
-    const csv = [headers, ...rows].map((row) => row.join(',')).join('\n');
+    const csv = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
     return csv;
   } catch (error) {
     console.warn("Error exporting feedback:", error);

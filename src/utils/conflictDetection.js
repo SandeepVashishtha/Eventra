@@ -42,24 +42,141 @@ const getEffectiveDuration = (event, fallbackMinutes = 60) => {
 };
 
 /**
+ * Parse a full ISO timestamp to UTC epoch ms.
+ *
+ * Handles both explicit-offset timestamps (e.g. "2026-06-01T10:00:00Z" or
+ * "2026-06-01T10:00:00+05:30", which are self-describing) and naive local
+ * wall-clock timestamps ("2026-06-01T10:00:00"), which are interpreted in the
+ * event's timezone via parseEventToUTC.
+ *
+ * @param {string} iso  - Full ISO timestamp, not a bare "YYYY-MM-DD" date
+ * @param {string} tz   - IANA timezone used for naive timestamps
+ * @returns {number|null}
+ */
+const parseIsoTimestampUTC = (iso, tz) => {
+  if (!iso || typeof iso !== "string") return null;
+
+  // Explicit offset or Z suffix → the instant is self-describing
+  if (/[zZ]|[+-]\d{2}:?\d{2}$/.test(iso)) {
+    const ms = new Date(iso).getTime();
+    return Number.isNaN(ms) ? null : ms;
+  }
+
+  // Naive "YYYY-MM-DDTHH:MM[:ss]" → treat wall-clock as local in `tz`
+  const match = iso.match(/^(\d{4}-\d{2}-\d{2})T(\d{1,2}):(\d{2})/);
+  if (!match) return null;
+
+  return parseEventToUTC(match[1], `${match[2]}:${match[3]}`, tz);
+};
+
+/**
+ * Resolve an event's start instant (UTC ms).
+ *
+ * Prefers the explicit { date, time } pair used by mock/hackathon events, then
+ * falls back to the single full ISO timestamp returned by the real API
+ * (event.eventDate / event.startDate / event.date). Returns null when neither
+ * is parseable.
+ *
+ * @param {object} event
+ * @param {string} tz
+ * @returns {number|null}
+ */
+const parseEventStartUTC = (event, tz) => {
+  const fromPair = parseEventToUTC(event?.date, event?.time, tz);
+  if (fromPair !== null) return fromPair;
+
+  const iso = event?.eventDate || event?.startDate || event?.date;
+  return parseIsoTimestampUTC(iso, tz);
+};
+
+/**
+ * Given a "YYYY-MM-DD" date string, return the next calendar day as
+ * "YYYY-MM-DD" using UTC date arithmetic so month/year rollovers are correct.
+ *
+ * @param {string} dateStr
+ * @returns {string|null}
+ */
+const getNextDayString = (dateStr) => {
+  const parts = dateStr.split("-").map(Number);
+  if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return null;
+  const [year, month, day] = parts;
+  const d = new Date(Date.UTC(year, month - 1, day));
+  d.setUTCDate(d.getUTCDate() + 1);
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const dayNum = String(d.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${dayNum}`;
+};
+
+/**
+ * Resolve an all-day / date-only event to a UTC range spanning the local day
+ * [dayStart, dayEnd) in the event's timezone.
+ *
+ * An event is treated as date-only when it has a parseable date but no time
+ * component. The range covers local midnight of `dateStr` through local
+ * midnight of the following day, converted via parseEventToUTC so DST
+ * transitions inside the day are honoured. This makes an all-day event
+ * overlap any timed event that falls on the same local day.
+ *
+ * @param {object} event
+ * @param {string} tz
+ * @returns {{ startMs: number, endMs: number, allDay: boolean }|null}
+ */
+const getDateOnlyUTCRange = (event, tz) => {
+  const dateStr = event?.date || event?.eventDate || event?.startDate;
+  const normalizedDate = normalizeDateString(dateStr);
+  if (!normalizedDate) return null;
+
+  // If a time component is present the event is timed, not all-day.
+  if (event?.time && parseTimeString(event.time)) return null;
+
+  const dayStartMs = parseEventToUTC(normalizedDate, "00:00", tz);
+  if (dayStartMs === null) return null;
+
+  const nextDay = getNextDayString(normalizedDate);
+  const dayEndMs =
+    nextDay !== null ? parseEventToUTC(nextDay, "00:00", tz) : dayStartMs + 24 * 60 * 60 * 1000;
+  if (dayEndMs === null) return null;
+
+  return { startMs: dayStartMs, endMs: dayEndMs, allDay: true };
+};
+
+/**
  * Convert an event to a UTC time-range { startMs, endMs }.
  * Returns null when the event lacks enough date/time data to parse.
  *
- * @param {object} event  - Event object with .date and .time fields
+ * For all-day / date-only events (a date with no time component) the range
+ * spans the local day [dayStart, dayEnd) in the event timezone so that
+ * conflicts with other same-day events are detected.
+ *
+ * @param {object} event  - Event object with a .date/.time pair or an ISO timestamp
  * @param {number} fallbackDuration  - Minutes to use when event.durationMinutes is absent
  * @param {string} [timezone]  - IANA tz string; defaults to browser's tz
- * @returns {{ startMs: number, endMs: number }|null}
+ * @returns {{ startMs: number, endMs: number, allDay?: boolean }|null}
  */
 export const getEventUTCRange = (event, fallbackDuration = 60, timezone) => {
   if (!event) return null;
 
-  const tz = event.timezone || event.timeZone || timezone || getUserTimezone();
-  const startMs = parseEventToUTC(event.date, event.time, tz);
+  // Prefer the event's OWN timezone (explicit field, or ICS TZID) over any
+  // caller-supplied fallback and over the viewer's browser timezone. A
+  // wall-clock date+time pair must be interpreted in the event's timezone, not
+  // the viewer's, otherwise cross-timezone overlaps are computed incorrectly.
+  const tz =
+    event.timezone ||
+    event.timeZone ||
+    event.tzid ||
+    event.icsTimezone ||
+    timezone ||
+    getUserTimezone();
+  const startMs = parseEventStartUTC(event, tz);
 
-  if (startMs === null) return null;
+  if (startMs !== null) {
+    const durationMs = getEffectiveDuration(event, fallbackDuration) * 60 * 1000;
+    return { startMs, endMs: startMs + durationMs };
+  }
 
-  const durationMs = getEffectiveDuration(event, fallbackDuration) * 60 * 1000;
-  return { startMs, endMs: startMs + durationMs };
+  // All-day / date-only event: span the local day [dayStart, dayEnd).
+  return getDateOnlyUTCRange(event, tz);
 };
 
 // ---------------------------------------------------------------------------
@@ -161,7 +278,7 @@ export const findConflictingEvents = (
 
   return registeredEvents
     .filter(Boolean)                           // drop null/undefined registration entries
-    .map((reg) => reg.event || reg)
+    .map((reg) => reg.event || reg.eventSummary || reg)
     .filter(Boolean)                           // drop registrations whose .event is also null
     .filter((event) => !newEvent.id || !event.id || event.id !== newEvent.id)
     .filter((event) => doEventsOverlap(newEvent, event, fallbackDuration, tz));

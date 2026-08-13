@@ -1,58 +1,34 @@
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
-  computeAttendancePrediction,
-  buildWaitlistPromotionSummary,
-  getPredictedAttendanceSummary
+  calculateAttendeeNoShowProbability,
+  predictEventTurnout,
 } from "../src/utils/attendancePrediction.js";
 
-try {
-  // Test Case 1: computeAttendancePrediction with empty/default inputs
-  const p1 = computeAttendancePrediction();
-  assert.equal(typeof p1.attendanceProbability, "number");
-  assert.equal(typeof p1.noShowProbability, "number");
-  assert.equal(p1.predictedAttendees, 0);
-  assert.equal(p1.recommendedPromotions, 0);
-  assert.equal(p1.projectedFillRate, 0);
-  assert.equal(p1.waitlistSize, 0);
+describe("Predictive ML Attendance & No-Show Calculator Tests", () => {
+  it("should calculate individual attendee no-show probability", () => {
+    const highTurnoutUser = {
+      pastAttendanceRatio: 0.95,
+      daysRegisteredBeforeEvent: 20,
+      profileCompleteness: 100,
+      badgeCount: 5,
+      isLocalResident: true,
+    };
 
-  // Test Case 2: computeAttendancePrediction with custom event details
-  const mockEvent = {
-    title: "Awesome React Workshop",
-    startDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days from now
-    maxAttendees: 100,
-    attendees: 80,
-    price: 0, // Free event
-    eventMode: "online",
-    trending: true,
-    waitlistCount: 20
-  };
+    const prob = calculateAttendeeNoShowProbability(highTurnoutUser);
+    assert.ok(prob >= 0 && prob <= 0.3, "High engagement attendee should have low no-show probability");
+  });
 
-  const p2 = computeAttendancePrediction(mockEvent, { reminders: [1, 2] });
-  assert(p2.attendanceProbability > 50, "Should have healthy attendance probability for online, free, trending event with reminders");
-  assert(p2.predictedAttendees > 0, "Should estimate non-zero attendees");
-  assert.equal(p2.waitlistSize, 20);
+  it("should aggregate overall event turnout predictions", () => {
+    const sampleRegistrations = [
+      { pastAttendanceRatio: 0.9, daysRegisteredBeforeEvent: 14, profileCompleteness: 90, badgeCount: 3, isLocalResident: true },
+      { pastAttendanceRatio: 0.3, daysRegisteredBeforeEvent: 1, profileCompleteness: 40, badgeCount: 0, isLocalResident: false },
+      { pastAttendanceRatio: 0.8, daysRegisteredBeforeEvent: 10, profileCompleteness: 85, badgeCount: 2, isLocalResident: true },
+    ];
 
-  // Test Case 3: buildWaitlistPromotionSummary when no waitlist or capacity exists
-  const summary1 = buildWaitlistPromotionSummary();
-  assert.equal(summary1.summary, "No waitlist data available.");
-  assert.deepEqual(summary1.actions, []);
-  assert.equal(summary1.seatsToPromote, 0);
-
-  // Test Case 4: buildWaitlistPromotionSummary with active waitlist and capacity
-  const summary2 = buildWaitlistPromotionSummary(mockEvent, { reminders: [1, 2] });
-  assert(summary2.seatsToPromote >= 0);
-  assert(summary2.summary.length > 0);
-  assert(summary2.actions.length > 0);
-
-  // Test Case 5: getPredictedAttendanceSummary formatting
-  const predSummary = getPredictedAttendanceSummary(mockEvent, { reminders: [1, 2] });
-  assert.equal(predSummary.title, mockEvent.title);
-  assert.equal(typeof predSummary.attendanceProbability, "number");
-  assert.equal(typeof predSummary.confidenceLabel, "string");
-  assert(predSummary.loadReason.length > 0);
-
-  console.log("attendancePrediction tests passed ✓");
-} catch (error) {
-  console.error("Test failed:", error);
-  process.exit(1);
-}
+    const stats = predictEventTurnout(sampleRegistrations);
+    assert.equal(stats.totalRegistered, 3);
+    assert.ok(stats.predictedTurnout > 0);
+    assert.ok(stats.recommendedOverbookingCapacity >= stats.totalRegistered);
+  });
+});

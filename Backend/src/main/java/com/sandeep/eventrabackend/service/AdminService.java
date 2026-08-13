@@ -1,8 +1,11 @@
 package com.sandeep.eventrabackend.service;
 
 import com.sandeep.eventrabackend.dto.AdminDashboardStatsDTO;
+import com.sandeep.eventrabackend.dto.AdminStatsResponse;
 import com.sandeep.eventrabackend.dto.RegistrationTrendDTO;
 import com.sandeep.eventrabackend.dto.response.*;
+import com.sandeep.eventrabackend.exception.RegistrationConflictException;
+import com.sandeep.eventrabackend.model.Event;
 import com.sandeep.eventrabackend.model.Feedback;
 import com.sandeep.eventrabackend.model.Hackathon;
 import com.sandeep.eventrabackend.model.Role;
@@ -11,6 +14,8 @@ import com.sandeep.eventrabackend.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.util.StringUtils;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -33,19 +38,20 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AdminService {
 
-    private final UserRepository              userRepository;
-    private final EventRepository             eventRepository;
-    private final HackathonRepository         hackathonRepository;
+    private final UserRepository userRepository;
+    private final EventRepository eventRepository;
+    private final HackathonRepository hackathonRepository;
     private final FeedbackAnalyticsRepository feedbackRepository;
-    private final EventAnalyticsRepository    eventAnalyticsRepo;
+    private final EventAnalyticsRepository eventAnalyticsRepo;
     private final RegistrationAnalyticsRepository regRepo;
     private final EventRegistrationRepository eventRegistrationRepository;
-    private final EventWaitlistRepository     eventWaitlistRepository;
-    private final EventTeamMemberRepository   eventTeamMemberRepository;
+    private final EventWaitlistRepository eventWaitlistRepository;
+    private final EventTeamMemberRepository eventTeamMemberRepository;
     private final EventRoleAuditLogRepository eventRoleAuditLogRepository;
     private final HackathonRegistrationRepository hackathonRegistrationRepository;
-    private final ProjectUpvoteRepository     projectUpvoteRepository;
-    private final NotificationRepository      notificationRepository;
+    private final ProjectUpvoteRepository projectUpvoteRepository;
+    private final NotificationRepository notificationRepository;
+    private final EventService eventService;
 
     // ══════════════════════════════════════════════════════════════════════
     // 1. USER MANAGEMENT
@@ -58,11 +64,19 @@ public class AdminService {
      * @param size page size
      * @param role optional role filter (e.g. "CLIENT") — null means all users
      */
-    public PagedResponse<AdminUserResponse> getUsers(int page, int size, String role) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+    public PagedResponse<AdminUserResponse> getUsers(int page, int size, String role, String search) {
+        int safePage = Math.max(page, 0);
+        Pageable pageable = PageRequest.of(safePage, size, Sort.by("createdAt").descending());
         Page<User> userPage;
+        boolean hasSearch = StringUtils.hasText(search);
+        String trimmedSearch = hasSearch ? search.trim() : null;
 
-        if (role != null && !role.isBlank()) {
+        if (hasSearch && role != null && !role.isBlank()) {
+            Role roleEnum = parseRole(role);
+            userPage = userRepository.searchUsersByRole(roleEnum, trimmedSearch, pageable);
+        } else if (hasSearch) {
+            userPage = userRepository.searchUsers(trimmedSearch, pageable);
+        } else if (role != null && !role.isBlank()) {
             Role roleEnum = parseRole(role);
             userPage = userRepository.findByRole(roleEnum, pageable);
         } else {
@@ -91,17 +105,49 @@ public class AdminService {
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
 
         Role callerRole = getAuthenticatedRole();
-
-        if (callerRole != Role.SUPER_ADMIN) {
-            if (requestedRole == Role.SUPER_ADMIN) {
-                throw new AccessDeniedException("Only SUPER_ADMIN users can assign the SUPER_ADMIN role");
-            }
-            if (targetUser.getRole() == Role.SUPER_ADMIN) {
-                throw new AccessDeniedException("Only SUPER_ADMIN users can modify SUPER_ADMIN accounts");
-            }
-        }
+        assertCanModifyTarget(callerRole, targetUser);
+        assertCanAssignRole(callerRole, requestedRole);
 
         targetUser.setRole(requestedRole);
+        return toAdminUserResponse(userRepository.save(targetUser));
+    }
+
+    @Transactional
+    public AdminUserResponse updateUser(Long id, com.sandeep.eventrabackend.dto.request.AdminUpdateUserRequest request) {
+        User targetUser = userRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
+
+        Role callerRole = getAuthenticatedRole();
+        assertCanModifyTarget(callerRole, targetUser);
+
+        if (request.getFirstName() != null) {
+            targetUser.setFirstName(request.getFirstName().trim());
+        }
+        if (request.getLastName() != null) {
+            targetUser.setLastName(request.getLastName().trim());
+        }
+        if (request.getUsername() != null) {
+            String username = request.getUsername().trim();
+            if (!username.equalsIgnoreCase(targetUser.getUsername()) && userRepository.existsByUsername(username)) {
+                throw new IllegalArgumentException("Username is already taken");
+            }
+            targetUser.setUsername(username);
+        }
+        if (request.getEmail() != null) {
+            String requestedEmail = request.getEmail().trim().toLowerCase();
+            if (!targetUser.getEmail().equalsIgnoreCase(requestedEmail)) {
+                throw new IllegalArgumentException(
+                        "Email changes are not allowed through the admin panel. "
+                                + "Changing an email would orphan the user's active JWT session and email-keyed data. "
+                                + "Email must be changed through a dedicated, verified self-service flow.");
+            }
+        }
+        if (request.getRole() != null && !request.getRole().isBlank()) {
+            Role requestedRole = parseRole(request.getRole());
+            assertCanAssignRole(callerRole, requestedRole);
+            targetUser.setRole(requestedRole);
+        }
+
         return toAdminUserResponse(userRepository.save(targetUser));
     }
 
@@ -113,10 +159,15 @@ public class AdminService {
         User targetUser = userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
 
-        Role callerRole = getAuthenticatedRole();
-        if (callerRole != Role.SUPER_ADMIN && targetUser.getRole() == Role.SUPER_ADMIN) {
-            throw new AccessDeniedException("Only SUPER_ADMIN users can delete SUPER_ADMIN accounts");
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && targetUser.getEmail().equalsIgnoreCase(auth.getName())) {
+            throw new IllegalArgumentException("Administrators cannot delete their own active account.");
         }
+
+        Role callerRole = getAuthenticatedRole();
+        assertCanModifyTarget(callerRole, targetUser);
+
+        List<Long> affectedEventIds = eventRegistrationRepository.findEventIdsByUser_Id(id);
 
         eventRegistrationRepository.deleteByUser_Id(id);
         eventWaitlistRepository.deleteByUser_Id(id);
@@ -125,6 +176,17 @@ public class AdminService {
         notificationRepository.deleteByUser_Id(id);
         feedbackRepository.deleteByUser_Id(id);
         eventRepository.deleteAttendeeRowsByUserId(id);
+        eventTeamMemberRepository.clearAssignedByUserId(id);
+        eventTeamMemberRepository.deleteByUser_Id(id);
+
+        for (Long eventId : affectedEventIds) {
+            eventRepository.findById(eventId).ifPresent(event -> {
+                event.setRegisteredCount((int) eventRegistrationRepository
+                        .countByEvent_IdAndStatus(eventId, "CONFIRMED"));
+                eventRepository.save(event);
+            });
+            eventService.promoteWaitlistAfterVacancy(eventId);
+        }
 
         userRepository.deleteById(id);
     }
@@ -136,25 +198,77 @@ public class AdminService {
     /**
      * Returns all events (paginated), visible to admin regardless of isPublic.
      */
-    public PagedResponse<EventResponse> getEvents(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("eventDate").descending());
-        return PagedResponse.from(eventRepository.findAll(pageable).map(this::toEventResponse));
+    public PagedResponse<EventResponse> getEvents(int page, int size, String search) {
+        int safePage = Math.max(page, 0);
+        Pageable pageable = PageRequest.of(safePage, size, Sort.by("eventDate").descending());
+        Specification<com.sandeep.eventrabackend.model.Event> spec = EventSpecifications.searchContains(search);
+        Page<com.sandeep.eventrabackend.model.Event> eventPage = spec == null
+                ? eventRepository.findAll(pageable)
+                : eventRepository.findAll(spec, pageable);
+        return PagedResponse.from(eventPage.map(this::toEventResponse));
     }
 
     /**
      * Returns all attendees registered for a specific event.
      */
     public List<AdminUserResponse> getEventAttendees(Long eventId) {
-        var event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new EntityNotFoundException("Event not found with id: " + eventId));
-        return event.getAttendees().stream()
-                .map(this::toAdminUserResponse)
+        if (!eventRepository.existsById(eventId)) {
+            throw new EntityNotFoundException("Event not found with id: " + eventId);
+        }
+        return eventRegistrationRepository.findByEvent_Id(eventId).stream()
+                .filter(registration -> "CONFIRMED".equals(registration.getStatus()))
+                .map(registration -> toAdminUserResponse(registration.getUser()))
                 .collect(Collectors.toList());
     }
 
     /**
      * Force-deletes an event (admin override, bypasses organizer ownership).
+     * Dependent rows are removed first so the delete never hits a foreign-key
+     * violation and no orphaned rows are left behind (Issue #12082).
      */
+    @Transactional
+    public EventResponse updateEvent(Long id, com.sandeep.eventrabackend.dto.request.EventUpdateRequest request) {
+        Event event = eventRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Event not found with id: " + id));
+
+        Integer previousCapacity = event.getCapacity();
+
+        if (request.getCapacity() != null && request.getCapacity() < event.getRegisteredCount()) {
+            throw new RegistrationConflictException(
+                    "Capacity cannot be reduced below the current number of registered users ("
+                            + event.getRegisteredCount() + ")");
+        }
+
+        event.setTitle(request.getTitle());
+        event.setDescription(request.getDescription());
+        event.setLocation(request.getLocation());
+        event.setEventDate(request.getEventDate());
+        if (request.getCapacity() != null) {
+            event.setCapacity(request.getCapacity());
+        }
+        if (request.getIsPublic() != null) {
+            event.setPublic(request.getIsPublic());
+        }
+        if (request.getImageUrl() != null) {
+            event.setImageUrl(request.getImageUrl());
+        }
+        if (request.getCategory() != null) {
+            event.setCategory(request.getCategory());
+        }
+        if (request.getTags() != null) {
+            event.setTags(request.getTags());
+        }
+
+        Event saved = eventRepository.save(event);
+
+        if (request.getCapacity() != null && previousCapacity != null
+                && request.getCapacity() > previousCapacity) {
+            eventService.promoteWaitlistAfterVacancy(id);
+        }
+
+        return toEventResponse(saved);
+    }
+
     @Transactional
     public void deleteEvent(Long id) {
         if (!eventRepository.existsById(id)) {
@@ -162,7 +276,6 @@ public class AdminService {
         }
         eventRegistrationRepository.deleteByEventId(id);
         eventWaitlistRepository.deleteByEvent_Id(id);
-        eventRepository.deleteAttendeeRowsByEventId(id);
         eventTeamMemberRepository.deleteByEvent_Id(id);
         feedbackRepository.deleteByEvent_Id(id);
         eventRoleAuditLogRepository.deleteByEventId(id);
@@ -177,8 +290,9 @@ public class AdminService {
      * Returns all hackathons (paginated).
      */
     public PagedResponse<HackathonResponse> getHackathons(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("startDate").descending());
-        return PagedResponse.from(hackathonRepository.findAll(pageable).map(this::toHackathonResponse));
+        int safePage = Math.max(page, 0);
+        Pageable pageable = PageRequest.of(safePage, size, Sort.by("startDate").descending());
+        return PagedResponse.from(hackathonRepository.findByIsDeletedFalse(pageable).map(this::toHackathonResponse));
     }
 
     /**
@@ -189,6 +303,7 @@ public class AdminService {
         if (!hackathonRepository.existsById(id)) {
             throw new EntityNotFoundException("Hackathon not found with id: " + id);
         }
+        hackathonRegistrationRepository.deleteByHackathonId(id);
         hackathonRepository.deleteById(id);
     }
 
@@ -197,7 +312,8 @@ public class AdminService {
     // ══════════════════════════════════════════════════════════════════════
 
     /**
-     * Returns an extended admin dashboard with user, event, hackathon, and feedback stats.
+     * Returns an extended admin dashboard with user, event, hackathon, and feedback
+     * stats.
      */
     public AdminDashboardStatsDTO getAdminDashboard() {
         LocalDateTime now = LocalDateTime.now();
@@ -209,6 +325,8 @@ public class AdminService {
                 .newUsersThisMonth(userRepository.countByCreatedAtAfter(startOfMonth))
                 .totalAdmins(userRepository.countByRole(Role.ADMIN))
                 .totalOrganizers(userRepository.countByRole(Role.ORGANIZER))
+                .totalAttendees(userRepository.countByRole(Role.ATTENDEE)
+                        + userRepository.countByRole(Role.CLIENT))
                 .totalClients(userRepository.countByRole(Role.CLIENT))
                 // Events
                 .totalEvents(eventAnalyticsRepo.count())
@@ -220,11 +338,28 @@ public class AdminService {
                 .averageCapacityUtilization(
                         Optional.ofNullable(eventAnalyticsRepo.findAverageCapacityUtilization()).orElse(0.0))
                 // Hackathons
-                .totalHackathons(hackathonRepository.count())
+                .totalHackathons(hackathonRepository.countByIsDeletedFalse())
                 // Feedback
                 .totalFeedbackSubmissions(feedbackRepository.countTotalFeedback())
                 .overallAverageRating(
                         Optional.ofNullable(feedbackRepository.findOverallAverageRating()).orElse(0.0))
+                .build();
+    }
+
+    /**
+     * Returns the compact dashboard stats consumed by the admin home page.
+     *
+     * <p>Mirrors {@code GET /api/admin/stats}: total users, active (participating)
+     * users, total and upcoming events, and total confirmed registrations.
+     */
+    public AdminStatsResponse getDashboardStats() {
+        LocalDateTime now = LocalDateTime.now();
+        return AdminStatsResponse.builder()
+                .totalUsers(userRepository.count())
+                .activeUsers(eventAnalyticsRepo.countUniqueParticipants())
+                .totalEvents(eventAnalyticsRepo.count())
+                .upcoming(eventAnalyticsRepo.countActiveEvents(now))
+                .totalParticipants(regRepo.countConfirmedRegistrations())
                 .build();
     }
 
@@ -237,7 +372,7 @@ public class AdminService {
         LocalDateTime from = LocalDateTime.now().minusMonths(months);
         List<Object[]> raw = userRepository.findMonthlySignupTrend(from);
 
-        final long[] cumulative = {0};
+        final long[] cumulative = { 0 };
         return raw.stream().map(row -> {
             long count = ((Number) row[1]).longValue();
             cumulative[0] += count;
@@ -257,8 +392,8 @@ public class AdminService {
                 .stream()
                 .map(row -> {
                     Map<String, Object> m = new LinkedHashMap<>();
-                    m.put("eventId",       ((Number) row[0]).longValue());
-                    m.put("eventTitle",    row[1].toString());
+                    m.put("eventId", ((Number) row[0]).longValue());
+                    m.put("eventTitle", row[1].toString());
                     m.put("registrations", ((Number) row[2]).longValue());
                     m.put("capacity",
                             row[3] != null ? ((Number) row[3]).intValue() : "Unlimited");
@@ -279,7 +414,8 @@ public class AdminService {
      * Returns all feedback entries (paginated).
      */
     public PagedResponse<AdminFeedbackResponse> getAllFeedback(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("submittedAt").descending());
+        int safePage = Math.max(page, 0);
+        Pageable pageable = PageRequest.of(safePage, size, Sort.by("submittedAt").descending());
         return PagedResponse.from(feedbackRepository.findAll(pageable).map(this::toAdminFeedbackResponse));
     }
 
@@ -369,5 +505,31 @@ public class AdminService {
             throw new AccessDeniedException("Unable to determine the authenticated user's role");
         }
         return Role.valueOf(authentication.getAuthorities().iterator().next().getAuthority());
+    }
+
+    /**
+     * Non–SUPER_ADMIN callers may not modify ADMIN or SUPER_ADMIN accounts
+     * (email/role/delete would otherwise enable peer admin takeover).
+     */
+    private void assertCanModifyTarget(Role callerRole, User targetUser) {
+        if (callerRole == Role.SUPER_ADMIN) {
+            return;
+        }
+        Role targetRole = targetUser.getRole();
+        if (targetRole == Role.SUPER_ADMIN) {
+            throw new AccessDeniedException("Only SUPER_ADMIN users can modify SUPER_ADMIN accounts");
+        }
+        if (targetRole == Role.ADMIN) {
+            throw new AccessDeniedException("Only SUPER_ADMIN users can modify ADMIN accounts");
+        }
+    }
+
+    private void assertCanAssignRole(Role callerRole, Role requestedRole) {
+        if (callerRole == Role.SUPER_ADMIN) {
+            return;
+        }
+        if (requestedRole == Role.SUPER_ADMIN || requestedRole == Role.ADMIN) {
+            throw new AccessDeniedException("Only SUPER_ADMIN users can assign ADMIN or SUPER_ADMIN roles");
+        }
     }
 }

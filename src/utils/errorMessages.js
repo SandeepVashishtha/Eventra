@@ -1,159 +1,353 @@
 /**
- * @fileoverview errorMessages.js
- * @module utils/errorMessages
+ * Centralized User-Facing Error Sanitization & Translation Engine
  *
- * Centralized localized utility mapping for translation, user-friendly
- * feedback generation, and error message sanitization across Eventra flows.
- *
- * Security Design Context:
- * Direct exposure of backend infrastructure stack traces, low-level database constraints,
- * or framework internal warnings (e.g. Postgres duplicate-key violations, Node call stacks)
- * poses a severe information disclosure vulnerability. Attackers utilize database or index names
- * to map target tables or trace SQL injectability vectors.
- *
- * To mitigate this risk, this module acts as a "Data Sanitization Gateway" and "Translation Mapper",
- * intercepting raw exceptions and map/normalize them into localized, safe UI strings.
- *
- * Strict ES Module (ESM) rules mandate relative imports to include the '.js' file extension.
+ * Prevents raw backend stack traces, SQL queries, database column names, internal
+ * IP addresses, and framework metadata from leaking into client-side UI toasts
+ * and form notifications.
  */
 
-import i18n from "../i18n/i18n.js";
+// ============================================================================
+// 1. HTTP Status Code Mapping Table
+// ============================================================================
 
-/**
- * Convenient short wrapper referencing the global i18n translation system.
- *
- * @param {string} key - The nested localization dictionary selector path (e.g. "error.generic").
- * @returns {string} The localized text corresponding to the language environment, or key if missing.
- */
-const t = (key) => i18n.t(key);
+export const STATUS_MESSAGES = {
+  400: "The request could not be understood. Please check your input and try again.",
+  401: "Your credentials are incorrect or your session has expired. Please sign in again.",
+  403: "You don't have permission to perform this action.",
+  404: "The requested resource was not found or may have been moved.",
+  405: "This operation is not supported for the requested resource.",
+  408: "The request timed out. Please check your connection and try again.",
+  409: "This information is already in use. Please try a different value.",
+  413: "The uploaded file or payload exceeds the maximum allowed size.",
+  415: "The provided media or file format is not supported.",
+  422: "Some fields contain invalid values. Please review and correct them.",
+  429: "Too many requests. Please wait a moment before trying again.",
+  500: "Something went wrong on our end. Please try again shortly.",
+  502: "The service is temporarily unavailable. Please try again shortly.",
+  503: "The service is currently undergoing maintenance. Please try again shortly.",
+  504: "The upstream server failed to respond in time. Please try again.",
+};
 
-// 🔥 FIX: Pre-compile each keyword regex pattern ONCE at module load.
-// Previously every call to getPublicErrorMessage recompiled the patterns
-// inside the for-loop. Now the patterns are built once, and only the
-// per-call message lookup is done in the loop.
-//
-// Patterns are intentionally written with bounded [\\s\\S]{0,200}? quantifiers
-// instead of unbounded .* to prevent catastrophic backtracking (ReDoS) on
-// attacker-controlled long error strings.
-const KEYWORD_PATTERNS = [
-  /(?:email[\s\S]{0,200}?already[\s\S]{0,200}?exist)|(?:already[\s\S]{0,200}?registered)|(?:duplicate[\s\S]{0,200}?email)/i,
-  /(?:invalid[\s\S]{0,200}?password)|(?:password[\s\S]{0,200}?incorrect)|(?:wrong[\s\S]{0,200}?password)/i,
-  /(?:invalid[\s\S]{0,200}?credential)|(?:credentials[\s\S]{0,200}?incorrect)/i,
-  /(?:account[\s\S]{0,200}?not[\s\S]{0,200}?found)|(?:user[\s\S]{0,200}?not[\s\S]{0,200}?found)/i,
-  /(?:account[\s\S]{0,200}?locked)|(?:too[\s\S]{0,200}?many[\s\S]{0,200}?attempt)/i,
-  /(?:token[\s\S]{0,200}?expired)|(?:session[\s\S]{0,200}?expired)|(?:jwt[\s\S]{0,200}?expired)/i,
-  /(?:network)|(?:fetch)|(?:econnrefused)|(?:enotfound)/i,
+// ============================================================================
+// 2. Keyword & Regex Pattern Matchers
+// ============================================================================
+
+const KEYWORD_MESSAGES = [
+  // Authentication & Credentials
+  {
+    pattern: /email.*already.*exist|already.*registered|duplicate.*email/i,
+    message: "This email is already registered. Try signing in instead.",
+    category: "auth",
+  },
+  {
+    pattern: /invalid.*password|password.*incorrect|wrong.*password/i,
+    message: "Invalid email or password.",
+    category: "auth",
+  },
+  {
+    pattern: /invalid.*credential|credentials.*incorrect|auth.*failed/i,
+    message: "Invalid email or password.",
+    category: "auth",
+  },
+  {
+    pattern: /account.*not.*found|user.*not.*found|no.*user/i,
+    message: "No account found with those details.",
+    category: "auth",
+  },
+  {
+    pattern: /account.*locked|too.*many.*attempt|brute.*force/i,
+    message: "Your account has been temporarily locked due to failed attempts. Please try again later.",
+    category: "auth",
+  },
+  {
+    pattern: /token.*expired|session.*expired|jwt.*expired|invalid.*token/i,
+    message: "Your session has expired. Please sign in again.",
+    category: "auth",
+  },
+
+  // Payment & Billing
+  {
+    pattern: /card.*declined|insufficient.*fund|payment.*failed/i,
+    message: "Your payment method was declined. Please verify your card details.",
+    category: "billing",
+  },
+  {
+    pattern: /expired.*card|card.*expired/i,
+    message: "Your payment card has expired. Please update your billing information.",
+    category: "billing",
+  },
+  {
+    pattern: /stripe.*error|gateway.*error|charge.*failed/i,
+    message: "Payment processing failed. Please try again or use a different payment method.",
+    category: "billing",
+  },
+
+  // File Upload & Storage
+  {
+    pattern: /file.*too.*large|max.*file.*size|size.*exceeded/i,
+    message: "File size exceeds the maximum limit. Please choose a smaller file.",
+    category: "upload",
+  },
+  {
+    pattern: /invalid.*file.*type|unsupported.*media|mime.*type/i,
+    message: "File format is not supported. Please upload a valid document or image.",
+    category: "upload",
+  },
+
+  // Network & Connectivity
+  {
+    pattern: /network.*error|fetch.*failed|econnrefused|enotfound|net::err/i,
+    message: "Unable to reach the server. Please check your internet connection.",
+    category: "network",
+  },
+
+  // Database & Internal Leaks (Sanitize & Catch)
+  {
+    pattern: /postgres|mysql|mongodb|sqlite|typeorm|prisma|sequelize|knex|syntax.*error/i,
+    message: "A database error occurred on our end. Please try again shortly.",
+    category: "system",
+  },
 ];
 
-// Translation keys mapped 1:1 to KEYWORD_PATTERNS. We resolve the message
-// at call time (not at module load) so i18n is fully initialised.
-const KEYWORD_KEYS = [
-  "error.emailExists",
-  "error.invalidCredentials",
-  "error.invalidCredentials",
-  "error.accountNotFound",
-  "error.accountLocked",
-  "error.unauthorized",
-  "error.networkError",
-];
+// ============================================================================
+// 3. Domain Fallback Dictionaries
+// ============================================================================
 
-/**
- * Retrieves a safe, sanitized, user-facing error message suitable for displaying in the UI.
- * Inspects status codes first, and if unavailable, applies regex keyword matching on message headers.
- * Logs original error details to the developer console when executing in non-production modes.
- *
- * @param {Error|Response|object|unknown} err - The captured exception or response package.
- * @param {string} [fallback=t("error.generic")] - Optional customized fallback message if no match is found.
- * @returns {string} A safe, localized string ready for user presentation.
- */
-export function getPublicErrorMessage(err, fallback = t("error.generic")) {
-  // Non-production environment logger output
-  // Helps developers debug the low-level causes while users see sanitized text.
-  if (process.env.NODE_ENV !== "production") {
-    console.error("[Eventra error details mapped for debugging]:", err);
-  }
+export const CATEGORY_FALLBACKS = {
+  auth: "Authentication failed. Please check your credentials.",
+  billing: "Payment processing error. Please try again.",
+  upload: "File upload failed. Please verify the file and try again.",
+  network: "Network error. Please check your connection.",
+  form: "Submission failed. Please check your input and try again.",
+  system: "An internal server error occurred. Please try again shortly.",
+  general: "An unexpected error occurred. Please try again.",
+};
 
-  // 1. HTTP Status Code Mapping Matrix
-  // Explicitly mapping standardized client/server HTTP codes to clear localizable actions.
-  const STATUS_MESSAGES = {
-    400: t("error.badRequest"),          // Bad request (invalid parameter structure)
-    401: t("error.unauthorized"),        // Token expired, missing headers, session invalid
-    403: t("error.forbidden"),           // Insufficient user permissions or access role
-    404: t("error.notFound"),            // Resource, entity, or page is unavailable
-    409: t("error.conflict"),            // Duplicate records (e.g. email or username already taken)
-    422: t("error.unprocessable"),       // Validation checks failed (e.g. bad format or invalid inputs)
-    429: t("error.tooManyRequests"),     // Rate limiter thresholds tripped
-    500: t("error.serverError"),         // Database exception or internal server crash
-    502: t("error.serviceUnavailable"),   // Proxy/gateway timeout or server is starting up
-    503: t("error.serviceUnavailable"),   // System overload or scheduled maintenance
-  };
-
-  // 2. Regular Expression (Regex) Keyword Recognition Matrix
-  // When an HTTP code is unavailable, we parse raw message strings to discover matching patterns.
-  // Using case-insensitive patterns to resolve common relational database or microservice issues.
-  // (Keyword regex patterns are pre-built at module load — see top of file.)
-
-  // Safe Guard Clause: if the error argument itself is falsy, immediately yield the fallback
-  if (!err) {
-    return fallback;
-  }
-
-  // 3. Extract status code from various typical response/error structures
-  // Handles:
-  //   - Axios error responses: err.response.status
-  //   - Standard HTTP response objects: err.status
-  //   - Custom API payloads: err.statusCode
-  const status =
-    err?.response?.status ||
-    err?.status ||
-    (typeof err?.statusCode === "number" ? err.statusCode : null);
-
-  // If a known status code is resolved, return its designated localization translation
-  if (status && STATUS_MESSAGES[status]) {
-    return STATUS_MESSAGES[status];
-  }
-
-  // 4. Extract raw message body for regex pattern parsing
-  // Cascades from Axios responses to generic Error messages to prevent ReferenceError.
-  const rawMessage = (
-    err?.response?.data?.message ||
-    err?.response?.data?.error ||
-    err?.message ||
-    ""
-  ).toLowerCase();
-
-  // Iterate over each pre-compiled regex rule in the keyword table.
-  // Pattern is built once at module load; the translation key is resolved
-  // at call time so i18n is fully initialised.
-  for (let i = 0; i < KEYWORD_PATTERNS.length; i++) {
-    if (KEYWORD_PATTERNS[i].test(rawMessage)) {
-      return t(KEYWORD_KEYS[i]);
-    }
-  }
-
-  // 5. Final fallback boundary: return standard generic error string
-  return fallback;
-}
-
-/**
- * Pre-defined localized constant messages for authentication flow outcomes.
- * Provided as raw strings for simple validation forms.
- */
 export const AUTH_ERRORS = {
   loginFailed: "Invalid email or password.",
   sessionExpired: "Your session has expired. Please sign in again.",
   accountLocked: "Too many failed attempts. Please wait before trying again.",
   registrationFailed: "Registration failed. Please check your details and try again.",
   emailTaken: "This email is already registered. Try signing in instead.",
-  passwordWeak: "Your password does not meet the strength requirements.",
+  passwordWeak: "Your password does not meet the security requirements.",
 };
 
-/**
- * Pre-defined localized constant messages for form processing outcomes.
- */
 export const FORM_ERRORS = {
   submitFailed: "Submission failed. Please check your input and try again.",
   networkError: "Unable to reach the server. Please check your connection.",
   serverError: "Something went wrong on our end. Please try again shortly.",
   validationFailed: "Some fields contain invalid values. Please review them.",
 };
+
+export const BILLING_ERRORS = {
+  cardDeclined: "Your card was declined. Please try a different card.",
+  processingError: "Unable to process payment right now. Please try again.",
+  subscriptionFailed: "Failed to update subscription. Please contact support.",
+};
+
+// ============================================================================
+// 4. Extraction & Sanitization Helpers
+// ============================================================================
+
+/**
+ * Recursively extracts raw error message text from diverse response shapes
+ * (Axios, Fetch Response, GraphQL errors array, or custom API wrappers).
+ *
+ * @param {Error|Object|unknown} err - Caught error object.
+ * @returns {string} Extracted raw message string.
+ */
+export function extractRawErrorText(err) {
+  if (!err) return "";
+
+  if (typeof err === "string") return err;
+
+  // GraphQL errors array handling
+  if (Array.isArray(err?.graphQLErrors) && err.graphQLErrors.length > 0) {
+    return err.graphQLErrors.map((e) => e.message).join(" ");
+  }
+
+  // Axios or standard REST API error shapes
+  const apiMessage =
+    err?.response?.data?.message ||
+    err?.response?.data?.error?.message ||
+    err?.response?.data?.error ||
+    err?.data?.message ||
+    err?.message;
+
+  if (typeof apiMessage === "string") return apiMessage;
+
+  // Handles nested field validation errors object { errors: { email: "taken" } }
+  if (typeof err?.response?.data?.errors === "object") {
+    try {
+      return JSON.stringify(err.response.data.errors);
+    } catch {
+      return "";
+    }
+  }
+
+  return "";
+}
+
+/**
+ * Resolves HTTP status code across multiple API response formats.
+ *
+ * @param {Error|Object|unknown} err - Error instance.
+ * @returns {number|null} HTTP status code or null.
+ */
+export function extractStatusCode(err) {
+  if (!err) return null;
+
+  // Extract HTTP status
+  const status =
+    err?.response?.status ||
+    err?.status ||
+    err?.statusCode ||
+    err?.response?.data?.statusCode;
+
+  return typeof status === "number" ? status : null;
+}
+
+/**
+ * Checks if a raw error message contains sensitive leak vectors
+ * (e.g., file paths, stack traces, database terms).
+ *
+ * @param {string} text - Raw error text.
+ * @returns {boolean} True if sensitive data detected.
+ */
+function containsSensitiveData(text) {
+  const sensitivePatterns = [
+    /at\s+[\w\d_.]+\s+\(/i, // Stack trace line
+    /SELECT\s+.*\s+FROM/i,   // SQL query
+    /INSERT\s+INTO/i,        // SQL query
+    /mongoerror/i,          // Mongo detail
+    /\/node_modules\//i,     // Server file path
+    /C:\\\\/i,              // Windows file path
+  ];
+
+  return sensitivePatterns.some((pattern) => pattern.test(text));
+}
+
+// ============================================================================
+// 5. Primary Public API
+// ============================================================================
+
+/**
+ * Returns a safe, user-friendly error message for display in UI toasts and alerts.
+ * Logs original error details to dev console in non-production environments.
+ *
+ * @param {Error|Object|unknown} err - Caught error instance.
+ * @param {Object|string} [options] - Configuration options or fallback string.
+ * @param {string} [options.fallback] - Custom fallback message.
+ * @param {string} [options.category] - Target domain fallback category.
+ * @param {boolean} [options.log=true] - Enable non-production console logging.
+ * @returns {string} Safe displayable message string.
+ */
+export function getPublicErrorMessage(err, options = {}) {
+  const fallback = typeof options === "string" 
+    ? options 
+    : options.fallback || CATEGORY_FALLBACKS[options.category] || CATEGORY_FALLBACKS.general;
+
+  const shouldLog = typeof options === "object" && options.log !== undefined ? options.log : true;
+
+  if (process.env.NODE_ENV !== "production" && shouldLog) {
+    console.error("[Eventra Error Sanitizer]", err);
+  }
+
+  if (!err) return fallback;
+
+  // 1. Match HTTP Status Code
+  const statusCode = extractStatusCode(err);
+  if (statusCode && STATUS_MESSAGES[statusCode]) {
+    return STATUS_MESSAGES[statusCode];
+  }
+
+  // 2. Extract and Inspect Raw Message
+  const rawText = extractRawErrorText(err);
+
+  if (!rawText) return fallback;
+
+  // Reject sensitive leaks directly to fallback
+  if (containsSensitiveData(rawText)) {
+    return fallback;
+  }
+
+  // 3. Regex Match against Keyword Table
+  for (const item of KEYWORD_MESSAGES) {
+    if (item.pattern.test(rawText)) {
+      return item.message;
+    }
+  }
+
+  // Fallback to HTTP Status code map
+  if (status && STATUS_MESSAGES[status]) {
+    return {
+      message: translate(`error.status.${status}`, STATUS_MESSAGES[status]),
+      status,
+      category: status >= 500 ? "SERVER_ERROR" : "CLIENT_ERROR",
+      action: status === 401 ? "REAUTH" : "RETRY",
+      retryAfterSeconds,
+      correlationId,
+    };
+  }
+
+  // Fallback for unhandled internal exceptions
+  return {
+    message: `${translate("error.fallback", fallback)} (${correlationId})`,
+    status: status || 500,
+    category: "UNHANDLED",
+    action: "CONTACT_SUPPORT",
+    retryAfterSeconds: null,
+    correlationId,
+  };
+}
+
+/**
+ * Parses raw error into a structured payload for analytical UI components.
+ *
+ * @param {Error|Object|unknown} err - Raw error object.
+ * @returns {Object} Structured error details payload.
+ */
+export function parseApiError(err) {
+  const statusCode = extractStatusCode(err);
+  const rawMessage = extractRawErrorText(err);
+  const safeMessage = getPublicErrorMessage(err, { log: false });
+
+  let matchedCategory = "general";
+  for (const item of KEYWORD_MESSAGES) {
+    if (item.pattern.test(rawMessage)) {
+      matchedCategory = item.category;
+      break;
+    }
+  }
+
+  return {
+    statusCode,
+    safeMessage,
+    category: matchedCategory,
+    isNetworkError: matchedCategory === "network" || statusCode === 0,
+    isAuthError: matchedCategory === "auth" || statusCode === 401 || statusCode === 403,
+    isValidationError: statusCode === 422 || statusCode === 400,
+  };
+}
+
+/**
+ * Creates a domain-customized error mapper function.
+ *
+ * @param {Array<{pattern: RegExp, message: string}>} customRules - Additional domain rules.
+ * @returns {Function} Custom error mapper.
+ */
+export function createErrorMapper(customRules = []) {
+  return function customErrorMapper(err, fallback) {
+    const rawText = extractRawErrorText(err);
+
+    for (const rule of customRules) {
+      if (rule.pattern.test(rawText)) {
+        return rule.message;
+      }
+    }
+
+    return getPublicErrorMessage(err, fallback);
+  };
+}
+
+export default getPublicErrorMessage;

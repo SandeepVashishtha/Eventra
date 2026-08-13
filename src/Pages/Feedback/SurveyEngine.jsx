@@ -6,6 +6,7 @@ import useDocumentTitle from "hooks/useDocumentTitle";
 import SurveyAnalytics from "components/admin/SurveyAnalytics";
 import { validate } from "../../validation";
 import { safeJsonParse } from "utils/safeJsonParse";
+import { logger } from "utils/logger";
 
 const SurveyEngine = () => {
   useDocumentTitle("Eventra | Dynamic Survey Engine");
@@ -64,7 +65,7 @@ const SurveyEngine = () => {
           setDraftDetected(true);
           return; // Skip setting isInitialized to prevent early overwrite
         }
-      } catch {}
+      } catch { logger.warn("[SurveyEngine] Draft detection failed"); }
     }
     setIsInitialized(true);
   }, []);
@@ -211,7 +212,13 @@ const SurveyEngine = () => {
       return;
     }
 
-
+    const publishedSurvey = {
+      title: surveyTitle,
+      description: surveyDescription,
+      questions,
+      publishedAt: new Date().toISOString(),
+    };
+    localStorage.setItem("eventra_survey_active", JSON.stringify(publishedSurvey));
     localStorage.removeItem("eventra_survey_builder_draft");
     toast.success("Survey published and active for attendees!");
   };

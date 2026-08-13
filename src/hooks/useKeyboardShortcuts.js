@@ -7,12 +7,27 @@ import {
   useCallback as reactUseCallback,
   useRef as reactUseRef,
 } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate as reactUseNavigate } from "react-router-dom";
 
 const getReactHook = (name, fallback) => globalThis.React?.[name] || fallback;
 const useEffect = (...args) => getReactHook("useEffect", reactUseEffect)(...args);
 const useCallback = (...args) => getReactHook("useCallback", reactUseCallback)(...args);
 const useRef = (...args) => getReactHook("useRef", reactUseRef)(...args);
+const useNavigate = () => {
+  if (typeof globalThis.ReactRouterDomMock !== "undefined") {
+    return globalThis.ReactRouterDomMock.navigate;
+  }
+  return reactUseNavigate();
+};
+
+const safeFocus = (element) => {
+  if (!element) return;
+  if (typeof requestAnimationFrame !== "undefined") {
+    requestAnimationFrame(() => element.focus());
+  } else {
+    element.focus();
+  }
+};
 
 /**
  * A custom React hook that registers and manages global keyboard shortcuts,
@@ -42,14 +57,7 @@ const useRef = (...args) => getReactHook("useRef", reactUseRef)(...args);
  * });
  */
 export const useKeyboardShortcuts = (shortcuts = {}, disabled = false) => {
-  const rrdNavigate =
-    typeof globalThis.ReactRouterDomMock !== "undefined"
-      ? null
-      : useNavigate();
-  const navigate =
-    typeof globalThis.ReactRouterDomMock !== "undefined"
-      ? globalThis.ReactRouterDomMock.navigate
-      : rrdNavigate;
+  const navigate = useNavigate();
 
   const shortcutsRef = useRef(shortcuts);
   useEffect(() => {
@@ -142,7 +150,7 @@ export const useKeyboardShortcuts = (shortcuts = {}, disabled = false) => {
         } else {
           const input = document.querySelector('nav input[type="text"], nav input[type="search"]') ||
                         document.querySelector('input[type="text"], input[type="search"]');
-          if (input) requestAnimationFrame(() => input.focus());
+          safeFocus(input);
         }
         return;
       }
@@ -156,7 +164,7 @@ export const useKeyboardShortcuts = (shortcuts = {}, disabled = false) => {
         }
         const input = document.querySelector('nav input[type="text"], nav input[type="search"]') ||
                       document.querySelector('input[type="text"], input[type="search"]');
-        if (input) requestAnimationFrame(() => input.focus());
+        safeFocus(input);
         return;
       }
 

@@ -65,9 +65,20 @@ export function buildPaginatedUrl(baseUrl, page, size) {
 
   const params = new URLSearchParams(queryString || "");
   
+  // Validate and normalize pagination parameters
+  const validPage =
+    Number.isFinite(Number(page)) && Number(page) >= 0
+      ? Math.floor(Number(page))
+      : 0;
+
+  const validSize =
+    Number.isFinite(Number(size)) && Number(size) > 0
+      ? Math.floor(Number(size))
+      : SERVER_PAGE_SIZE;
+
   // .set() explicitly overwrites existing keys, eliminating duplicate parameter pollution
-  params.set("page", page);
-  params.set("size", size);
+  params.set("page", validPage);
+  params.set("size", validSize);
 
   const newUrl = `${path}?${params.toString()}`;
   return hash ? `${newUrl}#${hash}` : newUrl;

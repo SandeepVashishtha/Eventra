@@ -99,14 +99,14 @@ const AcousticsOptimizationEngine = () => {
                              band.gain > 0 ? 'bg-emerald-900 border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 
                              'bg-rose-900 border-rose-500 shadow-[0_0_15px_rgba(225,29,72,0.3)]'
                            }`}
-                           style={{ bottom: \`calc(\${heightPercent}% - 12px)\` }}
+                           style={{ bottom: `calc(${heightPercent}% - 12px)` }}
                          >
                            <div className="w-1.5 h-1.5 rounded-full bg-white/50"></div>
                          </div>
                        </div>
                        
                        <div className="absolute -bottom-6 text-center">
-                         <span className="block text-[10px] text-sky-400 font-bold font-mono">{band.freq >= 1000 ? \`\${band.freq/1000}k\` : band.freq}Hz</span>
+                         <span className="block text-[10px] text-sky-400 font-bold font-mono">{band.freq >= 1000 ? `${band.freq/1000}k` : band.freq}Hz</span>
                          <span className="block text-[9px] text-neutral-500 font-mono mt-0.5">{band.gain > 0 ? '+' : ''}{band.gain.toFixed(1)} dB</span>
                        </div>
                      </div>
@@ -173,7 +173,7 @@ const AcousticsOptimizationEngine = () => {
                     <p className="text-slate-400 text-sm font-mono">Listening for room reflections...</p>
                     
                     <div className="w-full bg-slate-900 h-2 rounded-full mt-8 overflow-hidden">
-                      <div className="h-full bg-sky-500 transition-all duration-200" style={{ width: \`\${(frequency / 20000) * 100}%\` }}></div>
+                      <div className="h-full bg-sky-500 transition-all duration-200" style={{ width: `${(frequency / 20000) * 100}%` }}></div>
                     </div>
                   </div>
                 ) : engineState === 'processing' ? (

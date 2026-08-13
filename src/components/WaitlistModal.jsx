@@ -93,7 +93,7 @@ const WaitlistModal = ({
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+            className="text-gray-500 hover:text-gray-700 dark:text-gray-200 dark:hover:text-white"
             aria-label="Close modal"
           >
             ✕
@@ -124,7 +124,7 @@ const WaitlistModal = ({
                   </div>
                 )}
 
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-gray-600 dark:text-gray-200">
                   If spots become available or attendees cancel, we&apos;ll automatically promote you to
                   confirmed registration and send you a notification.
                 </p>
@@ -174,7 +174,7 @@ const WaitlistModal = ({
                       disabled={isLoading}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
                     />
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-200 mt-1">
                       We&apos;ll use this to contact you when a spot opens up
                     </p>
                   </div>

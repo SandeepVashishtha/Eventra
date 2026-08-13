@@ -157,7 +157,7 @@ const GamifiedExitDispersal = () => {
                        <div className={`h-full transition-all duration-1000 ${
                          gate.status === 'critical' ? 'bg-rose-500' :
                          gate.status === 'warning' ? 'bg-amber-400' : 'bg-emerald-400'
-                       }`} style={{ width: \`\${gate.density}%\` }}></div>
+                       }`} style={{ width: `${gate.density}%` }}></div>
                      </div>
                    </div>
 

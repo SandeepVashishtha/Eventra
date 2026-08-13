@@ -24,8 +24,6 @@ const MAX_TAG_LENGTH = 50;
 const SORT_MAPPING = {
   Newest: "date,desc",
   Upcoming: "date,asc",
-  // FIX (#7437): sort by AI recommendation score, highest first
-  "Best Match": "match,desc",
   Oldest: "date,asc",
   "Title A-Z": "title,asc",
   "Title Z-A": "title,desc",
@@ -37,6 +35,7 @@ const normalizeEventItem = (event) => normalizeEvent(event);
 
 const useEventListing = () => {
   const [events, setEvents] = useState([]);
+  const [highlightedEventIds, setHighlightedEventIds] = useState([]);
   const [filterType, setFilterType] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
@@ -58,7 +57,9 @@ const useEventListing = () => {
     totalElements: 0,
     first: true,
     last: true,
+    serverPaginated: false,
   });
+  const [serverPaged, setServerPaged] = useState(false);
 
   const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
   const isInitialMount = useRef(true);
@@ -80,8 +81,12 @@ const useEventListing = () => {
       params.append("search", safeSearch.trim().slice(0, MAX_SEARCH_LENGTH));
     }
 
-    if (filterType && filterType !== "all") {
+    if (filterType && filterType !== "all" && filterType !== "bookmarked") {
       params.append("status", filterType.toUpperCase());
+    }
+
+    if (categoryFilter && categoryFilter !== "all") {
+      params.append("category", categoryFilter);
     }
 
     if (safeFilters?.categories?.length) {
@@ -136,16 +141,31 @@ const useEventListing = () => {
       // Discard stale responses from earlier requests
       if (requestId !== latestRequestRef.current) return;
 
-      const responseData = response?.data || {};
+      // Guard against a null/undefined response so an unexpected or empty API
+      // reply degrades gracefully instead of silently rendering an empty list.
+      if (!response || typeof response !== "object") {
+        setEvents([]);
+        setServerPaged(false);
+        setLoadError("Failed to load events. Please try again later.");
+        return;
+      }
 
-      const apiEvents = Array.isArray(responseData.content)
+      const responseData = response.data || {};
+
+      const rawEvents = Array.isArray(responseData.content)
         ? responseData.content
         : Array.isArray(responseData)
           ? responseData
           : [];
 
+      // Guard against a malformed API payload where `content` (or the whole
+      // response body) is present but not an array — otherwise the `.map()`
+      // below would throw and crash the listing on a bad response.
+      const apiEvents = Array.isArray(rawEvents) ? rawEvents : [];
+
       const normalizedEvents = apiEvents.map(normalizeEventItem);
       setEvents(normalizedEvents);
+      setServerPaged(isPaged);
       setLastUpdated(new Date());
 
       setPagination({
@@ -153,14 +173,17 @@ const useEventListing = () => {
         totalElements: responseData.totalElements || 0,
         first: responseData.first ?? true,
         last: responseData.last ?? true,
+        serverPaginated: Array.isArray(responseData.content),
       });
     } catch (error) {
       setEvents([]);
+      setServerPaged(false);
       setPagination({
         totalPages: 1,
         totalElements: 0,
         first: true,
         last: true,
+        serverPaginated: false,
       });
 
       if (error?.response?.status === 403) {
@@ -183,7 +206,7 @@ const useEventListing = () => {
       return;
     }
     setCurrentPage(1);
-  }, [searchQuery, filterType, sortType, advancedFilters, eventsPerPage]);
+  }, [searchQuery, filterType, categoryFilter, sortType, advancedFilters, eventsPerPage]);
 
   const setSafePage = useCallback(
     (page) => {
@@ -211,9 +234,15 @@ const useEventListing = () => {
   const dateRangeStats = useMemo(() => getDateRange(events), [events]);
 
   const filteredEvents = useMemo(() => {
+const filteredEvents = useMemo(() => {
+    const baseEvents =
+      filterType === "bookmarked"
+        ? getBookmarkedEvents().map(normalizeEventItem)
+        : events;
+
     let filtered = activeSearchQuery.trim()
       ? getRouteSearchResults(
-          events,
+          baseEvents,
           activeSearchQuery,
           [
             { name: "title", weight: 0.8 },
@@ -224,7 +253,7 @@ const useEventListing = () => {
             { name: "description", weight: 0.1 },
           ]
         )
-      : [...events];
+      : [...baseEvents];
 
     // 2. Status timing filter
     filtered = filtered.filter((event) => {
@@ -236,31 +265,32 @@ const useEventListing = () => {
 
       if (filterType === "past" && status !== "past" && status !== "ended") return false;
 
-      if (filterType === "bookmarked") {
-        const bookmarks = getBookmarkedEvents();
-
-        return bookmarks.some((bookmark) => String(bookmark.id) === String(event.id));
-      }
-
       return true;
     });
 
-    // 3. Category filter
-    const target = categoryFilter && categoryFilter !== "all" ? categoryFilter.toLowerCase() : null;
+    // 3. Category filter (client-side only when the API did not page/filter for us)
+    const target =
+      !serverPaged && categoryFilter && categoryFilter !== "all"
+        ? categoryFilter.toLowerCase()
+        : null;
 
     if (target) {
       filtered = filtered.filter((event) => {
         const cat = event.category?.toLowerCase() || "";
         const type = event.type?.toLowerCase() || "";
+        const categories = event.categories || [];
 
         // Normalize for fuzzy matching (strip non-alphanumerics)
         const norm = (s) => s.replace(/[^a-z0-9]+/g, "");
         const nTarget = norm(target);
         const nCat = norm(cat);
         const nType = norm(type);
+        
+        // Check if any category in categories array matches
+        const nCategories = categories.map(c => norm(c.toLowerCase()));
 
         // Exact category match takes priority (backend enum values)
-        if (nCat === nTarget) return true;
+        if (nCat === nTarget || nCategories.includes(nTarget)) return true;
 
         // Legacy / fuzzy fallback for older event data
         if (target === "hackathon" || target === "hackathons") {
@@ -311,7 +341,19 @@ const useEventListing = () => {
   }, [scoredEvents]);
 
   const sortedEvents = useMemo(() => {
-    const base = sortType === "Best Match" ? scoredEvents : filteredEvents;
+    // Best Match must only re-order the already-filtered set (#12461).
+    // filteredEvents does not carry recommendation scores (useRecommendations
+    // returns a separate array), so enrich it from matchScoreMap first —
+    // otherwise the sort would compare all-zero scores and lose the ranking.
+    const base =
+      sortType === "Best Match"
+        ? filteredEvents.map((event) => ({
+            ...event,
+            recommendationScore: matchScoreMap.get(String(event.id))?.score ?? 0,
+            recommendationReasons: matchScoreMap.get(String(event.id))?.reasons ?? [],
+          }))
+        : filteredEvents;
+
     return [...base].sort((a, b) => {
       // Best Match: sort by AI recommendation score descending
       if (sortType === "Best Match") {
@@ -327,24 +369,38 @@ const useEventListing = () => {
       // Default / Newest
       return dateB - dateA;
     });
-  }, [filteredEvents, scoredEvents, sortType]);
+  }, [filteredEvents, matchScoreMap, sortType]);
+
+  const isBookmarkedTab = filterType === "bookmarked";
 
   const paginatedEvents = useMemo(() => {
+    // Bookmarked events come from local storage, so paginate them
+    // client-side regardless of how the (regular) server page was returned.
+    if (isBookmarkedTab) {
+      const startIndex = (currentPage - 1) * eventsPerPage;
+      return sortedEvents.slice(startIndex, startIndex + eventsPerPage);
+    }
+    // Server already returned one page — do not re-slice client-side.
+    if (serverPaged || pagination.serverPaginated) {
+      return sortedEvents;
+    }
     const startIndex = (currentPage - 1) * eventsPerPage;
     return sortedEvents.slice(startIndex, startIndex + eventsPerPage);
-  }, [sortedEvents, currentPage, eventsPerPage]);
+  }, [sortedEvents, currentPage, eventsPerPage, serverPaged, pagination.serverPaginated, isBookmarkedTab]);
 
-  const totalElements = pagination.totalPages > 1 ? pagination.totalElements : sortedEvents.length;
-  const totalPages =
-    pagination.totalPages > 1
-      ? pagination.totalPages
-      : Math.ceil(sortedEvents.length / eventsPerPage) || 1;
+  const totalElements = isBookmarkedTab || !serverPaged
+    ? sortedEvents.length
+    : pagination.totalElements;
+  const totalPages = isBookmarkedTab || !serverPaged
+    ? Math.ceil(sortedEvents.length / eventsPerPage) || 1
+    : pagination.totalPages || 1;
 
   return {
     currentPage,
     eventsPerPage,
     fetchEvents,
     filteredEvents,
+    highlightedEventIds,
     filterType,
     categoryFilter,
     loadError,
@@ -370,6 +426,7 @@ const useEventListing = () => {
     setViewMode,
     setAdvancedFilters,
     setIsAdvancedFiltersOpen,
+    setHighlightedEventIds,
   };
 };
 

@@ -33,4 +33,24 @@ public class RegistrationRequest {
     )
     @Builder.Default
     private Boolean showProfileInAttendeeDirectory = false;
+
+    @Schema(
+            description = "Group ID for group/bulk registrations (e.g., 'Table of 10' tickets).",
+            example = "table-5-acme-corp"
+    )
+    private String groupId;
+
+    @Schema(
+            description = "Flag indicating if this registration is the primary buyer for a group.",
+            example = "true",
+            defaultValue = "false"
+    )
+    @Builder.Default
+    private Boolean isGroupPrimary = false;
+
+    @Schema(
+            description = "Name of the group for display purposes.",
+            example = "Acme Corp - Table 5"
+    )
+    private String groupName;
 }

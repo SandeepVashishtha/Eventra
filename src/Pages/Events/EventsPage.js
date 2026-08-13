@@ -17,11 +17,15 @@ import PaginationControls from "./PaginationControls";
 import useEventListing from "./useEventListing";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
+import { safeJsonParse } from "utils/safeJsonParse";
+import RecentlyViewedEvents from "components/common/RecentlyViewedEvents";
+import TrendingEvents from "components/TrendingEvents/TrendingEvents";
 import ErrorBoundary from "../../components/common/ErrorBoundary";
 import ErrorMessage from "../../components/common/ErrorMessage";
 import { EventTimeline } from "../../components/EventTimeline";
 import EventComparison from "./EventComparison";
 import { toast } from "react-toastify";
+import { logger } from "utils/logger";
 import {
   decodeAdvancedFilters,
   encodeAdvancedFilters,
@@ -66,7 +70,10 @@ const renderCardSection = (
   viewMode,
   searchQuery,
   onClearSearch,
-  matchScoreMap
+  matchScoreMap,
+  selectedEvents,
+  toggleCompare,
+  setShowComparison
 ) => {
   if (isLoading) {
   return <ExploreEventsSkeleton />;
@@ -176,7 +183,17 @@ const EventsPage = () => {
   const listing = useEventListing();
   const [selectedEvents, setSelectedEvents] = useState([]);
   const [showComparison, setShowComparison] = useState(false);
-  const { isLoading } = listing;
+  const {
+    isLoading,
+    setAdvancedFilters,
+    setCategoryFilter,
+    setEventsPerPage,
+    setFilterType,
+    setSafePage,
+    setSearchQuery,
+    setSortType,
+    setViewMode,
+  } = listing;
   const cardSectionRef = useRef();
   const hasHydratedFilters = useRef(false);
   const [filtersHydrated, setFiltersHydrated] = useState(false);
@@ -286,7 +303,7 @@ const category =
         })
       );
     } catch (err) {
-      console.error("Failed to persist filter params:", err);
+      logger.error("Failed to persist filter params:", err);
     }
   }, [
     listing.currentPage,
@@ -455,7 +472,7 @@ const category =
         />
         {localSearchInput.trim() && (
           <div className="mb-4 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950/30 dark:text-indigo-300">
-            Showing results for: <span className="font-semibold">"{localSearchInput}"</span>
+            Showing results for: <span className="font-semibold">&quot;{localSearchInput}&quot;</span>
           </div>
         )}
         <div className="mb-4 text-sm text-slate-600 dark:text-slate-300">
@@ -480,7 +497,10 @@ const category =
   listing.viewMode,
   listing.searchQuery,
   clearSearchAndFilters,
-  listing.matchScoreMap
+  listing.matchScoreMap,
+  selectedEvents,
+  toggleCompare,
+  setShowComparison
 )}
 
           {!listing.isLoading && listing.totalPages > 1 && (

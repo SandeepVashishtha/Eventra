@@ -1,7 +1,9 @@
+import useToast from "hooks/useToast";
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 // Consolidated lucide-react imports for code cleanliness
-import { Facebook, Linkedin, MessageCircle, Send, Share2, Copy, Mail, Check } from 'lucide-react';
+import { MessageCircle, Send, Share2, Copy, Mail, Check } from 'lucide-react';
+import { FaFacebook as Facebook, FaLinkedin as Linkedin } from 'react-icons/fa';
 import { generateSharingUrl, copyToClipboard } from '@utils/shareUtils';
 import { toast } from 'react-toastify';
 import './ShareMenu.css';
@@ -24,6 +26,7 @@ const ShareMenu = ({
   buttonClassName = '',
   className = '',
 }) => {
+  const { success, error } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [calculatedPosition, setCalculatedPosition] = useState('bottom');
@@ -106,7 +109,7 @@ const ShareMenu = ({
         // Ignore AbortError caused by users intentionally closing the native share dialog
         if (err.name !== 'AbortError') {
           console.error('Error sharing:', err);
-          toast.error("Failed to share event", { autoClose: 2000 });
+          error("Failed to share event");
         }
       });
       return;
@@ -241,7 +244,7 @@ const ShareMenu = ({
                   {copied ? (
                     <Check className="w-4 h-4 text-green-600" />
                   ) : (
-                    <Copy className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    <Copy className="w-4 h-4 text-gray-600 dark:text-gray-200" />
                   )}
                 </div>
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">

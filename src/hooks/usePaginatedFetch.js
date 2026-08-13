@@ -65,7 +65,7 @@
  *   );
  */
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { logger } from "utils/logger";
 
 const DEFAULT_OPTIONS = {
@@ -136,7 +136,7 @@ const usePaginatedFetch = (fetchFn, options = {}) => {
     };
   }, []);
 
-  const execute = useCallback(async (currentPage, currentPerPage) => {
+  const execute = async (currentPage, currentPerPage) => {
     if (!enabled) return;
 
     // Abort any in-flight request
@@ -207,7 +207,7 @@ const usePaginatedFetch = (fetchFn, options = {}) => {
     }
 
     if (isMountedRef.current) setIsLoading(false);
-  }, [enabled, maxRetries, retryBaseMs, paginated]);
+  };
 
   // Trigger fetch when deps, page, or perPage change
   useEffect(() => {
@@ -215,9 +215,9 @@ const usePaginatedFetch = (fetchFn, options = {}) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, perPage, enabled, ...dependencies]);
 
-  const refetch = useCallback(() => {
+  const refetch = () => {
     execute(page, perPage);
-  }, [execute, page, perPage]);
+  };
 
   return {
     data,

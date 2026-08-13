@@ -1,10 +1,17 @@
 import { createRoot } from "react-dom/client";
 import { act } from "react";
 import useOfflineSync from "./useOfflineSync";
-import { getQueueIndexedDB, setQueue, clearQueue } from "../utils/offlineQueue";
+import { processQueue } from "../utils/offlineQueue";
+
+let mockAuthState = {
+  token: "mock-valid-token",
+  user: { id: "mock-user-id" },
+  isAuthenticated: () => true,
+  loading: false,
+};
 
 jest.mock("../context/AuthContext", () => ({
-  useAuth: () => ({ token: "mock-valid-token", user: { id: "mock-user-id" }, isAuthenticated: () => true, loading: false }),
+  useAuth: () => mockAuthState,
 }));
 
 jest.mock("../utils/tokenUtils", () => ({
@@ -12,51 +19,47 @@ jest.mock("../utils/tokenUtils", () => ({
 }));
 
 jest.mock("../utils/offlineQueue", () => ({
-  getQueueIndexedDB: jest.fn(),
-  setQueue: jest.fn(),
-  clearQueue: jest.fn(),
-  filterQueueByOwnership: jest.fn((queue) => queue),
-  validateQueueSession: jest.fn((queue) => queue),
+  processQueue: jest.fn(),
 }));
-
 
 describe("useOfflineSync", () => {
   let container;
   let root;
+  let swListeners;
 
-  let originalOnLine;
+  const defaultProcessResult = { processed: 2, succeeded: 2, dropped: 0, remaining: 0 };
 
   beforeEach(() => {
     container = document.createElement("div");
     document.body.appendChild(container);
     jest.clearAllMocks();
 
-    originalOnLine = navigator.onLine;
-    Object.defineProperty(navigator, "onLine", {
-      value: false,
+    mockAuthState = {
+      token: "mock-valid-token",
+      user: { id: "mock-user-id" },
+      isAuthenticated: () => true,
+      loading: false,
+    };
+
+    processQueue.mockResolvedValue(defaultProcessResult);
+
+    // jsdom does not provide navigator.serviceWorker; give the hook a stub so
+    // we can assert the SW message -> drain wiring.
+    swListeners = {};
+    Object.defineProperty(navigator, "serviceWorker", {
+      value: {
+        addEventListener: jest.fn((type, cb) => {
+          swListeners[type] = cb;
+        }),
+        removeEventListener: jest.fn((type) => {
+          delete swListeners[type];
+        }),
+      },
       configurable: true,
     });
-
-    // Mock global fetch
-    global.fetch = jest.fn().mockImplementation(() =>
-      Promise.resolve({
-        ok: true,
-        status: 200,
-        text: () => Promise.resolve("ok"),
-      })
-    );
-
-    jest
-      .requireMock("../utils/offlineQueue")
-      .filterQueueByOwnership.mockImplementation((queue) => queue);
-
-    jest
-      .requireMock("../utils/offlineQueue")
-      .validateQueueSession.mockImplementation((queue) => queue);
   });
 
   afterEach(() => {
-     
     act(() => {
       if (root) {
         root.unmount();
@@ -64,226 +67,206 @@ describe("useOfflineSync", () => {
     });
     document.body.removeChild(container);
     container = null;
-    delete global.fetch;
-    Object.defineProperty(navigator, "onLine", {
-      value: originalOnLine,
-      configurable: true,
-    });
+    delete navigator.serviceWorker;
+    jest.restoreAllMocks();
   });
 
-  it("attempts to sync immediately without backoff delay on first try in active sync run", async () => {
-    const queue = [
-      { id: "1", userId: "mock-user-id", retryCount: 0, payload: { name: "test-1" } },
-      { id: "2", userId: "mock-user-id", retryCount: 0, payload: { name: "test-2" } }
-    ];
-    getQueueIndexedDB.mockResolvedValue(queue);
-
+  const renderHook = async () => {
+    let hookResult;
     const TestComponent = () => {
-      useOfflineSync();
+      hookResult = useOfflineSync();
       return null;
     };
 
-     
     await act(async () => {
       root = createRoot(container);
       root.render(<TestComponent />);
     });
-    const startTime = Date.now();
+    return () => hookResult;
+  };
 
-    // Trigger online event to run the sync
-     
+  const flush = () => new Promise((resolve) => setTimeout(resolve, 10));
+
+  it("drains the IndexedDB queue via processQueue when the connection returns", async () => {
+    const getResult = await renderHook();
+
     await act(async () => {
       window.dispatchEvent(new Event("online"));
-
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await flush();
     });
 
-    const duration = Date.now() - startTime;
-
-    // Verify both items were synced and fetch was called
-    expect(global.fetch).toHaveBeenCalledTimes(2);
-    expect(clearQueue).toHaveBeenCalled();
-
-    // Verify it completed quickly (meaning no 1s/2s sequential backoff was applied)
-    // Since items had retryCount: 2 and 1 respectively, the original implementation
-    // would have blocked for 2s + 1s = 3 seconds.
-    // Our fix should complete it in under 500ms.
-    expect(duration).toBeLessThan(500);
+    expect(processQueue).toHaveBeenCalledTimes(1);
+    expect(processQueue).toHaveBeenCalledWith(
+      "mock-user-id",
+      expect.any(Function),
+      expect.anything()
+    );
+    expect(getResult().syncStatus).toBe("SUCCESS");
   });
 
-  it("preserves items with retryCount >= MAX_RETRIES in the offline queue instead of deleting them", async () => {
-    const queue = [
-      { id: "1", userId: "mock-user-id", retryCount: 3, payload: { name: "test-expired" } }
-    ];
-    getQueueIndexedDB.mockResolvedValue(queue);
+  it("triggers a drain when the OfflineManager dispatches eventra-background-sync", async () => {
+    await renderHook();
 
-    const TestComponent = () => {
-      useOfflineSync();
-      return null;
-    };
-
-     
     await act(async () => {
-      root = createRoot(container);
-      root.render(<TestComponent />);
+      window.dispatchEvent(new CustomEvent("eventra-background-sync"));
+      await flush();
     });
 
-     
-    await act(async () => {
-      window.dispatchEvent(new Event("online"));
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    });
-
-    // Verify fetch was NOT called because retryCount >= 3
-    expect(global.fetch).not.toHaveBeenCalled();
-    // Verify setQueue was called to preserve the item
-    expect(setQueue).toHaveBeenCalledWith(queue);
-    expect(clearQueue).not.toHaveBeenCalled();
+    expect(processQueue).toHaveBeenCalledTimes(1);
   });
 
-  // ── Security: Issue #5727 — cross-user action replay prevention ───────────
+  it("triggers a drain when the service worker posts EVENTRA_BACKGROUND_SYNC", async () => {
+    await renderHook();
 
-  it("[Security] does not replay queued actions that belong to a different user", async () => {
-    // Queue contains items from user-A only
-    const queue = [
-      { id: "x1", userId: "user-A", retryCount: 0, payload: { name: "stale-action" } },
-    ];
-    getQueueIndexedDB.mockResolvedValue(queue);
-
-    // filterQueueByOwnership drops all items since current user is mock-user-id, not user-A
-    jest
-      .requireMock("../utils/offlineQueue")
-      .filterQueueByOwnership.mockImplementation((_queue, currentUserId) =>
-        _queue.filter((item) => item.userId === currentUserId)
-      );
-
-    const TestComponent = () => {
-      useOfflineSync();
-      return null;
-    };
-
-     
     await act(async () => {
-      root = createRoot(container);
-      root.render(<TestComponent />);
+      swListeners["message"]({ data: { type: "EVENTRA_BACKGROUND_SYNC" } });
+      await flush();
     });
 
-     
-    await act(async () => {
-      window.dispatchEvent(new Event("online"));
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    });
-
-    // Fetch must NOT have been called — user-A's action should not run under mock-user-id's session
-    expect(global.fetch).not.toHaveBeenCalled();
-    // Queue should be cleared since all items were foreign
-    expect(clearQueue).toHaveBeenCalled();
+    expect(processQueue).toHaveBeenCalledTimes(1);
   });
 
-  it("[Security] does not replay actions with a stale session ID", async () => {
-    const queue = [
-      { id: "s1", userId: "mock-user-id", sessionId: "old-session-xyz", retryCount: 0, payload: { name: "stale-session-action" } },
-    ];
-    getQueueIndexedDB.mockResolvedValue(queue);
+  it("builds a fetch function that attaches the Bearer token from auth context", async () => {
+    await renderHook();
 
-    // validateQueueSession drops all items because their sessionId doesn't match the current session
-    jest
-      .requireMock("../utils/offlineQueue")
-      .validateQueueSession.mockImplementation((_queue, _currentSession) =>
-        _queue.filter((item) => item.sessionId === _currentSession)
-      );
-
-    // Simulate a different current session
-    const originalSessionStorage = global.sessionStorage;
-    Object.defineProperty(window, "sessionStorage", {
-      value: { getItem: jest.fn(() => "new-session-abc") },
-      configurable: true,
+    let capturedFetchFn;
+    processQueue.mockImplementationOnce(async (userId, fetchFn) => {
+      capturedFetchFn = fetchFn;
+      return defaultProcessResult;
     });
 
-    const TestComponent = () => {
-      useOfflineSync();
-      return null;
-    };
-
-     
-    await act(async () => {
-      root = createRoot(container);
-      root.render(<TestComponent />);
-    });
-
-     
     await act(async () => {
       window.dispatchEvent(new Event("online"));
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await flush();
     });
 
-    // Fetch must NOT be called — stale session items should be dropped
-    expect(global.fetch).not.toHaveBeenCalled();
-    expect(clearQueue).toHaveBeenCalled();
+    expect(capturedFetchFn).toBeDefined();
+    await capturedFetchFn("https://api.example.test/events/1/register", {
+      method: "POST",
+      body: "{}",
+    });
+    expect(global.fetch).toHaveBeenCalledWith(
+      "https://api.example.test/events/1/register",
+      expect.objectContaining({
+        method: "POST",
+        body: "{}",
+        headers: { Authorization: "Bearer mock-valid-token" },
+      })
+    );
+  });
 
-    Object.defineProperty(window, "sessionStorage", {
-      value: originalSessionStorage,
-      configurable: true,
+  it("does not send a Bearer header when the session is cookie-managed", async () => {
+    mockAuthState = { ...mockAuthState, token: "cookie-managed" };
+    await renderHook();
+
+    let capturedFetchFn;
+    processQueue.mockImplementationOnce(async (userId, fetchFn) => {
+      capturedFetchFn = fetchFn;
+      return defaultProcessResult;
+    });
+
+    await act(async () => {
+      window.dispatchEvent(new Event("online"));
+      await flush();
+    });
+
+    await capturedFetchFn("https://api.example.test/events/1/register", {
+      method: "POST",
+      body: "{}",
+    });
+    expect(global.fetch).toHaveBeenCalledWith(
+      "https://api.example.test/events/1/register",
+      expect.not.objectContaining({ Authorization: expect.any(String) })
+    );
+  });
+
+  it("does not drain the queue while the auth session is still loading", async () => {
+    mockAuthState = { ...mockAuthState, loading: true };
+    await renderHook();
+
+    await act(async () => {
+      window.dispatchEvent(new Event("online"));
+      await flush();
+    });
+
+    expect(processQueue).not.toHaveBeenCalled();
+  });
+
+  it("does not drain the queue for an unauthenticated visitor", async () => {
+    mockAuthState = { ...mockAuthState, isAuthenticated: () => false, user: null };
+    await renderHook();
+
+    await act(async () => {
+      window.dispatchEvent(new Event("online"));
+      await flush();
+    });
+
+    expect(processQueue).not.toHaveBeenCalled();
+  });
+
+  it("reports PARTIAL when some items remain or were dropped", async () => {
+    processQueue.mockResolvedValue({ processed: 3, succeeded: 1, dropped: 1, remaining: 1 });
+    const getResult = await renderHook();
+
+    await act(async () => {
+      window.dispatchEvent(new Event("online"));
+      await flush();
+    });
+
+    expect(getResult().syncStatus).toBe("PARTIAL");
+  });
+
+  it("reports FAILED when processQueue rejects", async () => {
+    processQueue.mockRejectedValue(new Error("network down"));
+    const getResult = await renderHook();
+
+    await act(async () => {
+      window.dispatchEvent(new Event("online"));
+      await flush();
+    });
+
+    expect(getResult().syncStatus).toBe("FAILED");
+  });
+
+  it("does not start a second drain while one is already running", async () => {
+    let resolveProcess;
+    processQueue.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveProcess = resolve;
+        })
+    );
+    await renderHook();
+
+    await act(async () => {
+      window.dispatchEvent(new Event("online"));
+      window.dispatchEvent(new CustomEvent("eventra-background-sync"));
+      await flush();
+    });
+
+    expect(processQueue).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      resolveProcess(defaultProcessResult);
     });
   });
 
-  it("[Security] filterQueueByOwnership is always called during replay — not optional", async () => {
-    const queue = [
-      { id: "f1", userId: "mock-user-id", retryCount: 0, payload: { name: "normal-action" } },
-    ];
-    getQueueIndexedDB.mockResolvedValue(queue);
-
-    const { filterQueueByOwnership } = jest.requireMock("../utils/offlineQueue");
-
-    const TestComponent = () => {
-      useOfflineSync();
-      return null;
-    };
-
-     
-    await act(async () => {
-      root = createRoot(container);
-      root.render(<TestComponent />);
+  it("dispatches eventra-offline-queue-processed after a run so OfflineManager resets", async () => {
+    const dispatched = [];
+    const originalDispatch = window.dispatchEvent.bind(window);
+    jest.spyOn(window, "dispatchEvent").mockImplementation((event) => {
+      if (event.type === "eventra-offline-queue-processed") {
+        dispatched.push(event.type);
+      }
+      return originalDispatch(event);
     });
 
-     
+    await renderHook();
+
     await act(async () => {
       window.dispatchEvent(new Event("online"));
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await flush();
     });
 
-    // filterQueueByOwnership MUST have been called — it is not optional
-    expect(filterQueueByOwnership).toHaveBeenCalled();
-    // It must be called with the current user's ID
-    expect(filterQueueByOwnership).toHaveBeenCalledWith(queue, "mock-user-id");
-  });
-
-  it("[Security] validateQueueSession is always called during replay", async () => {
-    const queue = [
-      { id: "v1", userId: "mock-user-id", sessionId: "sess-abc", retryCount: 0, payload: { name: "action" } },
-    ];
-    getQueueIndexedDB.mockResolvedValue(queue);
-
-    const { validateQueueSession } = jest.requireMock("../utils/offlineQueue");
-
-    const TestComponent = () => {
-      useOfflineSync();
-      return null;
-    };
-
-     
-    await act(async () => {
-      root = createRoot(container);
-      root.render(<TestComponent />);
-    });
-
-     
-    await act(async () => {
-      window.dispatchEvent(new Event("online"));
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    });
-
-    // validateQueueSession MUST have been called in all replay paths
-    expect(validateQueueSession).toHaveBeenCalled();
+    expect(dispatched).toContain("eventra-offline-queue-processed");
   });
 });

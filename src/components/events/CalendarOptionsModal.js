@@ -2,7 +2,7 @@ import { X, Calendar, Download } from "lucide-react";
 import {
   openCalendarProvider,
   getCalendarProviders,
-} from "../../utils/calendarUtils";
+} from "../../utils/calendarUtils-jp";
 
 const CalendarOptionsModal = ({ event, onClose }) => {
   const providers = getCalendarProviders();
