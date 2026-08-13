@@ -668,14 +668,15 @@ export const useEventForm = () => {
   }, [discardDraft]);
 
   const hasUnsavedChanges = useMemo(() => {
+    const baseline = initialFormData();
     return Object.entries(formData).some(([key, value]) => {
       if (["banner", "bannerPreview"].includes(key)) return false;
-      if (typeof value === "string") return value.trim() !== (initialFormData[key] || "");
+      if (typeof value === "string") return value.trim() !== (baseline[key] || "");
       if (Array.isArray(value)) return value.length > 0;
       if (typeof value === "object" && value !== null) {
-        return JSON.stringify(value) !== JSON.stringify(initialFormData[key] || {});
+        return JSON.stringify(value) !== JSON.stringify(baseline[key] || {});
       }
-      return Boolean(value) !== Boolean(initialFormData[key]);
+      return Boolean(value) !== Boolean(baseline[key]);
     });
   }, [formData]);
 
