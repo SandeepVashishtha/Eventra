@@ -30,8 +30,9 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
-
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -176,14 +177,18 @@ public class EventController {
         @ApiResponses({
                         @ApiResponse(responseCode = "200", description = "Events fetched successfully", content = @Content(array = @ArraySchema(schema = @Schema(implementation = EventResponse.class))))
         })
-        public ResponseEntity<List<EventResponse>> searchEvents(
+        public ResponseEntity<Page<EventResponse>> searchEvents(
                         @Parameter(description = "Search term for full-text search on title and description") @RequestParam(required = false) String search,
                         @Parameter(description = "Event category for filtering") @RequestParam(required = false) String category,
                         @Parameter(description = "Start date for filtering (ISO format)") @RequestParam(required = false) String startDate,
                         @Parameter(description = "End date for filtering (ISO format)") @RequestParam(required = false) String endDate,
-                        @Parameter(description = "Filter for free events only") @RequestParam(required = false) Boolean free) {
+                        @Parameter(description = "Filter for free events only") @RequestParam(required = false) Boolean free,
+                        @Parameter(description = "Page number (0-based)") @RequestParam(defaultValue = "0") int page,
+                        @Parameter(description = "Page size") @RequestParam(defaultValue = "20") int size) {
 
-                List<EventResponse> events = eventService.searchEvents(search, category, startDate, endDate, free);
+                Pageable pageable = PageRequest.of(page, size);
+                Page<EventResponse> events = eventService.searchEvents(search, category, startDate, endDate, free,
+                                pageable);
                 return ResponseEntity.ok(events);
         }
 

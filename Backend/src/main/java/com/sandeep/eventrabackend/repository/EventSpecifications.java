@@ -62,6 +62,45 @@ public final class EventSpecifications {
         return (root, query, cb) -> cb.isTrue(root.get("isPublic"));
     }
 
+    public static Specification<Event> notCancelled() {
+        return (root, query, cb) -> cb.notEqual(cb.upper(root.get("status")), "CANCELLED");
+    }
+
+    public static Specification<Event> categoryEquals(String category) {
+        if (!StringUtils.hasText(category)) {
+            return null;
+        }
+        return (root, query, cb) -> cb.equal(
+                cb.upper(root.get("category")),
+                category.trim().toUpperCase(Locale.ROOT));
+    }
+
+    public static Specification<Event> eventDateAfter(String startDate) {
+        if (!StringUtils.hasText(startDate)) {
+            return null;
+        }
+        LocalDateTime startDateTime;
+        try {
+            startDateTime = LocalDateTime.parse(startDate.trim());
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid startDate parameter: " + startDate);
+        }
+        return (root, query, cb) -> cb.greaterThanOrEqualTo(root.get("eventDate"), startDateTime);
+    }
+
+    public static Specification<Event> eventDateBefore(String endDate) {
+        if (!StringUtils.hasText(endDate)) {
+            return null;
+        }
+        LocalDateTime endDateTime;
+        try {
+            endDateTime = LocalDateTime.parse(endDate.trim());
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid endDate parameter: " + endDate);
+        }
+        return (root, query, cb) -> cb.lessThanOrEqualTo(root.get("eventDate"), endDateTime);
+    }
+
     public static Specification<Event> searchContains(String search) {
         if (!StringUtils.hasText(search)) {
             return null;
