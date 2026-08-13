@@ -172,26 +172,13 @@ public class StripeService {
         
         // Calculate installment amounts
         BigDecimal installmentAmount = paymentPlan.getInstallmentAmount();
-        BigDecimal upfrontAmount = paymentPlan.getUpfrontAmount();
         BigDecimal remainingAmount = paymentPlan.getRemainingAmount();
         
         // Convert to cents (Stripe uses smallest currency unit)
-        long upfrontAmountCents = upfrontAmount.multiply(new BigDecimal(100)).longValue();
         long installmentAmountCents = installmentAmount.multiply(new BigDecimal(100)).longValue();
         
-        // Create upfront payment (25%)
-        PaymentIntent upfrontIntent = createPaymentIntent(
-                customerId,
-                upfrontAmountCents,
-                paymentPlan.getCurrency().toLowerCase(),
-                paymentMethodId,
-                "Upfront payment for " + paymentPlan.getRegistration().getEvent().getTitle(),
-                createMetadata(paymentPlan, 1, paymentPlan.getTotalInstallments())
-        );
-        
-        paymentIntentIds.add(upfrontIntent.getId());
-        
-        // Create remaining installments (3 monthly payments)
+        // Create remaining installments (2..N); the upfront payment is created
+        // and confirmed separately by PaymentPlanService.
         LocalDateTime eventDate = paymentPlan.getRegistration().getEvent().getEventDate();
         LocalDateTime now = LocalDateTime.now();
         

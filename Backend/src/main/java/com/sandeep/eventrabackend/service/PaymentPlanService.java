@@ -345,16 +345,16 @@ public class PaymentPlanService {
                     paymentPlan, paymentPlan.getStripeCustomerId(), paymentMethodId);
             
             // Persist installment PaymentIntent IDs onto the Payment records so webhooks
-            // for installments 2+ can locate them. installmentIntentIds[0] is the
-            // (already persisted) upfront intent; subsequent entries map to installments
-            // 2+ by index.
+            // for installments 2+ can locate them. installmentIntentIds contains only
+            // the intents for installments 2..N (the upfront intent is already persisted
+            // above), so entry i-1 maps to the Payment row at index i.
             List<Payment> installmentPayments = paymentRepository.findByRegistration_IdOrderByInstallmentNumberAsc(
                     registration.getId());
             String stripeCustomerId = paymentPlan.getStripeCustomerId();
             for (int i = 0; i < installmentPayments.size(); i++) {
                 Payment p = installmentPayments.get(i);
-                if (i > 0 && i < installmentIntentIds.size()) {
-                    p.setStripePaymentIntentId(installmentIntentIds.get(i));
+                if (i > 0 && (i - 1) < installmentIntentIds.size()) {
+                    p.setStripePaymentIntentId(installmentIntentIds.get(i - 1));
                 }
                 p.setStripeCustomerId(stripeCustomerId);
                 paymentRepository.save(p);
