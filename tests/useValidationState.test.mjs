@@ -210,6 +210,7 @@ describe('useValidationState — status messages & custom i18n support', () => {
       result.current.statusMessage,
       'Email Address: Invalid format'
     );
+  });
 
   it('falls back to default message copy when a custom message key is missing', () => {
     const { result } = renderHook(() =>
@@ -254,6 +255,7 @@ describe('useValidationState — field class names', () => {
       classes.includes('border-red-500'),
       'Must include border-red-500'
     );
+  });
 
   it('applies blue border class for validating state when touched', () => {
     const { result } = renderHook(() =>
@@ -284,6 +286,7 @@ describe('useValidationState — ARIA attributes', () => {
       result.current.ariaAttributes['aria-describedby'],
       'email-error'
     );
+  });
 
   it('sets aria-describedby for success state when valid', () => {
     const { result } = renderHook(() =>

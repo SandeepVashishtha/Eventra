@@ -5,6 +5,7 @@ import com.sandeep.eventrabackend.dto.request.SignupRequest;
 import com.sandeep.eventrabackend.dto.request.GoogleAuthRequest;
 import com.sandeep.eventrabackend.dto.request.LogoutRequest;
 import com.sandeep.eventrabackend.dto.request.ReauthRequest;
+import com.sandeep.eventrabackend.dto.request.ResetPasswordRequest;
 import com.sandeep.eventrabackend.dto.response.AuthResponse;
 import com.sandeep.eventrabackend.dto.response.ErrorResponse;
 import com.sandeep.eventrabackend.security.AuthCookieHelper;
@@ -145,6 +146,30 @@ public class AuthController {
                     .headers(clearAuthCookies())
                     .body(error);
         }
+    }
+
+    @PostMapping("/reset-password")
+    @SecurityRequirements   // no auth needed for this endpoint
+    @Operation(
+            summary = "Request a password reset",
+            description = """
+                    Accepts an email address and issues a short-lived, single-use password
+                    reset token for the matching account (if one exists).
+                    
+                    The raw `resetToken` is returned in the response so the client can
+                    complete the flow; deployments with an email transport should instead
+                    email a reset link and remove the token from the response.
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Reset link dispatched (or account not found — same response to avoid enumeration)",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Validation error — missing/invalid email",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<Map<String, String>> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request) {
+        return ResponseEntity.ok(authService.requestPasswordReset(request.getEmail()));
     }
 
     @PostMapping("/google")

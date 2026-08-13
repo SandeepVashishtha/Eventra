@@ -5,12 +5,18 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Handles Grace-Period Token Reuse during Concurrent Refresh Bursts.
  * Prevents 403 Forbidden responses when multiple parallel requests use
  * a recently rotated refresh token within a brief 10-second grace window.
+ *
+ * <p>The grace state now lives behind a {@link TokenGraceStore} rather than a
+ * private per-instance map. Two handler instances that share the same store
+ * (e.g. via dependency injection, or a shared cluster-wide implementation such
+ * as Redis/DB) will honour a single grace window, fixing spurious 403s that
+ * previously occurred when a parallel request landed on a different instance
+ * than the one that rotated the token.
  */
 @Component
 public class TokenRefreshQueueHandler {
@@ -24,11 +30,26 @@ public class TokenRefreshQueueHandler {
 
     private static final String TOKEN_HASH_ALGORITHM = "SHA-256";
 
+    private final TokenGraceStore graceStore;
+
     /**
-     * SHA-256 digests of rotated tokens keyed by rotation time, keeping map
-     * keys fixed-size instead of storing full (hundreds-of-bytes) JWTs.
+     * Default constructor used by Spring — keeps the original per-JVM behaviour
+     * via an in-process store. For multi-instance deployments, inject a shared
+     * {@link TokenGraceStore} implementation instead.
      */
-    private final ConcurrentHashMap<String, Long> invalidatedTokenGraceMap = new ConcurrentHashMap<>();
+    public TokenRefreshQueueHandler() {
+        this(new InMemoryTokenGraceStore(MAX_GRACE_ENTRIES));
+    }
+
+    /**
+     * Constructor for tests / explicit dependency injection. Supplying the same
+     * store to multiple handler instances lets them share one grace window.
+     *
+     * @param graceStore the shared grace store
+     */
+    public TokenRefreshQueueHandler(TokenGraceStore graceStore) {
+        this.graceStore = graceStore;
+    }
 
     /**
      * Mark a consumed refresh token into grace period storage.
@@ -37,10 +58,7 @@ public class TokenRefreshQueueHandler {
         if (oldToken == null) {
             return;
         }
-        purgeExpired();
-        if (invalidatedTokenGraceMap.size() < MAX_GRACE_ENTRIES) {
-            invalidatedTokenGraceMap.put(hashToken(oldToken), System.currentTimeMillis());
-        }
+        graceStore.registerRotation(hashToken(oldToken), GRACE_PERIOD_MS);
     }
 
     /**
@@ -50,21 +68,7 @@ public class TokenRefreshQueueHandler {
         if (token == null) {
             return false;
         }
-        purgeExpired();
-        Long rotationTime = invalidatedTokenGraceMap.get(hashToken(token));
-        return rotationTime != null
-                && (System.currentTimeMillis() - rotationTime) <= GRACE_PERIOD_MS;
-    }
-
-    /**
-     * Drop entries whose grace window has elapsed so the map stays bounded by
-     * the number of rotations within the last {@link #GRACE_PERIOD_MS} window
-     * instead of growing for the lifetime of the process.
-     */
-    private void purgeExpired() {
-        long now = System.currentTimeMillis();
-        invalidatedTokenGraceMap.entrySet()
-                .removeIf(entry -> now - entry.getValue() > GRACE_PERIOD_MS);
+        return graceStore.isWithinGrace(hashToken(token), GRACE_PERIOD_MS);
     }
 
     private static String hashToken(String token) {

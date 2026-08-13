@@ -99,8 +99,10 @@ const SignupForm = () => {
         setFieldState("email", "error");
       } else {
         const emailAvailability = await validateEmailAvailability(emailValue);
-        if (!emailAvailability?.isValid && !emailAvailability?.skippedDueToError) {
-          nextErrors.email = getResultMessage(
+        if (!emailAvailability?.isValid) {
+          nextErrors.email = emailAvailability?.skippedDueToError
+            ? "Could not verify this email right now. Please try again."
+            : getResultMessage(
             emailAvailability,
             "This email is already registered. Please log in."
           );

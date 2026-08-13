@@ -111,6 +111,11 @@ export default function useEventAvailability(eventId, { enabled = true, scoped =
   const [cache, setCache] = useState({});
   const [status, setStatus] = useState(SSE_STATUS.IDLE);
 
+  // Bridges the SSE connection lifecycle to the fallback poller. `true` once the
+  // realtime channel is open (so polling can be paused) and `false` on
+  // error/close (so polling resumes). See the status effect below.
+  const [realtimeConnected, setRealtimeConnected] = useState(false);
+
   // Keep the latest availability per event in a ref so the polling interval can
   // read it without re-creating the interval on every cache change.
   const cacheRef = useRef(cache);
@@ -140,8 +145,12 @@ export default function useEventAvailability(eventId, { enabled = true, scoped =
   });
 
   // Keep an internal status that also flips to "polling" when we fall back.
+  // The `realtimeConnected` flag is the bridge between the SSE lifecycle and the
+  // fallback poller: it is `true` only while the stream is open, so the poll
+  // effect below can pause/resume the shared interval accordingly.
   useEffect(() => {
     setStatus(sseStatus);
+    setRealtimeConnected(sseStatus === SSE_STATUS.CONNECTED);
   }, [sseStatus]);
 
   // Initial fetch + SSE fallback polling. The recurring poll is shared across
@@ -172,10 +181,14 @@ export default function useEventAvailability(eventId, { enabled = true, scoped =
     // Fetch immediately so the UI shows a value before the first SSE event.
     fetchAvailability();
 
-    // Polling fallback: only useful while SSE is not connected, and shared so
-    // a grid of N cards produces one interval, not N.
+    // Polling fallback: only runs while the realtime channel is NOT connected,
+    // and is shared so a grid of N cards produces one interval, not N. When the
+    // SSE stream opens (`realtimeConnected` flips to true) this effect re-runs,
+    // clears the subscriber, and the shared interval is torn down once the last
+    // subscriber leaves. If the stream errors/closes, `realtimeConnected` goes
+    // false and polling is (re)started here.
     const unsubscribePoll =
-      sseStatus === SSE_STATUS.CONNECTED
+      realtimeConnected
         ? () => {}
         : subscribeAvailabilityPoll(normalizedEventId, (availability) => {
             setCache((prev) => ({ ...prev, [normalizedEventId]: availability }));
@@ -186,7 +199,7 @@ export default function useEventAvailability(eventId, { enabled = true, scoped =
       unsubscribePoll();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventId, enabled, sseStatus]);
+  }, [eventId, enabled, realtimeConnected]);
 
   // Memoised derived value for the tracked event.
   const availability = useMemo(

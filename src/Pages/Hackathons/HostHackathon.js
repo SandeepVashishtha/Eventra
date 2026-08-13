@@ -14,7 +14,7 @@ import { REQUIRED_FIELDS, validateHostHackathonForm } from "utils/hostHackathonV
 const HostHackathon = () => {
   const prefersReducedMotion = useReducedMotion();
   const navigate = useNavigate();
-  const { token, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -111,24 +111,17 @@ const HostHackathon = () => {
       const registrationDeadline =
         formData.registrationDeadline?.trim() || formData.startDate;
 
-      await hostHackathon(
-        {
-          title: sanitizeInputText(formData.hackathonName),
-          organizer: sanitizeInputText(formData.organizerName),
-          prizePool: sanitizeInputText(formData.prizeDetails),
-          description: sanitizeInputText(formData.description),
-          location: sanitizeInputText(formData.location),
-          startDate: formData.startDate,
-          endDate: formData.endDate,
-          mode: formData.mode,
-          registrationDeadline,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
+      await hostHackathon({
+        title: sanitizeInputText(formData.hackathonName),
+        organizer: sanitizeInputText(formData.organizerName),
+        prizePool: sanitizeInputText(formData.prizeDetails),
+        description: sanitizeInputText(formData.description),
+        location: sanitizeInputText(formData.location),
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        mode: formData.mode,
+        registrationDeadline,
+      });
 
       toast.success("Hackathon submitted successfully! It will be reviewed before going live.");
 

@@ -13,7 +13,7 @@ import java.time.Duration;
 /**
  * Differentiates SSE Heartbeat Reconnect Streams from REST API Rate Limit Buckets.
  */
-@Component
+@Component("sseRateLimitingFilter")
 public class RateLimitingFilter extends OncePerRequestFilter {
 
     private final RateLimitService rateLimitService;
