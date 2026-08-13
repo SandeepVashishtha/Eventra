@@ -380,7 +380,7 @@ export const apiUtils = {
 
 export default API;
 
-export { ApiError, RateLimitError, normalizeApiError };
+export { ApiError, RateLimitError, normalizeApiError, getApiErrorStatus, getApiErrorMessage };
 
 // Centralized configuration cache store for fallback endpoints
 export const apiConfigCache = {

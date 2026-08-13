@@ -1,6 +1,7 @@
 
 import { safeJsonParse } from "./safeJsonParse.js";
 import { apiUtils, API_ENDPOINTS } from "../config/api.js";
+import { getApiErrorStatus } from "../config/api/errors.js";
 import { logger } from "./logger.js";
 import { getOrMigrateKey } from "./storageKeyManager.js";
 import { syncSecureStorage } from "./secureStorage.js";
@@ -232,7 +233,7 @@ export const importCsvWaitlist = async (eventId, csvText, userId) => {
   } catch (error) {
     logger.error('[WaitlistUtils] Failed to import CSV waitlist:', error);
     
-    if (error?.response?.status === 401 || error?.response?.status === 403) {
+    if (getApiErrorStatus(error) === 401 || getApiErrorStatus(error) === 403) {
       throw error; // Re-throw auth errors
     }
 
@@ -556,7 +557,7 @@ export const getQueuePosition = async (eventId, userId) => {
       return mine.position;
     }
   } catch (error) {
-    if (error?.response?.status === 401 || error?.response?.status === 403) {
+    if (getApiErrorStatus(error) === 401 || getApiErrorStatus(error) === 403) {
       throw error;
     }
     // Fall back to local cache for offline / not-on-waitlist
@@ -654,7 +655,7 @@ export const joinWaitlist = async (eventId, user, registrationForm = {}) => {
     }
     throw new Error(response.data?.message || "Server rejected waitlist join");
   } catch (error) {
-    const status = error?.status || error?.response?.status;
+    const status = getApiErrorStatus(error);
     if (status === 409) {
       const serverMessage =
         error?.response?.data?.message ||
@@ -758,7 +759,7 @@ export const leaveWaitlist = async (eventId, userId) => {
       return true;
     }
   } catch (error) {
-    if (error?.response?.status === 401 || error?.response?.status === 403) {
+    if (getApiErrorStatus(error) === 401 || getApiErrorStatus(error) === 403) {
       throw error;
     }
     if (!checkIfOffline(error)) {
@@ -854,7 +855,7 @@ export const promoteRecord = async (record, event, options = {}, cacheOwnerId) =
     // Explicit server rejection
     return false;
   } catch (error) {
-    if (error?.response?.status === 401 || error?.response?.status === 403) {
+    if (getApiErrorStatus(error) === 401 || getApiErrorStatus(error) === 403) {
       throw error;
     }
     if (!checkIfOffline(error)) {
@@ -966,7 +967,7 @@ export const organizerRemoveUser = async (eventId, userId, cacheOwnerId) => {
       return true;
     }
   } catch (error) {
-    if (error?.response?.status === 401 || error?.response?.status === 403) {
+    if (getApiErrorStatus(error) === 401 || getApiErrorStatus(error) === 403) {
       throw error;
     }
     if (!checkIfOffline(error)) {
