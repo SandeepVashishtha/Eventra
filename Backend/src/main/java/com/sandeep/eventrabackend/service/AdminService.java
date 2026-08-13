@@ -169,6 +169,10 @@ public class AdminService {
 
         List<Long> affectedEventIds = eventRegistrationRepository.findEventIdsByUser_Id(id);
 
+        // Clear owner references before deletion to prevent foreign key constraint violations
+        eventRepository.clearOwnerByUserId(id);
+        hackathonRepository.clearOwnerByUserId(id);
+
         eventRegistrationRepository.deleteByUser_Id(id);
         eventWaitlistRepository.deleteByUser_Id(id);
         hackathonRegistrationRepository.deleteByUser_Id(id);
