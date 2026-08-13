@@ -39,10 +39,18 @@ public class ZkpFeedbackController {
 
         // Save feedback first, then mark nullifier as used to prevent nullifier
         // consumption on failed feedback persistence.
+        Long eventIdLong;
+        try {
+            eventIdLong = Long.valueOf(payload.getEventId());
+        } catch (NumberFormatException e) {
+            response.put("success", false);
+            response.put("message", "Invalid event ID format.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
         ZkpFeedback savedFeedback = null;
         try {
             savedFeedback = zkpFeedbackRepository.save(new ZkpFeedback(
-                    Long.valueOf(payload.getEventId()),
+                    eventIdLong,
                     payload.getNullifierHash(),
                     payload.getFeedbackCategory(),
                     payload.getFeedbackContent(),
