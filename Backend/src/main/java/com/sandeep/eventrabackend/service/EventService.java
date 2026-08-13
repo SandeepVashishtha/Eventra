@@ -395,54 +395,16 @@ public class EventService {
          * @return List of events matching the search criteria
          */
         @Transactional(readOnly = true)
-        public List<EventResponse> searchEvents(String search, String category, String startDate, String endDate,
-                        Boolean free) {
-                List<Event> events;
-
-                // Build query based on search criteria
-                if (search != null && !search.trim().isEmpty()) {
-                        // Full-text search on title and description
-                        events = eventRepository.findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
-                                        search, search);
-                } else {
-                        events = eventRepository.findAll();
-                }
-
-                // Apply additional filters
-                if (category != null && !category.trim().isEmpty()) {
-                        List<Event> filteredEvents = events.stream()
-                                        .filter(event -> category.equals(event.getCategory()))
-                                        .collect(Collectors.toList());
-                        events = filteredEvents;
-                }
-
-                if (startDate != null && !startDate.trim().isEmpty()) {
-                        LocalDateTime startDateTime;
-                        try {
-                                startDateTime = LocalDateTime.parse(startDate);
-                        } catch (Exception e) {
-                                throw new IllegalArgumentException("Invalid startDate parameter: " + startDate);
-                        }
-                        List<Event> filteredEvents = events.stream()
-                                        .filter(event -> event.getEventDate() != null &&
-                                                        !event.getEventDate().isBefore(startDateTime))
-                                        .collect(Collectors.toList());
-                        events = filteredEvents;
-                }
-
-                if (endDate != null && !endDate.trim().isEmpty()) {
-                        LocalDateTime endDateTime;
-                        try {
-                                endDateTime = LocalDateTime.parse(endDate);
-                        } catch (Exception e) {
-                                throw new IllegalArgumentException("Invalid endDate parameter: " + endDate);
-                        }
-                        List<Event> filteredEvents = events.stream()
-                                        .filter(event -> event.getEventDate() != null &&
-                                                        !event.getEventDate().isAfter(endDateTime))
-                                        .collect(Collectors.toList());
-                        events = filteredEvents;
-                }
+        public Page<EventResponse> searchEvents(String search, String category, String startDate, String endDate,
+                        Boolean free, Pageable pageable) {
+                // Push all filtering down to the database via a dynamic Specification.
+                Specification<Event> spec = Specification
+                                .where(EventSpecifications.isPublic())
+                                .and(EventSpecifications.notCancelled())
+                                .and(EventSpecifications.searchContains(search))
+                                .and(EventSpecifications.categoryEquals(category))
+                                .and(EventSpecifications.eventDateAfter(startDate))
+                                .and(EventSpecifications.eventDateBefore(endDate));
 
                 // Events do not currently model price, so a free filter cannot be applied.
                 // Do not use capacity as a proxy for price.
@@ -450,11 +412,8 @@ public class EventService {
                         // Intentionally no-op until pricing data is available.
                 }
 
-                return events.stream()
-                                .filter(Event::isPublic)
-                                .filter(event -> !"CANCELLED".equals(event.getStatus()))
-                                .map(this::toPublicEventResponse)
-                                .collect(Collectors.toList());
+                Page<Event> page = eventRepository.findAll(spec, pageable);
+                return page.map(this::toPublicEventResponse);
         }
 
         /**
