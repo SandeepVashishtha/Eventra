@@ -6,6 +6,7 @@ import com.sandeep.eventrabackend.dto.response.AuthResponse;
 import com.sandeep.eventrabackend.exception.PasswordMismatchException;
 import com.sandeep.eventrabackend.exception.UserAlreadyExistsException;
 import com.sandeep.eventrabackend.exception.InvalidGoogleTokenException;
+import com.sandeep.eventrabackend.exception.AccountNotVerifiedException;
 import com.sandeep.eventrabackend.model.PasswordResetToken;
 import com.sandeep.eventrabackend.model.Role;
 import com.sandeep.eventrabackend.model.User;
@@ -176,23 +177,12 @@ public class AuthService {
                 user = createOrGetGoogleUser(email, firstName, lastName, baseUsername);
             } else if (!user.isEmailVerified()
                     && (user.getAuthProvider() == null || "LOCAL".equalsIgnoreCase(user.getAuthProvider()))) {
-                // Unverified LOCAL accounts can be claimed by a verified Google identity
-                // for the same email. Verified LOCAL accounts are left untouched below.
-                SecureRandom secureRandom = new SecureRandom();
-                byte[] randomBytes = new byte[32];
-                secureRandom.nextBytes(randomBytes);
-                String securePassword = Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
-
-                user.setAuthProvider("GOOGLE");
-                user.setEmailVerified(true);
-                user.setPassword(passwordEncoder.encode(securePassword));
-                if (firstName != null && !firstName.isBlank()) {
-                    user.setFirstName(firstName);
-                }
-                if (lastName != null && !lastName.isBlank()) {
-                    user.setLastName(lastName);
-                }
-                user = userRepository.save(user);
+                // Never auto-claim an unverified LOCAL account. The Google identity may
+                // only be linked after the LOCAL account has proven email ownership; the
+                // caller must route to a verify-email / explicit link flow instead.
+                throw new AccountNotVerifiedException(
+                        "An account already exists for this email but has not been verified. "
+                        + "Please verify your email before linking your Google account.");
             } else if (!user.isEmailVerified()) {
                 user.setEmailVerified(true);
                 if (user.getAuthProvider() == null || user.getAuthProvider().isBlank()) {
@@ -206,6 +196,8 @@ public class AuthService {
             return buildAuthResponse(user, token);
 
         } catch (InvalidGoogleTokenException e) {
+            throw e;
+        } catch (AccountNotVerifiedException e) {
             throw e;
         } catch (DataIntegrityViolationException e) {
             // A unique-constraint race could not be resolved within the bounded
