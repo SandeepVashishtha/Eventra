@@ -93,6 +93,11 @@ const TeamWorkspace = () => {
         "SSE connection error. Started HTTP short-polling fallback stream every 4s.",
       ]);
 
+      if (fallbackInterval) {
+        clearInterval(fallbackInterval);
+        fallbackInterval = null;
+      }
+
       const fetchState = async () => {
         if (!isMounted) return;
         try {
@@ -132,6 +137,10 @@ const TeamWorkspace = () => {
         sseSource.onopen = () => {
           setConnectionStatus("sse");
           logger.info(`${logPrefix} Connection opened. Realtime SSE stream active.`);
+          if (fallbackInterval) {
+            clearInterval(fallbackInterval);
+            fallbackInterval = null;
+          }
         };
 
         sseSource.onmessage = (event) => {
