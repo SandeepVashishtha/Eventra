@@ -264,7 +264,9 @@ public class EventController {
         public ResponseEntity<List<AttendeeDirectoryResponse>> getAttendeeDirectory(
                         @Parameter(description = "ID of the event") @PathVariable Long id,
                         Authentication authentication) {
-
+                if (authentication == null || !authentication.isAuthenticated()) {
+                        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+                }
                 return ResponseEntity.ok(eventService.getAttendeeDirectory(id, authentication.getName()));
         }
 
