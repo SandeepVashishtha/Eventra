@@ -307,6 +307,22 @@ public class PaymentPlanService {
             List<String> installmentIntentIds = stripeService.scheduleInstallmentPayments(
                     paymentPlan, paymentPlan.getStripeCustomerId(), paymentMethodId);
             
+            // Persist installment PaymentIntent IDs onto the Payment records so webhooks
+            // for installments 2+ can locate them. installmentIntentIds[0] is the
+            // (already persisted) upfront intent; subsequent entries map to installments
+            // 2+ by index.
+            List<Payment> installmentPayments = paymentRepository.findByRegistration_IdOrderByInstallmentNumberAsc(
+                    registration.getId());
+            String stripeCustomerId = paymentPlan.getStripeCustomerId();
+            for (int i = 0; i < installmentPayments.size(); i++) {
+                Payment p = installmentPayments.get(i);
+                if (i > 0 && i < installmentIntentIds.size()) {
+                    p.setStripePaymentIntentId(installmentIntentIds.get(i));
+                }
+                p.setStripeCustomerId(stripeCustomerId);
+                paymentRepository.save(p);
+            }
+            
             // Update payment plan status
             paymentPlan.setStatus("ACTIVE");
             paymentPlanRepository.save(paymentPlan);
