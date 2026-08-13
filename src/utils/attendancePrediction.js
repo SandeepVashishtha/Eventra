@@ -81,3 +81,45 @@ export function predictEventTurnout(registrations = [], eventCapacity = 0) {
     recommendedWaitlistPromotions,
   };
 }
+
+/**
+ * Predict average attendance rate percentage from historical event records.
+ * Filters out invalid entries (e.g. non-numeric values, zero or missing capacity)
+ * and safely handles empty history arrays to avoid division by zero or NaN results.
+ *
+ * @param {Array<{attended?: number, capacity?: number, maxAttendees?: number}>} history - Event history list
+ * @param {number} [defaultRate=0] - Fallback percentage if history is empty or invalid
+ * @returns {number} Average attendance percentage (0 to 100)
+ */
+export function predictAttendanceRate(history = [], defaultRate = 0) {
+  if (!Array.isArray(history) || history.length === 0) {
+    return defaultRate;
+  }
+
+  const validEntries = history.filter((entry) => {
+    if (!entry || typeof entry !== "object") return false;
+    const capacity = Number(entry.capacity ?? entry.maxAttendees);
+    const attended = Number(entry.attended ?? entry.attendeesCount);
+
+    return (
+      Number.isFinite(capacity) &&
+      capacity > 0 &&
+      Number.isFinite(attended) &&
+      attended >= 0
+    );
+  });
+
+  if (validEntries.length === 0) {
+    return defaultRate;
+  }
+
+  const totalRatio = validEntries.reduce((sum, entry) => {
+    const capacity = Number(entry.capacity ?? entry.maxAttendees);
+    const attended = Number(entry.attended ?? entry.attendeesCount);
+    const ratio = Math.min(Math.max(attended / capacity, 0), 1);
+    return sum + ratio;
+  }, 0);
+
+  const averageRatio = totalRatio / validEntries.length;
+  return Math.round(averageRatio * 100);
+}
