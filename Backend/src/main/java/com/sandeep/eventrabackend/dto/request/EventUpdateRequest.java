@@ -53,4 +53,7 @@ public class EventUpdateRequest {
 
     @Schema(description = "Optional tags for the event to enable granular filtering and search", example = "AI,Conference,2026")
     private Set<String> tags;
+
+    @Schema(description = "Optional lifecycle status for the event (e.g. archived). When omitted the previous status is preserved.", example = "archived")
+    private String status;
 }

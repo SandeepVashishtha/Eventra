@@ -600,9 +600,21 @@ ${window.location.href}
               )}
               {canManageEvent && event.status !== "cancelled" && event.status !== "archived" && (
                 <button
-                  onClick={() => {
-                    setEvent({ ...event, status: "archived" });
-                    toast.success("Event Archived!");
+                  onClick={async () => {
+                    try {
+                      const res = await apiUtils.put(
+                        API_ENDPOINTS.EVENTS.UPDATE(event.id),
+                        { status: "archived" },
+                        { requiresAuth: true }
+                      );
+                      const updated = res?.data ?? res;
+                      setEvent({ ...event, ...(updated || {}) });
+                      toast.success("Event Archived!");
+                    } catch (err) {
+                      toast.error(
+                        err?.message || "Failed to archive event. Please try again."
+                      );
+                    }
                   }}
                   className="inline-flex items-center justify-center gap-2 rounded-full border border-orange-500 px-6 py-3 text-sm font-semibold text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition"
                 >

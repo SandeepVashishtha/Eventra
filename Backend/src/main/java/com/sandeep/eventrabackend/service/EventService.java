@@ -569,6 +569,9 @@ public class EventService {
                 if (request.getTags() != null) {
                         event.setTags(new HashSet<>(request.getTags()));
                 }
+                if (request.getStatus() != null) {
+                        event.setStatus(request.getStatus());
+                }
 
                 Event saved = eventRepository.save(event);
 
