@@ -182,9 +182,18 @@ export const throttleAsync = (asyncFn, limit = 500, options = {}) => {
   const { leading = true, trailing = true } = options;
 
   let inThrottle = false;
-  let lastResult = null;
+  let lastResult = undefined;
   let lastArgs = null;
   let timeoutId = null;
+  const pendingCallbacks = [];
+
+  const settlePending = (error, result) => {
+    while (pendingCallbacks.length > 0) {
+      const { resolve, reject } = pendingCallbacks.shift();
+      if (error) reject(error);
+      else resolve(result);
+    }
+  };
 
   const throttled = async (...args) => {
     if (!inThrottle) {
@@ -194,6 +203,7 @@ export const throttleAsync = (asyncFn, limit = 500, options = {}) => {
         lastResult = await asyncFn(...args);
       } else {
         lastArgs = args;
+        lastResult = undefined;
       }
 
       timeoutId = setTimeout(async () => {
@@ -201,7 +211,14 @@ export const throttleAsync = (asyncFn, limit = 500, options = {}) => {
         if (trailing && lastArgs) {
           const trailingArgs = lastArgs;
           lastArgs = null;
-          await throttled(...trailingArgs);
+          try {
+            lastResult = await asyncFn(...trailingArgs);
+            settlePending(null, lastResult);
+          } catch (error) {
+            settlePending(error, null);
+          }
+        } else {
+          settlePending(null, lastResult);
         }
       }, limit);
 
@@ -209,7 +226,9 @@ export const throttleAsync = (asyncFn, limit = 500, options = {}) => {
     }
 
     lastArgs = args;
-    return lastResult;
+    return new Promise((resolve, reject) => {
+      pendingCallbacks.push({ resolve, reject });
+    });
   };
 
   throttled.cancel = () => {
@@ -220,6 +239,7 @@ export const throttleAsync = (asyncFn, limit = 500, options = {}) => {
     inThrottle = false;
     lastArgs = null;
     lastResult = null;
+    settlePending(new DebounceCancelledError(), null);
   };
 
   return throttled;
