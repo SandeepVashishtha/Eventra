@@ -3,6 +3,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
+import RichTextEditor from "components/common/RichTextEditor";
 
 interface EventDraft {
   id: string;
@@ -841,17 +842,16 @@ const EventDraftManager: React.FC<
                   Description
                 </label>
 
-                <textarea
+                <RichTextEditor
                   name="description"
-                  value={
-                    formData.description
-                  }
-                  onChange={
-                    handleInputChange
-                  }
-                  rows={4}
+                  value={formData.description}
+                  onChange={(e) => {
+                    const newFormData = { ...formData, [e.target.name]: e.target.value };
+                    setFormData(newFormData);
+                  }}
                   placeholder="Describe your event..."
-                  className="w-full resize-none rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                  maxLength={500}
+                  className="w-full resize-none rounded-xl border border-gray-300 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                 />
               </div>
 

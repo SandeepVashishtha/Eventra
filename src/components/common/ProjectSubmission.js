@@ -8,6 +8,7 @@ import { useAuth } from "context/AuthContext";
 import { projectService } from "services/projectService";
 import { getUserFullName } from "utils/userNameUtils.mjs";
 import CharacterCounter from "./CharacterCounter";
+import RichTextEditor from "./RichTextEditor";
 import "./ProjectSubmission.css";
 
 const ProjectSubmission = ({ onClose, onSubmit }) => {
@@ -172,19 +173,18 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
 
           <div className="form-group">
             <label htmlFor="description">Description</label>
-            <textarea
+            <RichTextEditor
               id="description"
               name="description"
               value={formData.description}
-              onChange={handleInputChange}
-              rows="4"
+              onChange={(e) => {
+                const newFormData = { ...formData, [e.target.name]: e.target.value };
+                setFormData(newFormData);
+              }}
               maxLength={1000}
               aria-describedby="description-counter"
               placeholder="Describe your project, its features, and purpose"
             />
-            <p className="text-xs text-gray-500 mt-1 text-right">
-  {description.length}/500 characters
-</p>
             <div className="flex justify-end mt-1">
               <CharacterCounter id="description-counter" value={formData.description} maxLength={1000} />
             </div>
