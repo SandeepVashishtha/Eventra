@@ -516,10 +516,11 @@ const migratePayload = async (fromVersion, toVersion, storageKey, plaintext) => 
  * @returns {Promise<Object>} Metadata about the rotated key
  * @throws {Error} If rotation fails due to missing material, corrupted storage, or crypto unavailability
  */
-export const rotateKey = async () => {
-  if (!cryptoSupported) {
-    throw new Error("Key rotation requires Web Crypto API support");
-  }
+export const rotateKey = async () =>
+  withKeyLock(async () => {
+    if (!cryptoSupported) {
+      throw new Error("Key rotation requires Web Crypto API support");
+    }
 
   const METADATA_KEYS = new Set([MATERIAL_STORAGE_KEY, SALT_STORAGE_KEY, KEY_METADATA_KEY]);
 
@@ -617,7 +618,7 @@ export const rotateKey = async () => {
 
     throw new Error(`Key rotation failed: ${error.message}`);
   }
-};
+  });
 
 export const getKeyMetadata = () => {
   return getOrInitKeyMetadata();
@@ -698,6 +699,28 @@ const removedKeys = new Set();
 // While set, every read reports null so a clear is visible immediately even
 // though the disk wipe is serialized behind earlier queued writes.
 let pendingClear = false;
+
+// --- Key-rotation mutex -----------------------------------------------------
+// rotateKey() swaps the in-memory key material (DERIVED_KEY_MATERIAL /
+// DERIVED_KEY_SALT / _keyPromise) and re-encrypts every record. If a
+// getItemAsync / setItem runs concurrently it can observe a half-switched key
+// state and become unreadable. This promise-chain mutex serializes key
+// operations so rotation and concurrent reads/writes never interleave.
+let _keyLockChain = Promise.resolve();
+const withKeyLock = async (fn) => {
+  let release;
+  const next = new Promise((resolve) => {
+    release = resolve;
+  });
+  const prev = _keyLockChain;
+  _keyLockChain = _keyLockChain.then(() => next);
+  await prev;
+  try {
+    return await fn();
+  } finally {
+    release();
+  }
+};
 
 /**
  * Encrypts `value` and writes the ciphertext to localStorage under `key`.
@@ -802,6 +825,7 @@ export const syncSecureStorage = {
    *   could not be persisted (localStorage full, encryption error, etc.).
    */
   setItem: async function (key, value) {
+    return withKeyLock(async () => {
     try {
       pendingWrites.set(key, value);
       removedKeys.delete(key);
@@ -818,6 +842,7 @@ export const syncSecureStorage = {
       }
       return false;
     }
+    });
   },
 
   /**
@@ -868,7 +893,7 @@ export const syncSecureStorage = {
    * @returns {Promise<string|null>} Decrypted value, raw fallback, or `null`
    *   when the key does not exist or an unrecoverable error occurs.
    */
-  getItemAsync: async (key) => {
+  getItemAsync: async (key) => withKeyLock(async () => {
     try {
       if (pendingClear) {
         return null;
@@ -896,7 +921,7 @@ export const syncSecureStorage = {
       console.error("[secureStorage] getItemAsync failed:", error);
       return null;
     }
-  },
+  }),
 
   /**
    * Removes the value stored under the given key.
