@@ -2,6 +2,8 @@
 /**
  * adds a mode helper.
  */
+import { frequencyMap } from './frequency-map.js';
+
 export function getMode(array) {
   const freq = frequencyMap(array);
   let best;
