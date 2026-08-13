@@ -1,9 +1,9 @@
 import axios from "axios";
-import { ENV } from "./env";
-import { syncServerTimeFromHeader } from "../utils/timeSync";
-import { createIntegrityHeader } from "../utils/security/requestIntegrity";
+import { ENV } from "./env.js";
+import { syncServerTimeFromHeader } from "../utils/timeSync.js";
+import { createIntegrityHeader } from "../utils/security/requestIntegrity.js";
 import { ApiError, RateLimitError } from "./api/errors.js";
-import { setupRequestInterceptor, setupResponseInterceptor, setOnRequiresReauthHandler, setAuthToken as setInterceptorAuthToken, setRefreshToken as setInterceptorRefreshToken } from "./api/interceptors.js";
+import { setupRequestInterceptor, setupResponseInterceptor, setOnRequiresReauthHandler, setReauthRequired, setAuthToken as setInterceptorAuthToken, setRefreshToken as setInterceptorRefreshToken } from "./api/interceptors.js";
 import { API_BASE_URL, validateBackendConfig } from "./backendConfig.js";
 
 // ---------------------------------------------------------------------------
@@ -51,6 +51,7 @@ export const setRequiresReauthHandler = (handler) => {
   onRequiresReauth = handler;
   setOnRequiresReauthHandler(handler);
 };
+export { setReauthRequired };
 export const setAuthToken = (token) => {
   _authToken = token;
   setInterceptorAuthToken(token);
@@ -201,6 +202,7 @@ export const API_ENDPOINTS = {
     REGISTER: (id) => buildApiUrl(`/events/${id}/register`),
     CANCEL_REGISTRATION: (id) => buildApiUrl(`/events/${id}/registration`),
     CANCEL: (id) => buildApiUrl(`/events/${id}/cancel`),
+    ARCHIVE: (id) => buildApiUrl(`/events/${id}/archive`),
     AVAILABILITY: (id) => buildApiUrl(`/events/${id}/availability`),
     ATTENDEES: (id) => buildApiUrl(`/events/${id}/attendees`),
 
@@ -249,6 +251,9 @@ export const API_ENDPOINTS = {
     PREFERENCES: buildApiUrl("/users/preferences"),
     PUSH_SUBSCRIBE: buildApiUrl("/notifications/push-subscriptions"),
     PUSH_UNSUBSCRIBE: buildApiUrl("/notifications/push-subscriptions/unsubscribe"),
+    TEST_EMAIL: buildApiUrl("/notifications/send-test-email"),
+    SAVE_TEMPLATE: buildApiUrl("/notifications/save-template"),
+    GET_TEMPLATE: (eventId, templateType) => buildApiUrl(`/notifications/templates/${eventId}/${templateType}`),
   },
   USERS: {
     PROFILE: buildApiUrl("/users/profile"),
@@ -281,6 +286,7 @@ export const API_ENDPOINTS = {
     JOIN: buildApiUrl("/waitlist/join"),
     LEAVE: (id) => buildApiUrl(`/waitlist/${id}/leave`),
     STATUS: (id) => buildApiUrl(`/waitlist/${id}/status`),
+    IMPORT_CSV: (id) => buildApiUrl(`/events/${id}/waitlist/import`),
   },
   FEEDBACK: {
     BASE: buildApiUrl("/feedback"),
@@ -374,7 +380,7 @@ export const apiUtils = {
 
 export default API;
 
-export { ApiError, RateLimitError, normalizeApiError };
+export { ApiError, RateLimitError, normalizeApiError, getApiErrorStatus, getApiErrorMessage };
 
 // Centralized configuration cache store for fallback endpoints
 export const apiConfigCache = {

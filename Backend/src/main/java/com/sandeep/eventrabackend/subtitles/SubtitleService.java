@@ -479,17 +479,17 @@ public class SubtitleService {
      * Trim cache to prevent memory issues
      */
     private void trimCache() {
-        // Trim event cache
-        eventSubtitleCache.values().forEach(subtitles -> {
+        // Trim event cache — must update map entries, not reassign local variable
+        eventSubtitleCache.forEach((key, subtitles) -> {
             if (subtitles.size() > maxHistorySize) {
-                subtitles = new ArrayList<>(subtitles.subList(Math.max(0, subtitles.size() - maxHistorySize), subtitles.size()));
+                eventSubtitleCache.put(key, new ArrayList<>(subtitles.subList(Math.max(0, subtitles.size() - maxHistorySize), subtitles.size())));
             }
         });
         
-        // Trim session cache
-        sessionSubtitleCache.values().forEach(subtitles -> {
+        // Trim session cache — must update map entries, not reassign local variable
+        sessionSubtitleCache.forEach((key, subtitles) -> {
             if (subtitles.size() > bufferSize) {
-                subtitles = new ArrayList<>(subtitles.subList(Math.max(0, subtitles.size() - bufferSize), subtitles.size()));
+                sessionSubtitleCache.put(key, new ArrayList<>(subtitles.subList(Math.max(0, subtitles.size() - bufferSize), subtitles.size())));
             }
         });
         

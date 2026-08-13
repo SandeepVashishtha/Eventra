@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useCallback, useRef, useState } from "react";
-import { setOnUnauthorizedHandler, setRequiresReauthHandler, setAuthToken, setRefreshToken, apiUtils } from "../config/api.js";
+import { setOnUnauthorizedHandler, setRequiresReauthHandler, setReauthRequired, setAuthToken, setRefreshToken, apiUtils } from "../config/api.js";
 import { getRefreshToken } from "../config/api/interceptors.js";
 import { authService } from "../services/authService.js";
 import { syncSecureStorage } from "../utils/secureStorage.js";
@@ -244,26 +244,19 @@ export const AuthProvider = ({ children }) => {
         if (err?.status === 401 || err?.status === 403) {
           clearSession();
         } else {
-          // If network is offline, attempt to fall back to securely cached user details
+          // Network/server errors are not proof the session is still valid.
+          // Restore a display-only cached profile without roles so Gate cannot
+          // treat a stale ADMIN/ORGANIZER cache as an authenticated session.
           try {
             const cachedUser = await syncSecureStorage.getItemAsync("user");
             if (cachedUser) {
               const parsed = JSON.parse(cachedUser);
-              const resolvedRoles = normalizeRoles(
-                parsed.roles ?? (parsed.role ? [parsed.role] : [])
-              );
-              const rolePermissions = resolvedRoles.flatMap(
-                (role) => ROLE_PERMISSIONS[role] || []
-              );
               setUser({
                 ...parsed,
-                roles: resolvedRoles,
-                permissions: rolePermissions,
+                roles: [],
+                permissions: [],
+                profileValidated: false,
               });
-              // Never read a JS-readable token cookie (httpOnlyStorage policy).
-              // The active token is held in JS memory by setAuthToken or by
-              // the backend's HttpOnly Set-Cookie flow.
-              setToken("cookie-managed");
             } else {
               clearSession();
             }
@@ -291,6 +284,7 @@ export const AuthProvider = ({ children }) => {
     // Intercept 401 errors globally at Axios layer to auto-logout user
     setOnUnauthorizedHandler(() => clearExpiredSessionRef.current());
     setRequiresReauthHandler(() => {
+      setReauthRequired(true);
       setRequiresReauth(true);
     });
     return () => {
@@ -502,7 +496,14 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider value={value}>
       {children}
-      {requiresReauth && <ReAuthModal onSuccess={() => setRequiresReauth(false)} />}
+      {requiresReauth && (
+        <ReAuthModal
+          onSuccess={() => {
+            setReauthRequired(false);
+            setRequiresReauth(false);
+          }}
+        />
+      )}
     </AuthContext.Provider>
   );
 };

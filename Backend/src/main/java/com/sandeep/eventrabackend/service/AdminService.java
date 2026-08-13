@@ -5,6 +5,7 @@ import com.sandeep.eventrabackend.dto.AdminStatsResponse;
 import com.sandeep.eventrabackend.dto.RegistrationTrendDTO;
 import com.sandeep.eventrabackend.dto.response.*;
 import com.sandeep.eventrabackend.exception.RegistrationConflictException;
+import com.sandeep.eventrabackend.model.Event;
 import com.sandeep.eventrabackend.model.Feedback;
 import com.sandeep.eventrabackend.model.Hackathon;
 import com.sandeep.eventrabackend.model.Role;
@@ -133,11 +134,13 @@ public class AdminService {
             targetUser.setUsername(username);
         }
         if (request.getEmail() != null) {
-            String email = request.getEmail().trim().toLowerCase();
-            if (!email.equalsIgnoreCase(targetUser.getEmail()) && userRepository.existsByEmail(email)) {
-                throw new IllegalArgumentException("Email is already taken");
+            String requestedEmail = request.getEmail().trim().toLowerCase();
+            if (!targetUser.getEmail().equalsIgnoreCase(requestedEmail)) {
+                throw new IllegalArgumentException(
+                        "Email changes are not allowed through the admin panel. "
+                                + "Changing an email would orphan the user's active JWT session and email-keyed data. "
+                                + "Email must be changed through a dedicated, verified self-service flow.");
             }
-            targetUser.setEmail(email);
         }
         if (request.getRole() != null && !request.getRole().isBlank()) {
             Role requestedRole = parseRole(request.getRole());
@@ -166,13 +169,17 @@ public class AdminService {
 
         List<Long> affectedEventIds = eventRegistrationRepository.findEventIdsByUser_Id(id);
 
+        // Clear owner references before deletion to prevent foreign key constraint violations
+        eventRepository.clearOwnerByUserId(id);
+        hackathonRepository.clearOwnerByUserId(id);
+
         eventRegistrationRepository.deleteByUser_Id(id);
         eventWaitlistRepository.deleteByUser_Id(id);
         hackathonRegistrationRepository.deleteByUser_Id(id);
         projectUpvoteRepository.deleteByUser_Id(id);
         notificationRepository.deleteByUser_Id(id);
         feedbackRepository.deleteByUser_Id(id);
-        eventRepository.deleteAttendeeRowsByUserId(id);
+        // eventRepository.deleteAttendeeRowsByUserId(id); // Removed dropped table call
         eventTeamMemberRepository.clearAssignedByUserId(id);
         eventTeamMemberRepository.deleteByUser_Id(id);
 
@@ -266,6 +273,7 @@ public class AdminService {
         return toEventResponse(saved);
     }
 
+    @Transactional
     public void deleteEvent(Long id) {
         if (!eventRepository.existsById(id)) {
             throw new EntityNotFoundException("Event not found with id: " + id);
@@ -288,7 +296,7 @@ public class AdminService {
     public PagedResponse<HackathonResponse> getHackathons(int page, int size) {
         int safePage = Math.max(page, 0);
         Pageable pageable = PageRequest.of(safePage, size, Sort.by("startDate").descending());
-        return PagedResponse.from(hackathonRepository.findAll(pageable).map(this::toHackathonResponse));
+        return PagedResponse.from(hackathonRepository.findByIsDeletedFalse(pageable).map(this::toHackathonResponse));
     }
 
     /**
@@ -334,7 +342,7 @@ public class AdminService {
                 .averageCapacityUtilization(
                         Optional.ofNullable(eventAnalyticsRepo.findAverageCapacityUtilization()).orElse(0.0))
                 // Hackathons
-                .totalHackathons(hackathonRepository.count())
+                .totalHackathons(hackathonRepository.countByIsDeletedFalse())
                 // Feedback
                 .totalFeedbackSubmissions(feedbackRepository.countTotalFeedback())
                 .overallAverageRating(

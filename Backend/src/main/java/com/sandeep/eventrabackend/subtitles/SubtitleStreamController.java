@@ -1,7 +1,11 @@
 package com.sandeep.eventrabackend.subtitles;
 
+import com.sandeep.eventrabackend.model.EventRole;
+import com.sandeep.eventrabackend.service.EventRoleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.http.*;
@@ -27,11 +31,15 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class SubtitleStreamController {
     
     private final SubtitleService subtitleService;
+    private final EventRoleService eventRoleService;
     
     /**
-     * Map of event ID to list of active SSE emitters
+     * Map of event ID to active SSE emitters and their requested target
+     * language. A {@code null} language means the emitter receives subtitles
+     * in every language; a non-null language restricts live delivery to that
+     * language (issue #15335).
      */
-    private final Map<Long, List<SseEmitter>> eventEmitters = new ConcurrentHashMap<>();
+    private final Map<Long, Map<SseEmitter, String>> eventEmitters = new ConcurrentHashMap<>();
     
     /**
      * Map of session ID to list of active SSE emitters
@@ -122,7 +130,7 @@ public class SubtitleStreamController {
         SseEmitter emitter = createEmitter();
         
         // Register emitter with language filter
-        registerEventEmitter(eventId, emitter);
+        registerEventEmitter(eventId, emitter, language);
         
         // Send initial data (active subtitles in the specified language)
         List<Subtitle> subtitles = subtitleService.getSubtitlesByEventId(eventId);
@@ -157,11 +165,18 @@ public class SubtitleStreamController {
     }
     
     /**
-     * Register an emitter for an event
+     * Register an emitter for an event (receives every language)
      */
     private void registerEventEmitter(Long eventId, SseEmitter emitter) {
-        eventEmitters.computeIfAbsent(eventId, k -> new CopyOnWriteArrayList<>()).add(emitter);
-        
+        registerEventEmitter(eventId, emitter, null);
+    }
+
+    /**
+     * Register an emitter for an event, optionally scoped to a target language
+     */
+    private void registerEventEmitter(Long eventId, SseEmitter emitter, String language) {
+        eventEmitters.computeIfAbsent(eventId, k -> new ConcurrentHashMap<>()).put(emitter, language);
+
         log.debug("Registered emitter for event {}", eventId);
     }
     
@@ -178,7 +193,7 @@ public class SubtitleStreamController {
      * Unregister an emitter for an event
      */
     private void unregisterEventEmitter(Long eventId, SseEmitter emitter) {
-        List<SseEmitter> emitters = eventEmitters.get(eventId);
+        Map<SseEmitter, String> emitters = eventEmitters.get(eventId);
         if (emitters != null) {
             emitters.remove(emitter);
             if (emitters.isEmpty()) {
@@ -270,9 +285,13 @@ public class SubtitleStreamController {
      * Broadcast a subtitle to all clients subscribed to an event
      */
     public void broadcastToEvent(Long eventId, Subtitle subtitle) {
-        List<SseEmitter> emitters = eventEmitters.get(eventId);
+        Map<SseEmitter, String> emitters = eventEmitters.get(eventId);
         if (emitters != null) {
-            emitters.forEach(emitter -> sendSubtitle(emitter, subtitle, "subtitle"));
+            emitters.forEach((emitter, language) -> {
+                if (language == null || language.equalsIgnoreCase(subtitle.getTargetLanguage())) {
+                    sendSubtitle(emitter, subtitle, "subtitle");
+                }
+            });
         }
     }
     
@@ -290,9 +309,9 @@ public class SubtitleStreamController {
      * Broadcast an event to all clients subscribed to an event
      */
     public void broadcastEvent(Long eventId, String eventName, Object data) {
-        List<SseEmitter> emitters = eventEmitters.get(eventId);
+        Map<SseEmitter, String> emitters = eventEmitters.get(eventId);
         if (emitters != null) {
-            emitters.forEach(emitter -> {
+            emitters.keySet().forEach(emitter -> {
                 try {
                     emitter.send(SseEmitter.event()
                             .name(eventName)
@@ -322,7 +341,7 @@ public class SubtitleStreamController {
         sessionEmitters.forEach((sessionId, emitters) -> 
             sessionCounts.put(sessionId, emitters.size()));
         
-        stats.put("totalEventConnections", eventEmitters.values().stream().mapToInt(List::size).sum());
+        stats.put("totalEventConnections", eventEmitters.values().stream().mapToInt(Map::size).sum());
         stats.put("totalSessionConnections", sessionEmitters.values().stream().mapToInt(List::size).sum());
         stats.put("activeEvents", eventCounts);
         stats.put("activeSessions", sessionCounts);
@@ -333,13 +352,20 @@ public class SubtitleStreamController {
     
     /**
      * Close all connections for a specific event
+     *
+     * Requires authentication and the ORGANIZER (or higher) role on the event,
+     * mirroring {@code LiveAudienceService.requireModerator} so an anonymous
+     * caller cannot sever the live caption streams of an event (issue #15336).
      */
     @PostMapping("/event/{eventId}/disconnect")
-    public ResponseEntity<Map<String, Object>> disconnectEventClients(@PathVariable Long eventId) {
-        List<SseEmitter> emitters = eventEmitters.remove(eventId);
+    public ResponseEntity<Map<String, Object>> disconnectEventClients(
+            @PathVariable Long eventId,
+            Authentication authentication) {
+        requireOrganizer(eventId, authentication);
+        Map<SseEmitter, String> emitters = eventEmitters.remove(eventId);
         
         if (emitters != null) {
-            emitters.forEach(emitter -> {
+            emitters.keySet().forEach(emitter -> {
                 try {
                     emitter.complete();
                 } catch (Exception e) {
@@ -358,9 +384,16 @@ public class SubtitleStreamController {
     
     /**
      * Close all connections for a specific session
+     *
+     * Requires authentication and the ORGANIZER (or higher) role on the event
+     * the session belongs to (issue #15336). If the session cannot be resolved
+     * to an event, the request is denied.
      */
     @PostMapping("/session/{sessionId}/disconnect")
-    public ResponseEntity<Map<String, Object>> disconnectSessionClients(@PathVariable String sessionId) {
+    public ResponseEntity<Map<String, Object>> disconnectSessionClients(
+            @PathVariable String sessionId,
+            Authentication authentication) {
+        requireSessionOrganizer(sessionId, authentication);
         List<SseEmitter> emitters = sessionEmitters.remove(sessionId);
         
         if (emitters != null) {
@@ -382,7 +415,34 @@ public class SubtitleStreamController {
     }
     
     // ==================== Helper Methods ====================
-    
+
+    /**
+     * Resolve the authenticated caller's email, rejecting anonymous calls
+     */
+    private String authenticatedEmail(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated() || authentication.getName() == null) {
+            throw new AccessDeniedException("Authentication required for this action.");
+        }
+        return authentication.getName();
+    }
+
+    /**
+     * Require the caller to hold the ORGANIZER role (or higher) on the event
+     */
+    private void requireOrganizer(Long eventId, Authentication authentication) {
+        eventRoleService.requireRole(eventId, authenticatedEmail(authentication), EventRole.ORGANIZER);
+    }
+
+    /**
+     * Require the caller to hold the ORGANIZER role on the event a session belongs to
+     */
+    private void requireSessionOrganizer(String sessionId, Authentication authentication) {
+        Long eventId = subtitleService.getSession(sessionId)
+                .map(SubtitleSession::getEventId)
+                .orElseThrow(() -> new AccessDeniedException("Insufficient event role for this action."));
+        requireOrganizer(eventId, authentication);
+    }
+
     /**
      * Notify all event subscribers about a new subtitle
      * 

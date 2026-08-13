@@ -29,7 +29,7 @@ public class StreamController {
         this.eventStreamService = eventStreamService;
     }
 
-    private static final Set<String> AUTH_REQUIRED_TOPICS = Set.of("notifications", "analytics");
+    private static final Set<String> AUTH_REQUIRED_TOPICS = Set.of("notifications", "analytics", "live-audience");
 
     @GetMapping(value = "/{topic}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @Operation(summary = "Subscribe to a realtime SSE topic")

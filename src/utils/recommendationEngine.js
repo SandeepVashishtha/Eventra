@@ -69,6 +69,7 @@ const getPopularityScore = (event) => {
 const _tagCache = new Map();
 const _cacheOrder = [];
 const MAX_CACHE_SIZE = 100;
+const TAG_CACHE_TTL_MS = 5 * 60 * 1000;
 
 const _getCachedTags = (event) => {
   // 🔥 FIX: Skip the cache entirely when the event has no real id.
@@ -79,21 +80,30 @@ const _getCachedTags = (event) => {
   // events we expect to be re-encountered, and id-less events are not.
   const id = getEventId(event);
   if (!id) return getEventTags(event);
-  if (_tagCache.has(id)) {
-    const tags = _tagCache.get(id);
+  const cached = _tagCache.get(id);
+  if (cached && Date.now() - cached.cachedAt <= TAG_CACHE_TTL_MS) {
     const idx = _cacheOrder.indexOf(id);
     if (idx > -1) _cacheOrder.splice(idx, 1);
     _cacheOrder.push(id);
-    return tags;
+    return cached.tags;
   }
   if (_cacheOrder.length >= MAX_CACHE_SIZE) {
     const oldest = _cacheOrder.shift();
     _tagCache.delete(oldest);
   }
   const tags = getEventTags(event);
-  _tagCache.set(id, tags);
+  _tagCache.set(id, { tags, cachedAt: Date.now() });
   _cacheOrder.push(id);
   return tags;
+};
+
+/**
+ * Clears the in-memory tag cache. Exported for tests and SSR resets so stale,
+ * session-lifetime tag vectors are never served across users/requests.
+ */
+export const clearTagCache = () => {
+  _tagCache.clear();
+  _cacheOrder.length = 0;
 };
 
 const getSimilarityScore = (candidate, interactedEvents) => {
@@ -139,8 +149,11 @@ export const applyTimeDecay = (timestamp, halfLifeDays = DEFAULT_HALF_LIFE_DAYS)
   const timeMs = new Date(timestamp).getTime();
   if (Number.isNaN(timeMs)) return 1.0;
 
+  const safeHalfLife = Number.isFinite(halfLifeDays) && halfLifeDays > 0
+    ? halfLifeDays
+    : DEFAULT_HALF_LIFE_DAYS;
   const ageInDays = Math.max(0, (Date.now() - timeMs) / (1000 * 60 * 60 * 24));
-  const lambda = Math.LN2 / halfLifeDays;
+  const lambda = Math.LN2 / safeHalfLife;
   return Math.exp(-lambda * ageInDays);
 };
 
@@ -288,7 +301,9 @@ export const buildInteractionProfile = ({
     const eventLocation = normalizeText(event.location);
 
     // Apply time-decay multiplier based on interaction timestamp
-    const decayFactor = applyTimeDecay(entry.createdAt || entry.timestamp || event.date);
+    // (never fall back to the event date, which is not a recency signal)
+    const interactionTime = entry?.createdAt || entry?.timestamp;
+    const decayFactor = interactionTime ? applyTimeDecay(interactionTime) : 1.0;
     const weight = baseWeight * decayFactor;
 
     if (id) interactedIds.add(id);
@@ -437,10 +452,11 @@ export const calculateRecommendationScore = (
   };
 };
 
-export const getTrendingEventsForArea = (events = [], location = "", limit = 4) =>
-  [...events]
+export const getTrendingEventsForArea = (events = [], location = "", limit = 4) => {
+  const matchesArea = createLocationMatcher(location);
+  return [...events]
     .filter((event) => !calculateTemporalUrgencyScore(event.date || event.startDate).isExpired)
-    .filter((event) => eventMatchesArea(event, location) || event.eventMode === "online")
+    .filter((event) => matchesArea(normalizeText(event?.location)) || event.eventMode === "online")
     .map((event) => ({
       ...event,
       trendingScore: Math.round(getPopularityScore(event) * 10),

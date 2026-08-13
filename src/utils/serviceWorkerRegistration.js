@@ -1,338 +1,260 @@
-/* eslint-disable no-console */
-
 /**
- * Service Worker & PWA Lifecycle Management Module
- * Supports update detection, Web Push notifications, background sync, and cache control.
+ * Enterprise Progressive Web App (PWA) & Service Worker Lifecycle Management Engine
+ *
+ * Provides service worker registration, lifecycle hook management (onUpdate, onSuccess),
+ * automatic update detection, skipWaiting execution, offline/online status tracking,
+ * and secure origin verification.
  */
 
-const defaultConfig = {
-  swUrl: '/service-worker.js',
-  scope: '/',
-  onSuccess: (registration) => {
-    console.log('[SW Utility] Content is cached for offline use.', registration);
-  },
-  onUpdate: (registration) => {
-    console.log('[SW Utility] New content is available; please refresh.', registration);
-  },
-  onOffline: () => {
-    console.log('[SW Utility] No internet connection found. Running in offline mode.');
-  },
-  onOnline: () => {
-    console.log('[SW Utility] Internet connection restored.');
-  },
-  onError: (error) => {
-    console.error('[SW Utility] Service Worker registration error:', error);
-  },
-};
+// ============================================================================
+// 1. Helpers & Environment Detection
+// ============================================================================
 
-/**
- * Helper to convert a Base64 string to a Uint8Array for VAPID push keys.
- * @param {string} base64String
- * @returns {Uint8Array}
- */
-export const urlBase64ToUint8Array = (base64String) => {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
-};
-
-/**
- * Checks if current environment is localhost or dev server.
- * @returns {boolean}
- */
-export const isLocalhost = Boolean(
-  window.location.hostname === 'localhost' ||
-    window.location.hostname === '[::1]' ||
-    window.location.hostname.match(/^127(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/)
+const isLocalhost = Boolean(
+  typeof window !== "undefined" &&
+    (window.location.hostname === "localhost" ||
+      window.location.hostname === "[::1]" ||
+      window.location.hostname.match(/^127(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/))
 );
 
 /**
- * Registers the Service Worker with full lifecycle hooks and event listeners.
- * @param {Object} [customConfig]
+ * Checks if the current browser environment supports Service Workers and HTTPS/Localhost.
+ *
+ * @returns {boolean} True if SW registration is safe and supported.
  */
-export const registerServiceWorker = (customConfig = {}) => {
-  const config = { ...defaultConfig, ...customConfig };
-
-  if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
-    const publicUrl = new URL(process.env.PUBLIC_URL || '', window.location.href);
-    if (publicUrl.origin !== window.location.origin) {
-      console.warn('[SW Utility] Service worker origin mismatch. Skipping registration.');
-      return;
-    }
-
-    window.addEventListener('load', () => {
-      const swUrl = config.swUrl;
-
-      if (isLocalhost) {
-        checkValidServiceWorker(swUrl, config);
-        navigator.serviceWorker.ready.then(() => {
-          console.log('[SW Utility] Application served cache-first by local Service Worker.');
-        });
-      } else {
-        registerValidSW(swUrl, config);
-      }
-    });
-
-    setupConnectivityListeners(config);
+export const isServiceWorkerSupported = () => {
+  if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
+    return false;
   }
+
+  // SW requires HTTPS unless running on localhost
+  const isSecureContext = window.location.protocol === "https:" || isLocalhost;
+  return isSecureContext;
 };
 
-/**
- * Registers a valid service worker and sets up lifecycle event monitoring.
- */
-const registerValidSW = (swUrl, config) => {
-  navigator.serviceWorker
-    .register(swUrl, { scope: config.scope })
-    .then((registration) => {
-      registration.onupdatefound = () => {
-        const installingWorker = registration.installing;
-        if (installingWorker == null) return;
+// ============================================================================
+// 2. Primary Service Worker Registration
+// ============================================================================
 
-        installingWorker.onstatechange = () => {
-          if (installingWorker.state === 'installed') {
-            if (navigator.serviceWorker.controller) {
-              console.log('[SW Utility] New content is available; will activate when tabs close.');
-              if (config.onUpdate) config.onUpdate(registration);
-            } else {
-              console.log('[SW Utility] Content is cached for offline use.');
-              if (config.onSuccess) config.onSuccess(registration);
+/**
+ * Registers the service worker with lifecycle hooks for updates, offline caching, and errors.
+ *
+ * @param {Object} [config={}] - Registration configuration and callbacks.
+ * @param {string} [config.swUrl='/service-worker.js'] - Path to the service worker script.
+ * @param {Function} [config.onSuccess] - Callback when content is cached for offline use.
+ * @param {Function} [config.onUpdate] - Callback when new content is available and waiting to activate.
+ * @param {Function} [config.onError] - Callback when service worker registration fails.
+ * @param {boolean} [config.immediate=false] - Register immediately instead of waiting for window 'load'.
+ * @returns {Promise<ServiceWorkerRegistration|null>} Registration promise.
+ */
+export function registerServiceWorker(config = {}) {
+  const {
+    swUrl = "/service-worker.js",
+    onSuccess,
+    onUpdate,
+    onError,
+    immediate = false,
+  } = config;
+
+  if (!isServiceWorkerSupported()) {
+    if (process.env.NODE_ENV !== "production") {
+      console.info("[PWA] Service Workers are not supported or running in an insecure context.");
+    }
+    return Promise.resolve(null);
+  }
+
+  const registerScript = () => {
+    return navigator.serviceWorker
+      .register(swUrl)
+      .then((registration) => {
+        // Handle updates found during page load or SW updates
+        registration.onupdatefound = () => {
+          const installingWorker = registration.installing;
+          if (!installingWorker) return;
+
+          installingWorker.onstatechange = () => {
+            if (installingWorker.state === "installed") {
+              if (navigator.serviceWorker.controller) {
+                // New content is available; waiting to activate
+                if (process.env.NODE_ENV !== "production") {
+                  console.log("[PWA] New content is available and waiting to activate.");
+                }
+                if (typeof onUpdate === "function") {
+                  onUpdate(registration);
+                }
+              } else {
+                // Content has been cached for offline use
+                if (process.env.NODE_ENV !== "production") {
+                  console.log("[PWA] Content is cached for offline use.");
+                }
+                if (typeof onSuccess === "function") {
+                  onSuccess(registration);
+                }
+              }
             }
-          }
+          };
         };
-      };
-    })
-    .catch((error) => {
-      console.error('[SW Utility] Error during service worker registration:', error);
-      if (config.onError) config.onError(error);
+
+        if (isLocalhost) {
+          checkValidServiceWorker(swUrl, config);
+        }
+
+        return registration;
+      })
+      .catch((error) => {
+        if (process.env.NODE_ENV !== "production") {
+          console.error("[PWA] Error during service worker registration:", error);
+        }
+        if (typeof onError === "function") {
+          onError(error);
+        }
+        return null;
+      });
+  };
+
+  if (immediate || document.readyState === "complete") {
+    return registerScript();
+  }
+
+  return new Promise((resolve) => {
+    window.addEventListener("load", () => {
+      resolve(registerScript());
     });
-};
+  });
+}
 
 /**
- * Validates service worker response in localhost environments.
+ * Validates service worker asset existence when running on localhost.
  */
-const checkValidServiceWorker = (swUrl, config) => {
-  fetch(swUrl, { headers: { 'Service-Worker': 'script' } })
+function checkValidServiceWorker(swUrl, config) {
+  fetch(swUrl, { headers: { "Service-Worker": "script" } })
     .then((response) => {
-      const contentType = response.headers.get('content-type');
-      if (response.status === 404 || (contentType != null && contentType.indexOf('javascript') === -1)) {
+      const contentType = response.headers.get("content-type");
+      if (
+        response.status === 404 ||
+        (contentType != null && contentType.indexOf("javascript") === -1)
+      ) {
+        // SW not found or bad JS asset; unregister and reload
         navigator.serviceWorker.ready.then((registration) => {
           registration.unregister().then(() => {
             window.location.reload();
           });
         });
-      } else {
-        registerValidSW(swUrl, config);
       }
     })
     .catch(() => {
-      console.log('[SW Utility] No internet connection found. App is running in offline mode.');
-      if (config.onOffline) config.onOffline();
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[PWA] No internet connection found. App running in offline mode.");
+      }
     });
-};
+}
+
+// ============================================================================
+// 3. Lifecycle Controls: Update, Reload & Unregister
+// ============================================================================
 
 /**
- * Configures global online/offline event listeners.
+ * Prompts the waiting service worker to skip waiting and activate immediately.
+ * Optionally reloads the page once activated.
+ *
+ * @param {ServiceWorkerRegistration} registration - Active SW registration object.
+ * @param {boolean} [autoReload=true] - Automatically reload window when controller changes.
  */
-const setupConnectivityListeners = (config) => {
-  window.addEventListener('online', () => {
-    if (config.onOnline) config.onOnline();
-  });
+export function skipWaitingAndActivate(registration, autoReload = true) {
+  if (!registration || !registration.waiting) return;
 
-  window.addEventListener('offline', () => {
-    if (config.onOffline) config.onOffline();
-  });
-};
-
-/**
- * Signals waiting Service Worker to skip waiting and force immediate activation.
- */
-export const skipWaitingAndReload = async () => {
-  if (!('serviceWorker' in navigator)) return;
-
-  const registration = await navigator.serviceWorker.ready;
-  if (registration.waiting) {
-    registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-  }
-
-  navigator.serviceWorker.addEventListener(
-    'controllerchange',
-    () => {
-      window.location.reload();
-    },
-    { once: true }
-  );
-};
-
-/**
- * Checks for available Service Worker updates manually.
- * @returns {Promise<boolean>} True if an update is waiting to activate.
- */
-export const checkForUpdates = async () => {
-  if (!('serviceWorker' in navigator)) return false;
-
-  try {
-    const registration = await navigator.serviceWorker.ready;
-    await registration.update();
-    return Boolean(registration.waiting);
-  } catch (error) {
-    console.error('[SW Utility] Error checking for updates:', error);
-    return false;
-  }
-};
-
-/**
- * Subscribes current user to Web Push notifications.
- * @param {string} vapidPublicKey - Public VAPID Key
- * @returns {Promise<PushSubscription|null>}
- */
-export const subscribeUserToPush = async (vapidPublicKey) => {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-    console.warn('[Push] Push messaging is not supported in this browser.');
-    return null;
-  }
-
-  try {
-    const registration = await navigator.serviceWorker.ready;
-    const existingSubscription = await registration.pushManager.getSubscription();
-
-    if (existingSubscription) {
-      return existingSubscription;
-    }
-
-    const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
-    const newSubscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: convertedVapidKey,
+  if (autoReload) {
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (!refreshing) {
+        refreshing = true;
+        window.location.reload();
+      }
     });
-
-    console.log('[Push] User successfully subscribed to push notifications.');
-    return newSubscription;
-  } catch (error) {
-    console.error('[Push] Failed to subscribe user to push notifications:', error);
-    throw error;
   }
-};
+
+  registration.waiting.postMessage({ type: "SKIP_WAITING" });
+}
 
 /**
- * Unsubscribes current user from Web Push notifications.
- * @returns {Promise<boolean>}
+ * Forces a check for an updated service worker script on the server.
+ *
+ * @param {ServiceWorkerRegistration} [registration] - Optional registration instance.
+ * @returns {Promise<void>}
  */
-export const unsubscribeUserFromPush = async () => {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return false;
+export async function checkForSWUpdates(registration) {
+  if (!isServiceWorkerSupported()) return;
 
   try {
-    const registration = await navigator.serviceWorker.ready;
-    const subscription = await registration.pushManager.getSubscription();
-
-    if (subscription) {
-      const result = await subscription.unsubscribe();
-      console.log('[Push] User unsubscribed from push notifications.');
-      return result;
-    }
-    return false;
+    const reg = registration || (await navigator.serviceWorker.ready);
+    await reg.update();
   } catch (error) {
-    console.error('[Push] Error unsubscribing from push notifications:', error);
-    return false;
-  }
-};
-
-/**
- * Gets existing push subscription object.
- * @returns {Promise<PushSubscription|null>}
- */
-export const getPushSubscription = async () => {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return null;
-
-  try {
-    const registration = await navigator.serviceWorker.ready;
-    return await registration.pushManager.getSubscription();
-  } catch (error) {
-    console.error('[Push] Error fetching push subscription:', error);
-    return null;
-  }
-};
-
-/**
- * Registers a Background Sync tag for background task execution.
- * @param {string} tag - Unique sync tag name
- * @returns {Promise<boolean>}
- */
-export const registerBackgroundSync = async (tag) => {
-  if (!('serviceWorker' in navigator) || !('SyncManager' in window)) {
-    console.warn('[Sync] Background sync is not supported by this browser.');
-    return false;
-  }
-
-  try {
-    const registration = await navigator.serviceWorker.ready;
-    await registration.sync.register(tag);
-    console.log(`[Sync] Background sync registered with tag: "${tag}"`);
-    return true;
-  } catch (error) {
-    console.error(`[Sync] Failed to register background sync for tag "${tag}":`, error);
-    return false;
-  }
-};
-
-/**
- * Clears all active application Cache Storage.
- * @returns {Promise<boolean>}
- */
-export const clearAppCaches = async () => {
-  if (!('caches' in window)) return false;
-
-  try {
-    const cacheNames = await caches.keys();
-    await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
-    console.log('[Cache] Successfully cleared all cache storage.');
-    return true;
-  } catch (error) {
-    console.error('[Cache] Failed to clear application caches:', error);
-    return false;
-  }
-};
-
-/**
- * Estimates current cache and web storage usage in MB.
- * @returns {Promise<{ usageMB: number, quotaMB: number }|null>}
- */
-export const getCacheStorageUsage = async () => {
-  if (navigator.storage && navigator.storage.estimate) {
-    try {
-      const { usage, quota } = await navigator.storage.estimate();
-      return {
-        usageMB: parseFloat((usage / (1024 * 1024)).toFixed(2)),
-        quotaMB: parseFloat((quota / (1024 * 1024)).toFixed(2)),
-      };
-    } catch (error) {
-      console.error('[Storage] Error estimating storage usage:', error);
-      return null;
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("[PWA] Failed to check for service worker updates:", error);
     }
   }
-  return null;
-};
+}
 
 /**
- * Unregisters the Service Worker and releases control.
+ * Unregisters all active service workers for the domain and purges SW caches.
+ *
+ * @param {boolean} [clearCaches=false] - If true, clears CacheStorage caches as well.
+ * @returns {Promise<boolean>} True if unregistered successfully.
  */
-export const unregisterServiceWorker = () => {
-  if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
-    navigator.serviceWorker.ready
-      .then((registration) => {
-        registration.unregister().then((success) => {
-          if (success) {
-            console.log('[Service Worker] Successfully unregistered.');
-          }
-        });
-      })
-      .catch((error) => {
-        console.error('[Service Worker] Unregister failed:', error);
+export function unregisterServiceWorker(clearCaches = false) {
+  if (!isServiceWorkerSupported()) return Promise.resolve(false);
+
+  return navigator.serviceWorker.ready
+    .then((registration) => {
+      return registration.unregister().then(async (success) => {
+        if (clearCaches && "caches" in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map((key) => caches.delete(key)));
+        }
+        return success;
       });
-  }
-};
+    })
+    .catch((error) => {
+      if (process.env.NODE_ENV !== "production") {
+        console.error("[PWA] Unregister failed:", error);
+      }
+      return false;
+    });
+}
+
+// ============================================================================
+// 4. Network Status & Connectivity Helpers
+// ============================================================================
+
+/**
+ * Subscribes to network online/offline state changes.
+ *
+ * @param {Function} onOnline - Callback when connection is restored.
+ * @param {Function} onOffline - Callback when connection is lost.
+ * @returns {Function} Unsubscribe cleanup function.
+ */
+export function subscribeNetworkStatus(onOnline, onOffline) {
+  if (typeof window === "undefined") return () => {};
+
+  const handleOnline = () => onOnline && onOnline();
+  const handleOffline = () => onOffline && onOffline();
+
+  window.addEventListener("online", handleOnline);
+  window.addEventListener("offline", handleOffline);
+
+  return () => {
+    window.removeEventListener("online", handleOnline);
+    window.removeEventListener("offline", handleOffline);
+  };
+}
+
+/**
+ * Returns current browser online state.
+ *
+ * @returns {boolean} True if navigator is online.
+ */
+export function isOnline() {
+  return typeof navigator !== "undefined" ? navigator.onLine : true;
+}
+
+export default registerServiceWorker;

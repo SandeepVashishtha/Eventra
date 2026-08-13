@@ -1,3 +1,4 @@
+import useDragAndDrop from "hooks/useDragAndDrop";
 import { ArrowRightIcon, LightBulbIcon, FolderOpenIcon, CodeBracketIcon, CheckCircleIcon, ArrowUpTrayIcon, ClipboardDocumentCheckIcon, // Icons for form fields
   UserGroupIcon, EnvelopeIcon, LinkIcon, RectangleGroupIcon, CpuChipIcon, BookmarkIcon, UsersIcon, ClockIcon, UserPlusIcon, PhotoIcon, ArchiveBoxIcon, DocumentTextIcon, PencilSquareIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useState, useRef, useEffect } from "react";
@@ -11,6 +12,14 @@ import { sanitizeInputText } from "utils/inputSanitization";
 import { REQUIRED_FIELDS, validateSubmitProjectForm } from "utils/submitProjectValidation";
 
 const SubmitProject = () => {
+  // Fix: useDragAndDrop replaces manual isDragging state + 3 drag handlers.
+  // Adds drag counter to prevent isDragging flicker on child elements.
+  const { getRootProps, getInputProps, isDragOver: isDragging, error: dragError } = useDragAndDrop({
+    onDrop: (files) => processFile(files[0]),
+    accept: ["image/*"],
+    maxBytes: 5_242_880,
+  });
+
   const navigate = useNavigate();
   const { user, token, isAuthenticated } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -40,24 +49,9 @@ const SubmitProject = () => {
     targetAudience: "", // Added to state
   });
   const [errors, setErrors] = useState({});
-  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    processFile(file);
-  };
+  // Fix: drag handlers now provided by useDragAndDrop hook above
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];

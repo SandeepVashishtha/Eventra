@@ -22,6 +22,7 @@ import {
   Linkedin,
   Users,
   ArrowLeft,
+  ClipboardList,
 } from "lucide-react";
 import { getEventStatus, isEventRegistrationClosed } from "utils/eventUtils";
 import { useAuth } from "context/AuthContext";
@@ -52,6 +53,13 @@ import CopyButton from "components/ui/CopyButton";
 import AddToCalendar from "components/common/AddToCalendar";
 import useClipboard from "hooks/useClipboard";
 import { calculateReadTime, formatReadTime } from "utils/readTimeUtils";
+import EventSessionNotes from "components/events/EventSessionNotes";
+import scheduleService from "services/scheduleService";
+import {
+  getSessionNotes,
+  saveSessionNote,
+  deleteSessionNote,
+} from "utils/sessionNotesUtils";
 
 const formatEventDate = (dateValue) => {
   if (!dateValue) return { short: "TBD", full: "Date TBD", relative: "" };
@@ -160,6 +168,7 @@ const EventDetails = () => {
   const [fetchLoading, setFetchLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
 
   // Issue #11021 — organizer actions (cancel/archive/export) must be gated by
   // event ownership, not role alone. Without this, any ORGANIZER/ADMIN could
@@ -173,11 +182,50 @@ const EventDetails = () => {
   const abortControllerRef = useRef(null);
   const latestRequestIdRef = useRef(0);
 
-  // Live, real-time seat availability for this event. Subscribes to the shared
-  // SSE stream and falls back to polling. Safe to call with a null eventId
-  // (returns early) before the event details finish loading.
+  // Personal session notes are scoped per attendee per event. Sessions come
+  // from the event schedule (empty when no schedule is published); notes are
+  // persisted locally since they are private to each attendee.
+  const [eventSessions, setEventSessions] = useState([]);
+  const [sessionNotes, setSessionNotes] = useState([]);
+  const userId = user?.id || user?.email || "guest";
+
+  useEffect(() => {
+    if (!eventId) return;
+
+    setSessionNotes(getSessionNotes(eventId, userId));
+
+    let active = true;
+    (async () => {
+      try {
+        const response = await scheduleService.getSessions(eventId);
+        if (!active) return;
+        const data = response.data?.data ?? response.data ?? [];
+        setEventSessions(Array.isArray(data) ? data : []);
+      } catch {
+        if (active) setEventSessions([]);
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [eventId, userId]);
+
+  const handleSaveSessionNote = (note) => {
+    setSessionNotes(saveSessionNote(eventId, userId, note));
+  };
+
+  const handleDeleteSessionNote = (note) => {
+    setSessionNotes(deleteSessionNote(eventId, userId, note.id));
+  };
+
+  // Live, real-time seat availability for this event. Subscribes to the
+  // per-event SSE stream so the backend only broadcasts availability for this
+  // event. Safe to call with a null eventId (returns early) before the event
+  // details finish loading.
   const { availability: liveAvailability } = useEventAvailability(eventId, {
     enabled: eventId != null,
+    scoped: true,
   });
   const copyLink = async () => {
     const success = await copy(window.location.href, "eventLink");
@@ -274,6 +322,29 @@ const EventDetails = () => {
       isActive = false;
     };
   }, [eventId, user]);
+
+  const handleArchive = useCallback(async () => {
+    if (!eventId || isArchiving) return;
+    setIsArchiving(true);
+    try {
+      const response = await apiUtils.post(API_ENDPOINTS.EVENTS.ARCHIVE(eventId));
+      const updated = response.data?.data ?? response.data ?? {};
+      setEvent((current) => ({
+        ...(current || {}),
+        ...updated,
+        status: "archived",
+      }));
+      toast.success("Event archived.");
+    } catch (error) {
+      const message =
+        error?.data?.message ||
+        error?.message ||
+        "Could not archive this event. Please try again.";
+      toast.error(message);
+    } finally {
+      setIsArchiving(false);
+    }
+  }, [eventId, isArchiving]);
 
   const handlePrint = () => {
     setIsPrinting(true);
@@ -553,13 +624,12 @@ ${window.location.href}
               )}
               {canManageEvent && event.status !== "cancelled" && event.status !== "archived" && (
                 <button
-                  onClick={() => {
-                    setEvent({ ...event, status: "archived" });
-                    toast.success("Event Archived!");
-                  }}
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-orange-500 px-6 py-3 text-sm font-semibold text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition"
+                  type="button"
+                  onClick={handleArchive}
+                  disabled={isArchiving}
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-orange-500 px-6 py-3 text-sm font-semibold text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition disabled:opacity-60"
                 >
-                  <Archive size={16} /> Archive Event
+                  <Archive size={16} /> {isArchiving ? "Archiving..." : "Archive Event"}
                 </button>
               )}
 
@@ -587,6 +657,14 @@ ${window.location.href}
                     aria-label="Duplicate event"
                   >
                     <CalendarPlus size={18} /> Duplicate Event
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/events/${event.id}/registration-management`)}
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
+                    aria-label="Manage event registrations"
+                  >
+                    <ClipboardList size={18} /> Manage Registrations
                   </button>
                   <button
                     type="button"
@@ -707,6 +785,15 @@ ${window.location.href}
           <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
             <ReminderControls event={event} canSetReminder={canSetReminder} />
           </section>
+
+          {user && isRegistered(event.id) && (
+            <EventSessionNotes
+              sessions={eventSessions}
+              initialNotes={sessionNotes}
+              onSave={handleSaveSessionNote}
+              onDelete={handleDeleteSessionNote}
+            />
+          )}
 
           {/* Live seat availability panel */}
           {event.capacity != null && event.capacity > 0 && (

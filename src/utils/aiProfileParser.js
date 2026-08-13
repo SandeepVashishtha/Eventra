@@ -22,11 +22,53 @@ export const KNOWN_SKILLS = [
  * @param {string} url - The provided GitHub URL.
  * @returns {string|null} - The extracted username or null.
  */
-function extractUsername(url) {
+export function extractUsername(url) {
+  if (typeof url !== "string") return null;
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+
   try {
-    const cleanUrl = url.replace(/\/$/, "");
-    const parts = cleanUrl.split("/");
-    return parts[parts.length - 1] || null;
+    if (/github\.com/i.test(trimmed) || trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+      let formattedUrl = trimmed;
+      if (!/^https?:\/\//i.test(trimmed)) {
+        formattedUrl = "https://" + trimmed;
+      }
+      const parsed = new URL(formattedUrl);
+      if (!/github\.com$/i.test(parsed.hostname)) {
+        return null;
+      }
+      const pathSegments = parsed.pathname.split("/").filter(Boolean);
+      if (pathSegments.length === 0) {
+        return null;
+      }
+      const username = pathSegments[0];
+      if (/^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i.test(username)) {
+        const reserved = [
+          "features",
+          "enterprise",
+          "copilot",
+          "security",
+          "pricing",
+          "team",
+          "trending",
+          "explore",
+          "about",
+          "contact",
+          "careers",
+          "sponsors",
+        ];
+        if (reserved.includes(username.toLowerCase())) {
+          return null;
+        }
+        return username;
+      }
+      return null;
+    }
+
+    if (/^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i.test(trimmed)) {
+      return trimmed;
+    }
+    return null;
   } catch {
     return null;
   }

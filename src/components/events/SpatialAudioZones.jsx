@@ -183,15 +183,15 @@ const SpatialAudioZones = () => {
                 <div 
                   key={node.id}
                   className="absolute transform -translate-x-1/2 -translate-y-1/2"
-                  style={{ left: \`\${node.x}%\`, top: \`\${node.y}%\` }}
+                  style={{ left: `${node.x}%`, top: `${node.y}%` }}
                 >
                   {/* Sound Wave Visualization based on volume */}
                   {headTracking && node.volume > 0 && (
                     <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full border border-indigo-500/50 animate-ping"
                          style={{ 
-                           width: \`\${node.volume * 2}px\`, 
-                           height: \`\${node.volume * 2}px\`,
-                           animationDuration: \`\${2000 - (node.volume * 10)}ms\`
+                           width: `${node.volume * 2}px`, 
+                           height: `${node.volume * 2}px`,
+                           animationDuration: `${2000 - (node.volume * 10)}ms`
                          }}>
                     </div>
                   )}
@@ -207,11 +207,11 @@ const SpatialAudioZones = () => {
               {/* Render User Head */}
               <div 
                 className="absolute transform -translate-x-1/2 -translate-y-1/2 z-20 transition-all duration-500"
-                style={{ left: \`\${userPos.x}%\`, top: \`\${userPos.y}%\` }}
+                style={{ left: `${userPos.x}%`, top: `${userPos.y}%` }}
               >
                 <div 
                   className="relative w-8 h-8 transition-transform duration-500 ease-in-out"
-                  style={{ transform: \`rotate(\${headRotation}deg)\` }}
+                  style={{ transform: `rotate(${headRotation}deg)` }}
                 >
                   {/* Head graphic */}
                   <div className="w-8 h-8 bg-emerald-500 rounded-full border-2 border-white shadow-[0_0_20px_rgba(16,185,129,0.8)]"></div>
@@ -242,7 +242,7 @@ const SpatialAudioZones = () => {
                     const leftVolume = audioNodes.reduce((acc, node) => node.pan < 0 ? acc + (node.volume * Math.abs(node.pan)) : acc, 0);
                     const barHeight = headTracking ? Math.min(100, leftVolume + (Math.random() * 10)) : 10;
                     return (
-                      <div key={i} className="w-3 bg-indigo-500 rounded-t transition-all duration-100" style={{ height: \`\${barHeight}%\` }}></div>
+                      <div key={i} className="w-3 bg-indigo-500 rounded-t transition-all duration-100" style={{ height: `${barHeight}%` }}></div>
                     );
                   })}
                </div>
@@ -256,7 +256,7 @@ const SpatialAudioZones = () => {
                     const rightVolume = audioNodes.reduce((acc, node) => node.pan > 0 ? acc + (node.volume * node.pan) : acc, 0);
                     const barHeight = headTracking ? Math.min(100, rightVolume + (Math.random() * 10)) : 10;
                     return (
-                      <div key={i} className="w-3 bg-sky-500 rounded-t transition-all duration-100" style={{ height: \`\${barHeight}%\` }}></div>
+                      <div key={i} className="w-3 bg-sky-500 rounded-t transition-all duration-100" style={{ height: `${barHeight}%` }}></div>
                     );
                   })}
                </div>

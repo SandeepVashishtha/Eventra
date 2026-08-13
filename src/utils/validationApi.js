@@ -2,10 +2,14 @@ import { apiUtils } from "../config/api.js";
 
 const DEFAULT_TIMEOUT_MS = 8000;
 const DEFAULT_RETRIES = 1;
-// const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
+const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
 
 // In-memory response cache for validation results
 const validationCache = new Map();
+
+export const clearValidationCache = () => {
+  validationCache.clear();
+};
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -77,7 +81,7 @@ export const requestValidation = async (endpoint, options = {}) => {
   // Cache Lookup Key
   const cacheKey = `${method}:${endpoint}:${JSON.stringify(body || {})}`;
   if (useCache && validationCache.has(cacheKey)) {
-    return validationCache.get(cacheKey);
+    return { ...validationCache.get(cacheKey) };
   }
 
   let lastError = null;
@@ -159,7 +163,6 @@ export const requestValidation = async (endpoint, options = {}) => {
             errData?.message || invalidMessage,
             { status, data: errData },
           );
-          if (useCache) validationCache.set(cacheKey, failureResponse);
           return failureResponse;
         }
 
@@ -197,10 +200,9 @@ export const requestValidation = async (endpoint, options = {}) => {
       if (status && !RETRYABLE_STATUS_CODES.includes(status) && status < 500) {
         const failureResponse = createValidationResponse(
           false,
-          networkMessage,
+          data?.message || networkMessage,
           { status, data }
         );
-        if (useCache) validationCache.set(cacheKey, failureResponse);
         return failureResponse;
       }
 
@@ -261,6 +263,7 @@ const validationApi = {
   checkEmailAvailability,
   checkUsernameAvailability,
   checkPhoneValidation,
+  clearValidationCache,
   createValidationResponse,
   normalizeValidationApiResponse,
   requestValidation,

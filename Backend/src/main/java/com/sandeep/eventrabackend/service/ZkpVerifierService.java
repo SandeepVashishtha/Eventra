@@ -2,6 +2,7 @@ package com.sandeep.eventrabackend.service;
 
 import com.sandeep.eventrabackend.model.ZkpNullifier;
 import com.sandeep.eventrabackend.repository.ZkpNullifierRepository;
+import jakarta.annotation.PostConstruct;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,11 +20,27 @@ import java.util.HexFormat;
 @Service
 public class ZkpVerifierService {
 
-    @Value("${zkp.proof.verification-secret:eventra-zkp-verification-secret}")
+    private static final String DEFAULT_VERIFICATION_SECRET = "eventra-zkp-verification-secret";
+
+    /**
+     * Externally provisioned secret. Fails closed at startup when unset or still
+     * equal to the documented default, so instances never run with a publicly
+     * known key.
+     */
+    @Value("${zkp.proof.verification-secret:}")
     private String verificationSecret;
 
     @Autowired
     private ZkpNullifierRepository zkpNullifierRepository;
+
+    @PostConstruct
+    public void validateConfiguration() {
+        if (verificationSecret == null || verificationSecret.isBlank()
+                || DEFAULT_VERIFICATION_SECRET.equals(verificationSecret)) {
+            throw new IllegalStateException(
+                    "zkp.proof.verification-secret must be set to a non-default, externally provisioned secret");
+        }
+    }
 
     public static class ZkpProofPayload {
         @NotBlank(message = "eventId is required")
@@ -34,6 +51,7 @@ public class ZkpVerifierService {
         @NotBlank(message = "nullifierHash is required")
         private String nullifierHash;
         private String feedbackCategory;
+        @NotBlank(message = "feedbackContent is required")
         private String feedbackContent;
         private String severity; // LOW, MEDIUM, CRITICAL
 

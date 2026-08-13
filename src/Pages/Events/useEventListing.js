@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { API_ENDPOINTS, apiUtils } from "config/api";
+import { getApiErrorStatus } from "config/api/errors.js";
 import { normalizeEvent } from "utils/eventUtils";
 import { getEventStatus } from "utils/eventUtils";
 import useDebounce from "hooks/useDebounce";
@@ -133,14 +134,27 @@ const useEventListing = () => {
       // Discard stale responses from earlier requests
       if (requestId !== latestRequestRef.current) return;
 
-      const responseData = response?.data || {};
+      // Guard against a null/undefined response so an unexpected or empty API
+      // reply degrades gracefully instead of silently rendering an empty list.
+      if (!response || typeof response !== "object") {
+        setEvents([]);
+        setServerPaged(false);
+        setLoadError("Failed to load events. Please try again later.");
+        return;
+      }
 
-      const isPaged = Array.isArray(responseData.content);
-      const apiEvents = isPaged
+      const responseData = response.data || {};
+
+      const rawEvents = Array.isArray(responseData.content)
         ? responseData.content
         : Array.isArray(responseData)
           ? responseData
           : [];
+
+      // Guard against a malformed API payload where `content` (or the whole
+      // response body) is present but not an array — otherwise the `.map()`
+      // below would throw and crash the listing on a bad response.
+      const apiEvents = Array.isArray(rawEvents) ? rawEvents : [];
 
       const normalizedEvents = apiEvents.map(normalizeEventItem);
       setEvents(normalizedEvents);
@@ -165,7 +179,7 @@ const useEventListing = () => {
         serverPaginated: false,
       });
 
-      if (error?.response?.status === 403) {
+      if (getApiErrorStatus(error) === 403) {
         setLoadError("Access to events is currently restricted. Please try again later.");
       } else {
         setLoadError("Failed to load events. Please try again later.");
@@ -406,6 +420,7 @@ const useEventListing = () => {
     setViewMode,
     setAdvancedFilters,
     setIsAdvancedFiltersOpen,
+    setHighlightedEventIds,
   };
 };
 

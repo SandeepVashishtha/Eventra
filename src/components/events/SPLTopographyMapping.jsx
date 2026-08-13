@@ -51,7 +51,7 @@ const SPLTopographyMapping = () => {
     if (mappingActive && !delayTowersAdjusted) {
       addLog('ACTION', 'Recalculating DSP time-alignment for Delay Towers L & R.');
       setTimeout(() => {
-        addLog('SYS', 'Pushing phase alignment correction to L'Acoustics K1 array.');
+        addLog('SYS', 'Pushing phase alignment correction to L\'Acoustics K1 array.');
         setTimeout(() => {
           setDelayTowersAdjusted(true);
           addLog('SUCCESS', 'Dead zones eliminated. Bass traps dispersed. SPL normalized across field.');

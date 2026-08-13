@@ -3,11 +3,15 @@ import { motion } from "framer-motion";
 import { AlertCircle, Lock } from "lucide-react";
 import { apiUtils, API_ENDPOINTS } from "config/api.js";
 import { toast } from "react-toastify";
+import { useFocusTrap } from "hooks/useFocusTrap";
+import useScrollLock from "hooks/useScrollLock";
 
 const ReAuthModal = ({ onSuccess }) => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const { containerRef } = useFocusTrap(true);
+  useScrollLock(true);
 
 
   const handleSubmit = async (e) => {
@@ -43,6 +47,10 @@ const ReAuthModal = ({ onSuccess }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <motion.div
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="reauth-title"
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         className="bg-white dark:bg-gray-800 rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative overflow-hidden"
@@ -53,7 +61,7 @@ const ReAuthModal = ({ onSuccess }) => {
           <div className="mx-auto bg-red-100 dark:bg-red-900/30 w-16 h-16 rounded-full flex items-center justify-center mb-4">
             <Lock className="w-8 h-8 text-red-600 dark:text-red-400" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          <h2 id="reauth-title" className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
             Verify Your Session
           </h2>
           <p className="text-gray-500 dark:text-gray-200 text-sm">

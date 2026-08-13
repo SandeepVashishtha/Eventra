@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -18,6 +19,10 @@ public interface HackathonRepository extends JpaRepository<Hackathon, Long> {
     Optional<Hackathon> findByIdAndIsDeletedFalse(Long id);
 
     Page<Hackathon> findByIsDeletedFalse(Pageable pageable);
+
+    List<Hackathon> findByIsDeletedFalse();
+
+    long countByIsDeletedFalse();
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT h FROM Hackathon h WHERE h.id = :id AND h.isDeleted = false")

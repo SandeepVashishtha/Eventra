@@ -1,6 +1,8 @@
 package com.sandeep.eventrabackend.service;
 
+import com.sandeep.eventrabackend.repository.HackathonRegistrationRepository;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -13,9 +15,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class TeamWorkspaceSyncService {
+
+    private static final Pattern HACKATHON_ROOM_KEY =
+            Pattern.compile("^hackathon:(\\d+)(?::team:.*)?$");
 
     private static final class WorkspaceState {
         private final Object lock = new Object();
@@ -26,6 +33,19 @@ public class TeamWorkspaceSyncService {
     }
 
     private final ConcurrentHashMap<String, WorkspaceState> rooms = new ConcurrentHashMap<>();
+
+    private final UserRepository userRepository;
+    private final HackathonRepository hackathonRepository;
+    private final HackathonRegistrationRepository hackathonRegistrationRepository;
+
+    public TeamWorkspaceSyncService(
+            UserRepository userRepository,
+            HackathonRepository hackathonRepository,
+            HackathonRegistrationRepository hackathonRegistrationRepository) {
+        this.userRepository = userRepository;
+        this.hackathonRepository = hackathonRepository;
+        this.hackathonRegistrationRepository = hackathonRegistrationRepository;
+    }
 
     public Map<String, Object> snapshot(String roomKey) {
         WorkspaceState room = roomFor(roomKey);
@@ -97,6 +117,149 @@ public class TeamWorkspaceSyncService {
             return "user:" + auth.getName().trim().toLowerCase();
         }
         return "default";
+    }
+
+    /**
+     * Resolves the room key exactly like {@link #resolveRoomKey(String, String, String)}
+     * but only after verifying that the caller is a registered member of the
+     * hackathon identified by the supplied {@code hackathonId} (or embedded in
+     * {@code roomKey}). This stops any authenticated user from guessing another
+     * team's enumerable {@code hackathonId}/{@code teamId} and reading or
+     * overwriting its workspace (#15367).
+     *
+     * @param userEmail the authenticated caller's email (never a client-supplied claim)
+     */
+    public String resolveRoomKeyForMember(String roomKey, String hackathonId, String teamId, String userEmail) {
+        String resolved = resolveRoomKey(roomKey, hackathonId, teamId);
+        Long hackathon = extractHackathonId(resolved);
+        if (hackathon == null) {
+            throw new AccessDeniedException(
+                    "A hackathon workspace room is required. Provide a valid hackathonId and teamId.");
+        }
+        if (userEmail == null || !hackathonRegistrationRepository
+                .existsByHackathon_IdAndUser_Email(hackathon, userEmail)) {
+            throw new AccessDeniedException(
+                    "You are not a member of this hackathon and cannot access its team workspace.");
+        }
+        return resolved;
+    }
+
+    private Long extractHackathonId(String roomKey) {
+        if (!StringUtils.hasText(roomKey)) {
+            return null;
+        }
+        Matcher matcher = HACKATHON_ROOM_KEY.matcher(roomKey.trim());
+        if (!matcher.matches()) {
+            return null;
+        }
+        try {
+            return Long.valueOf(matcher.group(1));
+        } catch (NumberFormatException ex) {
+            return null;
+        }
+    }
+
+    /**
+     * Authorize reading a room. Hackathon rooms require the caller to be a
+     * registered participant or owner; user rooms are scoped to the caller's
+     * own account; arbitrary custom room keys are rejected (#15296).
+     */
+    public void requireReadAccess(String roomKey) {
+        if (!StringUtils.hasText(roomKey)) {
+            throw new AccessDeniedException("Room key is required.");
+        }
+        String normalized = roomKey.trim().toLowerCase();
+        if (normalized.startsWith(HACKATHON_ROOM_PREFIX)) {
+            requireHackathonMembership(parseHackathonId(roomKey));
+            return;
+        }
+        if (normalized.startsWith(USER_ROOM_PREFIX)) {
+            requireOwnUserRoom(roomKey);
+            return;
+        }
+        throw new AccessDeniedException("Custom room keys are not allowed.");
+    }
+
+    /**
+     * Authorize mutating a room. Only the hackathon owner (or a platform
+     * admin) may overwrite a team workspace; user rooms are write-scoped to
+     * the caller's own account (#15296).
+     */
+    public void requireWriteAccess(String roomKey) {
+        if (!StringUtils.hasText(roomKey)) {
+            throw new AccessDeniedException("Room key is required.");
+        }
+        String normalized = roomKey.trim().toLowerCase();
+        if (normalized.startsWith(HACKATHON_ROOM_PREFIX)) {
+            requireHackathonOwnership(parseHackathonId(roomKey));
+            return;
+        }
+        if (normalized.startsWith(USER_ROOM_PREFIX)) {
+            requireOwnUserRoom(roomKey);
+            return;
+        }
+        throw new AccessDeniedException("Custom room keys are not allowed.");
+    }
+
+    private void requireHackathonMembership(Long hackathonId) {
+        User user = currentUser();
+        if (isPlatformAdmin(user) || isHackathonOwner(hackathonId, user)) {
+            return;
+        }
+        if (!hackathonRegistrationRepository.existsByHackathon_IdAndUser_Email(hackathonId, user.getEmail())) {
+            throw new AccessDeniedException("You are not a member of this hackathon team workspace.");
+        }
+    }
+
+    private void requireHackathonOwnership(Long hackathonId) {
+        User user = currentUser();
+        if (isPlatformAdmin(user) || isHackathonOwner(hackathonId, user)) {
+            return;
+        }
+        throw new AccessDeniedException("Only the hackathon owner can update the team workspace.");
+    }
+
+    private void requireOwnUserRoom(String roomKey) {
+        String expected = USER_ROOM_PREFIX + authenticatedEmail().trim().toLowerCase();
+        if (!expected.equals(roomKey.trim().toLowerCase())) {
+            throw new AccessDeniedException("Workspace rooms are scoped to your own account.");
+        }
+    }
+
+    private boolean isHackathonOwner(Long hackathonId, User user) {
+        return hackathonRepository.findById(hackathonId)
+                .map(hackathon -> user.getId() != null && user.getId().equals(hackathon.getOwnerId()))
+                .orElse(false);
+    }
+
+    private Long parseHackathonId(String roomKey) {
+        String remainder = roomKey.substring(HACKATHON_ROOM_PREFIX.length());
+        int teamMarker = remainder.indexOf(":team:");
+        if (teamMarker != -1) {
+            remainder = remainder.substring(0, teamMarker);
+        }
+        try {
+            return Long.parseLong(remainder.trim());
+        } catch (NumberFormatException ex) {
+            throw new AccessDeniedException("Invalid hackathon room key.");
+        }
+    }
+
+    private User currentUser() {
+        return userRepository.findByEmail(authenticatedEmail())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found for authenticated principal."));
+    }
+
+    private String authenticatedEmail() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !StringUtils.hasText(auth.getName())) {
+            throw new AccessDeniedException("Authentication required.");
+        }
+        return auth.getName();
+    }
+
+    private boolean isPlatformAdmin(User user) {
+        return user.getRole() == Role.ADMIN || user.getRole() == Role.SUPER_ADMIN;
     }
 
     private WorkspaceState roomFor(String roomKey) {

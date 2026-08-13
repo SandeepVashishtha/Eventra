@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -33,4 +34,18 @@ public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecific
     @Query("UPDATE Event e SET e.registeredCount = e.registeredCount + 1 "
             + "WHERE e.id = :id AND (e.capacity IS NULL OR e.capacity > e.registeredCount)")
     int incrementRegisteredCountAtomically(@Param("id") Long id);
+
+    /**
+     * Case-insensitive search over title OR description.
+     * Used by {@code GET /api/events/search} (#15364).
+     */
+    List<Event> findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
+            String title, String description);
+
+    /**
+     * Grouped aggregate query for category statistics (Issue #16693).
+     * Calculates event count per category directly in the database to avoid loading all entities into JVM heap.
+     */
+    @Query("SELECT e.category, COUNT(e) FROM Event e WHERE e.category IS NOT NULL AND e.category <> '' GROUP BY e.category")
+    List<Object[]> countEventsByCategory();
 }

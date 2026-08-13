@@ -83,6 +83,7 @@ public class SecurityConfig {
         );
 
         configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L); // Cache preflight requests for 1 hour (#16589)
 
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();
@@ -152,10 +153,11 @@ public class SecurityConfig {
                                 "/api/events/{id}/availability",
                                 "/api/events/{id}/seats",
                                 "/api/events/{id}/feed.ics",
-                                "/api/events/stream"
+                                "/api/events/stream",
+                                "/api/events/{id}/stream"
                         ).permitAll()
-                        .requestMatchers("/stream/events", "/stream/leaderboard", "/stream/live-audience").permitAll()
-                        .requestMatchers("/stream/notifications", "/stream/analytics").authenticated()
+                        .requestMatchers("/stream/events", "/stream/leaderboard").permitAll()
+                        .requestMatchers("/stream/live-audience", "/stream/notifications", "/stream/analytics").authenticated()
                         // ── Public: Projects endpoint ────────────────────────
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/projects").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/projects/{id}").permitAll()
