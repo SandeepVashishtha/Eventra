@@ -27,9 +27,27 @@ import { computeSponsorBoothMetrics } from "../src/utils/sponsorAnalyticsUtils.j
   assert.equal(metrics.footfall, 3);
   assert.equal(metrics.jobClicks, 2);
   assert.equal(metrics.chatInitiations, 1);
-  assert.equal(metrics.qrScans, 6);
-  // (2 applies + 1 chat) / 3 visits = 100%
+  // No QR-scan actions were recorded, so qrScans must be 0 — not the total
+  // lead count (previously list.length == 6, see #17543).
+  assert.equal(metrics.qrScans, 0);
+  // (2 applies + 1 chat) / (3 visits + 0 scans) = 100%
   assert.equal(metrics.engagementRate, 100);
+}
+
+{
+  // QR scans are counted by action, not fabricated from the total lead count.
+  const metrics = computeSponsorBoothMetrics([
+    { action: "QR Scan" },
+    { action: "QR Scan" },
+    { action: "QR Scan: Booth A" },
+    { action: "Booth Visit" },
+    { action: "Chat Initiated" },
+  ]);
+  assert.equal(metrics.qrScans, 3);
+  assert.equal(metrics.boothVisits, 1);
+  assert.equal(metrics.chatInitiations, 1);
+  // (0 applies + 1 chat) / (1 visit + 3 scans) = 25%
+  assert.equal(metrics.engagementRate, 25);
 }
 
 {
@@ -41,9 +59,27 @@ import { computeSponsorBoothMetrics } from "../src/utils/sponsorAnalyticsUtils.j
   assert.equal(metrics.boothVisits, 0);
   assert.equal(metrics.footfall, 0);
   assert.equal(metrics.jobClicks, 2);
-  assert.equal(metrics.qrScans, 2);
+  assert.equal(metrics.qrScans, 0);
   assert.equal(metrics.engagementRate, 0);
-  assert.notEqual(metrics.boothVisits, metrics.qrScans * 3);
+  // boothVisits is not fabricated from the lead count (no Booth Visit actions
+  // were recorded, so it must stay 0 rather than tracking list.length).
+  assert.equal(metrics.boothVisits, 0);
+}
+
+{
+  // engagementRate should reflect the actual interaction mix (booth visits +
+  // QR scans as the base), so QR-only traffic still contributes a base.
+  const metrics = computeSponsorBoothMetrics([
+    { action: "QR Scan" },
+    { action: "QR Scan" },
+    { action: "Chat Initiated" },
+    { action: "Chat Initiated" },
+  ]);
+  assert.equal(metrics.qrScans, 2);
+  assert.equal(metrics.boothVisits, 0);
+  assert.equal(metrics.chatInitiations, 2);
+  // (0 applies + 2 chats) / (0 visits + 2 scans) = 100%
+  assert.equal(metrics.engagementRate, 100);
 }
 
 {
