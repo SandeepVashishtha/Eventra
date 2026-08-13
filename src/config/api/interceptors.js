@@ -11,12 +11,11 @@ const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 1_000;
 
 const SIGNED_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
-const REQUEST_SIGNING_SECRET_KEY = "VITE_REQUEST_SIGNING_SECRET";
+// Never read VITE_* here. Vite inlines those into the browser bundle, which
+// would make HMAC request signing forgeable by anyone who opens DevTools.
+const REQUEST_SIGNING_SECRET_KEY = "REQUEST_SIGNING_SECRET";
 
 const getRequestSigningSecret = () => {
-  if (typeof import.meta !== "undefined" && import.meta.env) {
-    return import.meta.env[REQUEST_SIGNING_SECRET_KEY] || "";
-  }
   if (typeof process !== "undefined" && process.env) {
     return process.env[REQUEST_SIGNING_SECRET_KEY] || "";
   }
