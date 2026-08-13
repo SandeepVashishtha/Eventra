@@ -2,6 +2,7 @@ import { Quote, Star, Play, Pause, ChevronLeft, ChevronRight, Share2, CheckCircl
 import { useRef, useEffect, useState, useMemo, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
+import { logger } from "utils/logger";
 
 // 🎯 Enhanced testimonials data with more metadata
 const testimonials = [
@@ -205,10 +206,9 @@ const ModernTestimonialTrain = () => {
           text: testimonial.quote,
           url: testimonial.shareUrl,
         });
-      } catch { console.warn("[Testimonials] Share handler failed"); }
       } catch (err) {
         if (err.name !== 'AbortError') {
-          console.error('Failed to share testimonial:', err);
+          logger.error('Failed to share testimonial:', err);
         }
       }
     } else {

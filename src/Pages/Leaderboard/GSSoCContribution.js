@@ -1,5 +1,5 @@
 import useCountdown from "hooks/useCountdown";
-import { useState, useMemo, useEffect, useCallback, memo, useRef } from "react";
+import { useState, useMemo, useEffect, memo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 // NEW
 import { ArrowRight } from "lucide-react";
@@ -16,15 +16,13 @@ import {
   ExternalLink,
   Calendar,
   Award,
-  MessageCircle,
-  Zap,
   Target,
-  Bell,
   WifiOff,
 } from "lucide-react";
 import useDocumentTitle from "hooks/useDocumentTitle";
 import useDebounce from "hooks/useDebounce.js";
 import { safeJsonParse } from "utils/safeJsonParse";
+import { toast } from "react-toastify";
 
 // ============ CONSTANTS ============
 const GSSOC_TIMELINE = [
@@ -69,24 +67,6 @@ const useKeyboardShortcut = (key, callback) => {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [key]);
-};
-
-const useToast = () => {
-  const [toasts, setToasts] = useState([]);
-
-  const addToast = useCallback((message, type = "info", duration = 3000) => {
-    const id = Date.now();
-    setToasts(prev => [...prev, { id, message, type }]);
-    setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id));
-    }, duration);
-  }, []);
-
-  const removeToast = useCallback((id) => {
-    setToasts(prev => prev.filter(t => t.id !== id));
-  }, []);
-
-  return { toasts, addToast, removeToast };
 };
 
 const formatNumber = (num) => num >= 1000 ? `${(num/1000).toFixed(1)}k` : num;
@@ -223,44 +203,11 @@ const Skeleton = ({ className }) => (
   <div className={`animate-pulse bg-gray-200 dark:bg-gray-700 rounded ${className}`} aria-hidden="true" />
 );
 
-const ToastContainer = ({ toasts, onClose }) => (
-  <div className="fixed bottom-4 right-4 z-50 space-y-2" role="region" aria-live="polite" aria-label="Notifications">
-    <AnimatePresence>
-      {toasts.map(toast => (
-        <motion.div
-          key={toast.id}
-          initial={{ opacity: 0, x: 100, scale: 0.9 }}
-          animate={{ opacity: 1, x: 0, scale: 1 }}
-          exit={{ opacity: 0, x: 100, scale: 0.9 }}
-          className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border ${
-            toast.type === 'success' ? 'bg-green-50 border-green-200 text-green-800 dark:bg-green-900/30 dark:border-green-800 dark:text-green-300' :
-            toast.type === 'error' ? 'bg-red-50 border-red-200 text-red-800 dark:bg-red-900/30 dark:border-red-800 dark:text-red-300' :
-            'bg-white border-gray-200 text-gray-800 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200'
-          }`}
-          role="alert"
-        >
-          {toast.type === 'success' && <CheckCircle className="w-5 h-5" aria-hidden="true" />}
-          {toast.type === 'error' && <Bell className="w-5 h-5" aria-hidden="true" />}
-          <p className="text-sm font-medium">{toast.message}</p>
-          <button
-            onClick={() => onClose(toast.id)}
-            className="ml-2 p-1 hover:bg-black/5 dark:hover:bg-white/10 rounded transition-colors"
-            aria-label="Dismiss notification"
-          >
-            ×
-          </button>
-        </motion.div>
-      ))}
-    </AnimatePresence>
-  </div>
-);
-
 // ============ MAIN COMPONENT ============
 const GSSoCContribution = () => {
   const prefersReducedMotion = useReducedMotion();
   useDocumentTitle("Eventra | GSSoC Contribution");
   const searchInputRef = useRef(null);
-  const { toasts, addToast, removeToast } = useToast();
 
   const [searchQuery] = useState(() => localStorage.getItem("gssoc.search") || "");
   // eslint-disable-next-line no-unused-vars
@@ -282,7 +229,7 @@ const GSSoCContribution = () => {
 
   const GSSOC_END_DATE = "2026-08-15T23:59:59";
   const timeLeft = useCountdown(GSSOC_END_DATE, () => {
-    addToast("🎉 GSSoC program has ended!", "success");
+    toast.success("🎉 GSSoC program has ended!");
   });
 
   useEffect(() => { localStorage.setItem("gssoc.search", searchQuery); }, [searchQuery]);
@@ -290,8 +237,8 @@ const GSSoCContribution = () => {
   useEffect(() => { localStorage.setItem("gssoc.userStats", JSON.stringify(userStats)); }, [userStats]);
 
   useEffect(() => {
-    const handleOnline = () => { setIsOffline(false); addToast("🟢 You're back online!", "success"); };
-    const handleOffline = () => { setIsOffline(true); addToast("🔴 You're offline. Some features may be limited.", "error"); };
+    const handleOnline = () => { setIsOffline(false); toast.success("🟢 You're back online!"); };
+    const handleOffline = () => { setIsOffline(true); toast.error("🔴 You're offline. Some features may be limited."); };
 
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
@@ -299,7 +246,7 @@ const GSSoCContribution = () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, [addToast]);
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 800);
@@ -308,7 +255,7 @@ const GSSoCContribution = () => {
 
   useKeyboardShortcut("/", () => {
     searchInputRef.current?.focus();
-    addToast("🔍 Search focused. Start typing...", "info", 1500);
+    toast.info("🔍 Search focused. Start typing...");
   });
 
   const containerVariants = useMemo(() => ({
@@ -504,7 +451,6 @@ const GSSoCContribution = () => {
         </motion.section>
       </motion.section>
 
-      <ToastContainer toasts={toasts} onClose={removeToast} />
     </>
   );
 };

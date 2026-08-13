@@ -6,8 +6,10 @@ import com.sandeep.eventrabackend.dto.response.AuthResponse;
 import com.sandeep.eventrabackend.exception.PasswordMismatchException;
 import com.sandeep.eventrabackend.exception.UserAlreadyExistsException;
 import com.sandeep.eventrabackend.exception.InvalidGoogleTokenException;
+import com.sandeep.eventrabackend.model.PasswordResetToken;
 import com.sandeep.eventrabackend.model.Role;
 import com.sandeep.eventrabackend.model.User;
+import com.sandeep.eventrabackend.repository.PasswordResetTokenRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
 import com.sandeep.eventrabackend.security.JwtTokenProvider;
 import com.sandeep.eventrabackend.security.TokenBlacklistService;
@@ -21,9 +23,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.sandeep.eventrabackend.dto.request.GoogleAuthRequest;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
+import java.util.Map;
 import java.util.Optional;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 
@@ -33,6 +40,9 @@ public class AuthService {
     /** Bounded retries for unique-username collisions under concurrent first logins. */
     private static final int MAX_USERNAME_RETRIES = 5;
 
+    private static final long RESET_TOKEN_EXPIRATION_MINUTES = 30;
+    private static final int RESET_TOKEN_BYTE_LENGTH = 32;
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
@@ -40,6 +50,7 @@ public class AuthService {
     private final GoogleAuthService googleAuthService;
     private final TokenBlacklistService tokenBlacklistService;
     private final TokenRefreshQueueHandler tokenRefreshQueueHandler;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
 
     public AuthService(UserRepository userRepository,
             PasswordEncoder passwordEncoder,
@@ -47,7 +58,8 @@ public class AuthService {
             JwtTokenProvider jwtTokenProvider,
             GoogleAuthService googleAuthService,
             TokenBlacklistService tokenBlacklistService,
-            TokenRefreshQueueHandler tokenRefreshQueueHandler) {
+            TokenRefreshQueueHandler tokenRefreshQueueHandler,
+            PasswordResetTokenRepository passwordResetTokenRepository) {
 
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -56,6 +68,7 @@ public class AuthService {
         this.googleAuthService = googleAuthService;
         this.tokenBlacklistService = tokenBlacklistService;
         this.tokenRefreshQueueHandler = tokenRefreshQueueHandler;
+        this.passwordResetTokenRepository = passwordResetTokenRepository;
     }
 
     @Transactional
@@ -234,6 +247,71 @@ public class AuthService {
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new org.springframework.security.authentication.BadCredentialsException(
                     "Incorrect password");
+        }
+    }
+
+    // ─── password reset ────────────────────────────────────────────────────────
+
+    /**
+     * Initiates a password reset for the given email.
+     *
+     * <p>A cryptographically random, short-lived token is generated and its
+     * SHA-256 hash is persisted so the raw token can be exchanged for a new
+     * password exactly once. The raw token is returned in the response because
+     * the backend has no email transport configured; deployments with a mailer
+     * should send it as a reset link instead and drop it from the response.</p>
+     *
+     * <p>For privacy, unknown emails still return HTTP 200 with the same generic
+     * message (no account enumeration).</p>
+     *
+     * @return a map with {@code message} and, when the account exists,
+     *         {@code resetToken} (raw token for the next step)
+     */
+    @Transactional
+    public Map<String, String> requestPasswordReset(String rawEmail) {
+        String normalizedEmail = rawEmail.toLowerCase();
+        User user = userRepository.findByEmail(normalizedEmail).orElse(null);
+        if (user == null) {
+            return Map.of(
+                    "message", "If an account exists for that email, a password reset link has been sent.");
+        }
+
+        String rawToken = generateResetToken();
+        String tokenHash = hashToken(rawToken);
+
+        // A new request invalidates all previously issued tokens for this user.
+        passwordResetTokenRepository.deleteByUser_Id(user.getId());
+
+        passwordResetTokenRepository.save(PasswordResetToken.builder()
+                .user(user)
+                .tokenHash(tokenHash)
+                .expiresAt(LocalDateTime.now().plusMinutes(RESET_TOKEN_EXPIRATION_MINUTES))
+                .used(false)
+                .build());
+
+        return Map.of(
+                "message", "If an account exists for that email, a password reset link has been sent.",
+                "resetToken", rawToken);
+    }
+
+    private String generateResetToken() {
+        SecureRandom secureRandom = new SecureRandom();
+        byte[] bytes = new byte[RESET_TOKEN_BYTE_LENGTH];
+        secureRandom.nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
+    private String hashToken(String rawToken) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(rawToken.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hex = new StringBuilder(hash.length * 2);
+            for (byte b : hash) {
+                hex.append(String.format("%02x", b));
+            }
+            return hex.toString();
+        } catch (NoSuchAlgorithmException ex) {
+            throw new IllegalStateException("SHA-256 is unavailable on this JVM", ex);
         }
     }
 

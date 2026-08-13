@@ -4,6 +4,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import java.time.Instant;
@@ -97,6 +98,17 @@ public interface SubtitleRepository extends JpaRepository<Subtitle, Long>, JpaSp
      */
     void deleteByEventId(Long eventId);
     
+    /**
+     * Find subtitles created before a specific time
+     */
+    List<Subtitle> findByCreatedAtBefore(Instant before);
+
+    /**
+     * Delete subtitles created before a specific time
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    void deleteByCreatedAtBefore(Instant before);
+
     /**
      * Delete expired subtitles
      */

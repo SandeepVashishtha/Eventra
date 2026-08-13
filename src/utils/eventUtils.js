@@ -18,6 +18,9 @@ const mapStatusKey = (status = "") => {
     done: "past",
     ended: "ended",
     "event ended": "ended",
+    cancelled: "cancelled",
+    canceled: "cancelled",
+    archived: "archived",
   };
 
   // 🔥 FIX: Return null for unmapped values instead of echoing the input.
@@ -50,17 +53,19 @@ export const computeDateStatus = (event = {}) => {
   if (!event) return "upcoming";
 
   const startDate = parseEventDate(event.startDate || event.date);
-  const endDate = asEndOfDay(parseEventDate(event.endDate || event.date));
+  const endDate = asEndOfDay(
+    parseEventDate(event.endDate || event.date || event.startDate)
+  );
   const now = new Date();
 
   if (!startDate) return "upcoming";
   if (now < startDate) return "upcoming";
 
-  // Moment-based, matching the backend's Event.isEventPast(): once the
-  // event's start time has passed it is no longer "live" — even when it is
-  // still the same calendar day. The old day-granular "live until midnight"
-  // kept the registration form enabled for hours after the event started
-  // while the server rejected every submission. (#12462)
+  // Day-granular "live" window, matching the backend LIVE timing filter
+  // (EventSpecifications: eventDate between today 00:00 and now). An event
+  // that started today is "live"; once its end-of-day boundary passes it
+  // becomes "past". (#15450)
+  if (endDate && now <= endDate) return "live";
   return "past";
 };
 
@@ -84,6 +89,10 @@ export const getEventStatus = (event) => {
     return "cancelled";
   }
 
+  if (explicitStatus === "archived") {
+    return "archived";
+  }
+
   if (explicitStatus && explicitStatus !== dateStatus) {
     return explicitStatus;
   }
@@ -93,12 +102,51 @@ export const getEventStatus = (event) => {
 export const isEventRegistrationClosed = (eventOrStatus) => {
   if (!eventOrStatus) return true;
 
+  // Moment-based, matching the backend's Event.isEventPast(): registration
+  // closes the moment the event's start time passes — even while the event is
+  // still classified "live" for display/filtering. This preserves #12462 while
+  // allowing #15450's "live" status. Event objects carry a date; raw status
+  // strings (e.g. "live") have none and fall through to the status mapping.
+  if (typeof eventOrStatus === "object") {
+    const startDate = parseEventDate(
+      eventOrStatus.startDate || eventOrStatus.eventDate || eventOrStatus.date
+    );
+    if (startDate && new Date() >= startDate) return true;
+  }
+
   const status =
     typeof eventOrStatus === "string"
       ? mapStatusKey(eventOrStatus)
       : getEventStatus(eventOrStatus);
 
-  return status === "past" || status === "ended" || status === "cancelled";
+  return status === "past" || status === "ended" || status === "cancelled" || status === "archived";
+};
+
+/**
+ * Check if an event has low inventory and should show FOMO badge.
+ * FOMO (Fear Of Missing Out) is triggered when remaining tickets drop below 10%
+ * of capacity OR below 20 absolute tickets.
+ *
+ * @param {number} capacity - Total event capacity
+ * @param {number} registeredCount - Number of registered participants
+ * @returns {Object} Object containing isLowInventory boolean and message string
+ */
+export const getFomoStatus = (capacity, registeredCount) => {
+  if (capacity == null || capacity <= 0) return { isLowInventory: false, message: null };
+
+  const remaining = capacity - (registeredCount ?? 0);
+  if (remaining <= 0) return { isLowInventory: false, message: null }; // Event is full, not "selling fast"
+
+  const lowThreshold = Math.max(20, Math.ceil(capacity * 0.1));
+  const isLowInventory = remaining <= lowThreshold;
+
+  if (!isLowInventory) return { isLowInventory: false, message: null };
+
+  // Generate appropriate FOMO message
+  if (remaining <= 5) {
+    return { isLowInventory: true, message: `Only ${remaining} Tickets Left!` };
+  }
+  return { isLowInventory: true, message: "Selling Fast!" };
 };
 
 export const normalizeEvent = (event) => {

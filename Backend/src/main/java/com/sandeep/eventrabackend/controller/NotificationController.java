@@ -2,6 +2,10 @@ package com.sandeep.eventrabackend.controller;
 
 import com.sandeep.eventrabackend.dto.response.NotificationResponse;
 import com.sandeep.eventrabackend.service.NotificationService;
+import com.sandeep.eventrabackend.dto.request.TestEmailRequest;
+import com.sandeep.eventrabackend.dto.request.SaveTemplateRequest;
+import com.sandeep.eventrabackend.dto.response.TestEmailResponse;
+import com.sandeep.eventrabackend.dto.response.TemplateResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -12,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import com.sandeep.eventrabackend.dto.request.PushSubscriptionRequest;
 import com.sandeep.eventrabackend.service.PushSubscriptionService;
+import com.sandeep.eventrabackend.service.EmailTemplateService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,7 +28,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
-
 import java.util.List;
 
 @RestController
@@ -34,11 +38,14 @@ public class NotificationController {
 
     private final NotificationService notificationService;
     private final PushSubscriptionService pushSubscriptionService;
+    private final EmailTemplateService emailTemplateService;
 
     public NotificationController(NotificationService notificationService,
-                                  PushSubscriptionService pushSubscriptionService) {
+                                  PushSubscriptionService pushSubscriptionService,
+                                  EmailTemplateService emailTemplateService) {
         this.notificationService = notificationService;
         this.pushSubscriptionService = pushSubscriptionService;
+        this.emailTemplateService = emailTemplateService;
     }
 
     @GetMapping
@@ -167,5 +174,100 @@ public class NotificationController {
         String endpoint = request != null ? request.getEndpoint() : null;
         pushSubscriptionService.unsubscribe(authentication.getName(), endpoint);
         return ResponseEntity.ok(Map.of("ok", true));
+    }
+
+    @PostMapping("/send-test-email")
+    @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN', 'SUPER_ADMIN')")
+    @Operation(
+            summary = "Send a test email to organizer",
+            description = "Sends a test email with the provided template to the organizer's email address for preview purposes. Only organizers and administrators can use this endpoint.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Test email sent successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid request data"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - JWT token missing or invalid"
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Forbidden - User does not have organizer or admin privileges"
+            )
+    })
+    public ResponseEntity<TestEmailResponse> sendTestEmail(
+            @Valid @RequestBody TestEmailRequest request,
+            Authentication authentication) {
+        String organizerEmail = authentication.getName();
+        return ResponseEntity.ok(emailTemplateService.sendTestEmail(request, organizerEmail));
+    }
+
+    @PostMapping("/save-template")
+    @Operation(
+            summary = "Save a custom email template",
+            description = "Saves a custom email template for an event and template type.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Template saved successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid request data"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - JWT token missing or invalid"
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Forbidden - User does not have permission"
+            )
+    })
+    public ResponseEntity<TemplateResponse> saveTemplate(
+            @Valid @RequestBody SaveTemplateRequest request,
+            Authentication authentication) {
+        String organizerEmail = authentication.getName();
+        return ResponseEntity.ok(emailTemplateService.saveTemplate(request, organizerEmail));
+    }
+
+    @GetMapping("/templates/{eventId}/{templateType}")
+    @Operation(
+            summary = "Get a custom email template",
+            description = "Retrieves a custom email template for an event and template type.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Template retrieved successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Template not found"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - JWT token missing or invalid"
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Forbidden - User does not have permission"
+            )
+    })
+    public ResponseEntity<TemplateResponse> getTemplate(
+            @PathVariable Long eventId,
+            @PathVariable String templateType,
+            Authentication authentication) {
+        String organizerEmail = authentication.getName();
+        return ResponseEntity.ok(emailTemplateService.getTemplate(eventId, templateType, organizerEmail));
     }
 }

@@ -7,6 +7,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook } from "@testing-library/react";
 import useDateFormatter from "../src/hooks/useDateFormatter";
+import { formatEventDate } from "../src/utils/dateFormatter.js";
 
 // Mock dateFormatter utils
 vi.mock("../src/utils/dateFormatter", () => ({
@@ -26,14 +27,12 @@ describe("useDateFormatter — formatEventDate", () => {
   it("calls formatEventDate with correct args", () => {
     const { result } = renderHook(() => useDateFormatter());
     result.current.formatEventDate("2026-06-12", { format: "long" });
-    const { formatEventDate } = await import("../src/utils/dateFormatter");
     expect(formatEventDate).toHaveBeenCalledWith("2026-06-12", expect.objectContaining({ format: "long" }));
   });
 
   it("passes default timezone to formatEventDate", () => {
     const { result } = renderHook(() => useDateFormatter({ timezone: "America/New_York" }));
     result.current.formatEventDate("2026-06-12");
-    const { formatEventDate } = await import("../src/utils/dateFormatter");
     expect(formatEventDate).toHaveBeenCalledWith("2026-06-12", expect.objectContaining({ timezone: "America/New_York" }));
   });
 });

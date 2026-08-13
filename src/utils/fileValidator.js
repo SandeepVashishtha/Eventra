@@ -65,9 +65,9 @@ function readFirstBytes(file, length = 8) {
  * @param {number} options.maxSizeMB - Maximum file size in MB (default: 5)
  * @param {string[]} options.allowedTypes - Allowed MIME types
  * @param {string[]} options.allowedExtensions - Allowed extensions
- * @returns {{ valid: boolean, error?: string }}
+ * @returns {Promise<{ valid: boolean, error?: string }>}
  */
-export function validateImageFile(file, options = {}) {
+export async function validateImageFile(file, options = {}) {
   // Use nullish coalescing (??) so explicitly passing 0 is respected
   const maxSizeMB = options.maxSizeMB ?? DEFAULT_MAX_SIZE_MB;
   const allowedTypes = options.allowedTypes ?? ALLOWED_IMAGE_TYPES;

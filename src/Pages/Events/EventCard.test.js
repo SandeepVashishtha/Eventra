@@ -25,9 +25,10 @@ jest.mock('context/AuthContext', () => ({
   useAuth: jest.fn().mockReturnValue({ user: null }),
 }));
 
-jest.mock('hooks/useBookmarks', () => ({
-  __esModule: true,
-  default: jest.fn(),
+jest.mock('utils/bookmarkUtils', () => ({
+  isEventBookmarked: jest.fn().mockReturnValue(false),
+  addBookmarkedEvent: jest.fn(),
+  removeBookmarkedEvent: jest.fn(),
 }));
 
 jest.mock('utils/conflictDetection', () => ({
@@ -75,13 +76,8 @@ const renderCard = (eventOverrides = {}) =>
   );
 
 const { checkRegistrationConflict } = require('utils/conflictDetection');
-const useBookmarks = require('hooks/useBookmarks').default;
+const { isEventBookmarked, addBookmarkedEvent, removeBookmarkedEvent } = require('utils/bookmarkUtils');
 const { useMyEvents } = require('context/MyEventsContext');
-
-const defaultBookmarks = () => ({
-  isBookmarked: jest.fn().mockReturnValue(false),
-  toggleBookmark: jest.fn(),
-});
 
 const defaultMyEvents = () => ({ myEvents: [], isRegistered: () => false });
 
@@ -90,7 +86,7 @@ describe('EventCard', () => {
     jest.clearAllMocks();
     getEventStatus.mockReturnValue('upcoming');
     checkRegistrationConflict.mockReturnValue({ hasConflict: false });
-    useBookmarks.mockReturnValue(defaultBookmarks());
+    isEventBookmarked.mockReturnValue(false);
     useMyEvents.mockReturnValue(defaultMyEvents());
   });
 
@@ -171,29 +167,24 @@ describe('EventCard', () => {
   describe('bookmark interaction', () => {
     const { toast } = require('react-toastify');
 
-    it('calls toggleBookmark and shows toast when bookmarking an unbookmarked event', async () => {
-      const toggleBookmark = jest.fn();
-      useBookmarks.mockReturnValue({
-        isBookmarked: jest.fn().mockReturnValue(false),
-        toggleBookmark,
-      });
+    it('bookmarks an unbookmarked event and shows the success toast without throwing', async () => {
+      isEventBookmarked.mockReturnValue(false);
       renderCard();
       const user = userEvent.setup();
       await user.click(screen.getByRole('button', { name: /bookmark event/i }));
-      expect(toggleBookmark).toHaveBeenCalledTimes(1);
-      expect(toast.success).toHaveBeenCalled();
+      expect(addBookmarkedEvent).toHaveBeenCalledWith(expect.objectContaining({ id: 42 }));
+      expect(toast.success).toHaveBeenCalledWith(
+        'Event saved!',
+        expect.objectContaining({ toastId: 'bookmark-42' })
+      );
     });
 
-    it('calls toggleBookmark and shows info toast when removing a bookmark', async () => {
-      const toggleBookmark = jest.fn();
-      useBookmarks.mockReturnValue({
-        isBookmarked: jest.fn().mockReturnValue(true),
-        toggleBookmark,
-      });
+    it('unbookmarks a bookmarked event and shows the info toast', async () => {
+      isEventBookmarked.mockReturnValue(true);
       renderCard();
       const user = userEvent.setup();
-      await user.click(screen.getByRole('button', { name: /remove event bookmark/i }));
-      expect(toggleBookmark).toHaveBeenCalledWith(expect.objectContaining({ id: 42 }));
+      await user.click(screen.getByRole('button', { name: /remove bookmark/i }));
+      expect(removeBookmarkedEvent).toHaveBeenCalledWith(42);
       expect(toast.info).toHaveBeenCalled();
     });
 

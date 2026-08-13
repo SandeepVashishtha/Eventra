@@ -92,12 +92,14 @@ export const generateSharingUrl = (shareData, platform) => {
     case "facebook":
       return `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
 
-    case "messenger":
-      // Messenger sharing requires a Facebook App ID (app_id parameter) which
-      // is not available in this client-side configuration.
-      // Callers should hide or disable the Messenger share button.
-      console.warn("[shareUtils] Messenger sharing is not supported — no Facebook App ID configured.");
-      return "";
+    case "messenger": {
+      const fbAppId = process.env.REACT_APP_FB_APP_ID;
+      if (!fbAppId) {
+        console.warn("[shareUtils] Missing REACT_APP_FB_APP_ID environment variable for Messenger sharing.");
+        return "";
+      }
+      return `https://www.facebook.com/dialog/send?link=${encodedUrl}&app_id=${encodeURIComponent(fbAppId)}&redirect_uri=${encodedUrl}`;
+    }
 
     case "linkedin":
       return `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}&title=${encodedTitle}&summary=${encodedDescription}`;

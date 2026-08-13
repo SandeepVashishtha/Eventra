@@ -1,12 +1,12 @@
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 package com.sandeep.eventrabackend.controller;
 
 import com.sandeep.eventrabackend.dto.request.CancelEventRequest;
+import com.sandeep.eventrabackend.dto.request.CsvWaitlistImportRequest;
 import com.sandeep.eventrabackend.dto.request.EventCreateRequest;
 import com.sandeep.eventrabackend.dto.request.EventScheduleRequest;
 import com.sandeep.eventrabackend.dto.request.EventUpdateRequest;
 import com.sandeep.eventrabackend.dto.request.RegistrationRequest;
+import com.sandeep.eventrabackend.dto.response.CsvWaitlistImportResponse;
 import com.sandeep.eventrabackend.dto.response.ErrorResponse;
 import com.sandeep.eventrabackend.dto.response.AttendeeDirectoryResponse;
 import com.sandeep.eventrabackend.dto.response.EventAvailabilityResponse;
@@ -30,8 +30,9 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
-
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -87,14 +88,12 @@ public class EventController {
                         @ApiResponse(responseCode = "403", description = "Forbidden - Insufficient event role", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
                         @ApiResponse(responseCode = "404", description = "Event not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
         })
-        public ResponseEntity<EventResponse> @CacheEvict(value = "events", key = "#id")
-    updateEvent(
+        public ResponseEntity<EventResponse> updateEvent(
                         @Parameter(description = "ID of the event to update") @PathVariable Long id,
                         @Valid @RequestBody EventUpdateRequest request,
                         Authentication authentication) {
 
-                EventResponse updatedEvent = eventService.@CacheEvict(value = "events", key = "#id")
-    updateEvent(id, request, authentication.getName());
+                EventResponse updatedEvent = eventService.updateEvent(id, request, authentication.getName());
                 return ResponseEntity.ok(updatedEvent);
         }
 
@@ -124,6 +123,16 @@ public class EventController {
         })
         public SseEmitter streamEvents() {
                 return eventStreamService.createEmitter();
+        }
+
+        @GetMapping(value = "/{id}/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+        @Operation(summary = "Stream availability updates for a single event", description = "Establishes a Server-Sent Events (SSE) connection scoped to one event, so the subscriber only receives availability broadcasts for that event.")
+        @ApiResponses({
+                        @ApiResponse(responseCode = "200", description = "SSE connection established")
+        })
+        public SseEmitter streamEventAvailability(
+                        @Parameter(description = "ID of the event to scope the stream to") @PathVariable Long id) {
+                return eventStreamService.createEmitter("events", id);
         }
 
         @GetMapping
@@ -168,15 +177,30 @@ public class EventController {
         @ApiResponses({
                         @ApiResponse(responseCode = "200", description = "Events fetched successfully", content = @Content(array = @ArraySchema(schema = @Schema(implementation = EventResponse.class))))
         })
-        public ResponseEntity<List<EventResponse>> searchEvents(
+        public ResponseEntity<Page<EventResponse>> searchEvents(
                         @Parameter(description = "Search term for full-text search on title and description") @RequestParam(required = false) String search,
                         @Parameter(description = "Event category for filtering") @RequestParam(required = false) String category,
                         @Parameter(description = "Start date for filtering (ISO format)") @RequestParam(required = false) String startDate,
                         @Parameter(description = "End date for filtering (ISO format)") @RequestParam(required = false) String endDate,
-                        @Parameter(description = "Filter for free events only") @RequestParam(required = false) Boolean free) {
+                        @Parameter(description = "Filter for free events only") @RequestParam(required = false) Boolean free,
+                        @Parameter(description = "Page number (0-based)") @RequestParam(defaultValue = "0") int page,
+                        @Parameter(description = "Page size") @RequestParam(defaultValue = "20") int size) {
 
-                List<EventResponse> events = eventService.searchEvents(search, category, startDate, endDate, free);
+                Pageable pageable = PageRequest.of(page, size);
+                Page<EventResponse> events = eventService.searchEvents(search, category, startDate, endDate, free,
+                                pageable);
                 return ResponseEntity.ok(events);
+        }
+
+        // ── Issue #16693 — GET /api/events/categories/summary ───────────────────
+
+        @GetMapping("/categories/summary")
+        @Operation(summary = "Get event count by category", description = "Returns total event counts per category computed using database-level GROUP BY aggregation.")
+        @ApiResponses({
+                        @ApiResponse(responseCode = "200", description = "Category statistics fetched successfully")
+        })
+        public ResponseEntity<java.util.Map<String, Long>> getEventCountByCategory() {
+                return ResponseEntity.ok(eventService.getEventCountByCategory());
         }
 
         // ── Issue #2101 — GET /api/events/{id} ──────────────────────────────────
@@ -205,12 +229,9 @@ public class EventController {
                         @ApiResponse(responseCode = "404", description = "Event not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
         })
         public ResponseEntity<EventAvailabilityResponse> getEventAvailability(
-                        @Parameter(description = "ID of the event") @PathVariable Long id,
-                        Authentication authentication) {
+                        @Parameter(description = "ID of the event") @PathVariable Long id) {
 
-                EventAvailabilityResponse response = eventService.getEventAvailability(
-                                id,
-                                authentication == null ? null : authentication.getName());
+                EventAvailabilityResponse response = eventService.getEventAvailability(id);
 
                 return ResponseEntity.ok(response);
         }
@@ -254,7 +275,9 @@ public class EventController {
         public ResponseEntity<List<AttendeeDirectoryResponse>> getAttendeeDirectory(
                         @Parameter(description = "ID of the event") @PathVariable Long id,
                         Authentication authentication) {
-
+                if (authentication == null || !authentication.isAuthenticated()) {
+                        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+                }
                 return ResponseEntity.ok(eventService.getAttendeeDirectory(id, authentication.getName()));
         }
 
@@ -298,6 +321,24 @@ public class EventController {
                         Authentication authentication) {
 
                 return ResponseEntity.ok(eventService.promoteWaitlistedUser(id, waitlistId, authentication.getName()));
+        }
+
+        @PostMapping("/{id}/waitlist/import")
+        @PreAuthorize("isAuthenticated()")
+        @Operation(summary = "Bulk import legacy waitlist data from CSV", description = "Allows organizers to import existing waitlists from legacy systems like Eventbrite. The CSV should contain Name, Email, Timestamp columns. Users are mapped to existing accounts and sorted by timestamp to maintain fair queuing.", security = @SecurityRequirement(name = "bearerAuth"))
+        @ApiResponses({
+                        @ApiResponse(responseCode = "200", description = "CSV import completed successfully", content = @Content(schema = @Schema(implementation = CsvWaitlistImportResponse.class))),
+                        @ApiResponse(responseCode = "400", description = "Invalid CSV format or missing required fields", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                        @ApiResponse(responseCode = "401", description = "Unauthorized - JWT token missing or invalid", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                        @ApiResponse(responseCode = "403", description = "Forbidden - User does not have organizer permissions for this event", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                        @ApiResponse(responseCode = "404", description = "Event not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+        })
+        public ResponseEntity<CsvWaitlistImportResponse> importLegacyWaitlist(
+                        @Parameter(description = "ID of the event") @PathVariable Long id,
+                        @Valid @RequestBody CsvWaitlistImportRequest request,
+                        Authentication authentication) {
+
+                return ResponseEntity.ok(eventService.importLegacyWaitlist(request, authentication.getName()));
         }
 
         // ── Issue #2102 — POST /api/events/{id}/register ─────────────────────────
@@ -376,6 +417,22 @@ public class EventController {
 
                 return ResponseEntity.ok(
                                 eventService.cancelEvent(id, authentication.getName(), request));
+        }
+
+        @PostMapping("/{id}/archive")
+        @PreAuthorize("isAuthenticated()")
+        @Operation(summary = "Archive an event", description = "Allows an event ORGANIZER/OWNER (or platform ADMIN) to archive an event. Archived events are hidden from the public listing.", security = @SecurityRequirement(name = "bearerAuth"))
+        @ApiResponses({
+                        @ApiResponse(responseCode = "200", description = "Event archived successfully", content = @Content(schema = @Schema(implementation = EventResponse.class))),
+                        @ApiResponse(responseCode = "401", description = "Unauthorized - JWT token missing or invalid", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                        @ApiResponse(responseCode = "403", description = "Forbidden - Insufficient event role", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                        @ApiResponse(responseCode = "404", description = "Event not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                        @ApiResponse(responseCode = "409", description = "Event is already archived or cancelled", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+        })
+        public ResponseEntity<EventResponse> archiveEvent(
+                        @Parameter(description = "ID of the event to archive") @PathVariable Long id,
+                        Authentication authentication) {
+                return ResponseEntity.ok(eventService.archiveEvent(id, authentication.getName()));
         }
 
         @PostMapping("/{id}/resend-cancellation-notice")

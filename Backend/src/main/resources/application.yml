@@ -11,7 +11,7 @@ app:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173,https://eventra-psi.vercel.app,https://eventra.sandeepvashishtha.in}
   zkp:
     proof:
-      verification-secret: ${ZKP_PROOF_VERIFICATION_SECRET:eventra-zkp-verification-secret}
+      verification-secret: ${ZKP_PROOF_VERIFICATION_SECRET:}
   rate-limit:
     enabled: ${RATE_LIMIT_ENABLED:true}
     trusted-proxy-hops: ${RATE_LIMIT_TRUSTED_PROXY_HOPS:1}
@@ -36,6 +36,9 @@ app:
     refresh:
       capacity: ${RATE_LIMIT_REFRESH_CAPACITY:30}
       window: ${RATE_LIMIT_REFRESH_WINDOW:1m}
+    validate:
+      capacity: ${RATE_LIMIT_VALIDATE_CAPACITY:20}
+      window: ${RATE_LIMIT_VALIDATE_WINDOW:1m}
 
 google:
   client:
@@ -44,6 +47,19 @@ google:
 spring:
   profiles:
     default: dev
+  flyway:
+    # Flyway is on the classpath for Postgres deployments, but must stay off
+    # for the H2-based dev/test profiles (the migration chain assumes the
+    # Hibernate-managed schema). Enable it explicitly on Postgres profiles.
+    enabled: ${FLYWAY_ENABLED:false}
+  cache:
+    type: redis
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: ${REDIS_TIMEOUT:2s}
 
 management:
   endpoints:

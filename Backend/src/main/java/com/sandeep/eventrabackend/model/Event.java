@@ -23,6 +23,12 @@ public class Event {
      * chosen by the organizer survives reload (issue #14603).
      */
     private LocalDateTime endDate;
+
+    /**
+     * IANA timezone (e.g. "America/New_York") or short alias (e.g. "EST") the
+     * event times are expressed in. Falls back to UTC when not set.
+     */
+    private String timezone;
     private boolean isPublic = true;
 
     /**
@@ -172,6 +178,14 @@ public class Event {
         this.endDate = endDate;
     }
 
+    public String getTimezone() {
+        return timezone;
+    }
+
+    public void setTimezone(String timezone) {
+        this.timezone = timezone;
+    }
+
     public boolean isPublic() {
         return isPublic;
     }
@@ -273,6 +287,9 @@ public class Event {
     }
 
     public void setCategories(Set<String> categories) {
+        if (categories != null && categories.size() > 3) {
+            throw new IllegalArgumentException("An event can have at most 3 categories.");
+        }
         this.categories = categories;
     }
 
@@ -291,6 +308,9 @@ public class Event {
     }
 
     public void setTags(Set<String> tags) {
+        if (tags != null && tags.size() > 10) {
+            throw new IllegalArgumentException("An event can have at most 10 tags.");
+        }
         this.tags = tags;
     }
 

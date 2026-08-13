@@ -72,7 +72,7 @@ export class TranscriptionResult {
     this.language = data.language || TRANSCRIPTION_CONFIG.DEFAULT_LANGUAGE;
     this.timestamp = data.timestamp || Date.now();
     this.duration = data.duration || 0;
-    this provider = data.provider || TRANSCRIPTION_CONFIG.DEFAULT_PROVIDER;
+    this.provider = data.provider || TRANSCRIPTION_CONFIG.DEFAULT_PROVIDER;
     this.rawData = data.rawData || null;
   }
   

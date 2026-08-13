@@ -21,7 +21,7 @@ class EventCancellationNotificationService {
    * Validate that event has essential data for notifications
    */
   validateEventData(event) {
-    const requiredFields = ['id', 'title', 'organiserId'];
+    const requiredFields = ['id', 'title', 'organizerId'];
     const missingFields = requiredFields.filter(field => !event[field]);
 
     if (missingFields.length > 0) {

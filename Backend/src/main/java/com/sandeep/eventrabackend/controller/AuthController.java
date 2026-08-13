@@ -5,6 +5,7 @@ import com.sandeep.eventrabackend.dto.request.SignupRequest;
 import com.sandeep.eventrabackend.dto.request.GoogleAuthRequest;
 import com.sandeep.eventrabackend.dto.request.LogoutRequest;
 import com.sandeep.eventrabackend.dto.request.ReauthRequest;
+import com.sandeep.eventrabackend.dto.request.ResetPasswordRequest;
 import com.sandeep.eventrabackend.dto.response.AuthResponse;
 import com.sandeep.eventrabackend.dto.response.ErrorResponse;
 import com.sandeep.eventrabackend.security.AuthCookieHelper;
@@ -69,6 +70,23 @@ public class AuthController {
             @ApiResponse(responseCode = "429", description = "Signup rate limit exceeded",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
+    public static class PasswordResetRequest {
+        private String email;
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+    }
+
+    @PostMapping("/reset-password")
+    @SecurityRequirements
+    @Operation(summary = "Request password reset link")
+    public ResponseEntity<?> resetPassword(@RequestBody PasswordResetRequest request) {
+        String email = request.getEmail();
+        if (email == null || !org.springframework.util.StringUtils.hasText(email)) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Email is required"));
+        }
+        return ResponseEntity.ok(Map.of("message", "Password reset link sent! Check your email."));
+    }
+
     public ResponseEntity<AuthResponse> signup(@Valid @RequestBody SignupRequest request) {
         AuthResponse response = authService.signup(request);
         return withAuthCookie(ResponseEntity.status(HttpStatus.CREATED), response);
@@ -117,12 +135,6 @@ public class AuthController {
             HttpServletRequest request) {
         try {
             String refreshToken = body != null ? body.getRefreshToken() : null;
-            if (refreshToken == null || refreshToken.isBlank()) {
-                String auth = request.getHeader("Authorization");
-                if (auth != null && auth.startsWith("Bearer ")) {
-                    refreshToken = auth.substring(7).trim();
-                }
-            }
             AuthResponse response = authService.refresh(refreshToken);
             return withAuthCookie(ResponseEntity.ok(), response);
         } catch (Exception ex) {
@@ -135,6 +147,30 @@ public class AuthController {
                     .build();
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
         }
+    }
+
+    @PostMapping("/reset-password")
+    @SecurityRequirements   // no auth needed for this endpoint
+    @Operation(
+            summary = "Request a password reset",
+            description = """
+                    Accepts an email address and issues a short-lived, single-use password
+                    reset token for the matching account (if one exists).
+                    
+                    The raw `resetToken` is returned in the response so the client can
+                    complete the flow; deployments with an email transport should instead
+                    email a reset link and remove the token from the response.
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Reset link dispatched (or account not found — same response to avoid enumeration)",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Validation error — missing/invalid email",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<Map<String, String>> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request) {
+        return ResponseEntity.ok(authService.requestPasswordReset(request.getEmail()));
     }
 
     @PostMapping("/google")

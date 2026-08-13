@@ -20,8 +20,8 @@ public class ASTTokenizerUtil {
                 .replaceAll("//.*|/\\*[\\s\\S]*?\\*/", "") // Remove comments
                 .replaceAll("\"[^\"]*\"|'[^']*'", "STR_LITERAL") // Normalize string literals
                 .replaceAll("\\b\\d+\\b", "NUM_LITERAL") // Normalize number literals
-                .replaceAll("\\b(let|var|const|function|class|return|if|else|for|while|import|from|export|def|public|private|class|static|void|int|double)\\b", "KW_$1") // Key words
-                .replaceAll("\\b[a-zA-Z_][a-zA-Z0-9_]*\\b", "IDENT"); // Replace generic identifier names
+                .replaceAll("\\b(let|var|const|function|class|return|if|else|for|while|import|from|export|def|public|private|static|void|int|double)\\b", "KW_$1") // Key words
+                .replaceAll("\\b(?!(?:KW_|STR_LITERAL|NUM_LITERAL))[a-zA-Z_][a-zA-Z0-9_]*\\b", "IDENT"); // Replace generic identifier names (preserving KW_*, STR_LITERAL, NUM_LITERAL)
 
         String[] tokens = normalized.split("\\s+");
         List<String> tokenList = new ArrayList<>();
@@ -38,6 +38,9 @@ public class ASTTokenizerUtil {
      */
     public static Set<Integer> generateKGramHashes(List<String> tokens) {
         Set<Integer> hashes = new HashSet<>();
+        if (tokens.isEmpty()) {
+            return hashes;
+        }
         if (tokens.size() < K_GRAM_SIZE) {
             hashes.add(Objects.hash(tokens));
             return hashes;
@@ -60,7 +63,6 @@ public class ASTTokenizerUtil {
         Set<Integer> hashesA = generateKGramHashes(tokensA);
         Set<Integer> hashesB = generateKGramHashes(tokensB);
 
-        if (hashesA.isEmpty() && hashesB.isEmpty()) return 100.0;
         if (hashesA.isEmpty() || hashesB.isEmpty()) return 0.0;
 
         Set<Integer> intersection = new HashSet<>(hashesA);

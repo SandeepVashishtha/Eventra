@@ -104,6 +104,10 @@ export const registerServiceWorker = () => {
         });
     });
   }
+
+  // SW requires HTTPS unless running on localhost
+  const isSecureContext = window.location.protocol === "https:" || isLocalhost;
+  return isSecureContext;
 };
 
 /**
@@ -126,6 +130,10 @@ export const unregisterServiceWorker = () => {
         console.log('[Service Worker] Unregister failed:', error);
         emit('error', error);
       });
+  };
+
+  if (immediate || document.readyState === "complete") {
+    return registerScript();
   }
 };
 

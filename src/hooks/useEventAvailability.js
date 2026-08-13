@@ -20,6 +20,60 @@ const MAX_POLL_EVENTS = 50;
 // Polling fallback interval (ms) used only when SSE is unavailable or fails.
 const POLL_INTERVAL_MS = 15_000;
 
+// ── Shared fallback poller ───────────────────────────────────────────────────
+// A grid of event cards would otherwise create one `setInterval` per card,
+// each firing `GET /api/events/{id}/availability` every 15s (a 50-card listing
+// = 200 req/min from a single client, tripping the backend rate limiter). We
+// keep a single module-level interval that iterates the tracked event ids and
+// notify every subscriber instance, capped at MAX_POLL_EVENTS (issue #15337).
+const pollSubscribers = new Map(); // eventId (String) -> Set<callback>
+let sharedPollTimer = null;
+
+const runSharedPoll = () => {
+  const ids = [...pollSubscribers.keys()].slice(0, MAX_POLL_EVENTS);
+  ids.forEach((eventId) => {
+    eventService
+      .getAvailability(eventId)
+      .then((res) => res.json())
+      .then((body) => {
+        const availability = normalizeEventAvailability(body);
+        const listeners = pollSubscribers.get(String(eventId));
+        if (listeners) {
+          listeners.forEach((cb) => cb(availability));
+        }
+      })
+      .catch(() => {
+        // Keep whatever the UI already has; the next tick / SSE event retries.
+      });
+  });
+};
+
+const subscribeAvailabilityPoll = (eventId, callback) => {
+  const key = String(eventId);
+  let listeners = pollSubscribers.get(key);
+  if (!listeners) {
+    listeners = new Set();
+    pollSubscribers.set(key, listeners);
+  }
+  listeners.add(callback);
+  if (!sharedPollTimer) {
+    sharedPollTimer = setInterval(runSharedPoll, POLL_INTERVAL_MS);
+  }
+  return () => {
+    const set = pollSubscribers.get(key);
+    if (set) {
+      set.delete(callback);
+      if (set.size === 0) {
+        pollSubscribers.delete(key);
+      }
+    }
+    if (pollSubscribers.size === 0 && sharedPollTimer) {
+      clearInterval(sharedPollTimer);
+      sharedPollTimer = null;
+    }
+  };
+};
+
 /**
  * React hook that provides live, real-time event seat availability with a
  * graceful degradation strategy:
@@ -39,6 +93,10 @@ const POLL_INTERVAL_MS = 15_000;
  * @param {number|string} eventId - The event id to track, or `null` to disable.
  * @param {Object} [options={}]
  * @param {boolean} [options.enabled=true] - Toggles the connection on/off.
+ * @param {boolean} [options.scoped=false] - Subscribe to the per-event stream
+ *   (`/api/events/{id}/stream`) so the backend only broadcasts availability for
+ *   this event. Use on single-event pages; keep the shared multiplexed stream
+ *   for grids so all cards share one connection.
  * @returns {Object}
  * @returns {Object|null} Object.availability - Normalised availability
  *   `{ capacity, registeredCount, spotsLeft, isFull }` or `null` before the
@@ -47,11 +105,16 @@ const POLL_INTERVAL_MS = 15_000;
  * @returns {number} Object.remaining - Number of seats left (0 when full/unlimited-safe).
  * @returns {string} Object.status - SSE connection status.
  */
-export default function useEventAvailability(eventId, { enabled = true } = {}) {
+export default function useEventAvailability(eventId, { enabled = true, scoped = false } = {}) {
   // Cache of availability keyed by event id. Stored in a single state object so
   // multiple consumers (cards on a grid) share one source of truth.
   const [cache, setCache] = useState({});
   const [status, setStatus] = useState(SSE_STATUS.IDLE);
+
+  // Bridges the SSE connection lifecycle to the fallback poller. `true` once the
+  // realtime channel is open (so polling can be paused) and `false` on
+  // error/close (so polling resumes). See the status effect below.
+  const [realtimeConnected, setRealtimeConnected] = useState(false);
 
   // Keep the latest availability per event in a ref so the polling interval can
   // read it without re-creating the interval on every cache change.
@@ -60,8 +123,11 @@ export default function useEventAvailability(eventId, { enabled = true } = {}) {
     cacheRef.current = cache;
   }, [cache]);
 
-  // Reflect the multiplexer's connection status.
-  const { status: sseStatus } = useRealTimeConnection(EVENT_STREAM_PATH, {
+  // Reflect the multiplexer's connection status. When `scoped` is set, connect
+  // to the per-event stream so the backend only pushes availability for this
+  // event instead of every event in the system.
+  const streamPath = scoped && eventId != null ? `/api/events/${eventId}/stream` : EVENT_STREAM_PATH;
+  const { status: sseStatus } = useRealTimeConnection(streamPath, {
     enabled: Boolean(eventId) && enabled,
     onMessage: (data, eventType) => {
       // Only handle availability broadcasts for the event we care about.
@@ -79,11 +145,16 @@ export default function useEventAvailability(eventId, { enabled = true } = {}) {
   });
 
   // Keep an internal status that also flips to "polling" when we fall back.
+  // The `realtimeConnected` flag is the bridge between the SSE lifecycle and the
+  // fallback poller: it is `true` only while the stream is open, so the poll
+  // effect below can pause/resume the shared interval accordingly.
   useEffect(() => {
     setStatus(sseStatus);
+    setRealtimeConnected(sseStatus === SSE_STATUS.CONNECTED);
   }, [sseStatus]);
 
-  // Initial + SSE fallback polling fetch.
+  // Initial fetch + SSE fallback polling. The recurring poll is shared across
+  // hook instances and only runs while the SSE stream is not connected.
   useEffect(() => {
     if (!enabled || eventId == null) {
       return undefined;
@@ -91,7 +162,6 @@ export default function useEventAvailability(eventId, { enabled = true } = {}) {
 
     const normalizedEventId = String(eventId);
     let isMounted = true;
-    let pollTimer = null;
 
     const fetchAvailability = async () => {
       try {
@@ -111,20 +181,25 @@ export default function useEventAvailability(eventId, { enabled = true } = {}) {
     // Fetch immediately so the UI shows a value before the first SSE event.
     fetchAvailability();
 
-    // Polling fallback: only useful when SSE is not connected. We check the
-    // connection status through the cache-safe path (state update is async),
-    // so we poll unconditionally but at a low frequency.
-    const startPolling = () => {
-      pollTimer = setInterval(fetchAvailability, POLL_INTERVAL_MS);
-    };
-    startPolling();
+    // Polling fallback: only runs while the realtime channel is NOT connected,
+    // and is shared so a grid of N cards produces one interval, not N. When the
+    // SSE stream opens (`realtimeConnected` flips to true) this effect re-runs,
+    // clears the subscriber, and the shared interval is torn down once the last
+    // subscriber leaves. If the stream errors/closes, `realtimeConnected` goes
+    // false and polling is (re)started here.
+    const unsubscribePoll =
+      realtimeConnected
+        ? () => {}
+        : subscribeAvailabilityPoll(normalizedEventId, (availability) => {
+            setCache((prev) => ({ ...prev, [normalizedEventId]: availability }));
+          });
 
     return () => {
       isMounted = false;
-      if (pollTimer) clearInterval(pollTimer);
+      unsubscribePoll();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventId, enabled]);
+  }, [eventId, enabled, realtimeConnected]);
 
   // Memoised derived value for the tracked event.
   const availability = useMemo(

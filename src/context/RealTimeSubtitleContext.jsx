@@ -177,7 +177,7 @@ export function RealTimeSubtitleProvider({ children }) {
   
   // Service references
   const subtitleQueue = useRef([]);
-  const latency Measurements = useRef([]);
+  const latencyMeasurements = useRef([]);
   const startTimeRef = useRef(null);
   const lastActivityRef = useRef(Date.now());
   
@@ -284,11 +284,9 @@ export function RealTimeSubtitleProvider({ children }) {
   const processSubtitleQueue = useCallback(() => {
     if (subtitleQueue.current.length === 0) return;
     
-    const queue = [...subtitleQueue.current];
-    subtitleQueue.current = [];
-    
-    // Get the first subtitle from queue
-    const nextSubtitle = queue[0];
+    // Get the next subtitle from queue
+    const nextSubtitle = subtitleQueue.current.shift();
+    if (!nextSubtitle) return;
     
     // Update active subtitle
     setActiveSubtitle(nextSubtitle);
@@ -324,7 +322,7 @@ export function RealTimeSubtitleProvider({ children }) {
     }));
     
     // Process remaining queue
-    if (queue.length > 1) {
+    if (subtitleQueue.current.length > 0) {
       // Delay processing to maintain order
       setTimeout(processSubtitleQueue, 100);
     }
@@ -692,6 +690,6 @@ export function useSubtitleStats() {
 }
 
 // Export components
-export { RealTimeSubtitleContext, SUBTITLE_CONFIG, SUBTITLE_STATE, Subtitle };
+export { RealTimeSubtitleContext };
 
 export default RealTimeSubtitleProvider;

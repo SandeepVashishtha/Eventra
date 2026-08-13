@@ -1,7 +1,16 @@
 package com.sandeep.eventrabackend.subtitles;
 
+import com.sandeep.eventrabackend.model.EventRole;
+import com.sandeep.eventrabackend.model.Role;
+import com.sandeep.eventrabackend.model.User;
+import com.sandeep.eventrabackend.repository.UserRepository;
+import com.sandeep.eventrabackend.service.EventRoleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.*;
 import org.springframework.data.domain.Page;
@@ -27,6 +36,8 @@ import java.util.*;
 public class SubtitleController {
     
     private final SubtitleService subtitleService;
+    private final EventRoleService eventRoleService;
+    private final UserRepository userRepository;
     
     // ==================== Subtitle CRUD Operations ====================
     
@@ -126,7 +137,10 @@ public class SubtitleController {
      * Get subtitles by user ID
      */
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<SubtitleDTO>> getSubtitlesByUserId(@PathVariable Long userId) {
+    public ResponseEntity<List<SubtitleDTO>> getSubtitlesByUserId(
+            @PathVariable Long userId,
+            Authentication authentication) {
+        assertCanReadUser(userId, authentication);
         List<Subtitle> subtitles = subtitleService.getSubtitlesByUserId(userId);
         List<SubtitleDTO> dtos = subtitles.stream()
                 .map(SubtitleDTO::fromEntity)
@@ -140,7 +154,9 @@ public class SubtitleController {
     @PutMapping("/{id}")
     public ResponseEntity<SubtitleDTO> updateSubtitle(
             @PathVariable Long id,
-            @Valid @RequestBody SubtitleDTO subtitleDTO) {
+            @Valid @RequestBody SubtitleDTO subtitleDTO,
+            Authentication authentication) {
+        assertCanModifySubtitle(id, authentication);
         Subtitle subtitle = subtitleService.updateSubtitle(id, subtitleDTO);
         SubtitleDTO result = SubtitleDTO.fromEntity(subtitle);
         return ResponseEntity.ok(result);
@@ -150,7 +166,10 @@ public class SubtitleController {
      * Mark a subtitle as final
      */
     @PostMapping("/{id}/finalize")
-    public ResponseEntity<SubtitleDTO> finalizeSubtitle(@PathVariable Long id) {
+    public ResponseEntity<SubtitleDTO> finalizeSubtitle(
+            @PathVariable Long id,
+            Authentication authentication) {
+        assertCanModifySubtitle(id, authentication);
         Subtitle subtitle = subtitleService.finalizeSubtitle(id);
         SubtitleDTO result = SubtitleDTO.fromEntity(subtitle);
         return ResponseEntity.ok(result);
@@ -160,7 +179,8 @@ public class SubtitleController {
      * Delete a subtitle by ID
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteSubtitle(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteSubtitle(@PathVariable Long id, Authentication authentication) {
+        assertCanModifySubtitle(id, authentication);
         subtitleService.deleteSubtitle(id);
         return ResponseEntity.noContent().build();
     }
@@ -169,7 +189,10 @@ public class SubtitleController {
      * Delete subtitles by session ID
      */
     @DeleteMapping("/session/{sessionId}")
-    public ResponseEntity<Void> deleteSubtitlesBySessionId(@PathVariable String sessionId) {
+    public ResponseEntity<Void> deleteSubtitlesBySessionId(
+            @PathVariable String sessionId,
+            Authentication authentication) {
+        assertCanModifySession(sessionId, authentication);
         subtitleService.deleteSubtitlesBySessionId(sessionId);
         return ResponseEntity.noContent().build();
     }
@@ -178,7 +201,10 @@ public class SubtitleController {
      * Delete subtitles by event ID
      */
     @DeleteMapping("/event/{eventId}")
-    public ResponseEntity<Void> deleteSubtitlesByEventId(@PathVariable Long eventId) {
+    public ResponseEntity<Void> deleteSubtitlesByEventId(
+            @PathVariable Long eventId,
+            Authentication authentication) {
+        assertCanModifyEvent(eventId, authentication);
         subtitleService.deleteSubtitlesByEventId(eventId);
         return ResponseEntity.noContent().build();
     }
@@ -301,6 +327,7 @@ public class SubtitleController {
      * Delete expired subtitles
      */
     @PostMapping("/cleanup/expired")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<Map<String, Object>> deleteExpiredSubtitles() {
         int deletedCount = subtitleService.deleteExpiredSubtitles();
         
@@ -310,6 +337,86 @@ public class SubtitleController {
         response.put("timestamp", new Date());
         
         return ResponseEntity.ok(response);
+    }
+    
+    // ==================== Authorization helpers ====================
+
+    /**
+     * FIX (#15368): Moderation/deletion of a subtitle requires the subtitle
+     * owner, an event organizer for the subtitle's event, or a platform admin.
+     */
+    private void assertCanModifySubtitle(Long subtitleId, Authentication authentication) {
+        Subtitle subtitle = subtitleService.getSubtitleById(subtitleId)
+                .orElseThrow(() -> new RuntimeException("Subtitle not found with id: " + subtitleId));
+        User caller = currentUser(authentication);
+        if (isAdmin(caller)) {
+            return;
+        }
+        if (subtitle.getUserId() != null && subtitle.getUserId().equals(caller.getId())) {
+            return;
+        }
+        if (subtitle.getEventId() != null
+                && eventRoleService.hasRole(subtitle.getEventId(), caller.getEmail(), EventRole.ORGANIZER)) {
+            return;
+        }
+        throw new AccessDeniedException(
+                "Only the subtitle owner, an event organizer, or an admin can modify this subtitle.");
+    }
+
+    /**
+     * FIX (#15368): Deleting a whole session requires organizer/admin access to
+     * the session's event. Resolves the event through the session's subtitles.
+     */
+    private void assertCanModifySession(String sessionId, Authentication authentication) {
+        List<Subtitle> subtitles = subtitleService.getSubtitlesBySessionId(sessionId);
+        if (subtitles.isEmpty()) {
+            return;
+        }
+        Long eventId = subtitles.get(0).getEventId();
+        if (eventId != null) {
+            assertCanModifyEvent(eventId, authentication);
+        }
+    }
+
+    /**
+     * FIX (#15368): Event-scoped subtitle operations require an event organizer
+     * or a platform admin.
+     */
+    private void assertCanModifyEvent(Long eventId, Authentication authentication) {
+        User caller = currentUser(authentication);
+        if (isAdmin(caller)) {
+            return;
+        }
+        if (eventRoleService.hasRole(eventId, caller.getEmail(), EventRole.ORGANIZER)) {
+            return;
+        }
+        throw new AccessDeniedException(
+                "Only an event organizer or an admin can manage subtitles for this event.");
+    }
+
+    /**
+     * FIX (#15368): A user may only list their own subtitles; admins may list
+     * any user's subtitles.
+     */
+    private void assertCanReadUser(Long userId, Authentication authentication) {
+        User caller = currentUser(authentication);
+        if (isAdmin(caller) || caller.getId().equals(userId)) {
+            return;
+        }
+        throw new AccessDeniedException("You can only view your own subtitles.");
+    }
+
+    private User currentUser(Authentication authentication) {
+        String email = authentication != null ? authentication.getName() : null;
+        if (email == null || email.isBlank()) {
+            throw new AccessDeniedException("Authentication is required.");
+        }
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+    }
+
+    private boolean isAdmin(User user) {
+        return user.getRole() == Role.ADMIN || user.getRole() == Role.SUPER_ADMIN;
     }
     
     // ==================== Exception Handlers ====================

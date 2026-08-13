@@ -16,11 +16,42 @@ import { safeParseJson } from "./jsonUtils.js";
 import { logger, isDevelopment } from "./logger.js";
 
 /**
- * Lazy-loaded reference to the Sentry browser SDK.
- * Dynamically imported only if Sentry is enabled and the runtime is a browser.
- * @type {object|null}
+ * Eventra Telemetry, Error Logging & Remote Diagnostics Engine
+ *
+ * Provides resilient multi-tier error logging with optional Sentry SDK integration,
+ * local storage fallback queues, deduplication, breadcrumb tracking, offline persistence,
+ * and automated global unhandled exception capturing.
  */
+
+// ============================================================================
+// 1. Constants & Module State
+// ============================================================================
+
+const STORAGE_KEYS = {
+  ERROR_LOG: "eventra_error_log",
+  FEATURE_ERRORS: "eventra_feature_errors",
+  OFFLINE_QUEUE: "eventra_offline_error_queue",
+};
+
+const LOG_LIMITS = {
+  MAX_LOCAL_ERRORS: 20,
+  MAX_FEATURE_ERRORS: 10,
+  MAX_OFFLINE_QUEUE: 50,
+  DEDUPE_WINDOW_MS: 5000,
+};
+
 let Sentry = null;
+let isInitialized = false;
+let userContext = null;
+const globalTags = new Map();
+const globalExtras = new Map();
+const recentErrorHashes = new Map();
+const internalBreadcrumbs = [];
+const MAX_BREADCRUMBS = 20;
+
+// ============================================================================
+// 2. Sentry Initialization & SDK Loader
+// ============================================================================
 
 // Initialize Sentry asynchronously to avoid blocking initial application load
 if (isSentryEnabled && typeof window !== "undefined") {
@@ -30,194 +61,469 @@ if (isSentryEnabled && typeof window !== "undefined") {
       const SentryModule = await import("@sentry/browser");
       Sentry = SentryModule.default || SentryModule;
 
-      const runtimeEnv =
-        typeof import.meta !== "undefined" && import.meta.env
-          ? import.meta.env
-          : typeof process !== "undefined" && process.env
-            ? process.env
-            : {};
+    Sentry.init({
+      dsn: SENTRY_DSN,
+      integrations: [
+        typeof SentryModule.browserTracingIntegration === "function"
+          ? SentryModule.browserTracingIntegration()
+          : null,
+        typeof SentryModule.replayIntegration === "function"
+          ? SentryModule.replayIntegration()
+          : null,
+      ].filter(Boolean),
+      tracesSampleRate: 0.25,
+      replaysSessionSampleRate: 0.1,
+      replaysOnErrorSampleRate: 1.0,
+      environment: process.env.NODE_ENV || "development",
+    });
 
-      // Initialize the Sentry client with performance and replay metrics
-      Sentry.init({
-        dsn: SENTRY_DSN,
-        integrations: [
-          typeof SentryModule.browserTracingIntegration === "function"
-            ? SentryModule.browserTracingIntegration()
-            : null,
-          typeof SentryModule.replayIntegration === "function"
-            ? SentryModule.replayIntegration()
-            : null,
-        ].filter(Boolean),
-        tracesSampleRate: 0.25,
-        replaysSessionSampleRate: 0.1,
-        replaysOnErrorSampleRate: 1.0,
-        environment: runtimeEnv.MODE || runtimeEnv.NODE_ENV || "development",
-      });
-      logger.info("[ErrorLogger] Sentry initialized successfully.");
-    } catch (importError) {
-      // Fallback: Sentry SDK is missing, failed to load, or blocked by ad-blocker
-      logger.warn("[ErrorLogger] Sentry SDK unavailable or failed to initialize. Falling back to local logging.", importError);
+    isInitialized = true;
+    } catch {
+      // Sentry SDK unavailable — local fallback logging remains active
     }
   })();
 }
 
+// ============================================================================
+// 3. Helper Functions & Metadata Extraction
+// ============================================================================
+
 /**
- * Builds a standardized error log entry with contextual environment information.
+ * Generates a simple hash string for error deduplication.
  *
- * @param {Error|null} error - The caught JavaScript error object.
- * @param {object|null} errorInfo - React component stack trace metadata (if applicable).
- * @param {object} [extra={}] - Additional key-value pairs of context.
- * @returns {object} A standardized error entry object.
+ * @param {string} str - Error payload representation.
+ * @returns {string} Unique numeric string hash.
  */
-function buildErrorEntry(error, errorInfo, extra = {}) {
+function simpleHash(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i += 1) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash |= 0;
+  }
+  return hash.toString(36);
+}
+
+/**
+ * Evaluates whether an error is duplicate within the deduplication window.
+ *
+ * @param {string} errorKey - Unique error string key.
+ * @returns {boolean} True if suppressed as duplicate.
+ */
+function isDuplicateError(errorKey) {
+  const now = Date.now();
+  const hash = simpleHash(errorKey);
+
+  if (recentErrorHashes.has(hash)) {
+    const lastSeen = recentErrorHashes.get(hash);
+    if (now - lastSeen < LOG_LIMITS.DEDUPE_WINDOW_MS) {
+      return true;
+    }
+  }
+
+  recentErrorHashes.set(hash, now);
+  
+  // Cleanup old hashes periodically
+  if (recentErrorHashes.size > 100) {
+    recentErrorHashes.forEach((timestamp, key) => {
+      if (now - timestamp > LOG_LIMITS.DEDUPE_WINDOW_MS) {
+        recentErrorHashes.delete(key);
+      }
+    });
+  }
+
+  return false;
+}
+
+/**
+ * Extracts environment metrics from browser window/navigator.
+ *
+ * @returns {Object} System context metadata.
+ */
+function getSystemMetadata() {
+  if (typeof window === "undefined") {
+    return { environment: "node-ssr" };
+  }
+
   return {
-    timestamp: new Date().toISOString(),
-    url: typeof window !== "undefined" && window.location ? window.location.href : "",
-    userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
-    message: error ? error.toString() : "Unknown error",
-    stack: isDevelopment ? (error?.stack || "") : "Redacted in production",
-    componentStack: isDevelopment ? (errorInfo?.componentStack || "") : "Redacted in production",
-    ...extra,
+    url: window.location.href,
+    pathname: window.location.pathname,
+    userAgent: navigator.userAgent || "",
+    language: navigator.language || "",
+    viewport: `${window.innerWidth}x${window.innerHeight}`,
+    screen: window.screen ? `${window.screen.width}x${window.screen.height}` : "unknown",
+    online: navigator.onLine !== undefined ? navigator.onLine : true,
+    memory: performance?.memory
+      ? {
+          usedJSHeapSize: performance.memory.usedJSHeapSize,
+          totalJSHeapSize: performance.memory.totalJSHeapSize,
+        }
+      : undefined,
   };
 }
 
 /**
- * Safely persists a standardized error entry to local storage.
- * Ensures that quota errors do not crash the application.
+ * Constructs a standardized JSON error log entry payload.
  *
- * @param {object} entry - The error entry object to append.
+ * @param {Error|unknown} error - Caught error object.
+ * @param {Object} [errorInfo] - React component stack or lifecycle info.
+ * @param {Object} [extra] - Supplemental context metadata.
+ * @param {string} [severity="error"] - Log level severity.
+ * @returns {Object} Structured error entry payload.
  */
-function persistToLocalStorage(entry) {
+function buildErrorEntry(error, errorInfo, extra = {}, severity = "error") {
+  const errObject = error instanceof Error ? error : new Error(String(error || "Unknown Error"));
+
+  return {
+    id: `err_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    timestamp: new Date().toISOString(),
+    severity,
+    message: errObject.message || "Unknown error",
+    name: errObject.name || "Error",
+    stack: errObject.stack || "",
+    componentStack: errorInfo?.componentStack || "",
+    user: userContext,
+    tags: Object.fromEntries(globalTags),
+    breadcrumbs: [...internalBreadcrumbs],
+    system: getSystemMetadata(),
+    extra: {
+      ...Object.fromEntries(globalExtras),
+      ...extra,
+    },
+  };
+}
+
+// ============================================================================
+// 4. Persistence & Local Storage Layer
+// ============================================================================
+
+/**
+ * Safely writes an entry to LocalStorage with bounded queue limits.
+ *
+ * @param {string} key - Storage key.
+ * @param {Object} entry - Log payload entry.
+ * @param {number} maxItems - Maximum items retained.
+ */
+function persistToLocalStorage(key, entry, maxItems) {
+  if (typeof window === "undefined" || !window.localStorage) return;
+
   try {
-    if (typeof localStorage === "undefined" || localStorage === null) {
-      return;
-    }
-    const rawData = localStorage.getItem("eventra_error_log");
-    const existing = safeParseJson(rawData, []);
-    
-    // Add new error to the top of the queue
+    const raw = localStorage.getItem(key);
+    const existing = raw ? JSON.parse(raw) : [];
     existing.unshift(entry);
-    
-    // Cap log history size at 10 to conserve space
-    localStorage.setItem("eventra_error_log", JSON.stringify(existing.slice(0, 10)));
-  } catch (storageError) {
-    // Graceful fallback for quota exceeded or storage blocked
-    logger.warn("[ErrorLogger] Failed to write error log to localStorage:", storageError);
+    localStorage.setItem(key, JSON.stringify(existing.slice(0, maxItems)));
+  } catch (e) {
+    console.warn("[Eventra ErrorLogger] LocalStorage write failed:", e);
   }
 }
 
 /**
- * Logs an error to standard console logger, optional Sentry server, and localStorage.
+ * Safely reads JSON array entries from LocalStorage.
  *
- * @param {Error} error - The caught Error object.
- * @param {object} [errorInfo] - Optional React component stack or lifecycle metadata.
- * @param {object} [extra={}] - Optional key-value pairs of context variables.
+ * @param {string} key - Storage key.
+ * @returns {Array<Object>} Stored entries array.
  */
-export const logError = (error, errorInfo, extra = {}) => {
+function readFromLocalStorage(key) {
+  if (typeof window === "undefined" || !window.localStorage) return [];
+
   try {
-    // 1. Output to local logger
-    logger.error("[ErrorLogger] Caught exception:", error);
-    if (errorInfo?.componentStack) {
-      logger.error("[ComponentStack] React lifecycle traceback:", errorInfo.componentStack);
-    }
-    if (extra && Object.keys(extra).length) {
-      logger.info("[ErrorLogger] Accompanying metadata context:", extra);
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+// ============================================================================
+// 5. Breadcrumb & User Context Management
+// ============================================================================
+
+/**
+ * Records a lightweight breadcrumb for contextual tracking.
+ *
+ * @param {Object|string} crumb - Breadcrumb payload or message string.
+ */
+export const addBreadcrumb = (crumb) => {
+  const breadcrumb = typeof crumb === "string"
+    ? { message: crumb, timestamp: new Date().toISOString() }
+    : { timestamp: new Date().toISOString(), ...crumb };
+
+  internalBreadcrumbs.push(breadcrumb);
+  if (internalBreadcrumbs.length > MAX_BREADCRUMBS) {
+    internalBreadcrumbs.shift();
+  }
+
+  if (Sentry) {
+    Sentry.addBreadcrumb(breadcrumb);
+  }
+};
+
+/**
+ * Binds active user identity to all subsequent error logs.
+ *
+ * @param {Object} user - User profile object.
+ */
+export const setUserContext = (user) => {
+  userContext = user
+    ? { id: user.id, email: user.email, role: user.role }
+    : null;
+
+  if (Sentry) {
+    Sentry.setUser(userContext);
+  }
+};
+
+/**
+ * Clears active user context state.
+ */
+export const clearUserContext = () => {
+  userContext = null;
+  if (Sentry) {
+    Sentry.setUser(null);
+  }
+};
+
+/**
+ * Sets a global tag key-value pair for error telemetry filtering.
+ *
+ * @param {string} key - Tag name.
+ * @param {string} value - Tag value.
+ */
+export const setTag = (key, value) => {
+  globalTags.set(key, String(value));
+  if (Sentry) {
+    Sentry.setTag(key, value);
+  }
+};
+
+/**
+ * Sets persistent extra metadata key-value pairs.
+ *
+ * @param {string} key - Metadata key.
+ * @param {*} value - Metadata value.
+ */
+export const setExtraContext = (key, value) => {
+  globalExtras.set(key, value);
+  if (Sentry) {
+    Sentry.setExtra(key, value);
+  }
+};
+
+// ============================================================================
+// 6. Core Logging API
+// ============================================================================
+
+/**
+ * Logs an error to console, local storage, and remote Sentry SDK.
+ *
+ * @param {Error|unknown} error - Error instance or message.
+ * @param {Object} [errorInfo] - Component error stack information.
+ * @param {Object} [extra] - Additional context payload.
+ * @param {string} [severity="error"] - Log level severity.
+ */
+export const logError = (error, errorInfo = null, extra = {}, severity = "error") => {
+  try {
+    const errorMsg = error?.message || String(error || "");
+    const dedupeKey = `${errorMsg}:${errorInfo?.componentStack || ""}`;
+
+    if (isDuplicateError(dedupeKey)) {
+      return;
     }
 
-    // 2. Transmit details to Sentry if integration is active
+    // Dev Console Formatting
+    console.group?.(`[Eventra ErrorLogger] [${severity.toUpperCase()}]`);
+    console.error("[Error]", error);
+    if (errorInfo?.componentStack) {
+      console.error("[ComponentStack]", errorInfo.componentStack);
+    }
+    if (Object.keys(extra).length) {
+      console.info("[Extra Context]", extra);
+    }
+
+    // Sentry SDK Dispatch
     if (Sentry) {
       Sentry.withScope((scope) => {
+        scope.setLevel(severity);
+        if (userContext) scope.setUser(userContext);
+        
+        globalTags.forEach((val, key) => scope.setTag(key, val));
+        globalExtras.forEach((val, key) => scope.setExtra(key, val));
+
         if (extra) {
-          scope.setExtras(extra);
+          Object.entries(extra).forEach(([k, v]) => scope.setExtra(k, v));
         }
+
         if (errorInfo?.componentStack) {
           scope.setExtra("componentStack", errorInfo.componentStack);
         }
-        Sentry.captureException(error);
+
+        if (error instanceof Error) {
+          Sentry.captureException(error);
+        } else {
+          Sentry.captureMessage(String(error), severity);
+        }
       });
     }
 
-    // 3. Persist log locally for UI debugging capabilities
-    const entry = buildErrorEntry(error, errorInfo, extra);
-    persistToLocalStorage(entry);
+    // Local Storage Fallback Persistence
+    const entry = buildErrorEntry(error, errorInfo, extra, severity);
+    persistToLocalStorage(STORAGE_KEYS.ERROR_LOG, entry, LOG_LIMITS.MAX_LOCAL_ERRORS);
   } catch (loggerError) {
-    // Fail-safe to avoid throwing errors during error handling
-    logger.warn("[ErrorLogger] Failed to process logError pipeline:", loggerError);
+    console.warn("[Eventra ErrorLogger] Critical error inside logging pipeline:", loggerError);
   }
 };
 
 /**
- * Persist feature-specific or module-specific errors to localStorage.
+ * Logs warning level messages.
  *
- * @param {string} key - Unique key identifier (e.g. 'auth', 'payment').
- * @param {object} entry - Standardized or custom error metadata object.
- * @param {number} [maxEntries=10] - Maximum capacity limit before slicing queue.
+ * @param {string} message - Warning message string.
+ * @param {Object} [extra] - Supplemental context payload.
  */
-export const persistErrors = (key, entry, maxEntries = 10) => {
-  try {
-    if (typeof localStorage === "undefined" || localStorage === null) return;
-    const storageKey = `eventra_${key}`;
-    const rawData = localStorage.getItem(storageKey);
-    const existing = safeParseJson(rawData, []);
-    
-    existing.unshift(entry);
-    localStorage.setItem(storageKey, JSON.stringify(existing.slice(0, maxEntries)));
-  } catch (error) {
-    logger.warn(`[ErrorLogger] Failed to persist errors for key '${key}':`, error);
-  }
+export const logWarning = (message, extra = {}) => {
+  logError(new Error(message), null, extra, "warning");
 };
 
 /**
- * Reads feature-specific errors from localStorage.
+ * Logs feature-specific errors into dedicated storage namespaces.
  *
- * @param {string} key - Unique key identifier.
- * @returns {Array} List of logged error entries.
+ * @param {string} featureName - Feature or module namespace.
+ * @param {Error|unknown} error - Error instance.
+ * @param {Object} [extra] - Context data.
  */
-export const getErrors = (key) => {
+export const logFeatureError = (featureName, error, extra = {}) => {
+  const enrichedExtra = { feature: featureName, ...extra };
+  logError(error, null, enrichedExtra, "error");
+
   try {
-    if (typeof localStorage === "undefined" || localStorage === null) return [];
-    return safeParseJson(localStorage.getItem(`eventra_${key}`), []);
-  } catch {
-    return [];
+    const entry = buildErrorEntry(error, null, enrichedExtra, "error");
+    const rawMap = readFromLocalStorage(STORAGE_KEYS.FEATURE_ERRORS);
+    const featureLogs = Array.isArray(rawMap) ? {} : rawMap;
+
+    featureLogs[featureName] = featureLogs[featureName] || [];
+    featureLogs[featureName].unshift(entry);
+    featureLogs[featureName] = featureLogs[featureName].slice(0, LOG_LIMITS.MAX_FEATURE_ERRORS);
+
+    if (typeof window !== "undefined" && window.localStorage) {
+      localStorage.setItem(STORAGE_KEYS.FEATURE_ERRORS, JSON.stringify(featureLogs));
+    }
+  } catch (e) {
+    console.warn("[Eventra ErrorLogger] Failed to persist feature error:", e);
   }
 };
 
 /**
- * Clears feature-specific errors from localStorage.
+ * Specialized logger for network API errors.
  *
- * @param {string} key - Unique key identifier.
+ * @param {Object} requestConfig - Request details (url, method, params).
+ * @param {Object|Error} errorResponse - API error response or Error instance.
  */
-export const clearErrors = (key) => {
-  try {
-    if (typeof localStorage === "undefined" || localStorage === null) return;
-    localStorage.removeItem(`eventra_${key}`);
-  } catch (error) {
-    logger.warn(`[ErrorLogger] Failed to clear errors for key '${key}':`, error);
-  }
+export const logNetworkError = (requestConfig, errorResponse) => {
+  const extra = {
+    network: {
+      url: requestConfig?.url,
+      method: requestConfig?.method,
+      status: errorResponse?.status || errorResponse?.response?.status,
+      statusText: errorResponse?.statusText || errorResponse?.response?.statusText,
+      responseData: errorResponse?.data || errorResponse?.response?.data,
+    },
+  };
+
+  logError(
+    new Error(`[Network Error] ${requestConfig?.method || "GET"} ${requestConfig?.url || "unknown"}`),
+    null,
+    extra,
+    "error"
+  );
 };
 
+// ============================================================================
+// 7. Global Exception Listeners & Initialization
+// ============================================================================
+
 /**
- * Retrieves the general system error log entries.
+ * Attaches window.onerror and unhandledrejection handlers for automatic capture.
+ */
+export const initGlobalErrorHandlers = () => {
+  if (typeof window === "undefined") return;
+
+  window.addEventListener("error", (event) => {
+    logError(event.error || event.message, null, {
+      source: "window.onerror",
+      filename: event.filename,
+      lineno: event.lineno,
+      colno: event.colno,
+    });
+  });
+
+  window.addEventListener("unhandledrejection", (event) => {
+    logError(event.reason || "Unhandled Promise Rejection", null, {
+      source: "window.unhandledrejection",
+    });
+  });
+};
+
+// Auto-initialize listeners on client side
+if (typeof window !== "undefined") {
+  initGlobalErrorHandlers();
+}
+
+// ============================================================================
+// 8. Log Inspection, Retrieval & Export
+// ============================================================================
+
+/**
+ * Retrieves general error logs stored locally.
  *
- * @returns {Array} List of general error logs.
+ * @returns {Array<Object>} Log entries.
  */
 export const getErrorLog = () => {
+  return readFromLocalStorage(STORAGE_KEYS.ERROR_LOG);
+};
+
+/**
+ * Retrieves logs scoped to a specific feature namespace.
+ *
+ * @param {string} featureName - Target feature namespace.
+ * @returns {Array<Object>} Feature log entries.
+ */
+export const getFeatureErrorLog = (featureName) => {
+  const logs = readFromLocalStorage(STORAGE_KEYS.FEATURE_ERRORS);
+  if (Array.isArray(logs)) return [];
+  return logs[featureName] || [];
+};
+
+/**
+ * Clears stored local error logs.
+ */
+export const clearErrorLog = () => {
+  if (typeof window === "undefined" || !window.localStorage) return;
+
   try {
-    if (typeof localStorage === "undefined" || localStorage === null) return [];
-    return safeParseJson(localStorage.getItem("eventra_error_log"), []);
-  } catch {
-    return [];
+    localStorage.removeItem(STORAGE_KEYS.ERROR_LOG);
+    localStorage.removeItem(STORAGE_KEYS.FEATURE_ERRORS);
+    localStorage.removeItem(STORAGE_KEYS.OFFLINE_QUEUE);
+  } catch (_) {
+    // Ignore storage clear failures
   }
 };
 
 /**
- * Clears the general system error log entries.
+ * Triggers a file download containing formatted error diagnostic logs.
  */
-export const clearErrorLog = () => {
-  try {
-    if (typeof localStorage === "undefined" || localStorage === null) return;
-    localStorage.removeItem("eventra_error_log");
-  } catch (error) {
-    logger.warn("[ErrorLogger] Failed to clear general error log:", error);
-  }
+export const exportErrorLogAsJSON = () => {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
+
+  const logs = getErrorLog();
+  const blob = new Blob([JSON.stringify(logs, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+
+  anchor.href = url;
+  anchor.download = `eventra-error-logs-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(url);
 };
+
+export default logError;
