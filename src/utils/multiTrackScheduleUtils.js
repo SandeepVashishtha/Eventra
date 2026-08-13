@@ -324,11 +324,12 @@ export const calculateTrackUtilization = (sessions, tracks, eventStart, eventEnd
     totalUsedMinutes += usedMinutes;
   });
 
+  const ratio = totalUsedMinutes / (totalEventMinutes * tracks.length);
   return {
     trackUtilization,
-    overallUtilization: ((totalUsedMinutes / (totalEventMinutes * tracks.length)) * 100).toFixed(2) + '%',
+    overallUtilization: (ratio * 100).toFixed(2) + '%',
     totalSessionMinutes: totalUsedMinutes,
-    averageUtilization: (totalUsedMinutes / (totalEventMinutes * tracks.length)).toFixed(2),
+    averageUtilization: Number((ratio * 100).toFixed(2)),
   };
 };
 
