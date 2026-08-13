@@ -50,8 +50,15 @@ const CarbonFootprintGamification = () => {
       // Update leaderboard
       setLeaderboard(prev => {
         const newLb = [...prev];
-        newLb[2] = { ...newLb[2], points: ecoPoints + 150, saved: carbonSaved + 12.5 };
-        return newLb.sort((a, b) => b.points - a.points).map((item, index) => ({...item, rank: index + 1}));
+        const myIndex = newLb.findIndex(item => item.name === 'You');
+        if (myIndex === -1) return prev;
+        newLb[myIndex] = {
+          ...newLb[myIndex],
+          points: newLb[myIndex].points + 150,
+          saved: (newLb[myIndex].saved ?? 0) + 12.5,
+        };
+        return newLb.sort((a, b) => b.points - a.points)
+                  .map((item, index) => ({...item, rank: index + 1}));
       });
     }, 2000);
     
@@ -204,7 +211,7 @@ const CarbonFootprintGamification = () => {
                     <span>{tier === 'Green' ? '250 (Gold)' : '500 (VIP)'}</span>
                   </div>
                   <div className="w-full h-1.5 bg-black/20 rounded-full overflow-hidden">
-                    <div className="h-full bg-white transition-all duration-1000" style={{ width: \`\${Math.min(100, (ecoPoints / (tier === 'Green' ? 250 : 500)) * 100)}%\` }}></div>
+                    <div className="h-full bg-white transition-all duration-1000" style={{ width: `${Math.min(100, (ecoPoints / (tier === 'Green' ? 250 : 500)) * 100)}%` }}></div>
                   </div>
                 </div>
               )}

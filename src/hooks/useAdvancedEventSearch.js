@@ -19,7 +19,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { safeLocalStorage } from "../utils/safeStorage";
-import { useDebounce } from "./useDebounce";
+import useDebounce from "./useDebounce";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -147,12 +147,14 @@ export default function useAdvancedEventSearch(events = [], { debounceMs = 250 }
         }
 
         // Category filter
-        if (
-          filters.categories.length > 0 &&
-          !filters.categories.includes(event.category) &&
-          !filters.categories.includes(event.type)
-        ) {
-          return false;
+        if (filters.categories.length > 0) {
+          const hasMatchingCategory = 
+            (event.category && filters.categories.includes(event.category)) ||
+            (event.type && filters.categories.includes(event.type)) ||
+            (event.categories && event.categories.some(cat => filters.categories.includes(cat)));
+          if (!hasMatchingCategory) {
+            return false;
+          }
         }
 
         // Status filter

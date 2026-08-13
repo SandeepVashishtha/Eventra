@@ -90,6 +90,11 @@ function registerValidSW(swUrl, config) {
           log('[Service Worker] Cache updated to version:', event.data.version);
           window.dispatchEvent(new CustomEvent('sw-cache-updated', { detail: event.data }));
         }
+        if (event.data && (event.data.type === 'EVENTRA_BACKGROUND_SYNC' || event.data.type === 'SYNC_REQUESTED')) {
+          // The SW fired the offline queue background sync; re-dispatch as a
+          // DOM CustomEvent so the hook (and any other client) can react.
+          window.dispatchEvent(new CustomEvent('eventra-background-sync', { detail: event.data }));
+        }
       });
 
       if ('periodicSync' in registration && registration.periodicSync) {
@@ -147,11 +152,15 @@ function checkValidServiceWorker(swUrl, config) {
         response.status === 404 ||
         (contentType != null && contentType.indexOf('javascript') === -1)
       ) {
-        // No service worker found. Probably a different app. Reload the page.
-        navigator.serviceWorker.ready.then((registration) => {
-          registration.unregister().then(() => {
+        // No service worker found. Unregister if exists and reload.
+        navigator.serviceWorker.getRegistration().then((registration) => {
+          if (registration) {
+            registration.unregister().then(() => {
+              window.location.reload();
+            });
+          } else {
             window.location.reload();
-          });
+          }
         });
       } else {
         // Service worker found. Proceed as normal.
@@ -167,12 +176,22 @@ export function unregister() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.ready
       .then((registration) => {
-        registration.unregister();
+        return registration.unregister(); // return Promise<boolean> so rejections propagate to .catch()
       })
       .catch((error) => {
         if (isDev) {
           logger.error(error.message);
         }
       });
+  }
+}
+
+export function registerWaitlistBackgroundSync(promotionToken) {
+  if ('serviceWorker' in navigator && 'SyncManager' in window) {
+    navigator.serviceWorker.ready
+      .then((registration) => {
+        return registration.sync.register(`sync-waitlist-promotion:${promotionToken}`);
+      })
+      .catch((err) => log("[SW] Background sync registration skipped/failed:", err));
   }
 }

@@ -1,3 +1,4 @@
+import useFileUpload from "hooks/useFileUpload";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactDOM from "react-dom"; // 🔥 FIX: Required for Modal Portal
 import { useAuth } from "context/AuthContext";
@@ -11,13 +12,12 @@ import {
   AtSign,
   Phone as PhoneIcon,
   FileText,
-  Github,
-  Linkedin,
   Link as LinkIcon,
   Image as ImageIcon,
   X as XIcon,
   Sparkles,
 } from "lucide-react";
+import { FaGithub as Github, FaLinkedin as Linkedin } from "react-icons/fa";
 
 import AiProfileGeneratorModal from "./AiProfileGeneratorModal";
 
@@ -87,6 +87,20 @@ const allSkillSuggestions = [
 const urlRegex = /^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w-._~:/?#[\]@!$&'()*+,;=]*)?$/i;
 
 const EditProfile = () => {
+  // Fix: useFileUpload replaces raw FileReader + manual 1MB size check
+  // Adds MIME type validation, loading state, and auto-revokes object URLs.
+  const {
+    preview: avatarPreview,
+    error: uploadError,
+    isProcessing: isUploadingAvatar,
+    handleFileChange: handleAvatarFileChange,
+    reset: resetAvatar,
+  } = useFileUpload({
+    mode: "base64",
+    maxBytes: 1_048_576, // 1MB — matches previous alert() limit
+    accept: ["image/*"],
+  });
+
   const navigate = useNavigate();
   const { user, setUser } = useAuth();
 
@@ -96,6 +110,7 @@ const EditProfile = () => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [saveError, setSaveError] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [currentSkillInput, setCurrentSkillInput] = useState("");
   const [aiModalOpen, setAiModalOpen] = useState(false);
@@ -251,6 +266,7 @@ const EditProfile = () => {
 
   const performSave = () => {
     setSuccessMessage("");
+    setSaveError("");
 
     const resolvedForm = {
       ...form,
@@ -280,9 +296,14 @@ const EditProfile = () => {
         profileHeadline: resolvedForm.profileHeadline || resolvedForm.bio || "",
         linkedinUrl: resolvedForm.linkedin || resolvedForm.linkedinUrl || "",
         githubUrl: resolvedForm.github || resolvedForm.githubUrl || "",
+        phone: resolvedForm.phone || "",
+        bio: resolvedForm.bio || "",
+        portfolio: resolvedForm.portfolio || "",
+        skills: Array.isArray(resolvedForm.skills) ? resolvedForm.skills : [],
+        profilePicture: resolvedForm.profilePicture || "",
       };
 
-      let savedProfile = resolvedForm;
+      let savedProfile;
       try {
         const response = await userService.updateProfile(apiPayload);
         const data = response.data || response;
@@ -294,9 +315,17 @@ const EditProfile = () => {
         };
       } catch (error) {
         console.error("Error saving profile to server:", error);
+        setLoading(false);
+        setSaveError(
+          error?.response?.data?.message ||
+            error?.message ||
+            "Failed to update profile. Please try again."
+        );
+        return;
       }
 
       setLoading(false);
+      setSaveError("");
       setSuccessMessage("Profile updated successfully");
       setConfirmOpen(false);
       setUser(savedProfile);
@@ -354,7 +383,7 @@ const EditProfile = () => {
               Auto-fill with AI
             </button>
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-gray-600 dark:text-gray-200 mt-1">
             Manage your personal information and how others see you on Eventra.
           </p>
         </div>
@@ -420,7 +449,7 @@ const EditProfile = () => {
               <div className="text-gray-900 dark:text-gray-100 font-semibold">
                 {form.fullName || form.username || form.email}
               </div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">
+              <div className="text-sm text-gray-500 dark:text-gray-200">
                 Update your avatar and profile info below.
               </div>
             </div>
@@ -693,12 +722,18 @@ const EditProfile = () => {
               </div>
             )}
 
+            {saveError && (
+              <div className="rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 px-4 py-3 text-red-800 dark:text-red-200">
+                {saveError}
+              </div>
+            )}
+
             {/* Actions */}
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => window.history.back()}
-                className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
               >
                 Cancel
               </button>
@@ -737,14 +772,14 @@ const ConfirmModal = ({ open, onCancel, onConfirm, loading }) => {
       <div className="absolute inset-0 bg-black/50" onClick={onCancel} />
       <div className="relative w-full max-w-md mx-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl p-6 z-10">
         <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Save changes?</h4>
-        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+        <p className="mt-1 text-sm text-gray-600 dark:text-gray-200">
           Do you want to save your profile updates?
         </p>
         <div className="mt-5 flex items-center justify-end gap-3">
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+            className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
            aria-label="button">
             Cancel
           </button>

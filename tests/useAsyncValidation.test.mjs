@@ -7,7 +7,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import useAsyncValidation from '../../src/hooks/useAsyncValidation';
+import useAsyncValidation from '../src/hooks/useAsyncValidation';
 
 // Use fake timers so debounce is testable without real delays
 beforeEach(() => { vi.useFakeTimers(); });

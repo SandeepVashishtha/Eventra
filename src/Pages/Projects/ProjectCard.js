@@ -1,4 +1,5 @@
-import { Star, Github, ExternalLink, AlertCircle, GitPullRequest, Cpu, Code2, Bookmark } from "lucide-react";
+import { Star, ExternalLink, AlertCircle, GitPullRequest, Cpu, Code2, Bookmark } from "lucide-react";
+import { FaGithub as Github } from "react-icons/fa";
 import { useState, useEffect, useRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import useReducedMotion from "hooks/useReducedMotion.js";
@@ -16,8 +17,8 @@ const CACHE_TTL = 1 * 60 * 60 * 1000; // 1 hour expiration
 const saveMetricsCache = (cache) => {
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
-  } catch (e) {
-    console.warn("Failed to save metrics cache:", e);
+  } catch {
+    // Ignore storage write failures
   }
 };
 
@@ -104,8 +105,8 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           cache = saved ? safeJsonParse(saved, {}) : {};
           cache[key] = { data: updated, timestamp: Date.now() };
           saveMetricsCache(cache);
-        } catch (err) {
-          console.warn('Failed to update metrics cache:', err);
+        } catch {
+          // Ignore cache update failures
         }
         return updated;
       });
@@ -143,8 +144,8 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           cache = saved ? safeJsonParse(saved, {}) : {};
           cache[key] = { data: updated, timestamp: Date.now() };
           saveMetricsCache(cache);
-        } catch (err) {
-          console.warn('Failed to update metrics cache:', err);
+        } catch {
+          // Ignore cache update failures
         }
         return updated;
       });

@@ -1,3 +1,4 @@
+import useWindowSize from "hooks/useWindowSize";
 import { useState, useEffect, memo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -121,27 +122,10 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
   const [recommendedEvents, setRecommendedEvents] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [visibleCount, setVisibleCount] = useState(3);
 
-  // Dynamic visible count calculation based on viewport width
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const handleResize = () => {
-      const width = window.innerWidth;
-      if (width < 640) {
-        setVisibleCount(1);
-      } else if (width < 1024) {
-        setVisibleCount(2);
-      } else {
-        setVisibleCount(3);
-      }
-    };
-
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  // Fix: useWindowSize replaces manual resize listener — debounced, SSR-safe
+  const { width } = useWindowSize();
+  const visibleCount = width < 640 ? 1 : width < 1024 ? 2 : 3;
 
   // Clamp currentIndex when visibleCount or recommendedEvents changes
   useEffect(() => {

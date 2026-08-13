@@ -1,3 +1,4 @@
+import useIdleDetection from "hooks/useIdleDetection";
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { safeJsonParse } from "../utils/safeJsonParse";
@@ -111,12 +112,24 @@ export const SessionRecoveryProvider = ({ children }) => {
   const [isOnline, setIsOnline] = useState(true);
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [showRecoveryPrompt, setShowRecoveryPrompt] = useState(false);
-  const [lastActivity, setLastActivity] = useState(Date.now());
-
-  const lastActivityRef = useRef(Date.now());
+  // Fix: useIdleDetection replaces manual lastActivity state + updateActivity +
+  // activity event listeners + session timeout setInterval.
+  const { lastActiveAt, reset: resetIdleTimer } = useIdleDetection({
+    idleMs: SESSION_TIMEOUT,
+    throttleMs: 1000,
+    onIdle: () => {
+      if (hasSession) clearSession();
+    },
+    events: ["mousedown", "mousemove", "keypress", "scroll", "touchstart", "click"],
+    enabled: !!user,
+  });
+  const lastActivity = lastActiveAt?.getTime() ?? Date.now();
   const isLoadingRef = useRef(true);
   const saveTimeoutRef = useRef(null);
   const activityTimeoutRef = useRef(null);
+  // Guard flag so a debounced save scheduled before clearSession is ignored
+  // instead of re-persisting cleared data (issue #14606).
+  const saveCancelledRef = useRef(false);
   const cloudRecovery = useCloudSessionRecovery({
     user,
     isAuthenticated: isAuthenticated?.() || false,
@@ -125,15 +138,7 @@ export const SessionRecoveryProvider = ({ children }) => {
     cloudSessions: cloudRecovery.cloudSessions,
   });
 
-  const updateActivity = useCallback(() => {
-    const now = Date.now();
-    // 🔥 FIX: Throttle to max once per second to prevent CPU thrashing from mousemove/scroll
-    if (now - lastActivityRef.current > 1000) {
-      lastActivityRef.current = now;
-      // 🔥 FIX: Synchronize React state so context consumers get accurate data
-      setLastActivity(now);
-    }
-  }, []);
+  // Fix: updateActivity replaced by useIdleDetection hook above
 
   useEffect(() => {
     const handleOnline = () => {
@@ -155,15 +160,7 @@ export const SessionRecoveryProvider = ({ children }) => {
     };
   }, []);
 
-  useEffect(() => {
-    const events = ["mousedown", "mousemove", "keypress", "scroll", "touchstart", "click"];
-    // 🔥 FIX: Added { passive: true } to further optimize scroll performance
-    events.forEach((event) => window.addEventListener(event, updateActivity, { passive: true }));
-
-    return () => {
-      events.forEach((event) => window.removeEventListener(event, updateActivity));
-    };
-  }, [updateActivity]);
+  // Fix: activity event listeners now managed by useIdleDetection hook
 
   // Load and decrypt the persisted session on mount
   useEffect(() => {
@@ -231,12 +228,15 @@ export const SessionRecoveryProvider = ({ children }) => {
 
   const saveSession = useCallback(
     (state) => {
+      // A fresh save supersedes any previously cancelled intent (issue #14606)
+      saveCancelledRef.current = false;
+
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
 
       saveTimeoutRef.current = setTimeout(async () => {
-        if (isLoadingRef.current) return;
+        if (isLoadingRef.current || saveCancelledRef.current) return;
         try {
           if (!isCryptoAvailable()) return;
 
@@ -260,11 +260,15 @@ export const SessionRecoveryProvider = ({ children }) => {
             sessionName: sanitizedState.sessionName || sanitizedState.name,
             recoveryType,
             timestamp: Date.now(),
-            lastActivity: lastActivityRef.current,
+            lastActivity: lastActivity,
             deviceFingerprint: getDeviceFingerprint(),
           };
 
           const ciphertext = await encryptSession(JSON.stringify(currentSession), key);
+
+          // Abort if the session was cleared while we were encrypting (issue #14606)
+          if (saveCancelledRef.current) return;
+
           localStorage.setItem(SESSION_KEY, ciphertext);
           setSessionData(currentSession);
           setHasSession(true);
@@ -292,6 +296,13 @@ export const SessionRecoveryProvider = ({ children }) => {
 
   const clearSession = useCallback(() => {
     try {
+      // Cancel any pending debounced save so cleared data cannot be
+      // re-persisted after sign-out / clear-session (issue #14606).
+      saveCancelledRef.current = true;
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
+      }
       localStorage.removeItem(SESSION_KEY);
       setSessionData(null);
       setHasSession(false);
@@ -350,16 +361,7 @@ export const SessionRecoveryProvider = ({ children }) => {
     setShowRecoveryPrompt(false);
   }, []);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const now = Date.now();
-      const inactiveTime = now - lastActivityRef.current;
-      if (inactiveTime > SESSION_TIMEOUT && hasSession) {
-        clearSession();
-      }
-    }, 60000);
-    return () => clearInterval(interval);
-  }, [hasSession, clearSession]);
+  // Fix: session timeout now handled by useIdleDetection onIdle callback above
 
   useEffect(() => {
     if ((multiRecovery.hasSessions || cloudRecovery.hasCloudSessions) && !sessionData) {

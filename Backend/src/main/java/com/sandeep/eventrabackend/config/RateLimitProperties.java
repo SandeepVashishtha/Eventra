@@ -14,6 +14,10 @@ public class RateLimitProperties {
     private EndpointLimit signup = new EndpointLimit(3, Duration.ofMinutes(10));
     private EndpointLimit forgotPassword = new EndpointLimit(3, Duration.ofMinutes(15));
     private EndpointLimit contact = new EndpointLimit(5, Duration.ofMinutes(10));
+    private EndpointLimit githubProxy = new EndpointLimit(30, Duration.ofMinutes(1));
+    private EndpointLimit google = new EndpointLimit(10, Duration.ofMinutes(1));
+    private EndpointLimit refresh = new EndpointLimit(30, Duration.ofMinutes(1));
+    private EndpointLimit validate = new EndpointLimit(20, Duration.ofMinutes(1));
 
     public boolean isEnabled() {
         return enabled;
@@ -53,6 +57,38 @@ public class RateLimitProperties {
 
     public void setContact(EndpointLimit contact) {
         this.contact = contact;
+    }
+
+    public EndpointLimit getGithubProxy() {
+        return githubProxy;
+    }
+
+    public void setGithubProxy(EndpointLimit githubProxy) {
+        this.githubProxy = githubProxy;
+    }
+
+    public EndpointLimit getGoogle() {
+        return google;
+    }
+
+    public void setGoogle(EndpointLimit google) {
+        this.google = google;
+    }
+
+    public EndpointLimit getRefresh() {
+        return refresh;
+    }
+
+    public void setRefresh(EndpointLimit refresh) {
+        this.refresh = refresh;
+    }
+
+    public EndpointLimit getValidate() {
+        return validate;
+    }
+
+    public void setValidate(EndpointLimit validate) {
+        this.validate = validate;
     }
 
     public static class EndpointLimit {

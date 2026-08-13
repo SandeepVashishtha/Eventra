@@ -82,6 +82,22 @@ export const useMultiTrackSchedule = (eventId) => {
   const [state, dispatch] = useReducer(scheduleReducer, initialState);
 
   /**
+   * Detect schedule conflicts
+   */
+  const updateConflicts = useCallback((tracks, sessions) => {
+    const conflictData = detectSessionConflicts(sessions, tracks);
+    dispatch({ type: 'SET_CONFLICTS', payload: conflictData.conflicts });
+  }, []);
+
+  /**
+   * Validate schedule integrity
+   */
+  const updateValidation = useCallback((tracks, sessions) => {
+    const validationData = validateScheduleIntegrity(sessions, tracks);
+    dispatch({ type: 'SET_VALIDATION', payload: validationData });
+  }, []);
+
+  /**
    * Load schedule from server
    */
   const loadSchedule = useCallback(async () => {
@@ -101,7 +117,7 @@ export const useMultiTrackSchedule = (eventId) => {
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
-  }, [eventId]);
+  }, [eventId, updateConflicts, updateValidation]);
 
   /**
    * Save schedule to server
@@ -129,19 +145,25 @@ export const useMultiTrackSchedule = (eventId) => {
    * Add new track
    */
   const addTrack = useCallback(async (trackData) => {
+    const optimisticId = `track-${Date.now()}`;
     try {
       const newTrack = {
-        id: `track-${Date.now()}`,
+        id: optimisticId,
         ...trackData,
         createdAt: new Date().toISOString(),
       };
       dispatch({ type: 'ADD_TRACK', payload: newTrack });
       
       // Save to server
-      await scheduleService.addTrack(eventId, trackData);
+      const created = await scheduleService.addTrack(eventId, { ...trackData, id: optimisticId });
+      const saved = created?.data ?? created;
+      if (saved?.id && saved.id !== optimisticId) {
+        dispatch({ type: 'UPDATE_TRACK', payload: { id: optimisticId, updates: { id: saved.id } } });
+      }
       
-      return newTrack;
+      return saved || newTrack;
     } catch (error) {
+      dispatch({ type: 'REMOVE_TRACK', payload: optimisticId });
       dispatch({ type: 'SET_ERROR', payload: error.message });
       throw error;
     }
@@ -187,9 +209,10 @@ export const useMultiTrackSchedule = (eventId) => {
    * Add session to schedule
    */
   const addSession = useCallback(async (sessionData) => {
+    const optimisticId = `session-${Date.now()}`;
     try {
       const newSession = {
-        id: `session-${Date.now()}`,
+        id: optimisticId,
         ...sessionData,
         createdAt: new Date().toISOString(),
         attendeeIds: [],
@@ -201,14 +224,19 @@ export const useMultiTrackSchedule = (eventId) => {
       updateValidation([...state.tracks], [...state.sessions, newSession]);
       
       // Save to server
-      await scheduleService.addSession(eventId, sessionData);
+      const created = await scheduleService.addSession(eventId, { ...sessionData, id: optimisticId });
+      const saved = created?.data ?? created;
+      if (saved?.id && saved.id !== optimisticId) {
+        dispatch({ type: 'UPDATE_SESSION', payload: { id: optimisticId, updates: { id: saved.id } } });
+      }
       
-      return newSession;
+      return saved || newSession;
     } catch (error) {
+      dispatch({ type: 'REMOVE_SESSION', payload: optimisticId });
       dispatch({ type: 'SET_ERROR', payload: error.message });
       throw error;
     }
-  }, [eventId, state.tracks, state.sessions]);
+  }, [eventId, state.tracks, state.sessions, updateConflicts, updateValidation]);
 
   /**
    * Update session information
@@ -230,7 +258,7 @@ export const useMultiTrackSchedule = (eventId) => {
       dispatch({ type: 'SET_ERROR', payload: error.message });
       throw error;
     }
-  }, [eventId, state.tracks, state.sessions]);
+  }, [eventId, state.tracks, state.sessions, updateConflicts, updateValidation]);
 
   /**
    * Remove session from schedule
@@ -250,7 +278,7 @@ export const useMultiTrackSchedule = (eventId) => {
       dispatch({ type: 'SET_ERROR', payload: error.message });
       throw error;
     }
-  }, [eventId, state.tracks, state.sessions]);
+  }, [eventId, state.tracks, state.sessions, updateConflicts, updateValidation]);
 
   /**
    * Auto-assign sessions to tracks
@@ -283,23 +311,7 @@ export const useMultiTrackSchedule = (eventId) => {
       dispatch({ type: 'SET_ERROR', payload: error.message });
       throw error;
     }
-  }, [eventId, state.tracks, state.sessions]);
-
-  /**
-   * Detect schedule conflicts
-   */
-  const updateConflicts = useCallback((tracks, sessions) => {
-    const conflictData = detectSessionConflicts(sessions, tracks);
-    dispatch({ type: 'SET_CONFLICTS', payload: conflictData.conflicts });
-  }, []);
-
-  /**
-   * Validate schedule integrity
-   */
-  const updateValidation = useCallback((tracks, sessions) => {
-    const validationData = validateScheduleIntegrity(sessions, tracks);
-    dispatch({ type: 'SET_VALIDATION', payload: validationData });
-  }, []);
+  }, [eventId, state.tracks, state.sessions, updateConflicts, updateValidation]);
 
   /**
    * Publish schedule

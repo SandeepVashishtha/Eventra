@@ -49,7 +49,7 @@ export default function ComparativeAnalyticsDashboard() {
               className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-all ${
                 selected.includes(e.name)
                   ? 'bg-indigo-600 text-white border-indigo-600'
-                  : 'bg-white text-gray-500 border-gray-300 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700'
+                  : 'bg-white text-gray-500 border-gray-300 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700'
               }`}>
               {e.name}
             </button>

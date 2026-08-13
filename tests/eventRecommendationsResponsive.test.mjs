@@ -68,15 +68,18 @@ describe("EventRecommendations Responsive Carousel Logic", () => {
 });
 
 describe("EventRecommendations Code Structure Integrity", () => {
-  it("should use dynamic visibleCount state and window resize listener", () => {
+  it("should derive visibleCount from useWindowSize breakpoints", () => {
     assert.ok(
-      componentSrc.includes("setVisibleCount"),
-      "Component source must declare and use visibleCount state"
+      componentSrc.includes("useWindowSize"),
+      "Component source must use the useWindowSize hook"
     );
     assert.ok(
-      componentSrc.includes('addEventListener("resize"') ||
-        componentSrc.includes("addEventListener('resize'"),
-      "Component source must attach window resize event listener"
+      componentSrc.includes("const { width } = useWindowSize()"),
+      "Component source must destructure width from useWindowSize"
+    );
+    assert.ok(
+      componentSrc.includes("width < 640 ? 1 : width < 1024 ? 2 : 3"),
+      "Component source must map width breakpoints to 1/2/3 visible cards"
     );
   });
 

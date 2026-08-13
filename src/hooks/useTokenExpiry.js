@@ -1,8 +1,8 @@
 import { useEffect, useRef, useCallback } from "react";
 import { toast } from "react-toastify";
-import { isTokenValid, decodeTokenPayload } from "../utils/tokenUtils";
-import { syncSecureStorage } from "../utils/secureStorage";
-import { logger } from "../utils/logger";
+import { isTokenValid, decodeTokenPayload } from "../utils/tokenUtils.js";
+import { syncSecureStorage } from "../utils/secureStorage.js";
+import { logger } from "../utils/logger.js";
 export const MAX_TOKEN_EXPIRY_TIMEOUT_MS = 2_147_483_647;
 const TOKEN_EXPIRY_BUFFER_MS = 1_000;
 
@@ -25,6 +25,8 @@ export function useTokenExpiry({ token, user, onExpired }) {
     if (typeof window === "undefined") return;
 
     let hadPreviousSession = false;
+    try { hadPreviousSession = !!syncSecureStorage.getItem("user"); } catch { console.warn("[useTokenExpiry] Failed to read session storage"); }
+    console.warn("[useTokenExpiry] Session expired. Clearing state.");
     try { hadPreviousSession = !!syncSecureStorage.getItem("user"); } catch {}
     logger.warn("[useTokenExpiry] Session expired. Clearing state.");
     onExpired();
@@ -74,7 +76,7 @@ export function useTokenExpiry({ token, user, onExpired }) {
       };
 
       scheduleExpiryCheck();
-    } else {
+    } else if (token !== "cookie-managed") {
       timeoutId = setInterval(() => {
         if (!isTokenValid(token)) {
           clearExpiredSession();

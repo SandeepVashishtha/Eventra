@@ -317,4 +317,47 @@ const finalQueue = getQueue();
 assert.equal(finalQueue.length, 1, "User A's item should remain in the queue");
 assert.equal(finalQueue[0].userId, "user-a", "Remaining item should belong to user-a");
 
+// ── pushToQueue with a service worker that never becomes active (#14604) ─────
+reset();
+// Simulate an environment where navigator.serviceWorker.ready never settles
+// (blocked/failed registration, first load, incognito). pushToQueue must
+// resolve promptly instead of hanging forever.
+const _hadNavigator = Object.prototype.hasOwnProperty.call(global, "navigator");
+const _prevNavigator = _hadNavigator ? global.navigator : undefined;
+Object.defineProperty(global, "navigator", {
+  configurable: true,
+  value: {
+    serviceWorker: {
+      ready: new Promise(() => {}), // never resolves
+    },
+  },
+});
+
+const noSwStart = Date.now();
+const noSwResult = await pushToQueue({ eventId: "evt-no-sw" });
+const noSwElapsed = Date.now() - noSwStart;
+assert.equal(
+  noSwResult,
+  true,
+  "pushToQueue() resolves true when no service worker becomes active"
+);
+assert.ok(
+  noSwElapsed < 1000,
+  `pushToQueue() must not block on serviceWorker.ready (took ${noSwElapsed}ms)`
+);
+assert.equal(
+  getQueue().length,
+  1,
+  "item is still durably queued without an active service worker"
+);
+
+if (_hadNavigator) {
+  Object.defineProperty(global, "navigator", {
+    configurable: true,
+    value: _prevNavigator,
+  });
+} else {
+  delete global.navigator;
+}
+
 console.log("All offlineQueue tests passed ✓");

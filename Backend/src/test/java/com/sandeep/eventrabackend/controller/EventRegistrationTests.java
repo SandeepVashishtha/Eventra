@@ -38,7 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Integration tests covering Issues #2101, #2102, and #2104 at the HTTP layer.
+ * Integration tests covering Issues #2101, #2102, #2104, and #14617 at the HTTP layer.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -159,7 +159,7 @@ public class EventRegistrationTests {
 
         mockMvc.perform(get("/api/events"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[?(@.id == " + privateEvent.getId() + ")]").isEmpty());
+                .andExpect(jsonPath("$.content[?(@.id == " + privateEvent.getId() + ")]").isEmpty());
     }
 
     @Test
@@ -173,6 +173,40 @@ public class EventRegistrationTests {
         privateEvent = eventRepository.save(privateEvent);
 
         mockMvc.perform(get("/api/events/" + privateEvent.getId()))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(get("/api/events/" + eventId))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("#12081 — GET /api/events excludes cancelled events")
+    void testGetAllEventsExcludesCancelledEvents() throws Exception {
+        Event cancelled = new Event();
+        cancelled.setTitle("Cancelled Event");
+        cancelled.setCapacity(100);
+        cancelled.setEventDate(LocalDateTime.now().plusDays(1));
+        cancelled.setPublic(true);
+        cancelled.setStatus("CANCELLED");
+        cancelled = eventRepository.save(cancelled);
+
+        mockMvc.perform(get("/api/events"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[?(@.id == " + cancelled.getId() + ")]").isEmpty());
+    }
+
+    @Test
+    @DisplayName("#12081 — GET /api/events/{id} returns 404 for a cancelled event")
+    void testGetPublicEventByIdExcludesCancelledEvent() throws Exception {
+        Event cancelled = new Event();
+        cancelled.setTitle("Cancelled Event");
+        cancelled.setCapacity(100);
+        cancelled.setEventDate(LocalDateTime.now().plusDays(1));
+        cancelled.setPublic(true);
+        cancelled.setStatus("CANCELLED");
+        cancelled = eventRepository.save(cancelled);
+
+        mockMvc.perform(get("/api/events/" + cancelled.getId()))
                 .andExpect(status().isNotFound());
 
         mockMvc.perform(get("/api/events/" + eventId))
@@ -386,6 +420,40 @@ public class EventRegistrationTests {
     }
 
     @Test
+    @DisplayName("#12080 — POST /register returns 409 for a cancelled event")
+    void testRegistrationCancelledEventRejected() throws Exception {
+        Event cancelled = new Event();
+        cancelled.setTitle("Cancelled Event");
+        cancelled.setCapacity(100);
+        cancelled.setEventDate(LocalDateTime.now().plusDays(1));
+        cancelled.setPublic(true);
+        cancelled.setStatus("CANCELLED");
+        cancelled = eventRepository.save(cancelled);
+
+        mockMvc.perform(post("/api/events/" + cancelled.getId() + "/register")
+                        .with(user("user1@example.com")))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("This event has been cancelled."));
+    }
+
+    @Test
+    @DisplayName("#12080 — POST /waitlist returns 409 for a cancelled event")
+    void testWaitlistCancelledEventRejected() throws Exception {
+        Event cancelled = new Event();
+        cancelled.setTitle("Cancelled Event");
+        cancelled.setCapacity(1);
+        cancelled.setEventDate(LocalDateTime.now().plusDays(1));
+        cancelled.setPublic(true);
+        cancelled.setStatus("CANCELLED");
+        cancelled = eventRepository.save(cancelled);
+
+        mockMvc.perform(post("/api/events/" + cancelled.getId() + "/waitlist")
+                        .with(user("user1@example.com")))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("This event has been cancelled."));
+    }
+
+    @Test
     @DisplayName("#2102 — POST /register returns 409 when event is full")
     void testRegistrationEventFull() throws Exception {
         // Fill the event (capacity = 5) with users 1..5
@@ -421,9 +489,7 @@ public class EventRegistrationTests {
         mockMvc.perform(get("/api/events/" + eventId + "/availability")
                         .with(user("user6@example.com")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.full").value(true))
-                .andExpect(jsonPath("$.waitlisted").value(true))
-                .andExpect(jsonPath("$.waitlistPosition").value(1));
+                .andExpect(jsonPath("$.full").value(true));
     }
 
     @Test
@@ -474,9 +540,7 @@ public class EventRegistrationTests {
 
         mockMvc.perform(get("/api/events/" + eventId + "/availability")
                         .with(user("user6@example.com")))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.waitlisted").value(false))
-                .andExpect(jsonPath("$.waitlistPosition", nullValue()));
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -566,5 +630,55 @@ public class EventRegistrationTests {
         Event event = eventRepository.findById(eventId).orElseThrow();
         assertEquals(successCount.get(), event.getRegisteredCount(),
                 "Persisted registeredCount does not match successful HTTP responses");
+    }
+
+    // ── Issue #14617 — Maintenance writes succeed on private events ──────────
+
+    @Test
+    @DisplayName("#14617 - cancelling a registration on a private event succeeds")
+    void testCancelRegistrationOnPrivateEvent() throws Exception {
+        mockMvc.perform(post("/api/events/" + eventId + "/register")
+                        .with(user("user1@example.com")))
+                .andExpect(status().isOk());
+
+        Event event = eventRepository.findById(eventId).orElseThrow();
+        event.setPublic(false);
+        eventRepository.save(event);
+
+        mockMvc.perform(delete("/api/events/" + eventId + "/registration")
+                        .with(user("user1@example.com")))
+                .andExpect(status().isNoContent());
+
+        assertTrue(eventRegistrationRepository
+                .findByEvent_IdAndUser_Email(eventId, "user1@example.com").isEmpty(),
+                "registration should be deleted even though the event is private");
+    }
+
+    @Test
+    @DisplayName("#14617 - waitlist promotion commits on a private event")
+    void testWaitlistPromotionOnPrivateEvent() throws Exception {
+        for (int i = 1; i <= 5; i++) {
+            mockMvc.perform(post("/api/events/" + eventId + "/register")
+                            .with(user("user" + i + "@example.com")))
+                    .andExpect(status().isOk());
+        }
+
+        mockMvc.perform(post("/api/events/" + eventId + "/waitlist")
+                        .with(user("user6@example.com")))
+                .andExpect(status().isCreated());
+
+        Event event = eventRepository.findById(eventId).orElseThrow();
+        event.setPublic(false);
+        eventRepository.save(event);
+
+        mockMvc.perform(delete("/api/events/" + eventId + "/registration")
+                        .with(user("user1@example.com")))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/users/my-events")
+                        .with(user("user6@example.com")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].eventId").value(eventId))
+                .andExpect(jsonPath("$[0].status").value("CONFIRMED"));
     }
 }

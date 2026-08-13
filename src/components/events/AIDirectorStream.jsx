@@ -152,7 +152,7 @@ const AIDirectorStream = () => {
                        <span>{audioLevels.host}%</span>
                      </div>
                      <div className="h-1.5 w-full bg-black rounded-full overflow-hidden">
-                       <div className="h-full bg-emerald-500 transition-all duration-300" style={{ width: \`\${audioLevels.host}%\` }}></div>
+                       <div className="h-full bg-emerald-500 transition-all duration-300" style={{ width: `${audioLevels.host}%` }}></div>
                      </div>
                    </div>
                    
@@ -162,7 +162,7 @@ const AIDirectorStream = () => {
                        <span>{audioLevels.guest}%</span>
                      </div>
                      <div className="h-1.5 w-full bg-black rounded-full overflow-hidden">
-                       <div className="h-full bg-emerald-500 transition-all duration-300" style={{ width: \`\${audioLevels.guest}%\` }}></div>
+                       <div className="h-full bg-emerald-500 transition-all duration-300" style={{ width: `${audioLevels.guest}%` }}></div>
                      </div>
                    </div>
 
@@ -172,7 +172,7 @@ const AIDirectorStream = () => {
                        <span>{audioLevels.crowd}%</span>
                      </div>
                      <div className="h-1.5 w-full bg-black rounded-full overflow-hidden">
-                       <div className="h-full bg-sky-500 transition-all duration-300" style={{ width: \`\${audioLevels.crowd}%\` }}></div>
+                       <div className="h-full bg-sky-500 transition-all duration-300" style={{ width: `${audioLevels.crowd}%` }}></div>
                      </div>
                    </div>
                  </div>

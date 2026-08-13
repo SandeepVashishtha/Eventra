@@ -1,3 +1,4 @@
+import useWindowSize from "hooks/useWindowSize";
 /* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5 */
 import { motion } from "framer-motion";
 import { useState, useEffect, useCallback, useMemo, memo } from "react";
@@ -391,7 +392,7 @@ const WhatsHappening = ({ eventsData = [], hackathonsData = [], projectsData = [
 
                             <div className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold border ${
                               event.timeLeft === "Ended"
-                                ? "bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/20"
+                                ? "bg-gray-500/10 text-gray-600 dark:text-gray-200 border-gray-500/20"
                                 : event.timeLeft === "Live Now" || event.timeLeft === "Active"
                                 ? "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20"
                                 : "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20"

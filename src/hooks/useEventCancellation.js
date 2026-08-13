@@ -11,6 +11,7 @@
 
 import { useState, useCallback } from "react";
 import { apiUtils, API_ENDPOINTS } from "../config/api.js";
+import { getApiErrorMessage } from "../config/api/errors.js";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
 import { logger } from "../utils/logger";
@@ -67,8 +68,13 @@ const useEventCancellation = (eventId, onSuccess, ownerId) => {
 
       // Guard (Issue #11021): role alone is not enough — only the event's own
       // organizer may cancel it. Prevents cross-tenant cancellation by swapping
-      // the event id in the URL.
-      if (ownerId != null && user?.id != null && String(ownerId) !== String(user.id)) {
+      // the event id in the URL. Admins may cancel any event.
+      if (
+        !isAdmin() &&
+        ownerId != null &&
+        user?.id != null &&
+        String(ownerId) !== String(user.id)
+      ) {
         setCancellationError("Only the event's own organizer can cancel this event.");
         return false;
       }
@@ -111,7 +117,6 @@ const useEventCancellation = (eventId, onSuccess, ownerId) => {
           ...(refundPolicy === REFUND_POLICIES.PARTIAL && {
             refundPercent: Number(refundPercent),
           }),
-          cancelledAt: new Date().toISOString(),
         };
 
         const res = await apiUtils.post(
@@ -139,8 +144,7 @@ const useEventCancellation = (eventId, onSuccess, ownerId) => {
         return true;
       } catch (err) {
         const message =
-          err?.response?.data?.message ||
-          err?.message ||
+          getApiErrorMessage(err) ||
           "An unexpected error occurred while cancelling the event.";
 
         logger.error("[useEventCancellation] Cancellation failed:", err);

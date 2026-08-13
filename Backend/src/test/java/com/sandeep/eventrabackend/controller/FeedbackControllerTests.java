@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sandeep.eventrabackend.dto.request.FeedbackRequest;
 import com.sandeep.eventrabackend.model.Event;
 import com.sandeep.eventrabackend.model.EventRegistration;
+import com.sandeep.eventrabackend.model.Feedback;
 import com.sandeep.eventrabackend.model.Role;
 import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.*;
@@ -15,6 +16,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -263,5 +265,134 @@ public class FeedbackControllerTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("GET /api/feedback/organizers/{id} — organizer can view own feedback")
+    void testOrganizerFeedbackSelfAccess() throws Exception {
+        EventRegistration registration = new EventRegistration();
+        registration.setEvent(eventRepository.findById(eventId).orElseThrow());
+        registration.setUser(userRepository.findByEmail(testUserEmail).orElseThrow());
+        eventRegistrationRepository.save(registration);
+
+        FeedbackRequest request = FeedbackRequest.builder()
+                .eventId(eventId)
+                .rating(5)
+                .comment("Great event")
+                .build();
+
+        mockMvc.perform(post("/api/feedback")
+                        .with(user(testUserEmail))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/api/feedback/organizers/{organizerId}", organizerId)
+                        .with(user(testUserEmail)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].userId").value(organizerId));
+    }
+
+    @Test
+    @DisplayName("GET /api/feedback/organizers/{id} — other user gets 403")
+    void testOrganizerFeedbackForbiddenForOtherUser() throws Exception {
+        User other = User.builder()
+                .firstName("Other")
+                .lastName("User")
+                .email("other@example.com")
+                .username("otheruser")
+                .password(passwordEncoder.encode("password"))
+                .role(Role.CLIENT)
+                .build();
+        userRepository.save(other);
+
+        mockMvc.perform(get("/api/feedback/organizers/{organizerId}", organizerId)
+                        .with(user("other@example.com")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("GET /api/feedback/organizers/{id} — admin can view any organizer feedback")
+    void testOrganizerFeedbackAdminAccess() throws Exception {
+        User admin = User.builder()
+                .firstName("Admin")
+                .lastName("User")
+                .email("admin@example.com")
+                .username("adminuser")
+                .password(passwordEncoder.encode("password"))
+                .role(Role.ADMIN)
+                .build();
+        userRepository.save(admin);
+
+        mockMvc.perform(get("/api/feedback/organizers/{organizerId}", organizerId)
+                        .with(user("admin@example.com")
+                                .authorities(new SimpleGrantedAuthority("ADMIN"))))
+                .andExpect(status().isOk());
+    }
+
+    // ── Issue #14615 — Public feedback endpoint visibility ────────────────
+
+    @Test
+    @DisplayName("GET /api/feedback?eventId= — public event, anonymous OK")
+    void testGetEventFeedbackPublicEventAnonymous() throws Exception {
+        seedFeedback("Public feedback comment");
+        mockMvc.perform(get("/api/feedback").param("eventId", eventId.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].rating").value(5))
+                .andExpect(jsonPath("$[0].comment").value("Public feedback comment"));
+    }
+
+    @Test
+    @DisplayName("GET /api/feedback?eventId= — private event hidden")
+    void testGetEventFeedbackPrivateEvent() throws Exception {
+        Event privateEvent = new Event();
+        privateEvent.setTitle("Private Event");
+        privateEvent.setEventDate(LocalDateTime.now().minusDays(1));
+        privateEvent.setOwnerId(organizerId);
+        privateEvent.setPublic(false);
+        privateEvent = eventRepository.save(privateEvent);
+
+        mockMvc.perform(get("/api/feedback").param("eventId", privateEvent.getId().toString()))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("GET /api/feedback?eventId= — cancelled event hidden")
+    void testGetEventFeedbackCancelledEvent() throws Exception {
+        Event cancelledEvent = new Event();
+        cancelledEvent.setTitle("Cancelled Event");
+        cancelledEvent.setEventDate(LocalDateTime.now().minusDays(1));
+        cancelledEvent.setOwnerId(organizerId);
+        cancelledEvent.setPublic(true);
+        cancelledEvent.setStatus("CANCELLED");
+        cancelledEvent = eventRepository.save(cancelledEvent);
+
+        mockMvc.perform(get("/api/feedback").param("eventId", cancelledEvent.getId().toString()))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("GET /api/feedback?eventId= — nonexistent event hidden")
+    void testGetEventFeedbackNonexistentEvent() throws Exception {
+        mockMvc.perform(get("/api/feedback").param("eventId", "99999"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("GET /api/feedback?eventId= — public comments are sanitized (HTML stripped)")
+    void testGetEventFeedbackSanitizesComments() throws Exception {
+        seedFeedback("<script>alert(1)</script> Nice event!");
+        mockMvc.perform(get("/api/feedback").param("eventId", eventId.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].comment").value("alert(1) Nice event!"));
+    }
+
+    private void seedFeedback(String comment) {
+        Feedback feedback = new Feedback();
+        feedback.setEvent(eventRepository.findById(eventId).orElseThrow());
+        feedback.setUser(userRepository.findByEmail(testUserEmail).orElseThrow());
+        feedback.setRating(5);
+        feedback.setComment(comment);
+        feedbackRepository.saveAndFlush(feedback);
     }
 }

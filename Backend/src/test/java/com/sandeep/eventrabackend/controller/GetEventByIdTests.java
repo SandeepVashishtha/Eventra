@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -70,13 +71,28 @@ public class GetEventByIdTests {
     }
 
     @Test
+    void testPublicEventOmitsOwnerIdAndCancellationReason() throws Exception {
+        Event cancelled = eventRepository.findById(publicEventId).orElseThrow();
+        cancelled.setOwnerId(42L);
+        cancelled.setCancellationReason("internal ops note");
+        cancelled.setStatus("CANCELLED");
+        eventRepository.save(cancelled);
+
+        mockMvc.perform(get("/api/events/" + publicEventId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Public Event"))
+                .andExpect(jsonPath("$.ownerId").value(nullValue()))
+                .andExpect(jsonPath("$.cancellationReason").value(nullValue()));
+    }
+
+    @Test
     @WithMockUser
     void testGetPrivateEventById() throws Exception {
-        // This should pass after implementation. Currently it might fail (return 404).
+        // Issue #12071 — a private event must not be retrievable through the
+        // public GET /api/events/{id} endpoint.
         mockMvc.perform(get("/api/events/" + privateEventId))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.title").value("Private Event"))
-                .andExpect(jsonPath("$.public").value(false));
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Event not found with id: " + privateEventId));
     }
 
     @Test

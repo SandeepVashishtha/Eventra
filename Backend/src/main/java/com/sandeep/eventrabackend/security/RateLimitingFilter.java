@@ -10,6 +10,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -21,31 +22,41 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Component
+@Component("authRateLimitingFilter")
 public class RateLimitingFilter extends OncePerRequestFilter {
 
     private static final String POST = "POST";
+    private static final String GET = "GET";
     private static final List<EndpointRule> ENDPOINT_RULES = List.of(
             new EndpointRule("login", POST, "/api/auth/login"),
             new EndpointRule("signup", POST, "/api/auth/signup"),
+            new EndpointRule("google", POST, "/api/auth/google"),
+            new EndpointRule("refresh", POST, "/api/auth/refresh"),
             new EndpointRule("forgotPassword", POST, "/api/auth/forgot-password"),
             new EndpointRule("forgotPassword", POST, "/api/auth/forgot-password/"),
             new EndpointRule("contact", POST, "/api/contact"),
             new EndpointRule("contact", POST, "/api/contact/"),
             new EndpointRule("contact", POST, "/api/contacts"),
-            new EndpointRule("contact", POST, "/api/contacts/")
+            new EndpointRule("contact", POST, "/api/contacts/"),
+            new EndpointRule("githubProxy", GET, "/api/github-proxy"),
+            new EndpointRule("validate", GET, "/api/validate/email"),
+            new EndpointRule("validate", GET, "/api/validate/username"),
+            new EndpointRule("validate", GET, "/api/validate/phone")
     );
 
     private final RateLimitProperties properties;
     private final RateLimitService rateLimitService;
     private final ObjectMapper objectMapper;
+    private final int trustedProxyHops;
 
     public RateLimitingFilter(RateLimitProperties properties,
             RateLimitService rateLimitService,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            @Value("${app.rate-limit.trusted-proxy-hops:1}") int trustedProxyHops) {
         this.properties = properties;
         this.rateLimitService = rateLimitService;
         this.objectMapper = objectMapper;
+        this.trustedProxyHops = Math.max(0, trustedProxyHops);
     }
 
     @Override
@@ -60,10 +71,10 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         }
 
         EndpointLimit endpointLimit = limitFor(endpointRule.name());
-        String clientIp = resolveClientIp(request);
+        String bucketKey = resolveBucketKey(request);
         RateLimitResult result = rateLimitService.consume(
                 endpointRule.name(),
-                clientIp,
+                bucketKey,
                 endpointLimit.getCapacity(),
                 endpointLimit.getWindow()
         );
@@ -108,14 +119,67 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         return switch (endpointName) {
             case "login" -> properties.getLogin();
             case "signup" -> properties.getSignup();
+            case "google" -> properties.getGoogle();
+            case "refresh" -> properties.getRefresh();
             case "forgotPassword" -> properties.getForgotPassword();
             case "contact" -> properties.getContact();
+            case "githubProxy" -> properties.getGithubProxy();
+            case "validate" -> properties.getValidate();
             default -> throw new IllegalArgumentException("Unknown rate limit endpoint: " + endpointName);
         };
     }
 
+    private String resolveBucketKey(HttpServletRequest request) {
+        String clientIp = resolveClientIp(request);
+        String userKey = resolveAuthenticatedUserKey(request);
+        if (userKey != null) {
+            return userKey + "|" + clientIp;
+        }
+        return clientIp;
+    }
+
+    private String resolveAuthenticatedUserKey(HttpServletRequest request) {
+        var authentication = org.springframework.security.core.context.SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || authentication.getPrincipal() == null
+                || "anonymousUser".equals(authentication.getPrincipal())) {
+            return null;
+        }
+        String name = authentication.getName();
+        return StringUtils.hasText(name) ? "user:" + name.trim().toLowerCase() : null;
+    }
+
+    /**
+     * Resolve the originating client IP using {@code X-Forwarded-For} with a
+     * known trusted hop count (Azure/Vercel LB), falling back to {@code X-Real-IP}
+     * then {@link HttpServletRequest#getRemoteAddr()}.
+     */
     private String resolveClientIp(HttpServletRequest request) {
-        return request.getRemoteAddr();
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (StringUtils.hasText(forwarded)) {
+            String[] parts = forwarded.split(",");
+            // Proxies append the connecting peer on the right. Trust the rightmost
+            // N entries as infrastructure; the client is the leftmost of that
+            // trusted suffix (ignoring any client-supplied left-hand spoof).
+            // hops=1 on "spoof, real" → index length-1 = real.
+            int clientIndex = Math.min(parts.length - 1,
+                    Math.max(0, parts.length - trustedProxyHops));
+            String candidate = parts[clientIndex].trim();
+            if (StringUtils.hasText(candidate) && !"unknown".equalsIgnoreCase(candidate)) {
+                return candidate;
+            }
+        }
+
+        String realIp = request.getHeader("X-Real-IP");
+        if (StringUtils.hasText(realIp)) {
+            return realIp.trim();
+        }
+
+        String remote = request.getRemoteAddr();
+        return StringUtils.hasText(remote) ? remote : "unknown";
     }
 
     private record EndpointRule(String name, String method, String path) {

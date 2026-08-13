@@ -134,7 +134,7 @@ const BiometricPyroSync = () => {
                <div className="flex-1 relative flex items-end">
                  
                  {/* Threshold Line */}
-                 <div className="absolute inset-x-0 border-t border-dashed border-rose-500/50 z-10" style={{ bottom: \`\${((excitementThreshold - 60) / (160 - 60)) * 100}%\` }}>
+                 <div className="absolute inset-x-0 border-t border-dashed border-rose-500/50 z-10" style={{ bottom: `${((excitementThreshold - 60) / (160 - 60)) * 100}%` }}>
                    <span className="absolute right-0 -top-4 text-[8px] text-rose-500 font-mono pr-1">Trigger</span>
                  </div>
 
@@ -146,7 +146,7 @@ const BiometricPyroSync = () => {
                        <div 
                          key={i} 
                          className={`flex-1 rounded-t-sm transition-all duration-300 ${bpm >= excitementThreshold ? 'bg-rose-500' : bpm > 110 ? 'bg-fuchsia-400' : 'bg-neutral-600'}`}
-                         style={{ height: \`\${heightPercent}%\` }}
+                         style={{ height: `${heightPercent}%` }}
                        ></div>
                      )
                    })}

@@ -1,32 +1,45 @@
 import assert from "node:assert/strict";
-import { generateGoogleCalendarUrl, addEventToGoogleCalendar, addHackathonToGoogleCalendar } from "../src/utils/calendarUtils.js";
+import { normalizeDateToUTC } from "../src/utils/calendarUtils.js";
 
-const eventData = {
-  title: "Hackathon Launch",
-  description: "Intro session",
-  location: "Main Hall",
-  startDate: "2026-05-28",
-  endDate: "2026-05-29"
-};
+// The Google Calendar URL builders (generateGoogleCalendarUrl /
+// addEventToGoogleCalendar / addHackathonToGoogleCalendar) were removed from
+// src/utils/calendarUtils.js when the module was narrowed to timezone
+// normalization (#14086). The current module only exports normalizeDateToUTC.
 
-const url = generateGoogleCalendarUrl(eventData);
-assert.ok(url.includes("action=TEMPLATE"));
-assert.ok(url.includes("text=Hackathon%20Launch"));
+assert.equal(
+  typeof normalizeDateToUTC,
+  "function",
+  "calendarUtils must export normalizeDateToUTC"
+);
 
-const event = {
-  title: "Workshop",
-  date: "2026-05-28",
-  time: "10:00 AM"
-};
-const eventUrl = addEventToGoogleCalendar(event);
-assert.ok(eventUrl.includes("Workshop"));
+// Date-only inputs are parsed as UTC and normalized to a UTC ISO string.
+assert.equal(
+  normalizeDateToUTC("2026-05-28"),
+  "2026-05-28T00:00:00.000Z"
+);
 
-const hackathon = {
-  title: "GSSoC Hack",
-  startDate: "2026-05-28",
-  endDate: "2026-05-30"
-};
-const hackUrl = addHackathonToGoogleCalendar(hackathon);
-assert.ok(hackUrl.includes("GSSoC%20Hack"));
+// The normalized output is always a valid UTC ISO string that round-trips.
+const normalized = normalizeDateToUTC("2026-05-28T10:00:00Z");
+assert.equal(normalized, "2026-05-28T10:00:00.000Z");
+assert.equal(new Date(normalized).toISOString(), normalized);
+
+// The normalized output must preserve the instant even when the input carries
+// a non-UTC offset.
+assert.equal(
+  normalizeDateToUTC("2026-05-28T10:00:00+05:30"),
+  "2026-05-28T04:30:00.000Z"
+);
+
+// Invalid dates fall back to the Unix epoch in UTC.
+assert.equal(
+  normalizeDateToUTC("not-a-date"),
+  new Date(0).toISOString(),
+  "invalid dates fall back to the epoch"
+);
+assert.equal(
+  normalizeDateToUTC(undefined),
+  new Date(0).toISOString(),
+  "undefined dates fall back to the epoch"
+);
 
 console.log("calendarUtils tests passed ✓");
