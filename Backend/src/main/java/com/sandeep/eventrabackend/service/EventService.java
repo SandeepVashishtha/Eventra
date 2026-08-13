@@ -94,6 +94,9 @@ public class EventService {
         /** Maximum number of automatic retries on optimistic-lock conflict. */
         private static final int MAX_REGISTRATION_RETRIES = 3;
 
+        /** Safety cap so waitlist promotion can never loop without bound. */
+        private static final int MAX_PROMOTIONS_PER_CALL = 50;
+
         private static final Set<String> ALLOWED_SORT_PROPERTIES = Set.of("eventDate", "title", "id");
 
         private static final Map<String, String> SORT_ALIASES = Map.of(
@@ -1306,31 +1309,39 @@ public class EventService {
                 Event event = eventRepository.findByIdWithLock(eventId)
                                 .orElseThrow(() -> new EventNotFoundException(
                                                 "Event not found with id: " + eventId));
-                while (event.getCapacity() == null || event.getRegisteredCount() < event.getCapacity()) {
-                        RegistrationResponse promoted = promoteFirstWaitingUser(event);
-                        if (promoted == null) {
+
+                int freeSeats = (event.getCapacity() == null)
+                                ? Integer.MAX_VALUE
+                                : event.getCapacity() - event.getRegisteredCount();
+                int promotionsRemaining = Math.min(freeSeats, MAX_PROMOTIONS_PER_CALL);
+
+                // Query waiting entries ONCE; the event is already pessimistically locked,
+                // so no separate per-entry lock is needed inside the loop.
+                List<EventWaitlist> waiting = eventWaitlistRepository
+                                .findByEvent_IdAndStatusOrderByPositionAscJoinedAtAsc(eventId, "WAITING");
+
+                for (EventWaitlist entry : waiting) {
+                        if (promotionsRemaining <= 0) {
                                 break;
                         }
-                        event.setRegisteredCount((int) eventRegistrationRepository
-                                        .countByEvent_IdAndStatus(eventId, "CONFIRMED"));
-                }
-        }
-
-        private RegistrationResponse promoteFirstWaitingUser(Event event) {
-                if (event.getCapacity() != null && event.getRegisteredCount() >= event.getCapacity()) {
-                        return null;
-                }
-
-                for (EventWaitlist entry : eventWaitlistRepository.findWaitingByEventIdWithLock(event.getId())) {
+                        if (event.getCapacity() != null
+                                        && event.getRegisteredCount() >= event.getCapacity()) {
+                                break;
+                        }
                         if (eventRegistrationRepository.existsByEvent_IdAndUser_Email(
                                         event.getId(), entry.getUser().getEmail())) {
                                 entry.setStatus("REMOVED");
                                 eventWaitlistRepository.save(entry);
                                 continue;
                         }
-                        return promoteEntry(event, entry);
+                        promoteEntry(event, entry);
+                        // Track occupancy in-memory instead of re-querying the DB each iteration.
+                        event.setRegisteredCount(event.getRegisteredCount() + 1);
+                        promotionsRemaining--;
                 }
-                return null;
+
+                eventRepository.save(event);
+                broadcastAvailability(event);
         }
 
         private RegistrationResponse promoteEntry(Event event, EventWaitlist entry) {
@@ -1343,12 +1354,6 @@ public class EventService {
                 registration.setStatus("CONFIRMED");
                 registration = eventRegistrationRepository.save(registration);
 
-                event.setRegisteredCount((int) eventRegistrationRepository
-                                .countByEvent_IdAndStatus(event.getId(), "CONFIRMED"));
-                Event saved = eventRepository.save(event);
-
-                broadcastAvailability(saved);
-
                 entry.setStatus("PROMOTED");
                 entry.setPromotedAt(LocalDateTime.now());
                 eventWaitlistRepository.save(entry);
@@ -1356,17 +1361,17 @@ public class EventService {
                 notificationRepository.save(Notification.builder()
                                 .user(user)
                                 .title("Waitlist spot opened")
-                                .message("A spot opened for " + saved.getTitle()
+                                .message("A spot opened for " + event.getTitle()
                                                 + ". You have been automatically registered.")
                                 .build());
 
-                Integer spotsRemaining = (saved.getCapacity() == null)
+                Integer spotsRemaining = (event.getCapacity() == null)
                                 ? null
-                                : Math.max(0, saved.getCapacity() - saved.getRegisteredCount());
+                                : Math.max(0, event.getCapacity() - event.getRegisteredCount());
 
                 return RegistrationResponse.builder()
-                                .eventId(saved.getId())
-                                .eventTitle(saved.getTitle())
+                                .eventId(event.getId())
+                                .eventTitle(event.getTitle())
                                 .userEmail(user.getEmail())
                                 .registeredAt(registration.getRegisteredAt())
                                 .spotsRemaining(spotsRemaining)
