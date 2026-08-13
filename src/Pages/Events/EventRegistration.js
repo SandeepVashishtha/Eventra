@@ -346,7 +346,7 @@ const EventRegistration = () => {
         const pos = await getQueuePosition(eventId, user.id);
         toast.success(t("eventRegistration.toastWaitlistSuccess"));
         clearSession();
-        return { success: true, error: null, waitlistPosition: pos };
+        return { success: true, error: null, waitlistPosition: pos, onWaitlist: true };
       } catch (err) {
         toast.error(err.message || t("eventRegistration.toastRegistrationError"));
         return { success: false, error: err.message, waitlistPosition: -1 };
@@ -393,7 +393,7 @@ const EventRegistration = () => {
       toast.success(t("eventRegistration.toastRegistrationSuccess"));
       addRegistration(event, formData, registrationId, qrToken);
       clearSession();
-      return { success: true, error: null, waitlistPosition: -1 };
+      return { success: true, error: null, waitlistPosition: -1, onWaitlist: false };
     } catch (error) {
       const failureMessage = getRegistrationFailureMessage(error);
 
@@ -456,7 +456,7 @@ const EventRegistration = () => {
           toast.warning(t("eventRegistration.toastNetworkQueued"), {
             autoClose: 4000,
           });
-          return { success: true, error: null, waitlistPosition: -1 };
+          return { success: true, error: null, waitlistPosition: -1, onWaitlist: isFreshlyFull };
         } else {
           toast.error(t("eventRegistration.toastOfflineQueueFull"));
           return {
@@ -480,7 +480,7 @@ const EventRegistration = () => {
         addRegistration(event, formData);
         clearSession();
         toast.info(failureMessage);
-        return { success: true, error: null, waitlistPosition: -1 };
+        return { success: true, error: null, waitlistPosition: -1, onWaitlist: isFreshlyFull };
       }
 
       toast.error(failureMessage);
@@ -574,7 +574,11 @@ const EventRegistration = () => {
     [navigate]
   );
 
-  const isEventFull = event ? event.attendees >= event.maxAttendees : false;
+  const isEventFull = event
+    ? typeof event.isFull === "boolean"
+      ? event.isFull
+      : event.attendees >= event.maxAttendees
+    : false;
   const status = getEventStatus(event);
   // const isPastEvent = status === "past" || status === "ended";
   const isCancelledEvent = status === "cancelled";
@@ -711,14 +715,14 @@ const EventRegistration = () => {
           </motion.div>
 
           <h2 className="text-3xl font-extrabold text-transparent bg-clip-text bg-linear-to-t from-indigo-600 to-pink-600 dark:from-indigo-400 dark:to-pink-400 mb-2">
-            {isEventFull
-              ? t("eventRegistration.successWaitlistTitle")
-              : t("eventRegistration.successConfirmedTitle")}
-          </h2>
-          <p className="text-gray-500 dark:text-gray-200 text-sm mb-6 max-w-md mx-auto leading-relaxed">
-            {isEventFull
-              ? t("eventRegistration.successWaitlistDesc", { position: waitlistPosition })
-              : t("eventRegistration.successConfirmedDesc")}
+         {actionState?.onWaitlist
+           ? t("eventRegistration.successWaitlistTitle")
+           : t("eventRegistration.successConfirmedTitle")}
+         </Typography>
+       </Stack>
+       {actionState?.onWaitlist
+         ? t("eventRegistration.successWaitlistDesc", { position: waitlistPosition })
+         : t("eventRegistration.successConfirmedDesc")}
           </p>
 
           <div className="bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200/40 dark:border-slate-800/50 rounded-3xl p-5 mb-8 text-left">
