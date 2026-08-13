@@ -259,7 +259,7 @@ public class LiveAudienceService {
     }
 
     private void publish(Long eventId, String type, Object payload) {
-        eventStreamService.publish(TOPIC, type,
+        eventStreamService.publish(TOPIC, eventId, type,
                 Map.of("eventId", eventId, "type", type, "payload", payload));
     }
 

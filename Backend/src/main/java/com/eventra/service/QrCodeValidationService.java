@@ -48,18 +48,9 @@ public class QrCodeValidationService {
                     paymentPlanRepository.findByRegistration_Id(registrationId);
             
             if (paymentPlanOptional.isPresent()) {
-                com.sandeep.eventrabackend.model.PaymentPlan paymentPlan = paymentPlanOptional.get();
-                
-                // If payment plan exists and is not completed, QR code is not activated
-                if (!paymentPlan.isQRCodeActivated() && paymentPlan.isActive()) {
-                    return new QrValidationResult(false, QrValidationStatus.PAYMENT_PENDING, 
-                            "❌ QR code not activated. Payment installments must be completed before QR code activation.");
-                }
-                
-                // Check if there are pending payments
-                if (paymentPlan.isActive() && !paymentPlan.isCompleted()) {
-                    return new QrValidationResult(false, QrValidationStatus.PAYMENT_INCOMPLETE, 
-                            "❌ Payment is incomplete. QR code activates after final installment is paid.");
+                QrValidationResult paymentResult = paymentGate(paymentPlanOptional.get());
+                if (paymentResult != null) {
+                    return paymentResult;
                 }
             }
         }
@@ -85,22 +76,32 @@ public class QrCodeValidationService {
                 paymentPlanRepository.findByRegistration_Id(registrationId);
         
         if (paymentPlanOptional.isPresent()) {
-            com.sandeep.eventrabackend.model.PaymentPlan paymentPlan = paymentPlanOptional.get();
-            
-            // If payment plan exists and is not completed, QR code is not activated
-            if (!paymentPlan.isQRCodeActivated()) {
-                return new QrValidationResult(false, QrValidationStatus.PAYMENT_PENDING, 
-                        "❌ QR code not activated. Payment installments must be completed before QR code activation.");
-            }
-            
-            // Check if there are pending payments
-            if (paymentPlan.isActive() && !paymentPlan.isCompleted()) {
-                return new QrValidationResult(false, QrValidationStatus.PAYMENT_INCOMPLETE, 
-                        "❌ Payment is incomplete. QR code activates after final installment is paid.");
+            QrValidationResult paymentResult = paymentGate(paymentPlanOptional.get());
+            if (paymentResult != null) {
+                return paymentResult;
             }
         }
 
         return new QrValidationResult(true, QrValidationStatus.VALID, "✅ QR Code verified successfully.");
+    }
+
+    private QrValidationResult paymentGate(com.sandeep.eventrabackend.model.PaymentPlan paymentPlan) {
+        if (paymentPlan.isCancelled() || paymentPlan.isFailed()) {
+            return new QrValidationResult(false, QrValidationStatus.CANCELLED_REGISTRATION,
+                    "❌ Payment plan was cancelled. Registration is no longer valid.");
+        }
+
+        if (!paymentPlan.isQRCodeActivated() && paymentPlan.isActive()) {
+            return new QrValidationResult(false, QrValidationStatus.PAYMENT_PENDING,
+                    "❌ QR code not activated. Payment installments must be completed before QR code activation.");
+        }
+
+        if (paymentPlan.isActive() && !paymentPlan.isCompleted()) {
+            return new QrValidationResult(false, QrValidationStatus.PAYMENT_INCOMPLETE,
+                    "❌ Payment is incomplete. QR code activates after final installment is paid.");
+        }
+
+        return null;
     }
 
     public boolean isQRCodeActivatedForRegistration(Long registrationId) {

@@ -119,9 +119,12 @@ export const validateBudgetInput = (budget = {}) => {
     "participants",
   ];
 
-  return fields.every(
-    (field) => toNumber(budget[field]) >= 0
-  );
+  return fields.every((field) => {
+    const raw = budget[field];
+    if (raw === "" || raw === null || raw === undefined) return false;
+    const num = Number(raw);
+    return Number.isFinite(num) && num >= 0;
+  });
 };
 
 /**

@@ -177,9 +177,10 @@ public class NotificationController {
     }
 
     @PostMapping("/send-test-email")
+    @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN', 'SUPER_ADMIN')")
     @Operation(
             summary = "Send a test email to organizer",
-            description = "Sends a test email with the provided template to the organizer's email address for preview purposes.",
+            description = "Sends a test email with the provided template to the organizer's email address for preview purposes. Only organizers and administrators can use this endpoint.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses({
@@ -197,7 +198,7 @@ public class NotificationController {
             ),
             @ApiResponse(
                     responseCode = "403",
-                    description = "Forbidden - User does not have permission"
+                    description = "Forbidden - User does not have organizer or admin privileges"
             )
     })
     public ResponseEntity<TestEmailResponse> sendTestEmail(

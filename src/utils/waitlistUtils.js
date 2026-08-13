@@ -1,6 +1,7 @@
 
 import { safeJsonParse } from "./safeJsonParse.js";
 import { apiUtils, API_ENDPOINTS } from "../config/api.js";
+import { getApiErrorStatus } from "../config/api/errors.js";
 import { logger } from "./logger.js";
 import { getOrMigrateKey } from "./storageKeyManager.js";
 import { syncSecureStorage } from "./secureStorage.js";
@@ -54,13 +55,13 @@ export const parseCsvWaitlistData = (csvText) => {
         if (char === '"') {
           inQuotes = !inQuotes;
         } else if (char === ',' && !inQuotes) {
-          parsedValues.push(currentValue);
+          parsedValues.push(currentValue.trim());
           currentValue = '';
         } else {
           currentValue += char;
         }
       }
-      parsedValues.push(currentValue); // Add last value
+      parsedValues.push(currentValue.trim()); // Add last value
 
       if (parsedValues.length < 3) {
         throw new Error(`Invalid CSV format in line ${i + 1}: expected at least 3 columns`);
@@ -80,7 +81,19 @@ export const parseCsvWaitlistData = (csvText) => {
       entries.push(entry);
     }
 
-    return entries;
+    // Deduplicate rows by email (case-insensitive) so the same email isn't
+    // sent twice within a single CSV import. Keep the first occurrence.
+    const seenEmails = new Set();
+    const dedupedEntries = [];
+    for (const entry of entries) {
+      const emailKey = (entry.email || '').toLowerCase().trim();
+      if (!seenEmails.has(emailKey)) {
+        seenEmails.add(emailKey);
+        dedupedEntries.push(entry);
+      }
+    }
+
+    return dedupedEntries;
   } catch (error) {
     logger.error('[WaitlistUtils] Failed to parse CSV waitlist data:', error);
     throw new Error(`Failed to parse CSV: ${error.message}`);
@@ -220,7 +233,7 @@ export const importCsvWaitlist = async (eventId, csvText, userId) => {
   } catch (error) {
     logger.error('[WaitlistUtils] Failed to import CSV waitlist:', error);
     
-    if (error?.response?.status === 401 || error?.response?.status === 403) {
+    if (getApiErrorStatus(error) === 401 || getApiErrorStatus(error) === 403) {
       throw error; // Re-throw auth errors
     }
 
@@ -400,7 +413,13 @@ const notifyWaitlistPositionChanges = async (eventId, beforeWaitlist, eventOrTit
 export const getGlobalWaitlist = async (userId) => {
   try {
     const key = getWaitlistStorageKey(userId);
-    const stored = await syncSecureStorage.getItemAsync(key);
+    let stored = await syncSecureStorage.getItemAsync(key);
+    if (!stored) {
+      const raw = syncSecureStorage.getItem(key);
+      if (raw !== null && !raw.includes('"version"')) {
+        stored = raw;
+      }
+    }
     let records = stored ? safeJsonParse(stored, []) : [];
     if (!Array.isArray(records)) records = [];
 
@@ -476,7 +495,7 @@ export const syncWaitlistFromServer = async (eventId, cacheOwnerId) => {
       // Reconcile: replace stale local records for this event with server state
       const records = await getGlobalWaitlist(cacheOwnerId);
       const reconciled = [
-        ...records.filter((r) => r.eventId !== id),
+        ...records.filter((r) => String(r.eventId) !== String(id)),
         ...serverData,
       ];
       await saveGlobalWaitlist(reconciled, cacheOwnerId);
@@ -506,7 +525,7 @@ export const getMyWaitlistEntry = async (eventId) => {
     ? {
         id: data.id,
         waitlistId: data.id,
-        eventId: data.eventId,
+        eventId: parseInt(data.eventId, 10),
         userId: data.userId ?? data.userEmail,
         position: data.position,
         status: String(data.status || "waiting").toLowerCase(),
@@ -526,7 +545,7 @@ export const getEventWaitlist = async (eventId, userId) => {
   const id = parseEventId(eventId);
   const records = await getGlobalWaitlist(userId);
   return records
-    .filter((r) => r.eventId === id && r.status === "waiting")
+    .filter((r) => String(r.eventId) === String(id) && r.status === "waiting")
     .sort((a, b) => parseJoinedAtTime(a.joinedAt) - parseJoinedAtTime(b.joinedAt));
 };
 
@@ -538,13 +557,13 @@ export const getQueuePosition = async (eventId, userId) => {
       return mine.position;
     }
   } catch (error) {
-    if (error?.response?.status === 401 || error?.response?.status === 403) {
+    if (getApiErrorStatus(error) === 401 || getApiErrorStatus(error) === 403) {
       throw error;
     }
     // Fall back to local cache for offline / not-on-waitlist
   }
   const eventWaitlist = await getEventWaitlist(eventId, userId);
-  const index = eventWaitlist.findIndex((r) => r.userId === userId);
+  const index = eventWaitlist.findIndex((r) => String(r.userId) === String(userId));
   return index !== -1 ? index + 1 : -1;
 };
 
@@ -555,7 +574,7 @@ export const addRegistrationToUserStorage = (userId, event) => {
   try {
     const raw = localStorage.getItem(storageKey);
     const current = raw ? safeJsonParse(raw, []) : [];
-    if (!current.some((r) => r.eventId === event.id)) {
+    if (!current.some((r) => String(r.eventId) === String(event.id))) {
       current.push({
         eventId: event.id,
         registeredAt: new Date().toISOString(),
@@ -636,7 +655,7 @@ export const joinWaitlist = async (eventId, user, registrationForm = {}) => {
     }
     throw new Error(response.data?.message || "Server rejected waitlist join");
   } catch (error) {
-    const status = error?.status || error?.response?.status;
+    const status = getApiErrorStatus(error);
     if (status === 409) {
       const serverMessage =
         error?.response?.data?.message ||
@@ -657,7 +676,7 @@ export const joinWaitlist = async (eventId, user, registrationForm = {}) => {
   try {
     const rawRegs = localStorage.getItem(userRegKey);
     const regs = rawRegs ? safeJsonParse(rawRegs, []) : [];
-    if (regs.some((r) => r.eventId === id)) {
+    if (regs.some((r) => String(r.eventId) === String(id))) {
       throw new Error("You are already registered for this event.");
     }
   } catch (e) {
@@ -666,7 +685,7 @@ export const joinWaitlist = async (eventId, user, registrationForm = {}) => {
 
   const records = await getGlobalWaitlist(userId);
   const existing = records.find(
-    (r) => r.userId === userId && r.eventId === id && r.status === "waiting"
+    (r) => String(r.userId) === String(userId) && String(r.eventId) === String(id) && r.status === "waiting"
   );
   if (existing) {
     throw new Error("You are already on the waitlist for this event.");
@@ -728,7 +747,7 @@ export const leaveWaitlist = async (eventId, userId) => {
     if (response.ok || response.status === 204) {
       const records = await getGlobalWaitlist(userId);
       const matchIndex = records.findIndex(
-        (r) => r.userId === userId && r.eventId === id && r.status === "waiting"
+        (r) => String(r.userId) === String(userId) && String(r.eventId) === String(id) && r.status === "waiting"
       );
       if (matchIndex !== -1) {
         records[matchIndex].status = "removed";
@@ -740,7 +759,7 @@ export const leaveWaitlist = async (eventId, userId) => {
       return true;
     }
   } catch (error) {
-    if (error?.response?.status === 401 || error?.response?.status === 403) {
+    if (getApiErrorStatus(error) === 401 || getApiErrorStatus(error) === 403) {
       throw error;
     }
     if (!checkIfOffline(error)) {
@@ -751,7 +770,7 @@ export const leaveWaitlist = async (eventId, userId) => {
 
   const records = await getGlobalWaitlist(userId);
   const matchIndex = records.findIndex(
-    (r) => r.userId === userId && r.eventId === id && r.status === "waiting"
+    (r) => String(r.userId) === String(userId) && String(r.eventId) === String(id) && r.status === "waiting"
   );
   if (matchIndex === -1) {
     throw new Error("No active waitlist record found for this user.");
@@ -768,7 +787,7 @@ export const leaveWaitlist = async (eventId, userId) => {
 const performLocalPromotion = async (record, event, cacheOwnerId) => {
   const records = await getGlobalWaitlist(cacheOwnerId);
   const match = records.find(
-    (r) => r.userId === record.userId && r.eventId === record.eventId && r.status === "waiting"
+    (r) => String(r.userId) === String(record.userId) && String(r.eventId) === String(record.eventId) && r.status === "waiting"
   );
   if (match) {
     match.status = "promoted";
@@ -791,7 +810,7 @@ const performLocalPromotion = async (record, event, cacheOwnerId) => {
 const markPromotionPendingSync = async (record, cacheOwnerId) => {
   const records = await getGlobalWaitlist(cacheOwnerId);
   const match = records.find(
-    (r) => r.userId === record.userId && r.eventId === record.eventId && r.status === "waiting"
+    (r) => String(r.userId) === String(record.userId) && String(r.eventId) === String(record.eventId) && r.status === "waiting"
   );
   if (match) {
     match.promotionPendingSync = true;
@@ -836,7 +855,7 @@ export const promoteRecord = async (record, event, options = {}, cacheOwnerId) =
     // Explicit server rejection
     return false;
   } catch (error) {
-    if (error?.response?.status === 401 || error?.response?.status === 403) {
+    if (getApiErrorStatus(error) === 401 || getApiErrorStatus(error) === 403) {
       throw error;
     }
     if (!checkIfOffline(error)) {
@@ -889,8 +908,8 @@ export const promoteNextUser = async (eventId, eventData = null, cacheOwnerId) =
   }
   const updatedRecord = (await getGlobalWaitlist(cacheOwnerId)).find(
     (r) =>
-      r.userId === nextUserRecord.userId &&
-      r.eventId === nextUserRecord.eventId
+      String(r.userId) === String(nextUserRecord.userId) &&
+      String(r.eventId) === String(nextUserRecord.eventId)
   );
 
   return updatedRecord || null;
@@ -932,7 +951,7 @@ export const organizerRemoveUser = async (eventId, userId, cacheOwnerId) => {
     if (response.ok || response.status === 204) {
       const records = await getGlobalWaitlist(cacheOwnerId);
       const matchIndex = records.findIndex(
-        (r) => r.userId === userId && r.eventId === id && r.status === "waiting"
+        (r) => String(r.userId) === String(userId) && String(r.eventId) === String(id) && r.status === "waiting"
       );
       if (matchIndex !== -1) {
         records[matchIndex].status = "removed_by_organizer";
@@ -948,7 +967,7 @@ export const organizerRemoveUser = async (eventId, userId, cacheOwnerId) => {
       return true;
     }
   } catch (error) {
-    if (error?.response?.status === 401 || error?.response?.status === 403) {
+    if (getApiErrorStatus(error) === 401 || getApiErrorStatus(error) === 403) {
       throw error;
     }
     if (!checkIfOffline(error)) {
@@ -959,7 +978,7 @@ export const organizerRemoveUser = async (eventId, userId, cacheOwnerId) => {
 
   const records = await getGlobalWaitlist(cacheOwnerId);
   const matchIndex = records.findIndex(
-    (r) => r.userId === userId && r.eventId === id && r.status === "waiting"
+    (r) => String(r.userId) === String(userId) && String(r.eventId) === String(id) && r.status === "waiting"
   );
 
   if (matchIndex === -1) {
@@ -986,7 +1005,7 @@ export const getWaitlistAnalytics = async (eventId, cacheOwnerId) => {
   const records = await getGlobalWaitlist(cacheOwnerId);
 
   const eventRecords = records.filter(
-    (record) => record.eventId === id
+    (record) => String(record.eventId) === String(id)
   );
 
   const promotedUsers = eventRecords.filter(

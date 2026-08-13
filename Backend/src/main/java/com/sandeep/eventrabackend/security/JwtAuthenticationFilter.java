@@ -49,7 +49,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
         try {
-            String token = extractTokenFromRequest(request);
+            String headerToken = extractHeaderToken(request);
+            String cookieToken = authCookieHelper.extractToken(request);
+
+            // Token confusion protection: when a token is supplied via BOTH the
+            // Authorization header and the auth cookie, they must resolve to the
+            // same principal. A mismatch means the request is ambiguous/forged.
+            if (StringUtils.hasText(headerToken) && StringUtils.hasText(cookieToken)
+                    && !tokensResolveToSameUser(headerToken, cookieToken)) {
+                logger.warn("Rejected request with mismatched header/cookie JWT identities");
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("Conflicting token identities");
+                return;
+            }
+
+            String token = StringUtils.hasText(headerToken) ? headerToken : cookieToken;
 
             if (StringUtils.hasText(token) && tokenBlacklistService.isBlacklisted(token)) {
                 if (tokenRefreshQueueHandler != null && tokenRefreshQueueHandler.isWithinGracePeriod(token)) {
@@ -65,7 +79,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
                 if (!jwtTokenProvider.isAccessToken(token)) {
                     logger.warn("Rejected non-access JWT on API request");
-                    filterChain.doFilter(request, response);
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.getWriter().write("Access token required");
                     return;
                 }
                 String username = jwtTokenProvider.getUsernameFromToken(token);
@@ -105,12 +120,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    private String extractTokenFromRequest(HttpServletRequest request) {
+    private String extractHeaderToken(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
         }
-        return authCookieHelper.extractToken(request);
+        return null;
+    }
+
+    private boolean tokensResolveToSameUser(String token1, String token2) {
+        if (!jwtTokenProvider.validateToken(token1) || !jwtTokenProvider.validateToken(token2)) {
+            return false;
+        }
+        if (!jwtTokenProvider.isAccessToken(token1) || !jwtTokenProvider.isAccessToken(token2)) {
+            return false;
+        }
+        String username1 = jwtTokenProvider.getUsernameFromToken(token1);
+        String username2 = jwtTokenProvider.getUsernameFromToken(token2);
+        return username1 != null && username1.equals(username2);
     }
 
     public boolean isTokenIssuedBeforePasswordUpdate(Date tokenIssuedAt, Date passwordUpdatedAt) {
