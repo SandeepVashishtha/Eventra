@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useActionState } from "react";
+import { useState, useEffect, useCallback, useMemo, useActionState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 // Calendar URL helpers — import from the timezone-aware utility instead of
 // using the old inline implementations (which were UTC-blind and hardcoded
@@ -11,7 +11,6 @@ import {
   getWebcalSubscriptionUrl,
 } from "utils/calendarUrlUtils";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
-import hackathonsData from "../Hackathons/hackathonMockData.json";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import {
@@ -77,6 +76,19 @@ const generateSecureUUID = () => {
     );
   }
   throw new Error("Secure random number generation is not supported in this browser.");
+};
+
+// Build a STABLE idempotency key for the same event+user+payload so that
+// repeated submits (online or offline) collapse into a single action. This is
+// what lets the offline queue dedupe REGISTER_EVENT / JOIN_WAITLIST per
+// event+user instead of enqueuing duplicates when the user taps submit twice.
+const makeRegistrationIdempotencyKey = (actionType, eventId, userId, payload) => {
+  const payloadString = JSON.stringify(payload || {});
+  let hash = 0;
+  for (let i = 0; i < payloadString.length; i += 1) {
+    hash = (hash * 31 + payloadString.charCodeAt(i)) | 0;
+  }
+  return `${String(actionType).toLowerCase()}-${eventId}-${userId}-${(hash >>> 0)}`;
 };
 
 const getRegistrationFailureMessage = (error) => {
@@ -154,9 +166,15 @@ const EventRegistration = () => {
     priority: "Medium",
     showProfileInAttendeeDirectory: false,
   });
+
+  // Keep a stable ref to the latest setValues so it can be used inside the
+  // event-loading effect without being listed as an unstable dependency.
+  const setValuesRef = useRef(setValues);
+  setValuesRef.current = setValues;
   // Load event data from backend API
   useEffect(() => {
     let isCancelled = false;
+    const controller = new AbortController();
 
     const applyLoadedEvent = (nextEvent) => {
       if (!isCancelled) {
@@ -166,7 +184,7 @@ const EventRegistration = () => {
 
     const prefillAuthenticatedUser = () => {
       if (!isCancelled && isAuthenticated() && user) {
-        setValues((prev) => ({
+        setValuesRef.current((prev) => ({
           ...prev,
           fullName: user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim() || "",
           email: user.email || "",
@@ -177,28 +195,10 @@ const EventRegistration = () => {
     const loadEvent = async () => {
       setLoading(true);
 
-      const isHackathonPath = location.pathname.startsWith("/register");
-      if (isHackathonPath) {
-        const foundMock = hackathonsData.find((item) => String(item.id) === String(eventId));
-        if (foundMock) {
-          applyLoadedEvent({
-            ...foundMock,
-            date: foundMock.startDate,
-            time: "10:00 AM",
-            image:
-              "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=800",
-            attendees: foundMock.participants,
-            maxAttendees: 1500,
-            status: foundMock.status,
-          });
-          if (!isCancelled) setLoading(false);
-          prefillAuthenticatedUser();
-          return;
-        }
-      }
-
       try {
-        const response = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
+        const response = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId), {
+          signal: controller.signal,
+        });
 
         if (response.status === 200 && response.data) {
           if (isCancelled) return;
@@ -214,7 +214,7 @@ const EventRegistration = () => {
         }
       } catch (error) {
         if (isCancelled) return;
-        console.error("Failed to load event details:", error);
+        logger.error("Failed to load event details:", error);
         const cached = getCachedEventDetail(eventId);
         if (cached?.event) {
           applyLoadedEvent(
@@ -233,20 +233,6 @@ const EventRegistration = () => {
           );
           return;
         }
-
-        const foundMock = hackathonsData.find((item) => String(item.id) === String(eventId));
-        if (foundMock) {
-          applyLoadedEvent({
-            ...foundMock,
-            date: foundMock.startDate,
-            time: "10:00 AM",
-            image:
-              "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=800",
-            attendees: foundMock.participants,
-            maxAttendees: 1500,
-            status: foundMock.status,
-          });
-        }
       } finally {
         if (!isCancelled) setLoading(false);
       }
@@ -255,9 +241,10 @@ const EventRegistration = () => {
     loadEvent();
     return () => {
       isCancelled = true;
+      controller.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventId, user, isAuthenticated, setValues, location.pathname]);
+  }, [eventId, user, isAuthenticated]);
 
   const refreshEventAvailability = useCallback(async (id) => {
     try {
@@ -334,7 +321,11 @@ const EventRegistration = () => {
 
     setShowConflictModal(false);
 
-    // Re-check capacity immediately before the POST (TOCTOU)
+    // Re-check capacity immediately before the POST (TOCTOU) using a SINGLE
+    // source of truth: the fresh capacity-check response. refreshEventAvailability
+    // already merges that response into the local `event` state, so `isEventFull`
+    // (derived from `event`) stays consistent with this check and the user is
+    // routed to the correct endpoint (waitlist when freshly full, register otherwise).
     let isFreshlyFull = false;
     try {
       const latestAvailability = await refreshEventAvailability(eventId);
@@ -355,7 +346,7 @@ const EventRegistration = () => {
         const pos = await getQueuePosition(eventId, user.id);
         toast.success(t("eventRegistration.toastWaitlistSuccess"));
         clearSession();
-        return { success: true, error: null, waitlistPosition: pos };
+        return { success: true, error: null, waitlistPosition: pos, onWaitlist: true };
       } catch (err) {
         toast.error(err.message || t("eventRegistration.toastRegistrationError"));
         return { success: false, error: err.message, waitlistPosition: -1 };
@@ -366,7 +357,14 @@ const EventRegistration = () => {
       ? API_ENDPOINTS.EVENTS.REGISTER(eventId)
       : `/api/events/${eventId}/register`;
 
-    const idempotencyKey = generateSecureUUID();
+    // Stable idempotency key for the same event+user+payload so repeated
+    // submits (online or offline) collapse into a single registration.
+    const idempotencyKey = makeRegistrationIdempotencyKey(
+      "REGISTER_EVENT",
+      eventId,
+      user.id,
+      formData
+    );
 
     // The selected seat travels with the registration so the server can
     // persist and atomically reserve it (format elementId:seatIndex).
@@ -395,7 +393,7 @@ const EventRegistration = () => {
       toast.success(t("eventRegistration.toastRegistrationSuccess"));
       addRegistration(event, formData, registrationId, qrToken);
       clearSession();
-      return { success: true, error: null, waitlistPosition: -1 };
+      return { success: true, error: null, waitlistPosition: -1, onWaitlist: false };
     } catch (error) {
       const failureMessage = getRegistrationFailureMessage(error);
 
@@ -407,6 +405,7 @@ const EventRegistration = () => {
       const isAlreadyRegistered = failureMessage === "You are already registered for this event.";
 
       if (isOfflineFailure) {
+        const actionType = isFreshlyFull ? "JOIN_WAITLIST" : "REGISTER_EVENT";
         const payload = isFreshlyFull
           ? {
               userId: user.id || user.email,
@@ -427,12 +426,21 @@ const EventRegistration = () => {
               showProfileInAttendeeDirectory: Boolean(formData.showProfileInAttendeeDirectory),
             };
 
+        // Stable idempotency key scoped to event+user+payload so repeated
+        // offline taps collapse into a single queued action.
+        const queueIdempotencyKey = makeRegistrationIdempotencyKey(
+          actionType,
+          eventId,
+          user.id,
+          payload
+        );
+
         const success = await pushToQueue(
           {
-            actionType: isFreshlyFull ? "JOIN_WAITLIST" : "REGISTER_EVENT",
+            actionType,
             endpoint,
             eventId: parseInt(eventId, 10),
-            idempotencyKey,
+            idempotencyKey: queueIdempotencyKey,
             payload,
           },
           user.id
@@ -448,7 +456,7 @@ const EventRegistration = () => {
           toast.warning(t("eventRegistration.toastNetworkQueued"), {
             autoClose: 4000,
           });
-          return { success: true, error: null, waitlistPosition: -1 };
+          return { success: true, error: null, waitlistPosition: -1, onWaitlist: isFreshlyFull };
         } else {
           toast.error(t("eventRegistration.toastOfflineQueueFull"));
           return {
@@ -472,7 +480,7 @@ const EventRegistration = () => {
         addRegistration(event, formData);
         clearSession();
         toast.info(failureMessage);
-        return { success: true, error: null, waitlistPosition: -1 };
+        return { success: true, error: null, waitlistPosition: -1, onWaitlist: isFreshlyFull };
       }
 
       toast.error(failureMessage);
@@ -519,8 +527,8 @@ const EventRegistration = () => {
             const records = await getGlobalWaitlist(user.id);
             const onWaitlist = records.some(
               (r) =>
-                r.userId === user.id &&
-                r.eventId === parseInt(eventId, 10) &&
+                String(r.userId) === String(user.id) &&
+                String(r.eventId) === String(eventId) &&
                 r.status === "waiting"
             );
             if (onWaitlist) {
@@ -566,7 +574,11 @@ const EventRegistration = () => {
     [navigate]
   );
 
-  const isEventFull = event ? event.attendees >= event.maxAttendees : false;
+  const isEventFull = event
+    ? typeof event.isFull === "boolean"
+      ? event.isFull
+      : event.attendees >= event.maxAttendees
+    : false;
   const status = getEventStatus(event);
   // const isPastEvent = status === "past" || status === "ended";
   const isCancelledEvent = status === "cancelled";
@@ -703,12 +715,12 @@ const EventRegistration = () => {
           </motion.div>
 
           <h2 className="text-3xl font-extrabold text-transparent bg-clip-text bg-linear-to-t from-indigo-600 to-pink-600 dark:from-indigo-400 dark:to-pink-400 mb-2">
-            {isEventFull
+            {actionState?.onWaitlist
               ? t("eventRegistration.successWaitlistTitle")
               : t("eventRegistration.successConfirmedTitle")}
           </h2>
-          <p className="text-gray-500 dark:text-gray-200 text-sm mb-6 max-w-md mx-auto leading-relaxed">
-            {isEventFull
+          <p className="text-slate-600 dark:text-slate-400 text-sm mb-6 max-w-sm mx-auto">
+            {actionState?.onWaitlist
               ? t("eventRegistration.successWaitlistDesc", { position: waitlistPosition })
               : t("eventRegistration.successConfirmedDesc")}
           </p>

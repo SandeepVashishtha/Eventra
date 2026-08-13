@@ -1,5 +1,6 @@
 package com.sandeep.eventrabackend.controller;
 
+import com.eventra.service.QrCodeValidationService;
 import com.sandeep.eventrabackend.model.Event;
 import com.sandeep.eventrabackend.model.EventRegistration;
 import com.sandeep.eventrabackend.model.TicketCheckIn;
@@ -44,6 +45,7 @@ public class TicketController {
     private final EventRegistrationRepository eventRegistrationRepository;
     private final EventRepository eventRepository;
     private final TicketCheckInRepository ticketCheckInRepository;
+    private final QrCodeValidationService qrCodeValidationService;
 
     @PostMapping("/validate")
     @Operation(summary = "Validate a ticket",
@@ -88,6 +90,12 @@ public class TicketController {
         boolean alreadyCheckedIn =
                 ticketCheckInRepository.existsByEventIdAndRegistrationId(eventId, registrationId);
 
+        QrCodeValidationService.QrValidationResult qrResult = qrCodeValidationService
+                .validateQrCodeWithRegistrationId(registrationId, reg.getStatus(), event.getStatus(), null);
+        if (!qrResult.isValid()) {
+            return ResponseEntity.ok(result(false, displayName(reg), registrationId, alreadyCheckedIn, qrResult.message()));
+        }
+
         return ResponseEntity.ok(result(true, displayName(reg), registrationId, alreadyCheckedIn,
                 alreadyCheckedIn ? "This ticket has already been checked in." : "Ticket is valid"));
     }
@@ -131,6 +139,14 @@ public class TicketController {
         if ("CANCELLED".equals(event.getStatus()) || "COMPLETED".equals(event.getStatus())) {
             return ResponseEntity.ok(result(false, null, registrationId, false,
                     "Event status does not allow check-in."));
+        }
+
+        QrCodeValidationService.QrValidationResult qrResult = qrCodeValidationService
+                .validateQrCodeWithRegistrationId(registrationId, reg.getStatus(), event.getStatus(), null);
+        if (!qrResult.isValid()) {
+            return ResponseEntity.ok(result(false, displayName(reg), registrationId,
+                    ticketCheckInRepository.existsByEventIdAndRegistrationId(eventId, registrationId),
+                    qrResult.message()));
         }
 
         if (ticketCheckInRepository.existsByEventIdAndRegistrationId(eventId, registrationId)) {

@@ -43,7 +43,7 @@ const EventCreation = () => {
   const location = useLocation();
 
   const [currentStep, setCurrentStep] = useState(CREATION_STEPS.FORM);
-  const [formData, setFormData] = useState(initialFormData);
+  const [formData, setFormData] = useState(initialFormData());
   const { isDirty: hasUnsavedChanges } = useFormDirty(formData);
   const [errors, setErrors] = useState({});
   const [newTag, setNewTag] = useState("");
@@ -339,7 +339,7 @@ const EventCreation = () => {
   }, [formData]);
 
   const resetForm = () => {
-    setFormData(initialFormData);
+    setFormData(initialFormData());
     setErrors({});
     localStorage.removeItem(DRAFT_KEY);
     setNewTag("");
@@ -502,7 +502,7 @@ const EventCreation = () => {
                 handleInputChange={handleInputChange}
                 errors={errors}
                 prefersReducedMotion={prefersReducedMotion}
-                todayString={todayString}
+                todayString={todayString()}
               />
               {/* Event Duration Type */}
               <motion.div
@@ -585,7 +585,7 @@ const EventCreation = () => {
                       name="startDate"
                       value={formData.startDate}
                       onChange={handleInputChange}
-                      min={todayString}
+                      min={todayString()}
                       className={`w-full border ${
                         errors.startDate ? "border-red-500" : "border-gray-300 dark:border-gray-600"
                       } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
@@ -605,7 +605,7 @@ const EventCreation = () => {
                       name="endDate"
                       value={formData.endDate}
                       onChange={handleInputChange}
-                      min={formData.startDate || todayString}
+                      min={formData.startDate || todayString()}
                       className={`w-full border ${
                         errors.endDate ? "border-red-500" : "border-gray-300 dark:border-gray-600"
                       } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
@@ -675,7 +675,7 @@ const EventCreation = () => {
                       name="date"
                       value={formData.date}
                       onChange={handleInputChange}
-                      min={todayString}
+                      min={todayString()}
                       className={`w-full border ${
                         errors.date ? "border-red-500" : "border-gray-300 dark:border-gray-600"
                       } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
