@@ -1,4 +1,6 @@
 
+import { hexToRgb } from './hex-to-rgb.js';
+
 /**
  * adds a brightness helper.
  */
