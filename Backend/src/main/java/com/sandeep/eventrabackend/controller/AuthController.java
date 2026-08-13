@@ -117,12 +117,6 @@ public class AuthController {
             HttpServletRequest request) {
         try {
             String refreshToken = body != null ? body.getRefreshToken() : null;
-            if (refreshToken == null || refreshToken.isBlank()) {
-                String auth = request.getHeader("Authorization");
-                if (auth != null && auth.startsWith("Bearer ")) {
-                    refreshToken = auth.substring(7).trim();
-                }
-            }
             AuthResponse response = authService.refresh(refreshToken);
             return withAuthCookie(ResponseEntity.ok(), response);
         } catch (Exception ex) {
