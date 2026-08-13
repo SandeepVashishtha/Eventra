@@ -78,6 +78,27 @@ describe("validationApi", () => {
     });
   });
 
+  it("returns duplicate email copy for 409 conflicts", async () => {
+    const fetchImpl = jest.fn(async () => {
+      const error = new Error("Conflict");
+      error.status = 409;
+      error.data = { message: "Duplicate email" };
+      throw error;
+    });
+
+    const result = await requestValidation("/api/validate/email/a", {
+      fetchImpl,
+      retries: 0,
+      invalidMessage: "This email is already registered. Please log in.",
+    });
+
+    expect(result).toMatchObject({
+      isValid: false,
+      status: 409,
+      message: "This email is already registered. Please log in.",
+    });
+  });
+
   it("retries transient failures before returning success", async () => {
     const fetchImpl = jest
       .fn()

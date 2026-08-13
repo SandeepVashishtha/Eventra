@@ -226,6 +226,12 @@ const processInterestBatch = () => {
       };
     });
 
+    // Keep interests size reasonable
+    if (interests.length > 50) {
+      interests = interests.slice(-50);
+      modified = true;
+    }
+
     if (modified) {
       // Sort interests by weight/score and apply LRU cap
       const sortedInterests = Array.from(existingInterests).sort((a, b) => {
