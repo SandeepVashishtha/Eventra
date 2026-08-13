@@ -1,5 +1,13 @@
 /**
- * Dynamic Ticket QR Payload & TOTP Rotating Token Generator (#13903)
+ * Dynamic Ticket QR Payload (#13903)
+ *
+ * The QR value encodes ONLY the opaque, server-issued ticket identifier
+ * (qrToken / registrationId). A rotating token derived from a keyless hash of
+ * public data (ticketId + timestamp) is trivially recomputable by anyone who
+ * knows the ticketId, so it offered no anti-fraud protection. Because the
+ * client bundle cannot hold a server-side secret, no client-side TOTP is
+ * generated; ticket validity is enforced server-side at scan time via
+ * `validateTicket` in TicketScanner.
  */
 
 export const getTicketHolderName = (user) =>
@@ -13,29 +21,14 @@ export const getTotpTimeWindow = (stepSeconds = 15) => {
 };
 
 /**
- * Build dynamic rotating QR payload with time-bound TOTP HMAC token payload.
+ * Build the QR payload for a ticket. Returns only the opaque ticket identifier
+ * so the encoded value matches the scanner's strict single-key contract
+ * (issue #11073) and carries no forgeable claims.
  */
-export const buildTicketQrPayload = ({ registration, serialNumber, stepSeconds = 15 }) => {
+export const buildTicketQrPayload = ({ registration, serialNumber }) => {
   const ticketId = registration?.qrToken || registration?.registrationId || serialNumber || null;
   if (!ticketId) return null;
-
-  const timeWindow = getTotpTimeWindow(stepSeconds);
-  const rawData = `${ticketId}:${timeWindow}`;
-
-  // Simple deterministic hash simulation for TOTP QR token
-  let hash = 0;
-  for (let i = 0; i < rawData.length; i++) {
-    hash = (hash << 5) - hash + rawData.charCodeAt(i);
-    hash |= 0;
-  }
-  const totpToken = Math.abs(hash).toString(16).substring(0, 8);
-
-  return {
-    ticketId,
-    totpToken,
-    timeWindow,
-    timestamp: Date.now(),
-  };
+  return { ticketId };
 };
 
 export const buildOpaqueTicketQrPayload = ({ registration, serialNumber }) => {
