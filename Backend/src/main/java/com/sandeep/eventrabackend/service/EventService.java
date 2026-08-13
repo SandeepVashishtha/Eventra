@@ -479,6 +479,7 @@ public class EventService {
                 event.setEventDate(request.getEventDate());
                 event.setCapacity(request.getCapacity());
                 event.setImageUrl(request.getImageUrl());
+                validateEventTags(request.getTags());
                 event.setCategory(request.getCategory());
                 if (request.getCategories() != null) {
                     event.setCategories(new HashSet<>(request.getCategories()));
@@ -545,6 +546,7 @@ public class EventService {
                 if (request.getImageUrl() != null) {
                         event.setImageUrl(request.getImageUrl());
                 }
+                validateEventTags(request.getTags());
                 if (request.getCategory() != null) {
                         event.setCategory(request.getCategory());
                 }
@@ -1517,6 +1519,15 @@ public class EventService {
                                 .refundPolicy(event.getRefundPolicy())
                                 .refundPercent(event.getRefundPercent())
                                 .build();
+        }
+
+        private void validateEventTags(java.util.Set<String> tags) {
+                if (tags == null) return;
+                for (String tag : tags) {
+                        if (tag == null || tag.length() < 2 || tag.length() > 30 || !tag.matches("^[a-zA-Z0-9-]+$")) {
+                                throw new IllegalArgumentException("Invalid tag format: " + tag);
+                        }
+                }
         }
 
         /**
