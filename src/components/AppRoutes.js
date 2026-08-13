@@ -7,6 +7,7 @@ import ProtectedRoute from "./auth/ProtectedRoute";
 
 const UserAchievements = lazy(() => import("../Pages/UserAchievements"));
 const NotFoundPage = lazy(() => import("../Pages/NotFoundPage"));
+const GoogleSheetsCallback = lazy(() => import("./auth/GoogleSheetsCallback"));
 
 const RouteFallback = () => (
   <div className="flex min-h-[60vh] items-center justify-center bg-white dark:bg-slate-950">
@@ -46,6 +47,9 @@ export default function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        
+        {/* Google Sheets OAuth callback route - public access */}
+        <Route path="/google-sheets-callback" element={<GoogleSheetsCallback />} />
 
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
