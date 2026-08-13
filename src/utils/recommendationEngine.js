@@ -139,8 +139,11 @@ export const applyTimeDecay = (timestamp, halfLifeDays = DEFAULT_HALF_LIFE_DAYS)
   const timeMs = new Date(timestamp).getTime();
   if (Number.isNaN(timeMs)) return 1.0;
 
+  const safeHalfLife = Number.isFinite(halfLifeDays) && halfLifeDays > 0
+    ? halfLifeDays
+    : DEFAULT_HALF_LIFE_DAYS;
   const ageInDays = Math.max(0, (Date.now() - timeMs) / (1000 * 60 * 60 * 24));
-  const lambda = Math.LN2 / halfLifeDays;
+  const lambda = Math.LN2 / safeHalfLife;
   return Math.exp(-lambda * ageInDays);
 };
 
