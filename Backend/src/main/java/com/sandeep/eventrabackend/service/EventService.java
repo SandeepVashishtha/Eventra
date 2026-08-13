@@ -105,6 +105,22 @@ public class EventService {
                         "title", "title",
                         "id", "id");
 
+        /**
+         * Allowlist for the public listing {@code status} filter. Restricts the
+         * public endpoint to timing/lifecycle labels that are safe to expose so
+         * callers cannot request internal states (e.g. DRAFT, ARCHIVED, INTERNAL)
+         * via the filter.
+         */
+        private static final Set<String> ALLOWED_PUBLIC_STATUSES = Set.of(
+                        "PUBLISHED", "UPCOMING", "ONGOING", "COMPLETED",
+                        "LIVE", "PAST", "ENDED", "CANCELLED", "CANCELED", "SCHEDULED");
+
+        /** Maximum page index accepted by the public listing (DoS guard). */
+        private static final int MAX_EVENTS_PAGE = 1000;
+
+        /** Maximum length (chars) of the public listing search term. */
+        private static final int MAX_EVENTS_SEARCH_LENGTH = 200;
+
         private final EventRepository eventRepository;
         private final EventRegistrationRepository eventRegistrationRepository;
         private final EventWaitlistRepository eventWaitlistRepository;
@@ -224,7 +240,24 @@ public class EventService {
                         String search,
                         List<String> statuses,
                         String sort) {
-                int safePage = Math.max(0, page);
+                if (statuses != null) {
+                        for (String raw : statuses) {
+                                if (raw == null) {
+                                        continue;
+                                }
+                                String status = raw.trim().toUpperCase(Locale.ROOT);
+                                if (!status.isEmpty() && !ALLOWED_PUBLIC_STATUSES.contains(status)) {
+                                        throw new IllegalArgumentException(
+                                                        "Invalid status filter '" + raw + "'. Allowed values: "
+                                                                        + String.join(", ", ALLOWED_PUBLIC_STATUSES));
+                                }
+                        }
+                }
+                if (search != null && search.length() > MAX_EVENTS_SEARCH_LENGTH) {
+                        throw new IllegalArgumentException(
+                                        "Search term must not exceed " + MAX_EVENTS_SEARCH_LENGTH + " characters");
+                }
+                int safePage = Math.min(Math.max(0, page), MAX_EVENTS_PAGE);
                 int safeSize = (size <= 0) ? 20 : Math.min(size, 100);
                 Pageable pageable = PageRequest.of(safePage, safeSize, resolveSort(sort));
                 Specification<Event> spec = EventSpecifications.publicListing(search, statuses);
