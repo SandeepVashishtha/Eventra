@@ -76,7 +76,14 @@ const _rescueFromLocalStorage = () => {
 // ---------------------------------------------------------------------------
 // Internal: notify the UI that a schema upgrade occurred
 // ---------------------------------------------------------------------------
+let _upgradeEventDispatched = false;
+
 const _dispatchUpgradeEvent = (rescuedCount) => {
+  // Guard against double-dispatch (defense-in-depth for #16163): the
+  // onupgradeneeded handler must surface at most one migration toast.
+  if (_upgradeEventDispatched) return;
+  _upgradeEventDispatched = true;
+
   const message =
     rescuedCount > 0
       ? `IndexedDB schema upgraded. ${rescuedCount} queued action(s) were safely migrated.`
@@ -109,6 +116,10 @@ const openDB = () => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
 
     request.onupgradeneeded = (e) => {
+      // Reset the dispatch guard so each distinct schema upgrade can emit
+      // exactly one migration notification.
+      _upgradeEventDispatched = false;
+
       const db = e.target.result;
       const oldVersion = e.oldVersion;
       const transaction = e.target.transaction;
@@ -198,9 +209,6 @@ const openDB = () => {
         newStore.createIndex("by_userId", "userId", { unique: false });
         newStore.createIndex("by_priority", "priority", { unique: false });
       }
-
-      // Step 4: Dispatch upgrade event
-      _dispatchUpgradeEvent(rescuedItems.length);
     };
 
     request.onsuccess = (e) => resolve(e.target.result);
