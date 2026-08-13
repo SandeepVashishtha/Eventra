@@ -84,7 +84,7 @@ public class EventStreamService {
         return emitter;
     }
 
-    public void publish(String topic, String eventName, Object payload) {
+    public void publish(String topic, Long eventId, String eventName, Object payload) {
         String normalized = normalizeTopic(topic);
         CopyOnWriteArrayList<SseEmitter> emitters = emittersByTopic.get(normalized);
         if (emitters == null || emitters.isEmpty()) {
@@ -92,6 +92,10 @@ public class EventStreamService {
         }
 
         for (SseEmitter emitter : emitters) {
+            Long filter = emitterEventFilters.get(emitter);
+            if (filter != null && !filter.equals(eventId)) {
+                continue;
+            }
             try {
                 emitter.send(SseEmitter.event().name(eventName).data(payload));
             } catch (IOException ex) {
