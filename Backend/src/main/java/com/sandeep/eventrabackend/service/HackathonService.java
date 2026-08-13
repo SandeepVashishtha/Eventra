@@ -75,6 +75,9 @@ public class HackathonService {
 
         // FIX (#14532): reject inverted date ranges on create, same as update.
         validateDateRanges(request.getStartDate(), request.getEndDate(), request.getRegistrationDeadline());
+        if (request.getTitle() != null && (request.getTitle().trim().length() < 3 || request.getTitle().trim().length() > 100)) {
+            throw new IllegalArgumentException("Title must be between 3 and 100 characters.");
+        }
         if (request.getDescription() != null && (request.getDescription().trim().length() < 10 || request.getDescription().trim().length() > 2000)) {
             throw new IllegalArgumentException("Description must be between 10 and 2000 characters.");
         }
@@ -117,13 +120,21 @@ public class HackathonService {
 
         // FIX (#14532): shared chronological validation, null-safe for partial updates.
         validateDateRanges(request.getStartDate(), request.getEndDate(), request.getRegistrationDeadline());
+        if (request.getTitle() != null && (request.getTitle().trim().length() < 3 || request.getTitle().trim().length() > 100)) {
+            throw new IllegalArgumentException("Title must be between 3 and 100 characters.");
+        }
         if (request.getDescription() != null && (request.getDescription().trim().length() < 10 || request.getDescription().trim().length() > 2000)) {
             throw new IllegalArgumentException("Description must be between 10 and 2000 characters.");
         }
 
         // FIX (#14532): partial update — only apply fields present in the request,
         // so a single-field payload cannot wipe the other columns.
-        if (request.getTitle() != null) hackathon.setTitle(request.getTitle());
+        if (request.getTitle() != null) {
+            if (request.getTitle().trim().length() < 3 || request.getTitle().trim().length() > 100) {
+                throw new IllegalArgumentException("Title must be between 3 and 100 characters.");
+            }
+            hackathon.setTitle(request.getTitle());
+        }
         if (request.getDescription() != null) {
             if (request.getDescription().trim().length() < 10 || request.getDescription().trim().length() > 2000) {
                 throw new IllegalArgumentException("Description must be between 10 and 2000 characters.");
