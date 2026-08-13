@@ -32,7 +32,310 @@ const NEGATIVE_CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutes for failed requests
 /** @type {Map<string, { data: object | Error, fetchedAt: number, isNegative: boolean }>} */
 const profileCache = new Map();
 
-/** @type {Map<string, Promise<object>>} */
+// ============================================================================
+// SECTION 4: GITHUB RATE LIMIT TRACKER
+// ============================================================================
+
+class RateLimitTracker {
+  constructor() {
+    this.limit = 60;
+    this.remaining = 60;
+    this.resetEpochSeconds = 0;
+    this.isPaused = false;
+  }
+
+  updateFromHeaders(headers) {
+    if (!headers) return;
+
+    const limitHeader = headers.get("X-RateLimit-Limit");
+    const remainingHeader = headers.get("X-RateLimit-Remaining");
+    const resetHeader = headers.get("X-RateLimit-Reset");
+
+    if (limitHeader) this.limit = parseInt(limitHeader, 10);
+    if (remainingHeader) this.remaining = parseInt(remainingHeader, 10);
+    if (resetHeader) this.resetEpochSeconds = parseInt(resetHeader, 10);
+
+    if (this.remaining <= CONFIG.RATE_LIMIT_SAFETY_MARGIN) {
+      this.isPaused = true;
+      telemetry.recordRateLimit();
+    } else {
+      this.isPaused = false;
+    }
+  }
+
+  canMakeRequest() {
+    const nowEpochSeconds = Math.floor(Date.now() / 1000);
+    if (this.resetEpochSeconds > 0 && nowEpochSeconds >= this.resetEpochSeconds) {
+      // Reset period expired; assume restored quota
+      this.remaining = this.limit;
+      this.isPaused = false;
+      return true;
+    }
+    return this.remaining > CONFIG.RATE_LIMIT_SAFETY_MARGIN;
+  }
+
+  getWaitTimeMs() {
+    const nowEpochSeconds = Math.floor(Date.now() / 1000);
+    if (this.resetEpochSeconds <= nowEpochSeconds) return 0;
+    return (this.resetEpochSeconds - nowEpochSeconds) * 1000;
+  }
+
+  getState() {
+    return {
+      limit: this.limit,
+      remaining: this.remaining,
+      resetEpochSeconds: this.resetEpochSeconds,
+      isPaused: this.isPaused,
+      resetDate: new Date(this.resetEpochSeconds * 1000).toISOString(),
+    };
+  }
+}
+
+export const rateLimitTracker = new RateLimitTracker();
+
+// ============================================================================
+// SECTION 5: L2 PERSISTENT INDEXEDDB STORAGE ADAPTER
+// ============================================================================
+
+class L2IndexedDBAdapter {
+  constructor() {
+    this.dbPromise = null;
+    this.isSupported =
+      typeof window !== "undefined" && "indexedDB" in window;
+  }
+
+  async getDB() {
+    if (!this.isSupported) return null;
+    if (this.dbPromise) return this.dbPromise;
+
+    this.dbPromise = new Promise((resolve, reject) => {
+      try {
+        const request = window.indexedDB.open(
+          CONFIG.L2_DB_NAME,
+          1
+        );
+
+        request.onupgradeneeded = (event) => {
+          const db = event.target.result;
+          if (!db.objectStoreNames.contains(CONFIG.L2_STORE_NAME)) {
+            const store = db.createObjectStore(CONFIG.L2_STORE_NAME, {
+              keyPath: "username",
+            });
+            store.createIndex("fetchedAt", "fetchedAt", { unique: false });
+          }
+        };
+
+        request.onsuccess = (event) => resolve(event.target.result);
+        request.onerror = (event) => {
+          console.warn("[L2Cache] Failed to open IndexedDB:", event.target.error);
+          resolve(null);
+        };
+      } catch (err) {
+        console.warn("[L2Cache] IndexedDB initialization exception:", err);
+        resolve(null);
+      }
+    });
+
+    return this.dbPromise;
+  }
+
+  async get(username) {
+    const db = await this.getDB();
+    if (!db) return null;
+
+    return new Promise((resolve) => {
+      try {
+        const transaction = db.transaction(CONFIG.L2_STORE_NAME, "readonly");
+        const store = transaction.objectStore(CONFIG.L2_STORE_NAME);
+        const request = store.get(username.toLowerCase());
+
+        request.onsuccess = () => {
+          const result = request.result;
+          if (!result) return resolve(null);
+
+          // Check expiration
+          const ttl = result.isError ? CONFIG.L1_ERROR_TTL_MS : CONFIG.L1_TTL_MS;
+          if (Date.now() - result.fetchedAt > ttl) {
+            this.delete(username); // Async eviction
+            return resolve(null);
+          }
+
+          resolve(result);
+        };
+
+        request.onerror = () => resolve(null);
+      } catch {
+        resolve(null);
+      }
+    });
+  }
+
+  async set(username, data, isError = false) {
+    const db = await this.getDB();
+    if (!db) return;
+
+    return new Promise((resolve) => {
+      try {
+        const transaction = db.transaction(CONFIG.L2_STORE_NAME, "readwrite");
+        const store = transaction.objectStore(CONFIG.L2_STORE_NAME);
+        const entry = {
+          username: username.toLowerCase(),
+          data,
+          fetchedAt: Date.now(),
+          isError,
+        };
+
+        const request = store.put(entry);
+        request.onsuccess = () => resolve(true);
+        request.onerror = () => resolve(false);
+      } catch {
+        resolve(false);
+      }
+    });
+  }
+
+  async delete(username) {
+    const db = await this.getDB();
+    if (!db) return;
+
+    try {
+      const transaction = db.transaction(CONFIG.L2_STORE_NAME, "readwrite");
+      const store = transaction.objectStore(CONFIG.L2_STORE_NAME);
+      store.delete(username.toLowerCase());
+    } catch {}
+  }
+
+  async clear() {
+    const db = await this.getDB();
+    if (!db) return;
+
+    try {
+      const transaction = db.transaction(CONFIG.L2_STORE_NAME, "readwrite");
+      const store = transaction.objectStore(CONFIG.L2_STORE_NAME);
+      store.clear();
+    } catch {}
+  }
+}
+
+const l2Cache = new L2IndexedDBAdapter();
+
+// ============================================================================
+// SECTION 6: L1 IN-MEMORY LRU CACHE MANAGER
+// ============================================================================
+
+class L1MemoryLRUCache {
+  constructor(capacity = CONFIG.L1_MAX_CAPACITY) {
+    this.capacity = capacity;
+    /** @type {Map<string, { data: object, fetchedAt: number, isError: boolean }>} */
+    this.cache = new Map();
+  }
+
+  get(username) {
+    if (!username) return null;
+    const key = username.trim().toLowerCase();
+    const entry = this.cache.get(key);
+
+    if (!entry) return null;
+
+    const ttl = entry.isError ? CONFIG.L1_ERROR_TTL_MS : CONFIG.L1_TTL_MS;
+    const isExpired = Date.now() - entry.fetchedAt > ttl;
+
+    if (isExpired) {
+      this.cache.delete(key);
+      return null;
+    }
+
+    // Refresh LRU ordering
+    this.cache.delete(key);
+    this.cache.set(key, entry);
+
+    if (entry.isError) return null; // Hide raw error entries from standard getter
+
+    return entry.data;
+  }
+
+  getRaw(username) {
+    if (!username) return null;
+    return this.cache.get(username.trim().toLowerCase()) || null;
+  }
+
+  set(username, data, isError = false) {
+    if (!username) return;
+    const key = username.trim().toLowerCase();
+
+    const entry = {
+      data,
+      fetchedAt: Date.now(),
+      isError,
+    };
+
+    if (this.cache.has(key)) {
+      this.cache.delete(key);
+    } else if (this.cache.size >= this.capacity) {
+      // Evict oldest entry (first item in Map iterator)
+      const oldestKey = this.cache.keys().next().value;
+      if (oldestKey) this.cache.delete(oldestKey);
+    }
+
+    this.cache.set(key, entry);
+  }
+
+  has(username) {
+    const key = username.trim().toLowerCase();
+    return this.cache.has(key);
+  }
+
+  delete(username) {
+    if (!username) return;
+    this.cache.delete(username.trim().toLowerCase());
+  }
+
+  clear() {
+    this.cache.clear();
+  }
+
+  size() {
+    return this.cache.size;
+  }
+}
+
+const l1Cache = new L1MemoryLRUCache();
+
+// ============================================================================
+// SECTION 7: GITHUB PAYLOAD NORMALIZER & SCHEMA VALIDATOR
+// ============================================================================
+
+/**
+ * Normalizes raw GitHub API user response into minimal display payload
+ */
+export const normalizeGitHubProfile = (raw) => {
+  if (!raw || typeof raw !== "object") {
+    throw new ProfileCacheError("Invalid raw GitHub payload", "INVALID_PAYLOAD");
+  }
+
+  return {
+    id: raw.id ?? null,
+    login: raw.login ?? "",
+    username: raw.login ?? "",
+    name: raw.name ?? raw.login ?? "",
+    avatarUrl: raw.avatar_url ?? "",
+    bio: raw.bio ?? "",
+    location: raw.location ?? "",
+    company: raw.company ?? "",
+    blog: raw.blog ?? "",
+    publicRepos: raw.public_repos ?? 0,
+    followers: raw.followers ?? 0,
+    following: raw.following ?? 0,
+    htmlUrl: raw.html_url ?? `https://github.com/${raw.login || ""}`,
+    updatedAt: raw.updated_at ?? new Date().toISOString(),
+  };
+};
+
+// ============================================================================
+// SECTION 8: NETWORK TRANSPORT & REQUEST COLLAPSING
+// ============================================================================
+
+/** @type {Map<string, Promise<object>>} In-flight request deduplication store */
 const inFlightRequests = new Map();
 
 // Track access order for LRU eviction
@@ -45,7 +348,7 @@ let accessCounter = 0;
  * Also updates access order for LRU eviction.
  *
  * @param {string} username
- * @returns {object|null}
+ * @returns {Promise<object|null>}
  */
 export function getCachedProfile(username) {
   const entry = profileCache.get(username);
@@ -95,7 +398,7 @@ export function setCachedProfile(username, data, isNegative = false) {
 }
 
 /**
- * Wraps a profile-fetch function with in-flight deduplication and caching.
+ * Main profile fetch function with caching, deduplication, queueing, and network transport.
  *
  * If a request for `username` is already in-flight, the existing Promise is
  * returned — no second network request is made. Once the request settles the
@@ -181,8 +484,41 @@ export function fetchProfileWithCache(username, fetcher) {
       throw err;
     });
 
-  inFlightRequests.set(username, request);
-  return request;
+  // 1. Return cached profile if valid
+  const cached = await getCachedProfile(normalizedKey);
+  if (cached) return cached;
+
+  // 2. Collapse concurrent duplicate requests
+  if (inFlightRequests.has(normalizedKey)) {
+    return inFlightRequests.get(normalizedKey);
+  }
+
+  // 3. Queue task in prioritized worker pool
+  const taskPromise = requestQueue.enqueue(
+    normalizedKey,
+    priority,
+    async () => {
+      try {
+        const data = await fetchProfileFromNetwork(normalizedKey, fetcher, {
+          timeoutMs,
+          signal,
+        });
+
+        await setCachedProfile(normalizedKey, data, false);
+        return data;
+      } catch (err) {
+        // Apply short negative caching for failures
+        await setCachedProfile(normalizedKey, { error: err.message }, true);
+        telemetry.recordError(err);
+        throw err;
+      } finally {
+        inFlightRequests.delete(normalizedKey);
+      }
+    }
+  );
+
+  inFlightRequests.set(normalizedKey, taskPromise);
+  return taskPromise;
 }
 
 /**
@@ -198,11 +534,9 @@ export function fetchProfileWithCache(username, fetcher) {
  * items carry `{ status: 'rejected', reason }` and must be handled by the
  * caller.
  *
- * @template T, R
- * @param {T[]}            items        - Items to process
- * @param {function(T): Promise<R>} taskFn - Async function to call per item
- * @param {number}          [concurrency=5]
- * @returns {Promise<PromiseSettledResult<R>[]>}
+ * @param {string[]} usernames
+ * @param {object} [options={}]
+ * @returns {Promise<PromiseSettledResult<object>[]>}
  */
 export async function fetchWithConcurrencyLimit(items, taskFn, concurrency = 5) {
   const results = new Array(items.length);
@@ -247,24 +581,48 @@ export async function fetchWithConcurrencyLimit(items, taskFn, concurrency = 5) 
 }
 
 /**
- * Clears the in-memory profile cache.
- * Intended for use in tests only — not needed in production code.
+ * Prefetches an array of profiles in background low priority mode.
+ *
+ * @param {string[]} usernames
+ * @param {object} [options={}]
  */
-export function clearProfileCache() {
-  profileCache.clear();
+export async function prefetchProfiles(usernames, options = {}) {
+  return fetchWithConcurrencyLimit(usernames, {
+    ...options,
+    priority: Priority.LOW,
+  });
+}
+
+/**
+ * Invalidates single user from L1 and L2 caches
+ */
+export async function invalidateProfile(username) {
+  if (!username) return;
+  const key = username.trim().toLowerCase();
+  l1Cache.delete(key);
+  await l2Cache.delete(key);
+  inFlightRequests.delete(key);
+}
+
+/**
+ * Clears all entries from both memory and persistent storage
+ */
+export async function clearProfileCache() {
+  l1Cache.clear();
+  await l2Cache.clear();
   inFlightRequests.clear();
   accessOrder.clear();
   accessCounter = 0;
 }
 
 /**
- * Returns the number of entries currently in the profile cache.
- * Useful for debugging and testing.
- *
- * @returns {number}
+ * Returns diagnostic size info
  */
 export function profileCacheSize() {
-  return profileCache.size;
+  return {
+    l1Size: l1Cache.size(),
+    inFlightCount: inFlightRequests.size,
+  };
 }
 
 /**

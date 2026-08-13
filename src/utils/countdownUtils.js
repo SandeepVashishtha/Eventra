@@ -106,6 +106,10 @@ export const formatDetailedCountdown = (time) => {
   if (!time || time.total <= 0) {
     return "Registration Closed";
   }
+  const days = typeof time.days === "number" && !isNaN(time.days) ? time.days : 0;
+  const hours = typeof time.hours === "number" && !isNaN(time.hours) ? time.hours : 0;
+  const minutes = typeof time.minutes === "number" && !isNaN(time.minutes) ? time.minutes : 0;
+  const seconds = typeof time.seconds === "number" && !isNaN(time.seconds) ? time.seconds : 0;
 
-  return `${time.days}d ${time.hours}h ${time.minutes}m ${time.seconds}s`;
+  return `${days}d ${hours}h ${minutes}m ${seconds}s`;
 };

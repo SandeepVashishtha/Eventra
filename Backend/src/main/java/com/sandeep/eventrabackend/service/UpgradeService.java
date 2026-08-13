@@ -21,6 +21,9 @@ public class UpgradeService {
 
     @Transactional
     public boolean upgradeTicket(String ticketId, String targetTier) {
+        if (ticketId == null || !ticketId.matches("^[a-zA-Z0-9_-]{5,50}$")) {
+            return false;
+        }
         if (!ticketTiers.containsKey(ticketId)) {
             return false;
         }
