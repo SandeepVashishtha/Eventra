@@ -73,6 +73,10 @@ public class HackathonService {
         User creator = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + userEmail));
 
+        if (request.getMaxParticipants() != null && request.getMaxParticipants() < 2) {
+            throw new IllegalArgumentException("Maximum participants capacity must be at least 2.");
+        }
+
         // FIX (#14532): reject inverted date ranges on create, same as update.
         validateDateRanges(request.getStartDate(), request.getEndDate(), request.getRegistrationDeadline());
         if (request.getDescription() != null && (request.getDescription().trim().length() < 10 || request.getDescription().trim().length() > 2000)) {
@@ -119,6 +123,9 @@ public class HackathonService {
         validateDateRanges(request.getStartDate(), request.getEndDate(), request.getRegistrationDeadline());
         if (request.getDescription() != null && (request.getDescription().trim().length() < 10 || request.getDescription().trim().length() > 2000)) {
             throw new IllegalArgumentException("Description must be between 10 and 2000 characters.");
+        }
+        if (request.getMaxParticipants() != null && request.getMaxParticipants() < 2) {
+            throw new IllegalArgumentException("Maximum participants capacity must be at least 2.");
         }
 
         // FIX (#14532): partial update — only apply fields present in the request,
