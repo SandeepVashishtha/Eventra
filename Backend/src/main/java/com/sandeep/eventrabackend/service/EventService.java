@@ -502,6 +502,7 @@ public class EventService {
                 event.setTitle(request.getTitle());
                 validateDescription(request.getDescription());
                 event.setDescription(request.getDescription());
+                validateLocation(request.getLocation());
                 event.setLocation(request.getLocation());
                 event.setEventDate(request.getEventDate());
                 event.setCapacity(request.getCapacity());
@@ -562,6 +563,9 @@ public class EventService {
 
                 validateTitle(request.getTitle());
                 event.setTitle(request.getTitle());
+                if (request.getLocation() != null) {
+                        validateLocation(request.getLocation());
+                }
                 event.setLocation(request.getLocation());
                 event.setEventDate(request.getEventDate());
                 if (request.getDescription() != null) {
@@ -1415,6 +1419,12 @@ public class EventService {
 
                 eventRepository.save(event);
                 broadcastAvailability(event);
+        }
+
+        private void validateLocation(String location) {
+                if (location == null || location.trim().length() < 3 || location.trim().length() > 150) {
+                        throw new IllegalArgumentException("Location must be between 3 and 150 characters.");
+                }
         }
 
         private RegistrationResponse promoteEntry(Event event, EventWaitlist entry) {
