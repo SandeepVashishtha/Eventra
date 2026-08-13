@@ -239,27 +239,28 @@ public class StripeService {
         return Subscription.retrieve(subscriptionId);
     }
 
-    // Verify webhook signature
-    public boolean verifyWebhookSignature(String payload, String signatureHeader) {
+    // Verify webhook signature and construct the event (single verification).
+    // Fails closed: throws if the secret is missing or the signature is invalid
+    // rather than silently returning a boolean that lets bad payloads through.
+    // Returns the constructed event so the caller can use it without re-parsing.
+    public Event verifyWebhookSignature(String payload, String signatureHeader) throws StripeException {
         if (stripeWebhookSecret == null || stripeWebhookSecret.isEmpty()) {
-            return false;
+            throw new IllegalStateException(
+                    "Stripe webhook secret is not configured; refusing to process webhook");
         }
-        
-        try {
-            String computedSignature = Webhook.constructEvent(
-                    payload,
-                    signatureHeader,
-                    stripeWebhookSecret
-            ).toString();
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+        return Webhook.constructEvent(payload, signatureHeader, stripeWebhookSecret);
     }
 
-    // Parse webhook event
-    public Event parseWebhookEvent(String payload, String signatureHeader) throws StripeException {
-        return Webhook.constructEvent(payload, signatureHeader, stripeWebhookSecret);
+    private final Set<String> processedEventIds = ConcurrentHashMap.newKeySet();
+
+    // Idempotency: returns true if a Stripe event id has already been processed.
+    public boolean isEventProcessed(String eventId) {
+        return processedEventIds.contains(eventId);
+    }
+
+    // Idempotency: record a Stripe event id as processed so retries are ignored.
+    public void markEventProcessed(String eventId) {
+        processedEventIds.add(eventId);
     }
 
     // Handle payment intent succeeded event
