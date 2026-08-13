@@ -1540,16 +1540,19 @@ public class EventService {
         public String buildIcsFeed(Long eventId) {
                 Event event = requirePublicEvent(eventId);
 
-                java.time.Instant start = event.getEventDate() != null
-                                ? event.getEventDate().atZone(java.time.ZoneId.systemDefault()).toInstant()
-                                : java.time.Instant.now();
+                java.time.ZoneId eventZone = resolveEventZone(event.getTimezone());
+                java.time.ZonedDateTime start = event.getEventDate() != null
+                                ? event.getEventDate().atZone(eventZone)
+                                : java.time.ZonedDateTime.now(eventZone);
                 // Default duration is 2 hours when no end date was persisted.
-                java.time.Instant end = (event.getEndDate() != null
-                                ? event.getEndDate().atZone(java.time.ZoneId.systemDefault()).toInstant()
+                java.time.ZonedDateTime end = (event.getEndDate() != null
+                                ? event.getEndDate().atZone(eventZone)
                                 : start.plus(java.time.Duration.ofHours(2)));
                 java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter
                                 .ofPattern("yyyyMMdd'T'HHmmss'Z'")
                                 .withZone(java.time.ZoneOffset.UTC);
+                java.time.format.DateTimeFormatter zonedFmt = java.time.format.DateTimeFormatter
+                                .ofPattern("yyyyMMdd'T'HHmmss");
 
                 String summary = escapeIcs(event.getTitle() != null ? event.getTitle() : "Eventra Event");
                 String description = escapeIcs(event.getDescription() != null ? event.getDescription() : "");
@@ -1564,13 +1567,24 @@ public class EventService {
                                 + "BEGIN:VEVENT\r\n"
                                 + "UID:" + uid + "\r\n"
                                 + "DTSTAMP:" + fmt.format(java.time.Instant.now()) + "\r\n"
-                                + "DTSTART:" + fmt.format(start) + "\r\n"
-                                + "DTEND:" + fmt.format(end) + "\r\n"
+                                + "DTSTART;TZID=" + eventZone.getId() + ":" + zonedFmt.format(start) + "\r\n"
+                                + "DTEND;TZID=" + eventZone.getId() + ":" + zonedFmt.format(end) + "\r\n"
                                 + "SUMMARY:" + summary + "\r\n"
                                 + "DESCRIPTION:" + description + "\r\n"
                                 + "LOCATION:" + location + "\r\n"
                                 + "END:VEVENT\r\n"
                                 + "END:VCALENDAR\r\n";
+        }
+
+        private static java.time.ZoneId resolveEventZone(String timezone) {
+                if (timezone != null && !timezone.isBlank()) {
+                        try {
+                                return java.time.ZoneId.of(timezone, java.time.ZoneId.SHORT_IDS);
+                        } catch (java.time.DateTimeException ignored) {
+                                // fall through to UTC
+                        }
+                }
+                return java.time.ZoneId.of("UTC");
         }
 
         private static String escapeIcs(String value) {
