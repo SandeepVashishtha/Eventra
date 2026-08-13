@@ -859,8 +859,9 @@ export const syncSecureStorage = {
    *    a `setItem` for this key is still running.
    * 2. localStorage ciphertext — decrypted with the derived AES-GCM key.
    *    If decryption fails (e.g. key material was lost between sessions) the
-   *    raw stored string is returned as a best-effort fallback so callers
-   *    can surface an error rather than silently returning `null`.
+   *    value is treated as unreadable and `null` is returned rather than
+   *    handing back raw ciphertext, so callers are not misled into treating
+   *    encrypted bytes as the intended plaintext (issue #16248).
    * 3. When Web Crypto is unavailable the raw stored value is returned
    *    directly (plaintext was written by `setItem` in degraded mode).
    *
@@ -887,7 +888,12 @@ export const syncSecureStorage = {
         try {
           return await decryptValue(key, stored);
         } catch {
-          return stored;
+          // Decryption failed: `stored` is ciphertext (or corrupt data), not the
+          // intended plaintext. Returning it would mask data loss and silently
+          // hand ciphertext to callers, so we surface the failure as `null`
+          // instead (issue #16248).
+          console.error("[secureStorage] getItemAsync decryption failed for", key);
+          return null;
         }
       }
 
