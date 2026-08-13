@@ -7,6 +7,7 @@ import {
   calculateDiversitySimilarity,
   calculateRecommendationScore,
   calculateTemporalUrgencyScore,
+  clearTagCache,
   getTrendingEventsForArea,
 } from "../src/utils/recommendationEngine.js";
 
@@ -241,6 +242,54 @@ assert(coldStart.length > 0, "cold-start users should still receive recommendati
 assert(
   coldStart.every((event) => event.recommendationScore > 0),
   "cold-start recommendations should all be positively scored",
+);
+
+// ===========================================================================
+// Tag cache TTL & invalidation
+// ===========================================================================
+
+const mutableEvent = {
+  id: 777,
+  title: "Mutable Event",
+  category: "Web Development",
+  type: "conference",
+  tags: ["React", "Frontend"],
+};
+const candidateEvent = {
+  id: 888,
+  title: "React Meetup",
+  category: "Web Development",
+  type: "conference",
+  tags: ["React"],
+};
+
+const similarityScore = (profile) =>
+  calculateRecommendationScore(candidateEvent, {}, profile).breakdown.find(
+    (b) => b.label === "Collaborative item similarity",
+  )?.score ?? 0;
+
+const cachedSimilarity = similarityScore(
+  buildInteractionProfile({ registeredEvents: [{ ...mutableEvent }] }),
+);
+
+mutableEvent.tags = ["Python", "Data"];
+
+const staleSimilarity = similarityScore(
+  buildInteractionProfile({ registeredEvents: [{ ...mutableEvent }] }),
+);
+assert.equal(
+  staleSimilarity,
+  cachedSimilarity,
+  "tag cache should serve the original tags within TTL",
+);
+
+clearTagCache();
+const freshSimilarity = similarityScore(
+  buildInteractionProfile({ registeredEvents: [{ ...mutableEvent }] }),
+);
+assert(
+  freshSimilarity < staleSimilarity,
+  "tag edits should be reflected once the cache is invalidated",
 );
 
 console.log("recommendationEngine tests passed ✓");
