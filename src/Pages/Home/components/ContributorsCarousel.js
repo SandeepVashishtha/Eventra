@@ -1,3 +1,4 @@
+import useInfiniteScroll from "hooks/useInfiniteScroll";
 import { GitBranch, ChevronLeft, ChevronRight } from "lucide-react";
 import { FaMedal, FaCodeBranch, FaUserFriends, FaBuilding, FaMapMarkerAlt, FaGithub, FaExternalLinkAlt } from "react-icons/fa";
 import { useState, useEffect, useCallback, useRef, memo } from "react";
