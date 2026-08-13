@@ -444,6 +444,24 @@ public class EventService {
         }
 
         /**
+         * Calculates total event count per category directly in the database (Issue #16693).
+         * Uses database GROUP BY aggregation to avoid loading all Event entities into memory.
+         *
+         * @return Map of category names to event counts
+         */
+        @Transactional(readOnly = true)
+        public Map<String, Long> getEventCountByCategory() {
+                List<Object[]> results = eventRepository.countEventsByCategory();
+                Map<String, Long> categoryCounts = new LinkedHashMap<>();
+                for (Object[] row : results) {
+                        if (row[0] != null) {
+                                categoryCounts.put((String) row[0], ((Number) row[1]).longValue());
+                        }
+                }
+                return categoryCounts;
+        }
+
+        /**
          * Creates a new event.
          *
          * @param request event creation details
