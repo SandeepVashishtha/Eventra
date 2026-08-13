@@ -487,6 +487,7 @@ public class PaymentPlanService {
         
         // Update registration
         registration.setPaymentStatus("COMPLETED");
+        registration.setStatus("CONFIRMED");
         registration.setQrActivated(true);
         registration.setQrActivationDate(LocalDateTime.now());
         eventRegistrationRepository.save(registration);
@@ -552,6 +553,7 @@ public class PaymentPlanService {
         
         // Update registration
         registration.setPaymentStatus("CANCELLED");
+        registration.setStatus("CANCELLED");
         registration.setQrActivated(false);
         eventRegistrationRepository.save(registration);
         
