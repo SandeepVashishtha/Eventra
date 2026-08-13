@@ -16,8 +16,6 @@ import {
   ExternalLink,
   Calendar,
   Award,
-  MessageCircle,
-  Zap,
   Target,
   WifiOff,
 } from "lucide-react";
