@@ -132,6 +132,7 @@ public class EventService {
         private final UserRepository userRepository;
         private final EventRoleService eventRoleService;
         private final EventStreamService eventStreamService;
+        private final StripeService stripeService;
 
         public EventService(
                         EventRepository eventRepository,
@@ -143,7 +144,8 @@ public class EventService {
                         EventRoleAuditLogRepository eventRoleAuditLogRepository,
                         UserRepository userRepository,
                         EventRoleService eventRoleService,
-                        EventStreamService eventStreamService) {
+                        EventStreamService eventStreamService,
+                        StripeService stripeService) {
                 this.eventRepository = eventRepository;
                 this.eventRegistrationRepository = eventRegistrationRepository;
                 this.eventWaitlistRepository = eventWaitlistRepository;
@@ -154,6 +156,7 @@ public class EventService {
                 this.userRepository = userRepository;
                 this.eventRoleService = eventRoleService;
                 this.eventStreamService = eventStreamService;
+                this.stripeService = stripeService;
         }
 
         /**
@@ -667,7 +670,9 @@ public class EventService {
                 eventRoleService.requireRole(id, userEmail, EventRole.ORGANIZER);
 
                 if ("CANCELLED".equals(event.getStatus())) {
-                        throw new RegistrationConflictException("Event is already cancelled.");
+                        // Idempotency guard: calling cancel twice must not re-send
+                        // notifications or re-process refunds.
+                        return toEventResponse(event);
                 }
 
                 String refundPolicy = request.getRefundPolicy() == null
@@ -763,7 +768,8 @@ public class EventService {
                                 .map(registration -> registration.getUser().getEmail())
                                 .forEach(emails::add);
                 eventWaitlistRepository
-                                .findByEvent_IdAndStatusOrderByPositionAscJoinedAtAsc(eventId, "CANCELLED")
+                                .findByEvent_IdAndStatusOrderByPositionAscJoinedAtAsc(eventId,
+                                                EventWaitlist.STATUS_EVENT_CANCELLED)
                                 .stream()
                                 .map(entry -> entry.getUser().getEmail())
                                 .forEach(emails::add);
@@ -772,23 +778,47 @@ public class EventService {
 
         private void notifyCancellation(Event event, String reason) {
                 String message = event.getTitle() + " has been cancelled. Reason: " + reason;
+                String refundPolicy = event.getRefundPolicy();
+                Integer refundPercent = event.getRefundPercent();
+                boolean refundDue = refundPolicy != null
+                                && !"NONE".equalsIgnoreCase(refundPolicy);
 
                 eventRegistrationRepository.findByEvent_IdAndStatus(event.getId(), "CONFIRMED")
-                                .forEach(registration -> notificationRepository.save(Notification.builder()
-                                                .user(registration.getUser())
-                                                .title("Event cancelled")
-                                                .message(message)
-                                                .build()));
+                                .forEach(registration -> {
+                                        notificationRepository.save(Notification.builder()
+                                                        .user(registration.getUser())
+                                                        .title("Event cancelled")
+                                                        .message(message)
+                                                        .build());
+
+                                        if (refundDue
+                                                        && registration.isPaymentCompleted()
+                                                        && registration.getStripePaymentIntentId() != null) {
+                                                try {
+                                                        stripeService.refundPayment(
+                                                                        registration.getStripePaymentIntentId(),
+                                                                        refundPolicy,
+                                                                        refundPercent);
+                                                } catch (Exception e) {
+                                                        log.error(
+                                                                        "Failed to refund payment for registration {} on cancelled event {}: {}",
+                                                                        registration.getId(),
+                                                                        event.getId(),
+                                                                        e.getMessage());
+                                                }
+                                        }
+                                });
 
                 eventWaitlistRepository
-                                .findByEvent_IdAndStatusOrderByPositionAscJoinedAtAsc(event.getId(), "WAITING")
+                                .findByEvent_IdAndStatusOrderByPositionAscJoinedAtAsc(event.getId(),
+                                                EventWaitlist.STATUS_WAITING)
                                 .forEach(entry -> {
                                         notificationRepository.save(Notification.builder()
                                                         .user(entry.getUser())
                                                         .title("Event cancelled")
                                                         .message(message)
                                                         .build());
-                                        entry.setStatus("CANCELLED");
+                                        entry.setStatus(EventWaitlist.STATUS_EVENT_CANCELLED);
                                         eventWaitlistRepository.save(entry);
                                 });
         }

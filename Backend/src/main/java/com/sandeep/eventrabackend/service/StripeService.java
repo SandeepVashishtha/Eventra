@@ -493,4 +493,44 @@ public class StripeService {
         
         return Refund.create(params);
     }
+
+    /**
+     * Refund a confirmed paid registration based on the event's refund policy.
+     *
+     * <p>Retrieves the PaymentIntent associated with the registration, reads the
+     * captured charge and refunds either the full amount (FULL) or a percentage of
+     * it (PARTIAL using {@code refundPercent}). When the policy is NONE the method
+     * is a no-op and returns {@code null}.</p>
+     *
+     * @param stripePaymentIntentId the registration's Stripe Payment Intent id
+     * @param refundPolicy           FULL, PARTIAL or NONE (case-insensitive)
+     * @param refundPercent          percentage to refund when policy is PARTIAL (1-100)
+     * @return the created {@link Refund}, or {@code null} when no refund is due
+     * @throws StripeException if the Stripe API call fails
+     */
+    public Refund refundPayment(String stripePaymentIntentId, String refundPolicy, Integer refundPercent)
+            throws StripeException {
+        if (stripePaymentIntentId == null || refundPolicy == null) {
+            return null;
+        }
+        if (!"FULL".equalsIgnoreCase(refundPolicy) && !"PARTIAL".equalsIgnoreCase(refundPolicy)) {
+            return null;
+        }
+
+        PaymentIntent intent = PaymentIntent.retrieve(stripePaymentIntentId);
+        if (intent.getCharges() == null || intent.getCharges().getData().isEmpty()) {
+            return null;
+        }
+        Charge charge = intent.getCharges().getData().get(0);
+
+        long chargeAmount = charge.getAmount();
+        long refundAmount;
+        if ("PARTIAL".equalsIgnoreCase(refundPolicy) && refundPercent != null) {
+            refundAmount = (long) (chargeAmount * refundPercent / 100.0);
+        } else {
+            refundAmount = chargeAmount;
+        }
+
+        return createRefund(charge.getId(), refundAmount);
+    }
 }
