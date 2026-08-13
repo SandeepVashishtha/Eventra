@@ -54,7 +54,7 @@ const DashboardEmptyState = () => {
         </h2>
 
         {/* ── Sub-copy ── */}
-        <p className="mt-3 max-w-md text-sm leading-relaxed text-gray-500 dark:text-gray-400">
+        <p className="mt-3 max-w-md text-sm leading-relaxed text-gray-500 dark:text-gray-200">
           You haven&apos;t joined any events or hackathons yet. Discover thousands of upcoming
           events tailored to your interests and start building your schedule today.
         </p>

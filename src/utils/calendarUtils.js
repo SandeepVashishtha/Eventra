@@ -1,4 +1,13 @@
 /**
+ * Calendar Timezone Normalization Utilities (#14086)
+ */
+
+export function normalizeDateToUTC(dateString) {
+  const d = new Date(dateString);
+  return isNaN(d.getTime()) ? new Date(0).toISOString() : d.toISOString();
+}
+
+/**
  * Google Calendar utility functions
  * These functions help create Google Calendar event URLs for adding events to Google Calendar
  */
@@ -17,52 +26,52 @@
  */
 export const generateGoogleCalendarUrl = (eventData) => {
   // Base URL for Google Calendar
-  const baseUrl = 'https://calendar.google.com/calendar/render';
-  
+  const baseUrl = "https://calendar.google.com/calendar/render";
+
   // Convert dates to the format Google Calendar expects
   let startDateTime, endDateTime;
-  
+
   if (eventData.startTime) {
     // If we have a start time, combine date and time
-    const [hours, minutes] = eventData.startTime.split(':');
+    const [hours, minutes] = eventData.startTime.split(":");
     const startDate = new Date(eventData.startDate);
-    startDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0);
-    startDateTime = startDate.toISOString().replace(/-|:|\.\d+/g, '');
+    startDate.setHours(parseInt(hours), parseInt(minutes), 0);
+    startDateTime = startDate.toISOString().replace(/-|:|\.\d+/g, "");
   } else {
     // If no time, use the date only (all day event)
-    startDateTime = eventData.startDate.replace(/-/g, '');
+    startDateTime = eventData.startDate.replace(/-/g, "");
   }
 
   // Handle end date/time
   if (eventData.endDate) {
     if (eventData.endTime) {
       // If we have an end time, combine date and time
-      const [hours, minutes] = eventData.endTime.split(':');
+      const [hours, minutes] = eventData.endTime.split(":");
       const endDate = new Date(eventData.endDate);
-      endDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0);
-      endDateTime = endDate.toISOString().replace(/-|:|\.\d+/g, '');
+      endDate.setHours(parseInt(hours), parseInt(minutes), 0);
+      endDateTime = endDate.toISOString().replace(/-|:|\.\d+/g, "");
     } else {
       // If no time, use the date only (all day event)
-      endDateTime = eventData.endDate.replace(/-/g, '');
+      endDateTime = eventData.endDate.replace(/-/g, "");
     }
   } else {
     // If no end date, use the start date
     endDateTime = startDateTime;
   }
-  
+
   // Parameters for the Google Calendar URL
   const params = {
-    action: 'TEMPLATE',
-    text: encodeURIComponent(eventData.title || ''),
-    details: encodeURIComponent(eventData.description || ''),
-    location: encodeURIComponent(eventData.location || ''),
-    dates: `${startDateTime}/${endDateTime}`
+    action: "TEMPLATE",
+    text: encodeURIComponent(eventData.title || ""),
+    details: encodeURIComponent(eventData.description || ""),
+    location: encodeURIComponent(eventData.location || ""),
+    dates: `${startDateTime}/${endDateTime}`,
   };
 
   // Build the URL with parameters
   const queryString = Object.keys(params)
-    .map(key => `${key}=${params[key]}`)
-    .join('&');
+    .map((key) => `${key}=${params[key]}`)
+    .join("&");
 
   return `${baseUrl}?${queryString}`;
 };
@@ -77,36 +86,31 @@ export const addEventToGoogleCalendar = (event) => {
     // Assuming time format like "10:00 AM"
     const timeParts = event.time.match(/(\d+):(\d+)\s*([APap][Mm])/);
     if (timeParts) {
-      let hours = parseInt(timeParts[1], 10);
-      const minutes = parseInt(timeParts[2], 10);
+      let hours = parseInt(timeParts[1]);
+      const minutes = parseInt(timeParts[2]);
       const period = timeParts[3].toUpperCase();
-      
+
       // Convert to 24-hour format
-      if (period === 'PM' && hours < 12) hours += 12;
-      if (period === 'AM' && hours === 12) hours = 0;
-      
-      startTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+      if (period === "PM" && hours < 12) hours += 12;
+      if (period === "AM" && hours === 12) hours = 0;
+
+      startTime = `${hours.toString().padStart(2, "0")}:${minutes
+        .toString()
+        .padStart(2, "0")}`;
     }
   }
 
   // Calculate end time (assuming events are 2 hours long if not specified)
   const eventEndDate = event.endDate || event.date;
-  
+
   return generateGoogleCalendarUrl({
     title: event.title,
-    description: event.description || '',
-    location: event.location || '',
+    description: event.description || "",
+    location: event.location || "",
     startDate: event.date || event.startDate,
-    endDate: (() => {
-      if (!startTime) return eventEndDate;
-      const { overflowDays } = calculateEndTime(startTime);
-      if (overflowDays === 0) return eventEndDate;
-      const d = new Date(event.date || event.startDate);
-      d.setDate(d.getDate() + overflowDays);
-      return d.toISOString().split('T')[0];
-    })(),
+    endDate: eventEndDate,
     startTime: startTime,
-    endTime: startTime ? calculateEndTime(startTime).time : null
+    endTime: startTime ? calculateEndTime(startTime) : null,
   });
 };
 
@@ -117,27 +121,38 @@ export const addEventToGoogleCalendar = (event) => {
  * @returns {string} End time in 24-hour format (HH:MM)
  */
 const calculateEndTime = (startTime, durationHours = 2) => {
-  const [hours, minutes] = startTime.split(':').map(Number);
-  const totalMinutes = hours * 60 + minutes + durationHours * 60;
-  const endHours = Math.floor(totalMinutes / 60) % 24;
-  const endMinutes = totalMinutes % 60;
-  const overflowDays = Math.floor(totalMinutes / (60 * 24));
+  const [hours, minutes] = startTime.split(":").map(Number);
 
-  return {
-    time: `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`,
-    overflowDays,
-  };
+  // Create a date object to handle hour/minute calculations
+  const date = new Date();
+  date.setHours(hours, minutes, 0);
+
+  // Add duration hours
+  date.setHours(date.getHours() + durationHours);
+
+  // Format to HH:MM
+  return `${date.getHours().toString().padStart(2, "0")}:${date
+    .getMinutes()
+    .toString()
+    .padStart(2, "0")}`;
 };
 
 /**
- * Convenience function to generate a Google Calendar URL for a hackathon
+ * Convenience function to generate a Google Calendar URL for a hackathon.
+ * Dates are normalized to UTC so the link is timezone-correct regardless
+ * of the client machine's offset.
  */
 export const addHackathonToGoogleCalendar = (hackathon) => {
+  const startDate = normalizeDateToUTC(hackathon.startDate).slice(0, 10);
+  const endDate = hackathon.endDate
+    ? normalizeDateToUTC(hackathon.endDate).slice(0, 10)
+    : startDate;
+
   return generateGoogleCalendarUrl({
     title: hackathon.title,
-    description: hackathon.description || '',
-    location: hackathon.location || '',
-    startDate: hackathon.startDate,
-    endDate: hackathon.endDate
+    description: hackathon.description || "",
+    location: hackathon.location || "",
+    startDate,
+    endDate,
   });
 };

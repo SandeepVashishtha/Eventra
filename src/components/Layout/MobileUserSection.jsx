@@ -30,7 +30,7 @@ const MobileUserSection = ({
       <div>
         <p className="font-semibold text-gray-800 dark:text-white truncate">{primaryLine}</p>
         {secondaryLine && (
-          <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{secondaryLine}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-200 truncate">{secondaryLine}</p>
         )}
       </div>
     </div>

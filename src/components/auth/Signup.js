@@ -94,7 +94,7 @@ export const FormField = ({
           <button
             type="button"
             onClick={() => setShowPassword((current) => !current)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-white"
             aria-label={showPassword ? "Hide password" : "Show password"}
             aria-pressed={showPassword}
           >
@@ -104,7 +104,7 @@ export const FormField = ({
       </div>
 
       {hint && !error && !success && (
-        <p id={`${id}-hint`} className="text-xs text-gray-500 dark:text-gray-400">
+        <p id={`${id}-hint`} className="text-xs text-gray-500 dark:text-gray-200">
           {hint}
         </p>
       )}
@@ -186,7 +186,7 @@ export const PasswordField = ({
         <button
           type="button"
           onClick={() => setShowPassword((current) => !current)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-white"
           aria-label={showPassword ? "Hide password" : "Show password"}
           aria-pressed={showPassword}
         >
@@ -221,7 +221,7 @@ export const PasswordField = ({
                 <li
                   key={requirement.id}
                   className={`flex items-center gap-1.5 ${
-                    met ? "text-green-600 dark:text-green-400" : "text-gray-500 dark:text-gray-400"
+                    met ? "text-green-600 dark:text-green-400" : "text-gray-500 dark:text-gray-200"
                   }`}
                 >
                   {met ? (
@@ -337,7 +337,7 @@ const Signup = () => {
           className="rounded-3xl border border-gray-200/60 bg-white/90 p-6 shadow-2xl backdrop-blur-xl dark:border-gray-700/60 dark:bg-gray-800/85 md:p-8"
         >
           <SignupForm />
-          <p className="mt-6 text-center text-xs text-gray-500 dark:text-gray-400">
+          <p className="mt-6 text-center text-xs text-gray-500 dark:text-gray-200">
             By creating an account, you agree to our{" "}
             <Link to="/terms" className="font-medium text-blue-600 hover:underline dark:text-blue-400">
               Terms

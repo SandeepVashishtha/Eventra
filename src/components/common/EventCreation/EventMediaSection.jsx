@@ -1,4 +1,4 @@
-import useDragAndDrop from "hooks/useDragAndDrop";
+import useFileUpload from "hooks/useFileUpload";
 
 import { motion, AnimatePresence } from "framer-motion";
 import { ImageIcon, Upload, X, Plus } from "lucide-react";
@@ -68,13 +68,18 @@ const TagInput = ({ tags, onAdd, onRemove, newTag, setNewTag, placeholder = "Add
 };
 
 const EventMediaSection = ({ 
-  // Fix: useDragAndDrop adds proper drag counter + accessibility to the banner dropzone
-  const { getRootProps: getBannerRootProps, getInputProps: getBannerInputProps, isDragOver: isBannerDragOver } = useDragAndDrop({
-    onDrop: async (files) => {
-      await handleBannerChange({ target: { files } });
-    },
+  // Fix: useFileUpload replaces createObjectURL with auto-revocation
+  // Previously the old bannerPreview URL was manually revoked in setFormData
+  // but this was fragile — useFileUpload handles it correctly on change/unmount.
+  const {
+    preview: bannerPreviewUrl,
+    error: bannerUploadError,
+    handleFileChange: handleBannerChange,
+    reset: resetBanner,
+  } = useFileUpload({
+    mode: "objectUrl",
+    maxBytes: 5_242_880, // 5MB
     accept: ["image/*"],
-    maxBytes: 5_242_880,
   });
 
   formData, 
@@ -100,17 +105,13 @@ const EventMediaSection = ({
     }
 
     setIsUploading(true);
-    const objectUrl = URL.createObjectURL(file);
-    setFormData((prev) => {
-      if (prev.bannerPreview && prev.bannerPreview.startsWith("blob:")) {
-        URL.revokeObjectURL(prev.bannerPreview);
-      }
-      return {
-        ...prev,
-        banner: file,
-        bannerPreview: objectUrl,
-      };
-    });
+    // Fix: handleBannerChange from useFileUpload handles URL creation + revocation
+    await handleBannerChange({ target: { files: [file] } });
+    setFormData((prev) => ({
+      ...prev,
+      banner: file,
+      bannerPreview: bannerPreviewUrl,
+    }));
     setIsUploading(false);
   };
 

@@ -53,7 +53,9 @@ const formatLastUpdated = (timestamp, t) => {
 };
 
 const prepareLeaderboardEntries = (entries = []) =>
-  entries.map((entry) => applyAchievementBonus({ ...entry }));
+  entries
+    .map((entry) => applyAchievementBonus({ ...entry }))
+    .sort((a, b) => b.points - a.points);
 
 const useDebouncedValue = (value, delay) => {
   const [debouncedValue, setDebouncedValue] = useState(value);

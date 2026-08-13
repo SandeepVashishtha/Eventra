@@ -169,6 +169,32 @@ const noCheckInStats = computeCheckInStats(registrations, []);
 assert.equal(noCheckInStats.checkedIn, 0, 'should handle no check-ins');
 assert.equal(noCheckInStats.notCheckedIn, 3, 'should count all as not checked in');
 
+// Test: computeCheckInStats - check-ins outside the active set must not produce
+// negative counts or a rate above 100%.
+const staleCheckIns = [
+  ...eventCheckIns,
+  { registrationId: 'reg-3', timestamp: new Date().toISOString(), scannedBy: 'scanner-1' },
+  { registrationId: 'reg-999', timestamp: new Date().toISOString(), scannedBy: 'scanner-1' },
+];
+const staleStats = computeCheckInStats(registrations, staleCheckIns);
+assert.equal(staleStats.checkedIn, 2, 'should count only check-ins for active registrations');
+assert.equal(staleStats.notCheckedIn, 1, 'should never report negative not-checked-in counts');
+assert.ok(staleStats.checkInRate <= 100, 'check-in rate should never exceed 100%');
+assert.equal(
+  staleStats.checkInRate,
+  66.67,
+  'should compute the rate against active registrations only'
+);
+
+// Test: computeCheckInStats - must not mutate the caller's checkIns array.
+const originalOrder = eventCheckIns.map((c) => c.registrationId);
+computeCheckInStats(registrations, eventCheckIns);
+assert.deepEqual(
+  eventCheckIns.map((c) => c.registrationId),
+  originalOrder,
+  'should not reorder the caller checkIns array'
+);
+
 // Test: computeSessionCheckInStats - basic session stats
 const sessions = [
   { id: 'session-1', name: 'Keynote', track: 'Main' },
@@ -224,4 +250,185 @@ const csvWithCommas = generateCheckInCSV(
 // "Smith, John" becomes "Smith  John" (with two spaces)
 assert.ok(csvWithCommas.includes('Smith  John'), 'CSV should escape commas in names');
 
-console.log('check-in utilities tests passed');
+// Import group-related functions
+import {
+  isGroupRegistration,
+  getGroupIdFromRegistration,
+  getGroupMembers,
+  getGroupPrimary,
+  isEntireGroupCheckedIn,
+  getGroupName,
+  recordGroupCheckIns,
+  computeGroupCheckInStats,
+} from '../src/utils/checkInUtils.js';
+
+// Test: isGroupRegistration - with groupId
+const groupRegistration = {
+  id: 'reg-1',
+  name: 'Alice',
+  email: 'alice@example.com',
+  groupId: 'group-1',
+  isGroupPrimary: true,
+};
+assert.equal(isGroupRegistration(groupRegistration), true, 'should identify group registration by groupId');
+
+// Test: isGroupRegistration - with isGroupPrimary
+const primaryRegistration = {
+  id: 'reg-2',
+  name: 'Bob',
+  email: 'bob@example.com',
+  isGroupPrimary: true,
+};
+assert.equal(isGroupRegistration(primaryRegistration), true, 'should identify group registration by isGroupPrimary');
+
+// Test: isGroupRegistration - non-group registration
+const individualRegistration = {
+  id: 'reg-3',
+  name: 'Charlie',
+  email: 'charlie@example.com',
+};
+assert.equal(isGroupRegistration(individualRegistration), false, 'should return false for non-group registration');
+
+// Test: isGroupRegistration - null/undefined
+assert.equal(isGroupRegistration(null), false, 'should return false for null registration');
+assert.equal(isGroupRegistration(undefined), false, 'should return false for undefined registration');
+
+// Test: getGroupIdFromRegistration - with groupId
+assert.equal(getGroupIdFromRegistration(groupRegistration), 'group-1', 'should return groupId');
+
+// Test: getGroupIdFromRegistration - without groupId
+assert.equal(getGroupIdFromRegistration(individualRegistration), null, 'should return null for non-group registration');
+
+// Test: getGroupMembers - filter by groupId
+const groupRegistrations = [
+  { id: 'reg-1', name: 'Alice', groupId: 'group-1', isGroupPrimary: true },
+  { id: 'reg-2', name: 'Bob', groupId: 'group-1' },
+  { id: 'reg-3', name: 'Charlie', groupId: 'group-1' },
+  { id: 'reg-4', name: 'Diana', groupId: 'group-2' },
+];
+const group1Members = getGroupMembers('group-1', groupRegistrations);
+assert.equal(group1Members.length, 3, 'should return all members of group-1');
+assert.equal(group1Members[0].name, 'Alice', 'should include Alice');
+assert.equal(group1Members[1].name, 'Bob', 'should include Bob');
+assert.equal(group1Members[2].name, 'Charlie', 'should include Charlie');
+
+// Test: getGroupMembers - non-existent group
+const nonExistentMembers = getGroupMembers('group-999', groupRegistrations);
+assert.equal(nonExistentMembers.length, 0, 'should return empty array for non-existent group');
+
+// Test: getGroupMembers - null/undefined groupId
+assert.deepEqual(getGroupMembers(null, groupRegistrations), [], 'should return empty array for null groupId');
+assert.deepEqual(getGroupMembers(undefined, groupRegistrations), [], 'should return empty array for undefined groupId');
+
+// Test: getGroupPrimary - find primary by isGroupPrimary flag
+const primary = getGroupPrimary(group1Members);
+assert.equal(primary.id, 'reg-1', 'should return the primary member');
+
+// Test: getGroupPrimary - fallback to first member
+const groupWithoutPrimary = [
+  { id: 'reg-5', name: 'Eve', groupId: 'group-3' },
+  { id: 'reg-6', name: 'Frank', groupId: 'group-3' },
+];
+const fallbackPrimary = getGroupPrimary(groupWithoutPrimary);
+assert.equal(fallbackPrimary.id, 'reg-5', 'should return first member as primary when no isGroupPrimary');
+
+// Test: getGroupPrimary - empty array
+assert.equal(getGroupPrimary([]), null, 'should return null for empty array');
+
+// Test: getGroupName - from primary registration
+const primaryWithGroupName = {
+  id: 'reg-1',
+  name: 'Alice',
+  groupId: 'group-1',
+  isGroupPrimary: true,
+  groupName: 'Table of 10',
+};
+assert.equal(getGroupName(primaryWithGroupName), 'Table of 10', 'should return groupName from registration');
+
+// Test: getGroupName - default name
+const registrationWithoutGroupName = {
+  id: 'reg-1',
+  name: 'Alice',
+  groupId: 'group-1',
+  isGroupPrimary: true,
+};
+assert.equal(getGroupName(registrationWithoutGroupName), 'Group', 'should return default "Group" name');
+
+// Test: getGroupName - from array
+assert.equal(getGroupName(group1Members), 'Group of 3', 'should return "Group of N" for array without primary groupName');
+
+// Test: isEntireGroupCheckedIn - all checked in
+const allCheckedIn = [
+  { registrationId: 'reg-1', timestamp: new Date().toISOString() },
+  { registrationId: 'reg-2', timestamp: new Date().toISOString() },
+  { registrationId: 'reg-3', timestamp: new Date().toISOString() },
+];
+assert.equal(isEntireGroupCheckedIn(group1Members, allCheckedIn), true, 'should return true when all members checked in');
+
+// Test: isEntireGroupCheckedIn - some not checked in
+const someCheckedIn = [
+  { registrationId: 'reg-1', timestamp: new Date().toISOString() },
+];
+assert.equal(isEntireGroupCheckedIn(group1Members, someCheckedIn), false, 'should return false when not all members checked in');
+
+// Test: isEntireGroupCheckedIn - none checked in
+assert.equal(isEntireGroupCheckedIn(group1Members, []), false, 'should return false when no members checked in');
+
+// Test: recordGroupCheckIns - basic recording
+const groupMembersToCheckIn = [
+  { id: 'reg-1', name: 'Alice', groupId: 'group-1', groupName: 'Table of 10' },
+  { id: 'reg-2', name: 'Bob', groupId: 'group-1', groupName: 'Table of 10' },
+];
+const newCheckIns = recordGroupCheckIns(groupMembersToCheckIn, 'group-check-in', []);
+assert.equal(newCheckIns.length, 2, 'should create check-in records for all group members');
+assert.equal(newCheckIns[0].registrationId, 'reg-1', 'should include registrationId');
+assert.equal(newCheckIns[0].scannedBy, 'group-check-in', 'should include scannedBy');
+assert.equal(newCheckIns[0].isGroupCheckIn, true, 'should mark as group check-in');
+assert.equal(newCheckIns[0].groupId, 'group-1', 'should include groupId');
+
+// Test: recordGroupCheckIns - skip already checked in
+const existingCheckIn = [
+  { registrationId: 'reg-1', timestamp: new Date().toISOString(), scannedBy: 'scanner' },
+];
+const newCheckInsWithExisting = recordGroupCheckIns(groupMembersToCheckIn, 'group-check-in', existingCheckIn);
+assert.equal(newCheckInsWithExisting.length, 1, 'should skip already checked-in members');
+assert.equal(newCheckInsWithExisting[0].registrationId, 'reg-2', 'should only include non-checked-in members');
+
+// Test: recordGroupCheckIns - empty group
+assert.deepEqual(recordGroupCheckIns([], 'scanner', []), [], 'should return empty array for empty group');
+
+// Test: computeGroupCheckInStats - basic stats
+const groupRegistrationsForStats = [
+  { id: 'reg-1', name: 'Alice', groupId: 'group-1', status: 'confirmed' },
+  { id: 'reg-2', name: 'Bob', groupId: 'group-1', status: 'confirmed' },
+  { id: 'reg-3', name: 'Charlie', groupId: 'group-1', status: 'confirmed' },
+  { id: 'reg-4', name: 'Diana', groupId: 'group-2', status: 'confirmed' },
+  { id: 'reg-5', name: 'Eve', status: 'confirmed' }, // Not in a group
+];
+
+const groupCheckIns = [
+  { registrationId: 'reg-1', timestamp: new Date().toISOString() },
+  { registrationId: 'reg-2', timestamp: new Date().toISOString() },
+  { registrationId: 'reg-3', timestamp: new Date().toISOString() },
+  { registrationId: 'reg-4', timestamp: new Date().toISOString() },
+];
+
+const groupStats = computeGroupCheckInStats(groupRegistrationsForStats, groupCheckIns);
+assert.equal(groupStats.totalGroups, 2, 'should count 2 groups');
+assert.equal(groupStats.fullyCheckedInGroups, 2, 'should count 2 fully checked-in groups (group-1 and group-2)');
+assert.equal(groupStats.partiallyCheckedInGroups, 0, 'should count 0 partially checked-in groups');
+
+// Test: computeGroupCheckInStats - partial check-in
+const partialCheckIns = [
+  { registrationId: 'reg-1', timestamp: new Date().toISOString() },
+];
+const partialStats = computeGroupCheckInStats(groupRegistrationsForStats, partialCheckIns);
+assert.equal(partialStats.totalGroups, 2, 'should count 2 groups');
+assert.equal(partialStats.fullyCheckedInGroups, 0, 'should count 0 fully checked-in groups');
+assert.equal(partialStats.partiallyCheckedInGroups, 1, 'should count 1 partially checked-in group');
+
+// Test: computeGroupCheckInStats - no groups
+const noGroupStats = computeGroupCheckInStats([{ id: 'reg-5', name: 'Eve', status: 'confirmed' }], []);
+assert.equal(noGroupStats.totalGroups, 0, 'should count 0 groups when no group registrations');
+
+console.log('check-in utilities tests passed (including group functions)');

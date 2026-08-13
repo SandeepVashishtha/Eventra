@@ -157,7 +157,7 @@ const PasswordReset = () => {
         </motion.div>
 
         <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 text-center">Reset Password</h1>
-        <p className="text-sm text-gray-600 dark:text-gray-400 text-center">Secure your account and get back to creating events.</p>
+        <p className="text-sm text-gray-600 dark:text-gray-200 text-center">Secure your account and get back to creating events.</p>
 
         {coolingDown && cooldownSeconds > 0 && (
           <motion.div

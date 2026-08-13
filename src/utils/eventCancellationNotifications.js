@@ -7,7 +7,7 @@
  */
 
 import axios from 'axios';
-import { API_BASE_URL } from '../config/api';
+import { API_BASE_URL } from '../config/backendConfig';
 
 class EventCancellationNotificationService {
   constructor() {
@@ -203,7 +203,7 @@ This is an automated message. Please do not reply to this email.
    */
   async fetchEventRegistrations(eventId) {
     try {
-      const response = await this.apiClient.get(`/events/${eventId}/registrations`);
+      const response = await this.apiClient.get(`/events/${eventId}/attendees`);
       return response.data || [];
     } catch (error) {
       console.error(`Failed to fetch registrations for event ${eventId}:`, error);

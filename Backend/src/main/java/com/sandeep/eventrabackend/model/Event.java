@@ -17,6 +17,12 @@ public class Event {
     private String description;
     private String location;
     private LocalDateTime eventDate;
+
+    /**
+     * Optional end date/time for the event schedule. Persisted so the end time
+     * chosen by the organizer survives reload (issue #14603).
+     */
+    private LocalDateTime endDate;
     private boolean isPublic = true;
 
     /**
@@ -32,7 +38,8 @@ public class Event {
     private Integer capacity;
 
     /**
-     * Current number of confirmed registrations — kept in sync with attendees.size().
+     * Current number of confirmed registrations — derived from event_registrations
+     * (status = CONFIRMED) and updated on register / cancel / promote / user delete.
      */
     private int registeredCount = 0;
 
@@ -49,6 +56,29 @@ public class Event {
      * when the event owner (or an administrator) cancels it.
      */
     private String status = "SCHEDULED";
+
+    /**
+     * Category of the event for better discovery and filtering.
+     * Valid values: Tech, Art, Music, Sports, Education, Networking, Other
+     */
+    private String category;
+
+    /**
+     * Multiple categories for the event to enable better discovery and filtering.
+     * Organizers can select up to 3 predefined categories.
+     */
+    @ElementCollection
+    @CollectionTable(name = "event_categories", joinColumns = @JoinColumn(name = "event_id"))
+    @Column(name = "category")
+    private Set<String> categories = new HashSet<>();
+
+    /**
+     * Tags for the event to enable granular filtering and search.
+     */
+    @ElementCollection
+    @CollectionTable(name = "event_tags", joinColumns = @JoinColumn(name = "event_id"))
+    @Column(name = "tag")
+    private Set<String> tags = new HashSet<>();
 
     /**
      * Reason provided by the organizer when the event was cancelled.
@@ -81,15 +111,6 @@ public class Event {
     @Version
     private Long version;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-        name = "event_attendees",
-        joinColumns = @JoinColumn(name = "event_id"),
-        inverseJoinColumns = @JoinColumn(name = "user_id"),
-        uniqueConstraints = @UniqueConstraint(columnNames = {"event_id", "user_id"})
-    )
-    private Set<User> attendees = new HashSet<>();
-
     // ── Helpers ─────────────────────────────────────────────────────────────
 
     /**
@@ -103,54 +124,187 @@ public class Event {
 
     // ── Getters & Setters ────────────────────────────────────────────────────
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
+    public String getTitle() {
+        return title;
+    }
 
-    public String getLocation() { return location; }
-    public void setLocation(String location) { this.location = location; }
+    public void setTitle(String title) {
+        this.title = title;
+    }
 
-    public LocalDateTime getEventDate() { return eventDate; }
-    public void setEventDate(LocalDateTime eventDate) { this.eventDate = eventDate; }
+    public String getDescription() {
+        return description;
+    }
 
-    public boolean isPublic() { return isPublic; }
-    public void setPublic(boolean isPublic) { this.isPublic = isPublic; }
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
-    public Integer getCapacity() { return capacity; }
-    public void setCapacity(Integer capacity) { this.capacity = capacity; }
+    public String getLocation() {
+        return location;
+    }
 
-    public int getRegisteredCount() { return registeredCount; }
-    public void setRegisteredCount(int registeredCount) { this.registeredCount = registeredCount; }
+    public void setLocation(String location) {
+        this.location = location;
+    }
 
-    public Long getOwnerId() { return ownerId; }
-    public void setOwnerId(Long ownerId) { this.ownerId = ownerId; }
+    public LocalDateTime getEventDate() {
+        return eventDate;
+    }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public void setEventDate(LocalDateTime eventDate) {
+        this.eventDate = eventDate;
+    }
 
-    public String getCancellationReason() { return cancellationReason; }
-    public void setCancellationReason(String cancellationReason) { this.cancellationReason = cancellationReason; }
+    public LocalDateTime getEndDate() {
+        return endDate;
+    }
 
-    public LocalDateTime getCancelledAt() { return cancelledAt; }
-    public void setCancelledAt(LocalDateTime cancelledAt) { this.cancelledAt = cancelledAt; }
+    public void setEndDate(LocalDateTime endDate) {
+        this.endDate = endDate;
+    }
 
-    public String getRefundPolicy() { return refundPolicy; }
-    public void setRefundPolicy(String refundPolicy) { this.refundPolicy = refundPolicy; }
+    public boolean isPublic() {
+        return isPublic;
+    }
 
-    public Integer getRefundPercent() { return refundPercent; }
-    public void setRefundPercent(Integer refundPercent) { this.refundPercent = refundPercent; }
+    public void setPublic(boolean isPublic) {
+        this.isPublic = isPublic;
+    }
 
-    public Long getVersion() { return version; }
-    public void setVersion(Long version) { this.version = version; }
+    public Integer getCapacity() {
+        return capacity;
+    }
 
-    public Set<User> getAttendees() { return attendees; }
-    public void setAttendees(Set<User> attendees) { this.attendees = attendees; }
+    public void setCapacity(Integer capacity) {
+        this.capacity = capacity;
+    }
 
-    public String getImageUrl() { return imageUrl; }
-    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+    public int getRegisteredCount() {
+        return registeredCount;
+    }
+
+    public void setRegisteredCount(int registeredCount) {
+        this.registeredCount = registeredCount;
+    }
+
+    public Long getOwnerId() {
+        return ownerId;
+    }
+
+    public void setOwnerId(Long ownerId) {
+        this.ownerId = ownerId;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getCancellationReason() {
+        return cancellationReason;
+    }
+
+    public void setCancellationReason(String cancellationReason) {
+        this.cancellationReason = cancellationReason;
+    }
+
+    public LocalDateTime getCancelledAt() {
+        return cancelledAt;
+    }
+
+    public void setCancelledAt(LocalDateTime cancelledAt) {
+        this.cancelledAt = cancelledAt;
+    }
+
+    public String getRefundPolicy() {
+        return refundPolicy;
+    }
+
+    public void setRefundPolicy(String refundPolicy) {
+        this.refundPolicy = refundPolicy;
+    }
+
+    public Integer getRefundPercent() {
+        return refundPercent;
+    }
+
+    public void setRefundPercent(Integer refundPercent) {
+        this.refundPercent = refundPercent;
+    }
+
+    public Long getVersion() {
+        return version;
+    }
+
+    public void setVersion(Long version) {
+        this.version = version;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public Set<String> getCategories() {
+        return categories;
+    }
+
+    public void setCategories(Set<String> categories) {
+        if (categories != null && categories.size() > 3) {
+            throw new IllegalArgumentException("An event can have at most 3 categories.");
+        }
+        this.categories = categories;
+    }
+
+    public void addCategory(String category) {
+        if (this.categories.size() < 3) {
+            this.categories.add(category);
+        }
+    }
+
+    public void removeCategory(String category) {
+        this.categories.remove(category);
+    }
+
+    public Set<String> getTags() {
+        return tags;
+    }
+
+    public void setTags(Set<String> tags) {
+        if (tags != null && tags.size() > 10) {
+            throw new IllegalArgumentException("An event can have at most 10 tags.");
+        }
+        this.tags = tags;
+    }
+
+    public void addTag(String tag) {
+        this.tags.add(tag);
+    }
+
+    public void removeTag(String tag) {
+        this.tags.remove(tag);
+    }
 }

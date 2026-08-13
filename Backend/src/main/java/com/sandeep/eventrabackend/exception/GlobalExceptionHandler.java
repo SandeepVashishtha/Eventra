@@ -1,22 +1,26 @@
 package com.sandeep.eventrabackend.exception;
 
 import com.sandeep.eventrabackend.dto.response.ErrorResponse;
+import jakarta.persistence.OptimisticLockException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
@@ -79,6 +83,13 @@ public class GlobalExceptionHandler {
         return buildError(HttpStatus.BAD_REQUEST, "Bad Request", ex.getMessage(), request);
     }
 
+    @ExceptionHandler(InvalidGoogleTokenException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidGoogleToken(
+            InvalidGoogleTokenException ex,
+            HttpServletRequest request) {
+        return buildError(HttpStatus.BAD_REQUEST, "Bad Request", ex.getMessage(), request);
+    }
+
     @ExceptionHandler(RegistrationClosedException.class)
     public ResponseEntity<ErrorResponse> handleRegistrationClosed(
             RegistrationClosedException ex,
@@ -104,10 +115,20 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(
             DataIntegrityViolationException ex,
             HttpServletRequest request) {
-        // e.g. a concurrent duplicate upvote hitting the (project_id, user_id)
-        // unique constraint should surface as a conflict, not a 500 (#11776).
-        return buildError(HttpStatus.CONFLICT, "Conflict",
-                "This resource already exists or was modified concurrently. Please try again.", request);
+        // A duplicate hitting a unique constraint (e.g. a repeat upvote on the
+        // (project_id, user_id) pair) is a genuine conflict → 409 (#11776).
+        // Any other integrity violation (NOT NULL, foreign key, CHECK, data too
+        // long...) is a client-side data problem and must surface as a 400, not
+        // a misleading 409.
+        String cause = ex.getMostSpecificCause() != null
+                ? ex.getMostSpecificCause().getMessage()
+                : ex.getMessage();
+        if (cause != null && cause.toLowerCase().contains("unique")) {
+            return buildError(HttpStatus.CONFLICT, "Conflict",
+                    "This resource already exists or was modified concurrently. Please try again.", request);
+        }
+        return buildError(HttpStatus.BAD_REQUEST, "Bad Request",
+                "The submitted data is invalid or conflicts with existing data. Please review and try again.", request);
     }
 
     @ExceptionHandler(FeedbackAlreadyExistsException.class)
@@ -129,6 +150,30 @@ public class GlobalExceptionHandler {
             AccessDeniedException ex,
             HttpServletRequest request) {
         return buildError(HttpStatus.FORBIDDEN, "Forbidden", "You do not have permission to access this resource", request);
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleMaxUploadSizeExceeded(
+            MaxUploadSizeExceededException ex,
+            HttpServletRequest request) {
+        logger.warn("File upload size exceeded: {}", ex.getMessage());
+        return buildError(HttpStatus.PAYLOAD_TOO_LARGE, "Payload Too Large",
+                "Uploaded file size exceeds the maximum permitted limit. Please upload a smaller file.", request);
+    }
+
+    @ExceptionHandler({
+            java.time.format.DateTimeParseException.class,
+            org.springframework.http.converter.HttpMessageNotReadableException.class,
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class,
+            org.springframework.web.bind.MissingServletRequestParameterException.class,
+            jakarta.validation.ConstraintViolationException.class,
+            org.springframework.web.bind.ServletRequestBindingException.class,
+    })
+    public ResponseEntity<ErrorResponse> handleBadClientInput(Exception ex,
+            HttpServletRequest request) {
+        logger.warn("Malformed request: {}", ex.getMessage());
+        return buildError(HttpStatus.BAD_REQUEST, "Bad Request",
+                "Malformed request: " + ex.getMessage(), request);
     }
 
     @ExceptionHandler(Exception.class)
@@ -198,5 +243,15 @@ public class GlobalExceptionHandler {
                 .timestamp(LocalDateTime.now())
                 .build();
         return ResponseEntity.status(status).body(response);
+    }
+
+    @ExceptionHandler({OptimisticLockException.class, ObjectOptimisticLockingFailureException.class})
+    public ResponseEntity<Map<String, Object>> handleOptimisticLockException(Exception ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.CONFLICT.value());
+        body.put("error", "Conflict");
+        body.put("message", "Concurrent ticket cancellation detected. Please retry your request.");
+        return new ResponseEntity<>(body, HttpStatus.CONFLICT);
     }
 }

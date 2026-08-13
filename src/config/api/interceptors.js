@@ -11,12 +11,11 @@ const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 1_000;
 
 const SIGNED_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
-const REQUEST_SIGNING_SECRET_KEY = "VITE_REQUEST_SIGNING_SECRET";
+// Never read VITE_* here. Vite inlines those into the browser bundle, which
+// would make HMAC request signing forgeable by anyone who opens DevTools.
+const REQUEST_SIGNING_SECRET_KEY = "REQUEST_SIGNING_SECRET";
 
 const getRequestSigningSecret = () => {
-  if (typeof import.meta !== "undefined" && import.meta.env) {
-    return import.meta.env[REQUEST_SIGNING_SECRET_KEY] || "";
-  }
   if (typeof process !== "undefined" && process.env) {
     return process.env[REQUEST_SIGNING_SECRET_KEY] || "";
   }
@@ -52,14 +51,34 @@ const signRequestConfig = async (config) => {
 
 let onUnauthorized = null;
 let _onRequiresReauth = null;
+let _reauthRequired = false;
 
 let _authToken = null;
+let _refreshToken = null;
 
 export const setOnUnauthorizedHandler = (handler) => { onUnauthorized = handler; };
 export const setOnRequiresReauthHandler = (handler) => { _onRequiresReauth = handler; };
+export const setReauthRequired = (value) => { _reauthRequired = Boolean(value); };
+export const isReauthRequired = () => _reauthRequired;
 export const setAuthToken = (token) => { _authToken = token; };
+export const setRefreshToken = (token) => { _refreshToken = token; };
+export const getRefreshToken = () => _refreshToken;
+
+const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+const isReauthUrl = (url) => typeof url === "string" && url.includes("/auth/reauth");
+
+const assertReauthAllowsRequest = (config) => {
+  const method = config.method?.toUpperCase();
+  if (_reauthRequired && MUTATING_METHODS.has(method) && !isReauthUrl(config.url)) {
+    throw new ApiError("Re-authentication required before this action can continue.", {
+      status: 401,
+      data: { code: "REQUIRES_REAUTH" },
+    });
+  }
+};
 
 export const createRequestInterceptor = (isDev) => async (config) => {
+  assertReauthAllowsRequest(config);
   if (isDev) {
     logger.info(`[API ${config.method?.toUpperCase()}]`, config.url || "");
   }
@@ -104,6 +123,7 @@ export const createResponseInterceptor = (API) => {
 
     if (status === 401) {
       if (errorCode === "REQUIRES_REAUTH" && _onRequiresReauth) {
+        _reauthRequired = true;
         _onRequiresReauth();
       } else if (onUnauthorized) {
         onUnauthorized();
@@ -180,6 +200,7 @@ const normalizeApiErrorWithTimeout = (error, timeoutMs) => {
 
 export function setupRequestInterceptor(api, { isDev, buildApiUrl, getAuthToken,   }) {
   api.interceptors.request.use(async (config) => {
+    assertReauthAllowsRequest(config);
     if (isDev) {
       logger.info(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
     }
@@ -231,7 +252,7 @@ export function setupRequestInterceptor(api, { isDev, buildApiUrl, getAuthToken,
   });
 }
 
-export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthorized, getOnRequiresReauth }) {
+export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthorized, getOnRequiresReauth, setAuthToken: applyAuthToken, setRefreshToken: applyRefreshToken }) {
   api.interceptors.response.use(
     (response) => {
       const headerValue = response.headers?.["x-server-time"] || response.headers?.["date"] || (typeof response.headers?.get === 'function' ? (response.headers.get("x-server-time") || response.headers.get("date")) : null);
@@ -250,6 +271,7 @@ export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthori
 
       if (status === 401) {
         if (errorCode === "REQUIRES_REAUTH") {
+          _reauthRequired = true;
           if (onRequiresReauth) onRequiresReauth();
           throw normalizeApiErrorWithTimeout(error, timeoutMs);
         }
@@ -257,11 +279,32 @@ export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthori
         if (!config._retry && !config.url?.includes("/auth/refresh")) {
           config._retry = true;
           try {
-            if (isDev) logger.info(`[API] Attempting OAuth token refresh...`);
-            await api.post("/auth/refresh");
+            if (!_refreshToken) {
+              throw new Error("No refresh token available");
+            }
+            if (isDev) logger.info(`[API] Attempting token refresh...`);
+            const refreshRes = await api.post("/auth/refresh", {
+              refreshToken: _refreshToken,
+            });
+            const nextAccess = refreshRes?.data?.token;
+            const nextRefresh = refreshRes?.data?.refreshToken;
+            if (nextAccess) {
+              if (applyAuthToken) applyAuthToken(nextAccess);
+              else setAuthToken(nextAccess);
+              config.headers = config.headers || {};
+              config.headers["Authorization"] = `Bearer ${nextAccess}`;
+            }
+            if (nextRefresh) {
+              if (applyRefreshToken) applyRefreshToken(nextRefresh);
+              else setRefreshToken(nextRefresh);
+            }
             return api(config);
           } catch (refreshError) {
-            logger.error("OAuth token refresh failed. Locking user out.", refreshError);
+            logger.error("Token refresh failed. Locking user out.", refreshError);
+            if (applyAuthToken) applyAuthToken(null);
+            else setAuthToken(null);
+            if (applyRefreshToken) applyRefreshToken(null);
+            else setRefreshToken(null);
             if (onUnauthorized) {
               onUnauthorized();
             }

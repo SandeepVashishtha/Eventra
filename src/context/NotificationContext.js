@@ -1,7 +1,7 @@
 import { createContext, useContext, useCallback, useMemo, useEffect, useRef } from "react";
 import { useAuth } from "./AuthContext";
 import useRealTimeConnection, { SSE_STATUS } from "../hooks/useRealTimeConnection";
-import { getNotificationCategory, getNotificationMessage, getNotificationTitle } from "../utils/notificationPreferences";
+import { getNotificationCategory, getNotificationDedupeKey, getNotificationMessage, getNotificationTitle } from "../utils/notificationPreferences";
 import { useNotificationPreferences } from "../hooks/useNotificationPreferences";
 import { usePushSubscription } from "../hooks/usePushSubscription";
 import { useNotificationDelivery } from "../hooks/useNotificationDelivery";
@@ -12,18 +12,27 @@ const NotificationContext = createContext();
 
 const normalizeNotification = (n = {}) => ({
   ...n,
-  id: n.id || n._id || `${n.timestamp || n.createdAt || Date.now()}-${getNotificationMessage(n)}`,
+  id: getNotificationDedupeKey(n) || `${Date.now()}-${Math.random().toString(36).slice(2)}`,
   title: getNotificationTitle(n),
   message: getNotificationMessage(n),
   category: getNotificationCategory(n),
   timestamp: n.timestamp || n.createdAt || n.updatedAt || new Date().toISOString(),
 });
 
-// 🟢 This helper function handles your assigned interval cleanup task
-const useBackgroundInterval = (realtimeStatus, fetchNotifications) => {
+// Realtime channels (e.g. `/stream/notifications`) may stay connected without
+// ever delivering a message when no backend publisher exists. Polling must
+// therefore also run when the channel has been silent for a heartbeat window,
+// not only when the connection reports IDLE (issue #15334).
+const SILENT_CHANNEL_MS = 30000;
+
+const useBackgroundInterval = (realtimeStatus, fetchNotifications, lastRealtimeMessageRef) => {
   useEffect(() => {
     const intervalId = setInterval(() => {
-      if (realtimeStatus === SSE_STATUS.IDLE) {
+      const channelSilent =
+        realtimeStatus === SSE_STATUS.IDLE ||
+        (lastRealtimeMessageRef &&
+          Date.now() - lastRealtimeMessageRef.current >= SILENT_CHANNEL_MS);
+      if (channelSilent) {
         fetchNotifications?.();
       }
     }, 30000);
@@ -31,12 +40,13 @@ const useBackgroundInterval = (realtimeStatus, fetchNotifications) => {
     return () => {
       clearInterval(intervalId);
     };
-  }, [realtimeStatus, fetchNotifications]);
+  }, [realtimeStatus, fetchNotifications, lastRealtimeMessageRef]);
 };
 
 export const NotificationProvider = ({ children }) => {
   const { token } = useAuth();
   const hasCompletedInitialFetch = useRef(false);
+  const lastRealtimeMessageRef = useRef(0);
 
   const { preferences, defaultPreferences, updatePreferences, savePreferences } =
     useNotificationPreferences();
@@ -66,6 +76,7 @@ export const NotificationProvider = ({ children }) => {
 
   const handleRealtimeMessage = useCallback(
     (data) => {
+      lastRealtimeMessageRef.current = Date.now();
       if (Array.isArray(data)) { data.forEach(ingestRealtime); return; }
       ingestRealtime(data?.notification || data);
     },
@@ -79,7 +90,7 @@ export const NotificationProvider = ({ children }) => {
 
   // 🟢 FIXED: Removed the old 'realtimeStatus' state variable & its redundant useEffect entirely.
   // 🟢 Added your required background interval function call here instead.
-  useBackgroundInterval(sseStatus, fetchNotifications);
+  useBackgroundInterval(sseStatus, fetchNotifications, lastRealtimeMessageRef);
 
   useEffect(() => {
     if (!markAsReadRef) return;

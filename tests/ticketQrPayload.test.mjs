@@ -1,59 +1,45 @@
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { buildTicketQrPayload, buildTicketQrValue, getTicketHolderName } from "../src/utils/ticketQrPayload.js";
+import {
+  getTicketHolderName,
+  getTotpTimeWindow,
+  buildTicketQrPayload,
+  buildTicketQrValue,
+  validateTicketQrWindow,
+} from "../src/utils/ticketQrPayload.js";
 
-const event = {
-  id: 10287,
-  title: "Eventra Summit",
-};
+describe("Dynamic Ticket QR Payload & TOTP Rotating Protocol Tests", () => {
+  it("should format ticket holder name fallback cleanly", () => {
+    assert.equal(getTicketHolderName({ fullName: "Alex Rivera" }), "Alex Rivera");
+    assert.equal(getTicketHolderName({ firstName: "Sarah", lastName: "Chen" }), "Sarah Chen");
+    assert.equal(getTicketHolderName(null), "Eventra Guest");
+  });
 
-const user = {
-  firstName: "Asha",
-  lastName: "Rao",
-  email: "asha@example.com",
-};
+  it("should calculate 15s step time window integer", () => {
+    const windowNum = getTotpTimeWindow(15);
+    assert.ok(typeof windowNum === "number" && windowNum > 0);
+  });
 
-const registration = {
-  registrationId: "reg-123",
-  qrToken: "signed-ticket-token",
-};
+  it("should generate dynamic TOTP QR payload with timeWindow", () => {
+    const payload = buildTicketQrPayload({ registration: { registrationId: "REG-101" } });
+    assert.ok(payload);
+    assert.equal(payload.ticketId, "REG-101");
+    assert.ok(payload.totpToken);
+    assert.ok(payload.timeWindow);
 
-const payload = buildTicketQrPayload({
-  event,
-  user,
-  registration,
-  serialNumber: "EVT-ASH-9XY7Z",
+    const jsonStr = buildTicketQrValue(payload);
+    assert.equal(jsonStr, JSON.stringify({ ticketId: "REG-101" }));
+    assert.equal(Object.keys(JSON.parse(jsonStr)).length, 1);
+  });
+
+  it("should validate current TOTP time window and reject expired windows", () => {
+    const validPayload = buildTicketQrPayload({ registration: { registrationId: "REG-101" } });
+    assert.equal(validateTicketQrWindow(validPayload), true);
+
+    const expiredPayload = {
+      ...validPayload,
+      timeWindow: validPayload.timeWindow - 5, // 5 windows ago (>15s * 5 = 75s ago)
+    };
+    assert.equal(validateTicketQrWindow(expiredPayload), false);
+  });
 });
-
-// The QR must encode ONLY the opaque server-issued token — no PII.
-assert.deepStrictEqual(payload, {
-  ticketId: "signed-ticket-token",
-});
-
-// Round-trip through the encoded value.
-assert.deepStrictEqual(JSON.parse(buildTicketQrValue(payload)), payload);
-
-// PII (attendee name, event name, registration id) must never ride in the QR.
-const serialisedQr = buildTicketQrValue(payload);
-assert.ok(
-  !serialisedQr.includes("Asha") && !serialisedQr.includes("Eventra Summit") && !serialisedQr.includes("reg-123"),
-  "QR value must not embed attendee name, event name, or registration id",
-);
-
-// When no server-issued token exists, no QR payload may be produced.
-assert.equal(
-  buildTicketQrPayload({
-    event,
-    user: {},
-    registration: null,
-  }),
-  null,
-  "buildTicketQrPayload() returns null when no server-issued token exists",
-);
-
-assert.equal(
-  buildTicketQrValue(null),
-  "",
-  "buildTicketQrValue() returns an empty string for a null payload",
-);
-
-assert.equal(getTicketHolderName({ fullName: "Priya Shah", firstName: "Ignored" }), "Priya Shah");

@@ -234,8 +234,8 @@ const CVPerimeterSecurity = () => {
                     className="absolute border-2 border-red-500 bg-red-500/20 shadow-[0_0_15px_rgba(220,38,38,0.8)] flex flex-col justify-end transition-all duration-300 ease-linear"
                     style={{ 
                       width: '40px', height: '80px',
-                      left: \`\${targetPos.x}%\`, 
-                      top: \`\${targetPos.y}%\`,
+                      left: `${targetPos.x}%`, 
+                      top: `${targetPos.y}%`,
                       transform: 'translate(-50%, -50%)'
                     }}
                   >
@@ -253,8 +253,8 @@ const CVPerimeterSecurity = () => {
                   {/* Trajectory Prediction Line */}
                   <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-50">
                     <line 
-                      x1={\`\${targetPos.x}%\`} y1={\`\${targetPos.y}%\`} 
-                      x2={\`\${targetPos.x + 20}%\`} y2={\`\${targetPos.y + 20}%\`} 
+                      x1={`${targetPos.x}%`} y1={`${targetPos.y}%`} 
+                      x2={`${targetPos.x + 20}%`} y2={`${targetPos.y + 20}%`} 
                       stroke="red" strokeWidth="1" strokeDasharray="4 2" 
                     />
                   </svg>

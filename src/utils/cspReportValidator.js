@@ -1,21 +1,23 @@
+/**
+ * CSP Report Validator & Endpoint Domain Filtering (#13909)
+ */
+
 export function isValidCspReport(report) {
-  if (!report || typeof report !== "object") return false;
-
-  const payload = report["csp-report"];
-  if (!payload || typeof payload !== "object") return false;
-
-  const violatedDirective = payload["violated-directive"];
-  if (typeof violatedDirective !== "string" || violatedDirective.length > 500) {
+  if (!report || typeof report !== "object" || !report["csp-report"]) {
     return false;
   }
+  const body = report["csp-report"];
+  return Boolean(body["violated-directive"] || body["effective-directive"]);
+}
 
-  // Prevent script/HTML tag injection in reports
-  const blockedUri = payload["blocked-uri"];
-  if (typeof blockedUri === "string") {
-    if (/<script|javascript:|data:/i.test(blockedUri)) {
-      return false;
-    }
+export function isSelfOriginatingCspReport(blockedUri, reportUri) {
+  if (!blockedUri || !reportUri) return false;
+
+  try {
+    const blockedHost = new URL(blockedUri).host;
+    const reportHost = new URL(reportUri).host;
+    return blockedHost === reportHost;
+  } catch {
+    return blockedUri.includes(reportUri) || reportUri.includes(blockedUri);
   }
-
-  return true;
 }

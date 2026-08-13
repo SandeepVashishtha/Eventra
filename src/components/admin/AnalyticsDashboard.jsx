@@ -65,13 +65,14 @@ const getInitialLiveCount = () => {
 
 const AnalyticsDashboard = () => {
   const { analytics, loading: analyticsLoading } = useAnalytics();
-  const [setCheckins] = useState(getInitialCheckins);
+  const [checkins, setCheckins] = useState(getInitialCheckins);
   const [hourlyData, setHourlyData] = useState(INITIAL_HOURLY_DATA);
   const [liveCount, setLiveCount] = useState(getInitialLiveCount);
   const [activeCheckinsPerMinute, setActiveCheckinsPerMinute] = useState(5.4);
-  const [activeTab] = useState('analytics');
+  const [activeTab, setActiveTab] = useState('analytics');
 
   const categoryData = analytics?.categoryBreakdown || FALLBACK_CATEGORY_DATA;
+  const isShowingFallbackData = !analyticsLoading && (!analytics || !analytics.categoryBreakdown);
 
   // Real-time SSE stream — takes priority over local simulation when connected
   const { recentCheckins: streamCheckins, status: streamStatus } = useAnalyticsStream();
@@ -207,8 +208,36 @@ const AnalyticsDashboard = () => {
 
   return (
     <div className="space-y-8 text-slate-800 dark:text-slate-100">
+      {isShowingFallbackData && (
+        <div className="flex items-start gap-3 p-4 border rounded-2xl bg-amber-50 border-amber-200 dark:bg-amber-950/40 dark:border-amber-800">
+          <span className="mt-0.5 w-2 h-2 rounded-full bg-amber-400 shrink-0" aria-hidden="true" />
+          <div>
+            <h4 className="text-xs font-bold text-amber-800 dark:text-amber-300">
+              Showing simulated data — live analytics unavailable
+            </h4>
+            <p className="mt-0.5 text-[11px] text-amber-700 dark:text-amber-400/80">
+              The analytics summary could not be loaded from the backend, so the
+              numbers below are placeholder values, not real registrations or check-ins.
+            </p>
+          </div>
+        </div>
+      )}
       {/* Tab Navigation */}
       <div className="flex gap-2 mb-4">
+        <button
+          onClick={() => setActiveTab("analytics")}
+          className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-md transition self-start sm:self-auto"
+          aria-label="Show analytics tab">
+          <Activity className="w-3.5 h-3.5" />
+          Analytics
+        </button>
+        <button
+          onClick={() => setActiveTab("budget")}
+          className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-md transition self-start sm:self-auto"
+          aria-label="Show budget tab">
+          <Clock className="w-3.5 h-3.5" />
+          Budget
+        </button>
         <button
           onClick={triggerManualCheckin}
           className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-md transition self-start sm:self-auto"
@@ -397,6 +426,32 @@ const AnalyticsDashboard = () => {
                 ))}
               </div>
             </div>
+          </div>
+
+          {/* RECENT CHECK-INS FEED */}
+          <div className="p-6 bg-white border shadow-md dark:bg-slate-900 border-slate-200 dark:border-slate-800/80 rounded-3xl">
+            <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4">
+              Recent Check-ins
+            </h3>
+            <ul className="space-y-2">
+              {checkins.map((item) => (
+                <li
+                  key={item.id}
+                  className="flex items-center justify-between p-3 border bg-slate-50 dark:bg-slate-950 border-slate-100 dark:border-slate-850 rounded-xl"
+                >
+                  <div>
+                    <div className="text-xs font-bold text-slate-800 dark:text-slate-100">{item.name}</div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400">{item.event}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[10px] font-bold text-slate-400">{item.time}</div>
+                    <div className={`text-[10px] font-bold ${item.status === "Flagged" ? "text-rose-500" : "text-emerald-500"}`}>
+                      {item.status}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
         </>
       )}

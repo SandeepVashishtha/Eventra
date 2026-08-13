@@ -63,6 +63,8 @@ export const suggestMeetingSlots = (userA, userB, dateStr) => {
     { start: "04:30 PM", end: "05:00 PM", type: "Virtual Lounge" }
   ];
   
+  if (slots.length === 0) return [];
+  
   const offset = generateSeed(userA, userB, dateStr) % slots.length;
   return [...slots.slice(offset), ...slots.slice(0, offset)];
 };

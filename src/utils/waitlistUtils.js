@@ -6,6 +6,234 @@ import { getOrMigrateKey } from "./storageKeyManager.js";
 import { syncSecureStorage } from "./secureStorage.js";
 import { pushToQueue } from "./offlineQueue.js";
 
+// CSV parsing utility for legacy waitlist import
+export const parseCsvWaitlistData = (csvText) => {
+  try {
+    const lines = csvText.split('\n');
+    if (lines.length < 2) {
+      throw new Error('CSV must have at least one data row');
+    }
+
+    // Parse header line
+    const headers = lines[0].split(',').map(header => header.trim());
+    
+    // Validate required columns
+    const requiredColumns = ['Name', 'Email', 'Timestamp'];
+    const missingColumns = requiredColumns.filter(col => 
+      !headers.some(header => header.toLowerCase() === col.toLowerCase())
+    );
+    
+    if (missingColumns.length > 0) {
+      throw new Error(`Missing required columns: ${missingColumns.join(', ')}`);
+    }
+
+    // Map headers to standard names (case-insensitive)
+    const headerMap = {};
+    headers.forEach((header, index) => {
+      const lowerHeader = header.toLowerCase();
+      if (lowerHeader === 'name') headerMap.name = index;
+      else if (lowerHeader === 'email') headerMap.email = index;
+      else if (lowerHeader === 'timestamp') headerMap.timestamp = index;
+    });
+
+    const entries = [];
+    
+    // Process data rows (skip header)
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue; // Skip empty lines
+
+      const values = line.split(',').map(value => value.trim());
+      
+      // Handle CSV values that might contain commas (simple quoted string support)
+      const parsedValues = [];
+      let currentValue = '';
+      let inQuotes = false;
+      
+      for (const char of line) {
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          parsedValues.push(currentValue);
+          currentValue = '';
+        } else {
+          currentValue += char;
+        }
+      }
+      parsedValues.push(currentValue); // Add last value
+
+      if (parsedValues.length < 3) {
+        throw new Error(`Invalid CSV format in line ${i + 1}: expected at least 3 columns`);
+      }
+
+      const entry = {
+        name: parsedValues[headerMap.name] || '',
+        email: parsedValues[headerMap.email] || '',
+        timestamp: parsedValues[headerMap.timestamp] || ''
+      };
+
+      // Validate required fields
+      if (!entry.name || !entry.email || !entry.timestamp) {
+        throw new Error(`Missing required data in line ${i + 1}`);
+      }
+
+      entries.push(entry);
+    }
+
+    return entries;
+  } catch (error) {
+    logger.error('[WaitlistUtils] Failed to parse CSV waitlist data:', error);
+    throw new Error(`Failed to parse CSV: ${error.message}`);
+  }
+};
+
+// Validate parsed CSV entries before import
+export const validateCsvWaitlistEntries = (entries) => {
+  if (!Array.isArray(entries)) {
+    throw new Error('Invalid entries format: expected array');
+  }
+
+  if (entries.length === 0) {
+    throw new Error('No valid entries found in CSV');
+  }
+
+  const errors = [];
+  const validEntries = [];
+
+  entries.forEach((entry, index) => {
+    try {
+      // Validate required fields
+      if (!entry.name || typeof entry.name !== 'string' || entry.name.trim() === '') {
+        errors.push({ line: index + 2, field: 'Name', error: 'Name is required' });
+        return;
+      }
+
+      if (!entry.email || typeof entry.email !== 'string' || entry.email.trim() === '') {
+        errors.push({ line: index + 2, field: 'Email', error: 'Email is required' });
+        return;
+      }
+
+      // Basic email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(entry.email)) {
+        errors.push({ line: index + 2, field: 'Email', error: 'Invalid email format' });
+        return;
+      }
+
+      if (!entry.timestamp || typeof entry.timestamp !== 'string' || entry.timestamp.trim() === '') {
+        errors.push({ line: index + 2, field: 'Timestamp', error: 'Timestamp is required' });
+        return;
+      }
+
+      // Try to parse timestamp (ISO format expected)
+      const timestamp = entry.timestamp.trim();
+      const date = new Date(timestamp);
+      if (isNaN(date.getTime())) {
+        // Try additional formats
+        const formats = [
+          timestamp, // ISO
+          timestamp.replace(' ', 'T'), // Date with space
+          `${timestamp}T00:00:00Z`, // Date only
+        ];
+        
+        let parsedSuccessfully = false;
+        for (const format of formats) {
+          const testDate = new Date(format);
+          if (!isNaN(testDate.getTime())) {
+            parsedSuccessfully = true;
+            break;
+          }
+        }
+        
+        if (!parsedSuccessfully) {
+          errors.push({ line: index + 2, field: 'Timestamp', error: 'Invalid timestamp format. Expected ISO format (YYYY-MM-DDTHH:MM:SSZ)' });
+          return;
+        }
+      }
+
+      validEntries.push({
+        name: entry.name.trim(),
+        email: entry.email.trim().toLowerCase(),
+        timestamp: timestamp
+      });
+
+    } catch (error) {
+      errors.push({ line: index + 2, field: 'All', error: error.message });
+    }
+  });
+
+  return {
+    validEntries,
+    errors,
+    hasErrors: errors.length > 0
+  };
+};
+
+// Bulk import CSV waitlist data
+export const importCsvWaitlist = async (eventId, csvText, userId) => {
+  try {
+    // Parse CSV text
+    const parsedEntries = parseCsvWaitlistData(csvText);
+    
+    // Validate entries
+    const { validEntries, errors, hasErrors } = validateCsvWaitlistEntries(parsedEntries);
+    
+    if (hasErrors) {
+      return {
+        success: false,
+        message: `CSV validation failed with ${errors.length} errors`,
+        errors: errors.map(error => `${error.field} error at line ${error.line}: ${error.error}`),
+        importedCount: 0,
+        failedCount: parsedEntries.length
+      };
+    }
+
+    // Prepare payload for backend
+    const payload = {
+      eventId: parseInt(eventId, 10),
+      entries: validEntries.map(entry => ({
+        name: entry.name,
+        email: entry.email,
+        timestamp: entry.timestamp
+      }))
+    };
+
+    // Send to backend
+    const response = await apiUtils.post(
+      API_ENDPOINTS.WAITLIST.IMPORT_CSV(eventId),
+      payload
+    );
+
+    if (!response.ok) {
+      const errorData = response.data || {};
+      throw new Error(errorData.message || 'Failed to import CSV waitlist data');
+    }
+
+    return {
+      success: true,
+      message: 'CSV waitlist data imported successfully',
+      data: response.data,
+      importedCount: response.data?.successfulImports || validEntries.length,
+      failedCount: response.data?.failedImports || 0
+    };
+
+  } catch (error) {
+    logger.error('[WaitlistUtils] Failed to import CSV waitlist:', error);
+    
+    if (error?.response?.status === 401 || error?.response?.status === 403) {
+      throw error; // Re-throw auth errors
+    }
+
+    return {
+      success: false,
+      message: error.message || 'Failed to import CSV waitlist data',
+      errors: [error.message],
+      importedCount: 0,
+      failedCount: 0
+    };
+  }
+};
+
 const GLOBAL_WAITLIST_KEY = "eventra_global_waitlists";
 const NOTIFICATION_INBOX_PREFIX = "eventra_notification_inbox";
 const CANONICAL_NOTIFICATION_INBOX_KEY = NOTIFICATION_INBOX_PREFIX;
@@ -128,7 +356,9 @@ const getWaitlistEventTitle = (eventId, eventOrTitle, records = []) => {
 
 const getPositionMap = (waitlist) =>
   waitlist.reduce((positions, record, index) => {
-    positions.set(record.userId, index + 1);
+    if (record && record.userId != null) {
+      positions.set(String(record.userId), index + 1);
+    }
     return positions;
   }, new Map());
 
@@ -141,7 +371,9 @@ const notifyWaitlistPositionChanges = async (eventId, beforeWaitlist, eventOrTit
 
   await Promise.all(
     afterWaitlist.map(async (record, index) => {
-      const previousPosition = previousPositions.get(record.userId);
+      if (!record || record.userId == null) return;
+
+      const previousPosition = previousPositions.get(String(record.userId));
       const currentPosition = index + 1;
       if (!previousPosition || currentPosition >= previousPosition) return;
 
@@ -231,7 +463,16 @@ export const syncWaitlistFromServer = async (eventId, cacheOwnerId) => {
     if (response.ok && response.data) {
       const serverData = (
         Array.isArray(response.data) ? response.data : response.data.entries || []
-      ).map((r) => ({ ...r, eventId: parseInt(r.eventId, 10) }));
+      ).map((r) => ({
+        ...r,
+        id: r.id,
+        waitlistId: r.id,
+        eventId: parseInt(r.eventId, 10),
+        userId: r.userId ?? r.userEmail,
+        status: String(r.status || "waiting").toLowerCase(),
+        joinedAt: r.joinedAt,
+        position: r.position,
+      }));
       // Reconcile: replace stale local records for this event with server state
       const records = await getGlobalWaitlist(cacheOwnerId);
       const reconciled = [
@@ -253,17 +494,55 @@ export const syncWaitlistFromServer = async (eventId, cacheOwnerId) => {
   return getEventWaitlist(id, cacheOwnerId);
 };
 
+/** Attendee: fetch own waitlist entry/position from GET /api/events/{id}/waitlist/me */
+export const getMyWaitlistEntry = async (eventId) => {
+  const id = parseEventId(eventId);
+  const response = await apiUtils.get(`${API_ENDPOINTS.EVENTS.ALL}/${id}/waitlist/me`);
+  if (!response.ok) {
+    return null;
+  }
+  const data = response.data;
+  return data
+    ? {
+        id: data.id,
+        waitlistId: data.id,
+        eventId: data.eventId,
+        userId: data.userId ?? data.userEmail,
+        position: data.position,
+        status: String(data.status || "waiting").toLowerCase(),
+        eventTitle: data.eventTitle,
+        joinedAt: data.joinedAt,
+      }
+    : null;
+};
+
+const parseJoinedAtTime = (joinedAt) => {
+  const time = new Date(joinedAt).getTime();
+  return Number.isFinite(time) ? time : Infinity;
+};
+
 // Get waitlist entries for a specific event with 'waiting' status
 export const getEventWaitlist = async (eventId, userId) => {
   const id = parseEventId(eventId);
   const records = await getGlobalWaitlist(userId);
   return records
     .filter((r) => r.eventId === id && r.status === "waiting")
-    .sort((a, b) => (new Date(a.joinedAt).getTime() || Infinity) - (new Date(b.joinedAt).getTime() || Infinity));
+    .sort((a, b) => parseJoinedAtTime(a.joinedAt) - parseJoinedAtTime(b.joinedAt));
 };
 
 // Calculate queue position (1-indexed) for a user on a specific event
 export const getQueuePosition = async (eventId, userId) => {
+  try {
+    const mine = await getMyWaitlistEntry(eventId);
+    if (mine?.position != null) {
+      return mine.position;
+    }
+  } catch (error) {
+    if (error?.response?.status === 401 || error?.response?.status === 403) {
+      throw error;
+    }
+    // Fall back to local cache for offline / not-on-waitlist
+  }
   const eventWaitlist = await getEventWaitlist(eventId, userId);
   const index = eventWaitlist.findIndex((r) => r.userId === userId);
   return index !== -1 ? index + 1 : -1;
@@ -359,7 +638,11 @@ export const joinWaitlist = async (eventId, user, registrationForm = {}) => {
   } catch (error) {
     const status = error?.status || error?.response?.status;
     if (status === 409) {
-      throw new Error("You are already on the waitlist for this event.");
+      const serverMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Unable to join waitlist due to a conflict.";
+      throw new Error(serverMessage);
     }
     if (error.isNetworkError || error.isTimeout) {
       // Fall through to offline fallback
@@ -435,14 +718,14 @@ export const joinWaitlist = async (eventId, user, registrationForm = {}) => {
   return newEntry;
 };
 
-// Leave waitlist - tries server first, falls back to localStorage
+// Leave waitlist - DELETE /api/events/{id}/waitlist (matches backend)
 export const leaveWaitlist = async (eventId, userId) => {
   const id = parseEventId(eventId);
   const beforeWaitlist = await getEventWaitlist(id, userId);
 
   try {
-    const response = await apiUtils.post(`${API_ENDPOINTS.EVENTS.ALL}/${id}/waitlist/leave`, { userId });
-    if (response.ok) {
+    const response = await apiUtils.delete(`${API_ENDPOINTS.EVENTS.ALL}/${id}/waitlist`);
+    if (response.ok || response.status === 204) {
       const records = await getGlobalWaitlist(userId);
       const matchIndex = records.findIndex(
         (r) => r.userId === userId && r.eventId === id && r.status === "waiting"
@@ -456,8 +739,14 @@ export const leaveWaitlist = async (eventId, userId) => {
       await notifyWaitlistPositionChanges(id, beforeWaitlist, undefined, userId);
       return true;
     }
-  } catch {
-    // Fall through to localStorage-only path
+  } catch (error) {
+    if (error?.response?.status === 401 || error?.response?.status === 403) {
+      throw error;
+    }
+    if (!checkIfOffline(error)) {
+      throw error;
+    }
+    // Fall through to localStorage-only path for genuine offline
   }
 
   const records = await getGlobalWaitlist(userId);
@@ -528,10 +817,15 @@ export const promoteRecord = async (record, event, options = {}, cacheOwnerId) =
   const beforeWaitlist = shouldNotifyPositionChanges
     ? await getEventWaitlist(record.eventId, cacheOwnerId)
     : [];
+  const waitlistId = record.id ?? record.waitlistId;
+  if (!waitlistId) {
+    logger.error("[WaitlistUtils] promoteRecord missing waitlist entry id");
+    return false;
+  }
   try {
-    const response = await apiUtils.post(`${API_ENDPOINTS.EVENTS.ALL}/${event.id}/waitlist/promote`, {
-      userId: record.userId,
-    });
+    const response = await apiUtils.post(
+      `${API_ENDPOINTS.EVENTS.ALL}/${event.id}/waitlist/${waitlistId}/promote`
+    );
     if (response.ok) {
       const promoted = await performLocalPromotion(record, event, cacheOwnerId);
       if (promoted && shouldNotifyPositionChanges) {
@@ -542,6 +836,9 @@ export const promoteRecord = async (record, event, options = {}, cacheOwnerId) =
     // Explicit server rejection
     return false;
   } catch (error) {
+    if (error?.response?.status === 401 || error?.response?.status === 403) {
+      throw error;
+    }
     if (!checkIfOffline(error)) {
       return false;
     }
@@ -622,12 +919,17 @@ export const handleCapacityIncrease = async (event, newCapacity, cacheOwnerId) =
 export const organizerRemoveUser = async (eventId, userId, cacheOwnerId) => {
   const id = parseEventId(eventId);
   const beforeWaitlist = await getEventWaitlist(id, cacheOwnerId);
+  const target = beforeWaitlist.find((r) => String(r.userId) === String(userId));
+  const waitlistId = target?.id ?? target?.waitlistId;
 
   try {
-    const response = await apiUtils.post(`${API_ENDPOINTS.EVENTS.ALL}/${id}/waitlist/remove`, {
-      userId,
-    });
-    if (response.ok) {
+    if (!waitlistId) {
+      throw new Error("User is not in the active waitlist.");
+    }
+    const response = await apiUtils.delete(
+      `${API_ENDPOINTS.EVENTS.ALL}/${id}/waitlist/${waitlistId}`
+    );
+    if (response.ok || response.status === 204) {
       const records = await getGlobalWaitlist(cacheOwnerId);
       const matchIndex = records.findIndex(
         (r) => r.userId === userId && r.eventId === id && r.status === "waiting"
@@ -645,8 +947,14 @@ export const organizerRemoveUser = async (eventId, userId, cacheOwnerId) => {
       await notifyWaitlistPositionChanges(id, beforeWaitlist, undefined, cacheOwnerId);
       return true;
     }
-  } catch {
-    // Fall through to localStorage-only path
+  } catch (error) {
+    if (error?.response?.status === 401 || error?.response?.status === 403) {
+      throw error;
+    }
+    if (!checkIfOffline(error)) {
+      throw error;
+    }
+    // Fall through to localStorage-only path for genuine offline
   }
 
   const records = await getGlobalWaitlist(cacheOwnerId);
