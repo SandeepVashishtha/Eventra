@@ -1,10 +1,15 @@
 package com.sandeep.eventrabackend.service;
 
+import com.sandeep.eventrabackend.model.Role;
+import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.HackathonRegistrationRepository;
+import com.sandeep.eventrabackend.repository.HackathonRepository;
+import com.sandeep.eventrabackend.repository.UserRepository;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -23,12 +28,6 @@ public class TeamWorkspaceSyncService {
 
     private static final Pattern HACKATHON_ROOM_KEY =
             Pattern.compile("^hackathon:(\\d+)(?::team:.*)?$");
-
-    private final HackathonRegistrationRepository hackathonRegistrationRepository;
-
-    public TeamWorkspaceSyncService(HackathonRegistrationRepository hackathonRegistrationRepository) {
-        this.hackathonRegistrationRepository = hackathonRegistrationRepository;
-    }
 
     private static final class WorkspaceState {
         private final Object lock = new Object();
@@ -163,14 +162,6 @@ public class TeamWorkspaceSyncService {
         } catch (NumberFormatException ex) {
             return null;
         }
-    }
-        if (StringUtils.hasText(hackathonId) && StringUtils.hasText(teamId)) {
-            return "hackathon:" + hackathonId.trim() + ":team:" + teamId.trim();
-        }
-        if (StringUtils.hasText(hackathonId)) {
-            return "hackathon:" + hackathonId.trim();
-        }
-        return "user:" + authenticatedEmail().trim().toLowerCase();
     }
 
     /**
