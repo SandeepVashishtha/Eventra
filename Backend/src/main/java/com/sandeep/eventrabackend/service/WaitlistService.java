@@ -39,7 +39,7 @@ public class WaitlistService {
      * or roll back together.
      */
     public boolean confirmPromotion(String promotionToken, String userId, String eventId) {
-        if (promotionToken == null || promotionToken.trim().isEmpty()) {
+        if (promotionToken == null || promotionToken.trim().isEmpty() || !promotionToken.matches("^[a-zA-Z0-9-]{8,64}$")) {
             return false;
         }
 
@@ -62,7 +62,7 @@ public class WaitlistService {
     }
 
     public boolean isTokenProcessed(String promotionToken) {
-        if (promotionToken == null || promotionToken.trim().isEmpty()) {
+        if (promotionToken == null || promotionToken.trim().isEmpty() || !promotionToken.matches("^[a-zA-Z0-9-]{8,64}$")) {
             return false;
         }
         if (processedPromotionTokens.contains(promotionToken)) {
