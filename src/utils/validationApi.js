@@ -228,8 +228,11 @@ export const requestValidation = async (endpoint, options = {}) => {
   );
 };
 
-export const checkEmailAvailability = (email, options = {}) =>
-  requestValidation(
+export const checkEmailAvailability = (email, options = {}) => {
+  if (!email || typeof email !== "string" || !email.trim()) {
+    return Promise.resolve(createValidationResponse(false, "Email is required"));
+  }
+  return requestValidation(
     options.endpoint || `/api/validate/email/${encodeURIComponent(email)}`,
     {
       invalidMessage: "Email is already registered",
