@@ -27,6 +27,8 @@ public class PlagiarismDetectorService {
         Set<String> union = new HashSet<>(tokensA);
         union.addAll(tokensB);
 
+        if (union.isEmpty()) return 0.0;
+
         return (double) intersection.size() / union.size() * 100.0;
     }
 }
