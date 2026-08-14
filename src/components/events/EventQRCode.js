@@ -6,8 +6,32 @@ const EventQRCode = ({
   registrationId = "",
   qrValue = "",
 }) => {
-  const handleDownload = () => {
-    alert("QR download functionality can be integrated later.");
+  const handleDownload = async () => {
+    if (!qrValue) {
+      alert("No QR code available to download.");
+      return;
+    }
+
+    try {
+      const link = document.createElement("a");
+      if (qrValue.startsWith("data:")) {
+        link.href = qrValue;
+      } else {
+        const response = await fetch(qrValue);
+        if (!response.ok) throw new Error(`Download failed (${response.status})`);
+        const blob = await response.blob();
+        link.href = URL.createObjectURL(blob);
+      }
+      link.download = `event-qr-${registrationId || "ticket"}.png`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      if (link.href.startsWith("blob:")) {
+        URL.revokeObjectURL(link.href);
+      }
+    } catch (error) {
+      alert("Failed to download QR code. Please try again.");
+    }
   };
 
   return (
