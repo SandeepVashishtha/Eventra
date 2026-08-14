@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import * as ExtractKey from '../extract-key.js';
+import { extractKey } from '../extract-key.js';
 
 describe('extract-key', () => {
-  it('exports a module', () => {
-    expect(ExtractKey).toBeDefined();
+  it('extracts the values of a key from each item', () => {
+    expect(extractKey([{ id: 1 }, { id: 2 }], 'id')).toEqual([1, 2]);
+    expect(extractKey([], 'id')).toEqual([]);
   });
 });
-
