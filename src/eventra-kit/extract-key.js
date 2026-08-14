@@ -1,7 +1,7 @@
 /**
  * adds a extract-key helper.
  */
-export function extractKey(value) {
-  return value.map((item, index) => [index, item]);
+export function extractKey(value, key) {
+  return value.map((item) => item[key]);
 }
 
