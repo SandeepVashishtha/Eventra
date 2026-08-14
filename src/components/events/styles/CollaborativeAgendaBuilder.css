@@ -1,0 +1,308 @@
+/**
+ * CollaborativeAgendaBuilder.css - Styles for Collaborative Yjs-based Multi-Track Event Scheduler (#17674)
+ * Contains custom styles for the collaborative scheduler components
+ */
+
+/* Main container */
+.collaborative-agenda-builder {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background-color: var(--bg-primary);
+}
+
+/* Header styles */
+.cab-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 56px;
+}
+
+/* Status bar */
+.cab-status-bar {
+  display: flex;
+  align-items: center;
+  overflow-x: auto;
+}
+
+.cab-status-bar > div {
+  white-space: nowrap;
+}
+
+/* Content area */
+.cab-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.cab-sidebar {
+  width: 256px;
+  min-width: 256px;
+  overflow-y: auto;
+}
+
+/* Main content area */
+.cab-main {
+  flex: 1;
+  overflow: auto;
+  padding: 1rem;
+}
+
+/* Calendar view specific styles */
+.calendar-view {
+  display: grid;
+  grid-template-columns: auto repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1px;
+  height: 100%;
+  min-width: 100%;
+}
+
+.calendar-view .time-column {
+  position: sticky;
+  left: 0;
+  background-color: inherit;
+  z-index: 1;
+}
+
+/* Session block in calendar */
+.calendar-view .session-block {
+  position: absolute;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.calendar-view .session-block:hover {
+  transform: scale(1.02);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Editable session highlight */
+.calendar-view .session-block.editing {
+  border: 2px solid var(--color-blue-400);
+  background-color: var(--color-blue-100);
+}
+
+/* List view styles */
+.list-view {
+  overflow: auto;
+  width: 100%;
+}
+
+.list-view table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.list-view th,
+.list-view td {
+  padding: 0.5rem;
+  text-align: left;
+}
+
+.list-view tr {
+  border-bottom: 1px solid var(--color-slate-200);
+}
+
+.list-view tr:hover {
+  background-color: var(--color-slate-50);
+}
+
+.list-view tr.editing {
+  background-color: var(--color-blue-50);
+}
+
+/* Grid view styles */
+.grid-view {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.grid-view .session-card {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid var(--color-slate-200);
+}
+
+.grid-view .session-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Dark mode adjustments */
+.dark .calendar-view {
+  background-color: var(--color-slate-800);
+}
+
+.dark .calendar-view .session-block {
+  background-color: var(--color-slate-700);
+  border-color: var(--color-slate-600);
+}
+
+.dark .calendar-view .session-block:hover {
+  background-color: var(--color-slate-600);
+}
+
+.dark .calendar-view .session-block.editing {
+  background-color: var(--color-blue-800);
+  border-color: var(--color-blue-500);
+}
+
+.dark .list-view tr {
+  border-bottom-color: var(--color-slate-700);
+}
+
+.dark .list-view tr:hover {
+  background-color: var(--color-slate-800);
+}
+
+.dark .list-view tr.editing {
+  background-color: var(--color-blue-900);
+}
+
+.dark .grid-view .session-card {
+  background-color: var(--color-slate-700);
+  border-color: var(--color-slate-600);
+}
+
+.dark .grid-view .session-card:hover {
+  background-color: var(--color-slate-600);
+}
+
+/* Presence bar styles */
+.coorganizer-presence-bar {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+}
+
+.coorganizer-presence-bar .avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid white;
+  margin-left: -8px;
+}
+
+.coorganizer-presence-bar .avatar:first-child {
+  margin-left: 0;
+}
+
+/* Cursor indicator styles */
+.cursor-indicator {
+  position: absolute;
+  pointer-events: none;
+  z-index: 40;
+  transition: all 0.1s ease-out;
+}
+
+.cursor-indicator .cursor-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.cursor-indicator .cursor-name {
+  margin-top: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .cab-sidebar {
+    width: 100%;
+    min-width: 100%;
+    max-height: 200px;
+  }
+
+  .cab-main {
+    width: 100%;
+  }
+
+  .cab-header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .coorganizer-presence-bar {
+    bottom: auto;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}
+
+/* Animation classes */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Scrollbar styling for dark mode */
+.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: var(--color-slate-800);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: var(--color-slate-600);
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: var(--color-slate-500);
+}
+
+/* Focus styles for accessibility */
+.collaborative-agenda-builder button:focus,
+.collaborative-agenda-builder input:focus,
+.collaborative-agenda-builder select:focus,
+.collaborative-agenda-builder textarea:focus {
+  outline: none;
+  ring: 2px solid var(--color-blue-500);
+  ring-offset: 2px;
+}
+
+/* Selection styles */
+::selection {
+  background-color: var(--color-blue-200);
+  color: var(--color-blue-900);
+}
+
+.dark ::selection {
+  background-color: var(--color-blue-800);
+  color: var(--color-blue-100);
+}

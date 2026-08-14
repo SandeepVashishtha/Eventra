@@ -63,7 +63,9 @@
     "@tensorflow-models/mobilenet": "^2.1.0",
     "react-virtualized-auto-sizer": "^2.0.3",
     "react-window": "^2.3.0",
-    "recharts": "^3.10.1"
+    "recharts": "^3.10.1",
+    "yjs": "^13.6.20",
+    "y-websocket": "^1.5.5"
   },
   "scripts": {
     "dev": "vite",
