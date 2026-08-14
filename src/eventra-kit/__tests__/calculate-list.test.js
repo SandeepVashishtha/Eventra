@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import * as CalculateList from '../calculate-list.js';
+import { calculateList } from '../calculate-list.js';
 
 describe('calculate-list', () => {
-  it('exports a module', () => {
-    expect(CalculateList).toBeDefined();
+  it('computes the sum of a list', () => {
+    expect(calculateList([1, 2, 3])).toBe(6);
+    expect(calculateList([10, -4])).toBe(6);
+    expect(calculateList([])).toBe(0);
   });
 });
-
