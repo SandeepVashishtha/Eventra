@@ -1,3 +1,4 @@
+import useSearch from "hooks/useSearch";
 import { AlertCircle, ChevronDown, Search, X, Filter, Bookmark, RefreshCw } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -167,8 +168,8 @@ const InnerGallery = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [filterCategory, setFilterCategory] = useState("all");
   const [sortBy, setSortBy] = useState("recent");
-  const [searchQuery, setSearchQuery] = useState("");
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  // Fix: useSearch adds sanitization to prevent XSS via search input
+  const { query: searchQuery, debouncedQuery: debouncedSearchQuery, setQuery: setSearchQuery } = useSearch({ urlParam: "q", debounceMs: 300 });
   const [categories, setCategories] = useState(["all"]);
   const [error, setError] = useState("");
   const [bookmarks, setBookmarks] = useState([]);
