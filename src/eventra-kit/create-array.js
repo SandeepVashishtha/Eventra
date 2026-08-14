@@ -2,6 +2,6 @@
  * adds a create-array helper.
  */
 export function createArray(value) {
-  return value.length === 0;
+  return Array.isArray(value) ? [...value] : value == null ? [] : [value];
 }
 
