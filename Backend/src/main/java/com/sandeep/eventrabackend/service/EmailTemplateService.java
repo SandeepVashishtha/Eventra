@@ -43,6 +43,12 @@ public class EmailTemplateService {
         if (request == null || request.getTemplateType() == null) {
             throw new IllegalArgumentException("Invalid template type");
         }
+        if (organizerEmail == null || organizerEmail.isBlank()) {
+            throw new IllegalArgumentException("Organizer email is required");
+        }
+        if (request.getCustomTemplate() == null || request.getCustomTemplate().isBlank()) {
+            throw new IllegalArgumentException("Custom template is required");
+        }
         String type = request.getTemplateType();
         if (!type.equals("waitlist_promotion") && !type.equals("cancellation")) {
             throw new IllegalArgumentException("Invalid template type");
