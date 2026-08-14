@@ -1,3 +1,5 @@
+import { hexToRgb } from './hex-to-rgb.js';
+import { colorToHex } from './color-to-hex.js';
 
 /**
  * adds a color blend helper.
