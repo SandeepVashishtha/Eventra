@@ -1,0 +1,7 @@
+.streak-calendar {
+  font-family: inherit;
+}
+
+.day-box {
+  transition: all 0.2s ease-in-out;
+}
