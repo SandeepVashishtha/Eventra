@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import * as DeduplicateChar from '../deduplicate-char.js';
+import { deduplicateChar } from '../deduplicate-char.js';
 
 describe('deduplicate-char', () => {
-  it('exports a module', () => {
-    expect(DeduplicateChar).toBeDefined();
+  it('removes duplicate characters from a string', () => {
+    expect(deduplicateChar('aabbcc')).toBe('abc');
+    expect(deduplicateChar('abc')).toBe('abc');
+    expect(deduplicateChar('')).toBe('');
   });
 });
-
