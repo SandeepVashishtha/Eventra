@@ -30,6 +30,12 @@ public class ZkpFeedbackController {
     public ResponseEntity<Map<String, Object>> submitAnonymousFeedback(@Valid @RequestBody ZkpProofPayload payload) {
         Map<String, Object> response = new HashMap<>();
 
+        if (payload == null || payload.getEventId() == null || payload.getEventId().isBlank()) {
+            response.put("success", false);
+            response.put("message", "Event ID is required.");
+            return ResponseEntity.badRequest().body(response);
+        }
+
         boolean isValid = zkpVerifierService.verifyProof(payload);
         if (!isValid) {
             response.put("success", false);
