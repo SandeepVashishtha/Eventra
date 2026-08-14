@@ -991,8 +991,8 @@ public class EventService {
                 Long eventId = request.getEventId();
                 List<CsvWaitlistImportRequest.CsvWaitlistEntry> entries = request.getEntries();
                 
-                // Validate event exists and organizer has permission
-                Event event = eventRepository.findById(eventId)
+                // Validate event exists and organizer has permission (use findByIdWithLock to serialize waitlist position updates)
+                Event event = eventRepository.findByIdWithLock(eventId)
                                 .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + eventId));
                 
                 eventRoleService.requireRole(eventId, organizerEmail, EventRole.ORGANIZER);
@@ -1029,9 +1029,6 @@ public class EventService {
                                                 LocalDateTime::compareTo))
                                 .toList();
                 
-                // Get current max position for this event
-                int currentMaxPosition = eventWaitlistRepository.findMaxPositionByEventId(eventId);
-                
                 for (int i = 0; i < sortedEntries.size(); i++) {
                         CsvWaitlistImportRequest.CsvWaitlistEntry entry = sortedEntries.get(i);
                         
@@ -1067,17 +1064,44 @@ public class EventService {
                                         continue;
                                 }
                                 
-                                // Create and save the waitlist entry
-                                EventWaitlist waitlistEntry = new EventWaitlist();
-                                waitlistEntry.setEvent(event);
-                                waitlistEntry.setUser(user);
-                                waitlistEntry.setPosition(currentMaxPosition + successfulImports + 1);
-                                waitlistEntry.setStatus("WAITING");
-                                // Use parsed timestamp or current time
-                                waitlistEntry.setJoinedAt(joinedAt);
-                                
-                                eventWaitlistRepository.save(waitlistEntry);
-                                successfulImports++;
+                                boolean saved = false;
+                                for (int attempt = 1; attempt <= MAX_REGISTRATION_RETRIES; attempt++) {
+                                        EventWaitlist waitlistEntry = new EventWaitlist();
+                                        waitlistEntry.setEvent(event);
+                                        waitlistEntry.setUser(user);
+                                        int currentMaxPosition = eventWaitlistRepository.findMaxPositionByEventId(eventId);
+                                        waitlistEntry.setPosition(currentMaxPosition + 1);
+                                        waitlistEntry.setStatus("WAITING");
+                                        waitlistEntry.setJoinedAt(joinedAt);
+                                        
+                                        try {
+                                                eventWaitlistRepository.saveAndFlush(waitlistEntry);
+                                                successfulImports++;
+                                                saved = true;
+                                                break;
+                                        } catch (DataIntegrityViolationException ex) {
+                                                String details = String.valueOf(ex.getMostSpecificCause() != null
+                                                                ? ex.getMostSpecificCause().getMessage()
+                                                                : ex.getMessage()).toLowerCase();
+                                                if (details.contains("uk_event_waitlist_event_position") || details.contains("position")) {
+                                                        continue;
+                                                }
+                                                if (details.contains("user") || details.contains("event_id")) {
+                                                        response.addFailure(new CsvWaitlistImportResponse.ImportFailure(
+                                                                        i, entry.getEmail(), "User already on waitlist for this event"));
+                                                        failedImports++;
+                                                        saved = true;
+                                                        break;
+                                                }
+                                                throw ex;
+                                        }
+                                }
+
+                                if (!saved) {
+                                        response.addFailure(new CsvWaitlistImportResponse.ImportFailure(
+                                                        i, entry.getEmail(), "Could not import waitlist entry due to high demand position collisions"));
+                                        failedImports++;
+                                }
                                 
                         } catch (Exception e) {
                                 // Handle parsing errors and other exceptions

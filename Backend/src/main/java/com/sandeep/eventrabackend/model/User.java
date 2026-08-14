@@ -35,6 +35,13 @@ public class User {
     @Column(name = "last_name", nullable = false, length = 50)
     private String lastName;
 
+    public String getName() {
+        if (firstName == null && lastName == null) return null;
+        if (firstName == null) return lastName;
+        if (lastName == null) return firstName;
+        return firstName + " " + lastName;
+    }
+
     @Column(nullable = false, unique = true, length = 100)
     private String email;
 
