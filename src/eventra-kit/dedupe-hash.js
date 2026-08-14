@@ -1,7 +1,7 @@
 /**
  * adds a dedupe-hash helper.
  */
-export function dedupeHash(value, separator) {
-  return value.join(separator);
+export function dedupeHash(value) {
+  return Array.isArray(value) ? [...new Set(value)] : [];
 }
 
