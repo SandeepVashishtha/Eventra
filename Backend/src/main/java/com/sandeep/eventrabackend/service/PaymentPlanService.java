@@ -44,12 +44,7 @@ public class PaymentPlanService {
 
     // Create a new payment plan for installment payments
     @Transactional
-    public PaymentPlan createPaymentPlan(
-            Long registrationId,
-            BigDecimal ticketPrice,
-            String currency,
-            Integer upfrontPercentage,
-            Integer totalInstallments) {
+    public PaymentPlan createPaymentPlan(Long registrationId) {
         
         // Get registration
         EventRegistration registration = eventRegistrationRepository.findById(registrationId)
@@ -63,26 +58,16 @@ public class PaymentPlanService {
             return existingActivePlan.get();
         }
 
-        // Validate input
-        if (ticketPrice == null || ticketPrice.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Ticket price must be greater than zero");
-        }
-
-        // The registration's ticket price is the source of truth once set:
-        // reject requests that try to change it (e.g. lower it) after creation.
-        if (registration.getTicketPrice() != null
-                && registration.getTicketPrice().compareTo(ticketPrice) != 0) {
-            throw new IllegalArgumentException(
-                    "Ticket price does not match the price set for this registration");
+        // The registration's stored ticket price is the server-side source of truth:
+        // the plan amount is derived from it and client-supplied prices are never used.
+        BigDecimal ticketPrice = registration.getTicketPrice();
+        if (ticketPrice == null || ticketPrice.signum() <= 0) {
+            throw new IllegalStateException(
+                    "No valid ticket price configured for this registration");
         }
         
-        if (upfrontPercentage == null || upfrontPercentage < 0 || upfrontPercentage > 100) {
-            upfrontPercentage = 25; // Default to 25%
-        }
-        
-        if (totalInstallments == null || totalInstallments < 2) {
-            totalInstallments = 4; // Default to 4 installments (25% + 3 monthly)
-        }
+        int upfrontPercentage = 25; // Default to 25%
+        int totalInstallments = 4; // Default to 4 installments (25% + 3 monthly)
         
         // Calculate amounts
         BigDecimal upfrontAmount = ticketPrice.multiply(new BigDecimal(upfrontPercentage))
@@ -94,7 +79,7 @@ public class PaymentPlanService {
         PaymentPlan paymentPlan = new PaymentPlan();
         paymentPlan.setRegistration(registration);
         paymentPlan.setTotalAmount(ticketPrice);
-        paymentPlan.setCurrency(currency != null ? currency : "USD");
+        paymentPlan.setCurrency("USD");
         paymentPlan.setTotalInstallments(totalInstallments);
         paymentPlan.setInstallmentAmount(installmentAmount);
         paymentPlan.setUpfrontPercentage(upfrontPercentage);
@@ -116,7 +101,6 @@ public class PaymentPlanService {
         
         // Update registration
         registration.setPaymentStatus("PARTIAL");
-        registration.setTicketPrice(ticketPrice);
         registration.setPaymentProvider("STRIPE");
         registration.setQrActivated(false);
         eventRegistrationRepository.save(registration);
