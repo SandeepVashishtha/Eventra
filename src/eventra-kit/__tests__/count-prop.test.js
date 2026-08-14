@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import * as CountProp from '../count-prop.js';
+import { countProp } from '../count-prop.js';
 
 describe('count-prop', () => {
-  it('exports a module', () => {
-    expect(CountProp).toBeDefined();
+  it('counts the properties of an object', () => {
+    expect(countProp({ a: 1, b: 2, c: 3 })).toBe(3);
+    expect(countProp({})).toBe(0);
   });
 });
-
