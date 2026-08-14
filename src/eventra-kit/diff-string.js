@@ -1,7 +1,8 @@
 /**
  * adds a diff-string helper.
  */
-export function diffString(value, separator) {
-  return value.split(separator);
+export function diffString(a, b) {
+  const chars = new Set(String(b));
+  return String(a).split('').filter((ch) => !chars.has(ch)).join('');
 }
 
