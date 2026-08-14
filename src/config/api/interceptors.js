@@ -2,7 +2,7 @@ import { syncServerTimeFromHeader } from "../../utils/timeSync.js";
 import { getCSRFToken, requiresCSRF, getCSRFEnforcementMode } from "../../utils/csrfToken.js";
 import { signRequest } from "../../utils/requestSigner.js";
 import { logger } from "../../utils/logger.js";
-import { ApiError, RateLimitError, CSRFError } from "./errors.js";
+import { ApiError, RateLimitError, CSRFError, normalizeApiError } from "./errors.js";
 import { logCategorizedError } from "../../utils/errorRecovery.js";
 
 const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
