@@ -155,4 +155,23 @@ class EventCancelTests {
                 .andExpect(jsonPath("$.status").value("CANCELLED"))
                 .andExpect(jsonPath("$.refundPolicy").value("NONE"));
     }
+
+    @Test
+    @DisplayName("Cancelling an already-cancelled event is idempotent")
+    void cancelEvent_AlreadyCancelled_IdempotentSuccess() throws Exception {
+        mockMvc.perform(post("/api/events/" + existingEvent.getId() + "/cancel")
+                        .with(user("admin@example.com").authorities(new SimpleGrantedAuthority("ADMIN")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("reason", "weather", "refundPolicy", "FULL"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("CANCELLED"));
+
+        mockMvc.perform(post("/api/events/" + existingEvent.getId() + "/cancel")
+                        .with(user("admin@example.com").authorities(new SimpleGrantedAuthority("ADMIN")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("reason", "weather", "refundPolicy", "FULL"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("CANCELLED"))
+                .andExpect(jsonPath("$.refundPolicy").value("FULL"));
+    }
 }
