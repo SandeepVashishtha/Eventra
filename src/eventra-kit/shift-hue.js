@@ -1,3 +1,4 @@
+import { hexToRgb } from './hex-to-rgb.js';
 
 /**
  * adds a hue shift helper.
