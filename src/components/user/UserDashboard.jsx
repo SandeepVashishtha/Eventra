@@ -395,7 +395,7 @@ export default function UserDashboard() {
           ) : (
             <div>
               <p className="ud-greeting">{greeting},</p>
-              <h1 className="ud-username">{firstName} ≡ƒæï</h1>
+              <h1 className="ud-username">{firstName} 👋</h1>
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('eventra-offline-queue-sync'))}
               className="ml-4 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-full shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
@@ -408,7 +408,7 @@ export default function UserDashboard() {
           <div className="ud-topbar-right">
             <div className="ud-search-wrap">
               <Search size={15} className="ud-search-icon" />
-              <input className="ud-search" placeholder="SearchΓÇª" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+              <input className="ud-search" placeholder="Search…" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
               {searchQuery && (
                 <button className="ud-search-clear" onClick={() => setSearchQuery("")} aria-label="Clear search query"><X size={13} /></button>
               )}
@@ -812,7 +812,7 @@ export default function UserDashboard() {
           <div className="ud-footer-divider" />
           <div className="ud-footer-content">
             <p className="ud-footer-copyright">
-              ┬⌐ {new Date().getFullYear()} Eventra. All rights reserved.
+              © {new Date().getFullYear()} Eventra. All rights reserved.
             </p>
             <div className="ud-footer-links">
               <Link to="/helpcenter" className="ud-footer-link">Help Center</Link>
