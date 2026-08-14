@@ -1,0 +1,15 @@
+.setup-2fa-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 1300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.setup-2fa-card {
+  animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
