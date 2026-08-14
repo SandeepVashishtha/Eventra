@@ -517,7 +517,10 @@ public class StripeService {
 
         long chargeAmount = charge.getAmount();
         long refundAmount;
-        if ("PARTIAL".equalsIgnoreCase(refundPolicy) && refundPercent != null) {
+        if ("PARTIAL".equalsIgnoreCase(refundPolicy)) {
+            if (refundPercent == null) {
+                return null;
+            }
             refundAmount = (long) (chargeAmount * refundPercent / 100.0);
         } else {
             refundAmount = chargeAmount;
