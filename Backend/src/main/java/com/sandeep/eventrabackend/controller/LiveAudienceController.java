@@ -20,6 +20,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -128,6 +129,7 @@ public class LiveAudienceController {
     }
 
     @DeleteMapping("/questions/{questionId}")
+    @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Delete a Q&A question",
             description = "Deletes a question. Requires organizer, admin or owner access.",
             security = @SecurityRequirement(name = "bearerAuth"))
