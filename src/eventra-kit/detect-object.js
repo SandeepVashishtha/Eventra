@@ -2,6 +2,6 @@
  * adds a detect-object helper.
  */
 export function detectObject(value) {
-  return value.length === 0;
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
