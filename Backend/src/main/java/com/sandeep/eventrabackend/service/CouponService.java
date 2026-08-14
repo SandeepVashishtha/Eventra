@@ -55,6 +55,7 @@ public class CouponService implements ApplicationRunner {
         try {
             acquired = lock.tryLock(LOCK_WAIT_SECONDS, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
+            locks.remove(code, lock);
             Thread.currentThread().interrupt();
             throw new CouponRedemptionException("Interrupted while acquiring coupon lock for code: " + code, e);
         }
