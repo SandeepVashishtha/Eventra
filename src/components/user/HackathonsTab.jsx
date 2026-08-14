@@ -4,6 +4,7 @@ import { Trophy, Calendar, MapPin, Plus } from "lucide-react";
 import StatusBadge from "../common/StatusBadge";
 import { DashboardItemCardSkeleton } from "../common/SkeletonLoaders";
 import SearchEmptyState from "../common/SearchEmptyState";
+import EmptyState from "../common/EmptyState";
 import { getSmartDateLabel } from "utils/relativeTime";
 
 const HackathonsTab = ({ hackathons, loading, fadeUp }) => (
