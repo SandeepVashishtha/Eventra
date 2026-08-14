@@ -1,7 +1,7 @@
 /**
  * adds a create-dict helper.
  */
-export function createDict(value, separator) {
-  return value.split(separator);
+export function createDict(value) {
+  return Object.fromEntries(value);
 }
 
