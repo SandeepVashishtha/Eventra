@@ -57,6 +57,7 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
   const {
     preview: avatarPreview,
     handleFileChange: handleAvatarChange,
+    reset: resetAvatar,
   } = useFileUpload({ mode: "base64", accept: ["image/*"], maxBytes: 2_097_152 });
 
   const { totalEvents = 0, currentStreak = 0, unlockedCount = 0 } = userStats;
@@ -253,9 +254,9 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
                     <span>Upload Image</span>
                     <input type="file" onChange={handleAvatarChange} accept="image/*" className="hidden" />
                   </label>
-                  {avatar && (
+                  {avatarPreview && (
                     <button 
-                      onClick={() => setAvatar(null)}
+                      onClick={() => resetAvatar()}
                       className="text-xs text-rose-500 hover:text-rose-400 font-bold cursor-pointer"
                     >
                       Clear
@@ -342,7 +343,7 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
                 {/* Aura border */}
                 <span className={`absolute -inset-1 rounded-full bg-linear-to-r ${currentTemplate.ringClass} blur-xs opacity-80 animate-pulse`} />
                 <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-slate-800 bg-slate-900 flex items-center justify-center">
-                  {avatar ? (
+                  {avatarPreview ? (
                     <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" loading="lazy" />
                   ) : (
                     <User className="w-8 h-8 text-slate-655" />
