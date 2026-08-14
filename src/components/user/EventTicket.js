@@ -382,18 +382,22 @@ const EventTicket = ({ event, user, onClose }) => {
                       EVENT AGENDA
                     </span>
                     <ul className="ud-ticket-agenda-list mt-1 space-y-2 text-xs text-zinc-300">
-                      <li className="flex justify-between items-center border-b border-white/5 pb-1">
-                        <span>1. Welcome & Keynote</span>
-                        <span className="text-zinc-400 font-semibold">10:00 AM</span>
-                      </li>
-                      <li className="flex justify-between items-center border-b border-white/5 pb-1">
-                        <span>2. Technical Deep-Dive</span>
-                        <span className="text-zinc-400 font-semibold">11:30 AM</span>
-                      </li>
-                      <li className="flex justify-between items-center border-b border-white/5 pb-1">
-                        <span>3. Interactive Q&A</span>
-                        <span className="text-zinc-400 font-semibold">02:00 PM</span>
-                      </li>
+                      {Array.isArray(event?.agenda) && event.agenda.length > 0
+                        ? event.agenda.map((item, idx) => (
+                            <li
+                              key={idx}
+                              className="flex justify-between items-center border-b border-white/5 pb-1"
+                            >
+                              <span>{idx + 1}. {item.title || item.label || item.name || 'Session'}</span>
+                              <span className="text-zinc-400 font-semibold">{item.time || item.startTime || 'TBA'}</span>
+                            </li>
+                          ))
+                        : (
+                          <li className="flex justify-between items-center border-b border-white/5 pb-1">
+                            <span>Full agenda shared at check-in</span>
+                            <span className="text-zinc-400 font-semibold">See organizer</span>
+                          </li>
+                        )}
                     </ul>
                   </div>
 
