@@ -1,7 +1,7 @@
 /**
  * adds a compute-string helper.
  */
-export function computeString(value, separator) {
-  return value.split(separator);
+export function computeString(value) {
+  return String(value).length;
 }
 
