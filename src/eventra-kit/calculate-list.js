@@ -2,6 +2,6 @@
  * adds a calculate-list helper.
  */
 export function calculateList(value) {
-  return typeof value === 'string';
+  return value == null ? 0 : value.length;
 }
 
