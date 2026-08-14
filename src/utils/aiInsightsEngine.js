@@ -961,7 +961,6 @@ const _sanitizeProfileForAI = (profile) => {
  */
 export const generateAIInsights = async (event, profile = {}, options = {}) => {
   const startTime = Date.now();
-  _telemetry.recordRequest(startTime, 'start');
   
   const {
     signal,
@@ -1019,11 +1018,6 @@ export const generateAIInsights = async (event, profile = {}, options = {}) => {
         
         logger.info(`[AIInsightsEngine] Cache hit for event ${eventId}`);
         
-        // Update telemetry with cache latency
-        const latency = Date.now() - startTime;
-        _telemetry.metrics.totalLatency += latency;
-        _telemetry.metrics.latencies.push(latency);
-        
         return { ...cachedInsights, cached: true };
       }
       _telemetry.recordCacheMiss();
@@ -1078,8 +1072,7 @@ export const generateAIInsights = async (event, profile = {}, options = {}) => {
         
         return insights;
       } else {
-        // No fallback enabled, rethrow the error
-        _telemetry.recordRequest(startTime, 'fallback_disabled');
+        // No fallback enabled, rethrow the error (outer catch records once)
         throw new Error(`AI service failed and local fallback disabled: ${aiError.message}`);
       }
     }
