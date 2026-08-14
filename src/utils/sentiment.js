@@ -170,7 +170,8 @@ export const analyzeSentiment = (text) => {
     return 0;
   }
 
-  const tokens = tokenizeWithMetadata(text);
+  const safeText = text.slice(0, 10000);
+  const tokens = tokenizeWithMetadata(safeText);
   if (tokens.length === 0) return 0;
 
   const { score } = evaluateTokenSequence(tokens);
@@ -200,7 +201,8 @@ export const analyzeSentimentDetailed = (text) => {
     };
   }
 
-  const tokens = tokenizeWithMetadata(text);
+  const safeText = text.slice(0, 10000);
+  const tokens = tokenizeWithMetadata(safeText);
   const { score, posWords, negWords, negationCount } = evaluateTokenSequence(tokens);
 
   const clampedScore = Math.max(-5, Math.min(5, score));
