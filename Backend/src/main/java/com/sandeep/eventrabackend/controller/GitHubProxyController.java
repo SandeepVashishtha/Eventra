@@ -3,7 +3,10 @@ package com.sandeep.eventrabackend.controller;
 import com.sandeep.eventrabackend.service.GitHubProxyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -23,10 +26,15 @@ public class GitHubProxyController {
     }
 
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Proxy an allowlisted GitHub API path")
     public ResponseEntity<String> proxy(
             @RequestParam("path") String path,
-            @RequestParam Map<String, String> allParams) {
+            @RequestParam Map<String, String> allParams,
+            Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         return gitHubProxyService.proxy(path, allParams);
     }
 }
