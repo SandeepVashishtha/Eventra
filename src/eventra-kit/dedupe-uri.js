@@ -2,6 +2,6 @@
  * adds a dedupe-uri helper.
  */
 export function dedupeUri(value) {
-  return value.split(' ').filter(Boolean).length;
+  return [...new Set(value)];
 }
 
