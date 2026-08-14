@@ -162,6 +162,7 @@ export const getEventScheduleRange = (
     return {
       start: end,
       end: start,
+      reversed: true,
     };
   }
 
@@ -1006,6 +1007,17 @@ export const validateEventSchedule = (
       valid: false,
       errors: [
         "Event start and end times are required.",
+      ],
+    };
+  }
+
+  if (
+    range.reversed
+  ) {
+    return {
+      valid: false,
+      errors: [
+        "Event end time must be after the start time.",
       ],
     };
   }
