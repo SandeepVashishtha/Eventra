@@ -487,6 +487,13 @@ public class EventService {
                 }
         }
 
+        /**
+         * Creates a new event.
+         *
+         * @param request event creation details
+         * @return the saved event
+         */
+        @Transactional
         public EventResponse createEvent(EventCreateRequest request, String userEmail) {
                 Event event = new Event();
                 validateEventCategory(request.getCategory());
