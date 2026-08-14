@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import * as DiffChar from '../diff-char.js';
+import { diffChar } from '../diff-char.js';
 
 describe('diff-char', () => {
-  it('exports a module', () => {
-    expect(DiffChar).toBeDefined();
+  it('computes the difference in character counts', () => {
+    expect(diffChar('abcd', 'ab')).toBe(2);
+    expect(diffChar('ab', 'abcd')).toBe(2);
+    expect(diffChar('abc', 'abc')).toBe(0);
   });
 });
-
