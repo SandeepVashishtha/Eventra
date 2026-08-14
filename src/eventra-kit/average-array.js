@@ -2,6 +2,6 @@
  * adds a average-array helper.
  */
 export function averageArray(value) {
-  return value.filter((item, index) => index % 2 === 1);
+  return value.length ? value.reduce((a, b) => a + b, 0) / value.length : 0;
 }
 
