@@ -49,14 +49,8 @@ const SubmitProject = () => {
     targetAudience: "", // Added to state
   });
   const [errors, setErrors] = useState({});
-  const fileInputRef = useRef(null);
 
   // Fix: drag handlers now provided by useDragAndDrop hook above
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    processFile(file);
-  };
 
   const processFile = (file) => {
     if (!file) return;
@@ -396,23 +390,14 @@ const handleSubmit = async (e) => {
               </label>
               {field.name === "projectImage" ? (
                 <div
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                  onClick={() => fileInputRef.current?.click()}
+                  {...getRootProps()}
                   className={`w-full border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 ${
                     isDragging
                       ? "border-primary bg-primary/10"
                       : "border-border hover:border-primary hover:bg-bg/50"
                   }`}
                 >
-                  <input
-                    type="file"
-                    accept="image/*"
-                    ref={fileInputRef}
-                    className="hidden"
-                    onChange={handleFileChange}
-                  />
+                  <input {...getInputProps()} />
                   {formData.projectImage ? (
                     <div className="relative w-full max-w-[200px] aspect-square flex items-center justify-center rounded-lg border border-border overflow-hidden bg-bg group">
                       <img
@@ -440,6 +425,11 @@ const handleSubmit = async (e) => {
                         Supports PNG, JPG, JPEG, SVG up to 5MB
                       </div>
                     </div>
+                  )}
+                  {dragError && (
+                    <p className="text-red-500 text-xs mt-2" role="alert">
+                      {dragError}
+                    </p>
                   )}
                 </div>
               ) : (
