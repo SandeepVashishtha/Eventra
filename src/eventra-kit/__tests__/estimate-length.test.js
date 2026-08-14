@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import * as EstimateLength from '../estimate-length.js';
+import { estimateLength } from '../estimate-length.js';
 
 describe('estimate-length', () => {
-  it('exports a module', () => {
-    expect(EstimateLength).toBeDefined();
+  it('estimates the length of strings, arrays, and objects', () => {
+    expect(estimateLength([1, 2, 3])).toBe(3);
+    expect(estimateLength('hi')).toBe(2);
   });
 });
-
