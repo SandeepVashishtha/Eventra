@@ -236,3 +236,107 @@ export async function createProject(projectData) {
     throw err;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+ * ADMIN SERVICE API CALLS
+ * ══════════════════════════════════════════════════════════════════════ */
+
+export async function fetchAdminStats() {
+  try {
+    return await fetchAPI("/api/admin/stats");
+  } catch (err) {
+    console.error("Failed to fetch admin stats:", err);
+    throw err;
+  }
+}
+
+export async function fetchAdminDashboardStats() {
+  try {
+    return await fetchAPI("/api/admin/analytics/dashboard");
+  } catch (err) {
+    console.error("Failed to fetch admin dashboard stats:", err);
+    throw err;
+  }
+}
+
+export async function getAdminUsers(page = 0, size = 10, role = "", search = "") {
+  try {
+    const params = new URLSearchParams({ page, size });
+    if (role) params.append("role", role);
+    if (search) params.append("search", search);
+    return await fetchAPI(`/api/admin/users?${params.toString()}`);
+  } catch (err) {
+    console.error("Failed to fetch admin users:", err);
+    throw err;
+  }
+}
+
+export async function updateAdminUser(userId, userData) {
+  try {
+    return await fetchAPI(`/api/admin/users/${userId}`, {
+      method: "PUT",
+      body: JSON.stringify(userData)
+    });
+  } catch (err) {
+    console.error(`Failed to update admin user ID ${userId}:`, err);
+    throw err;
+  }
+}
+
+export async function updateAdminUserRole(userId, role) {
+  try {
+    return await fetchAPI(`/api/admin/users/${userId}/role`, {
+      method: "PUT",
+      body: JSON.stringify({ role })
+    });
+  } catch (err) {
+    console.error(`Failed to update role for user ID ${userId}:`, err);
+    throw err;
+  }
+}
+
+export async function deleteAdminUser(userId) {
+  try {
+    return await fetchAPI(`/api/admin/users/${userId}`, {
+      method: "DELETE"
+    });
+  } catch (err) {
+    console.error(`Failed to delete admin user ID ${userId}:`, err);
+    throw err;
+  }
+}
+
+export async function getAdminEvents(page = 0, size = 10, search = "") {
+  try {
+    const params = new URLSearchParams({ page, size });
+    if (search) params.append("search", search);
+    return await fetchAPI(`/api/admin/events?${params.toString()}`);
+  } catch (err) {
+    console.error("Failed to fetch admin events:", err);
+    throw err;
+  }
+}
+
+export async function updateAdminEvent(eventId, eventData) {
+  try {
+    return await fetchAPI(`/api/admin/events/${eventId}`, {
+      method: "PUT",
+      body: JSON.stringify(eventData)
+    });
+  } catch (err) {
+    console.error(`Failed to update admin event ID ${eventId}:`, err);
+    throw err;
+  }
+}
+
+export async function deleteAdminEvent(eventId) {
+  try {
+    return await fetchAPI(`/api/admin/events/${eventId}`, {
+      method: "DELETE"
+    });
+  } catch (err) {
+    console.error(`Failed to delete admin event ID ${eventId}:`, err);
+    throw err;
+  }
+}
+
