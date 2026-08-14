@@ -131,6 +131,15 @@ public class HackathonService {
 
         // FIX (#14532): shared chronological validation, null-safe for partial updates.
         validateDateRanges(request.getStartDate(), request.getEndDate(), request.getRegistrationDeadline());
+        // The range must also stay consistent against pre-existing dates that a
+        // partial update does not touch (e.g. moving only startDate past endDate).
+        LocalDateTime effectiveStart = request.getStartDate() != null
+                ? request.getStartDate() : hackathon.getStartDate();
+        LocalDateTime effectiveEnd = request.getEndDate() != null
+                ? request.getEndDate() : hackathon.getEndDate();
+        LocalDateTime effectiveDeadline = request.getRegistrationDeadline() != null
+                ? request.getRegistrationDeadline() : hackathon.getRegistrationDeadline();
+        validateMergedDateRanges(effectiveStart, effectiveEnd, effectiveDeadline);
         if (request.getTitle() != null && (request.getTitle().trim().length() < 3 || request.getTitle().trim().length() > 100)) {
             throw new IllegalArgumentException("Title must be between 3 and 100 characters.");
         }
@@ -195,6 +204,23 @@ public class HackathonService {
         }
         if (registrationDeadline != null && registrationDeadline.isBefore(LocalDateTime.now())) {
             throw new IllegalArgumentException("Registration deadline must be in the future.");
+        }
+    }
+
+    /**
+     * Validates ordering only (no future-in-time checks) against the merged
+     * date values of a partial update, so a new date cannot contradict an
+     * existing one it does not touch.
+     */
+    private void validateMergedDateRanges(LocalDateTime startDate, LocalDateTime endDate, LocalDateTime registrationDeadline) {
+        if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
+            throw new IllegalArgumentException("Start date cannot be after end date.");
+        }
+        if (registrationDeadline != null && endDate != null && registrationDeadline.isAfter(endDate)) {
+            throw new IllegalArgumentException("Registration deadline cannot be after end date.");
+        }
+        if (registrationDeadline != null && startDate != null && registrationDeadline.isAfter(startDate)) {
+            throw new IllegalArgumentException("Registration deadline cannot be after start date.");
         }
     }
 
