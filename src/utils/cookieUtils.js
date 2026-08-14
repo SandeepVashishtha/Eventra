@@ -292,3 +292,40 @@ export function getCookie(name) {
 export function hasCookie(name) {
   return getCookie(name) !== null;
 }
+
+/**
+ * Sets an authentication cookie with strict security attributes.
+ *
+ * Explicitly configures path="/", SameSite="Strict" (or configured value),
+ * and automatically enforces the Secure flag on HTTPS connections to protect
+ * authentication tokens from CSRF attacks and insecure transmission.
+ *
+ * @param {string} name - Cookie name
+ * @param {string} value - Cookie value
+ * @param {number|Object} [daysOrOptions=7] - Expiry in days or custom options
+ * @param {Object} [options={}] - Additional cookie options
+ * @returns {boolean} True if cookie was set successfully
+ */
+export function setAuthCookie(name, value, daysOrOptions = 7, options = {}) {
+  let opts = {};
+  if (typeof daysOrOptions === "object" && daysOrOptions !== null) {
+    opts = { ...daysOrOptions };
+  } else {
+    const days = typeof daysOrOptions === "number" ? daysOrOptions : 7;
+    opts = {
+      maxAge: days * 86400,
+      ...options,
+    };
+  }
+
+  const isHttps = typeof window !== "undefined" && window.location.protocol === "https:";
+
+  const authOptions = {
+    path: "/",
+    sameSite: opts.sameSite || import.meta.env?.VITE_COOKIE_SAME_SITE || "Strict",
+    secure: opts.secure !== undefined ? opts.secure : isHttps,
+    ...opts,
+  };
+
+  return setCookie(name, value, authOptions);
+}
