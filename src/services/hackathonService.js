@@ -1,37 +1,5 @@
 import { apiUtils, API_ENDPOINTS } from "../config/api";
 
-/**
- * Normalises a raw HackathonResponse from the backend into the shape
- * expected by HackathonPage / HackathonCard.
- *
- * Backend fields  →  UI fields
- *  startDate/endDate  → status ("live" | "upcoming" | "completed")
- *  prizePool (string) → prize  (kept as-is; filter util parses digits)
- */
-const normalizeHackathon = (h) => {
-  const now = Date.now();
-  const start = h.startDate ? new Date(h.startDate).getTime() : null;
-  const end = h.endDate ? new Date(h.endDate).getTime() : null;
-
-  let status = "upcoming";
-  if (start && end) {
-    if (now >= start && now <= end) status = "live";
-    else if (now > end) status = "completed";
-  }
-
-  return {
-    ...h,
-    // computed
-    status,
-    // alias: filter util reads hackathon.prize
-    prize: h.prize ?? h.prizePool ?? null,
-    // alias: card reads hackathon.date as a fallback
-    date: h.startDate ?? h.date ?? null,
-    // techStack not in API yet — default to empty
-    techStack: h.techStack ?? [],
-  };
-};
-
 // ============================================================================
 // 1. CONFIGURATION & CACHE STATE MANAGEMENT
 // ============================================================================
@@ -98,15 +66,30 @@ export const normalizeHackathon = (item = {}, index = 0) => {
   const startDate = item.startDate ? new Date(item.startDate).getTime() : now - 86400000;
   const endDate = item.endDate ? new Date(item.endDate).getTime() : now + 86400000 * 7;
 
-  // Calculate dynamic status based on start and end dates
+  // Calculate dynamic status based on start and end dates ("live" | "upcoming" | "completed")
   let calculatedStatus = item.status || "upcoming";
   if (now >= startDate && now <= endDate) {
-    calculatedStatus = "ongoing";
+    calculatedStatus = "live";
   } else if (now > endDate) {
-    calculatedStatus = "ended";
+    calculatedStatus = "completed";
   } else if (now < startDate) {
     calculatedStatus = "upcoming";
   }
+
+  if (calculatedStatus === "ongoing") calculatedStatus = "live";
+  if (calculatedStatus === "ended") calculatedStatus = "completed";
+
+  const tags = Array.isArray(item.tags)
+    ? item.tags
+    : Array.isArray(item.categories)
+    ? item.categories
+    : ["General"];
+
+  const techStack = Array.isArray(item.techStack) && item.techStack.length > 0
+    ? item.techStack
+    : tags;
+
+  const prizePool = typeof item.prizePool === "number" ? item.prizePool : parseFloat(item.prizePool || 0);
 
   return {
     id: item.id || item._id || `hackathon_${index}_${Date.now()}`,
@@ -119,12 +102,15 @@ export const normalizeHackathon = (item = {}, index = 0) => {
     logoImage: item.logoImage || item.logo || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=200&q=80",
     startDate: new Date(startDate).toISOString(),
     endDate: new Date(endDate).toISOString(),
+    date: item.startDate ?? item.date ?? new Date(startDate).toISOString(),
     status: calculatedStatus,
     mode: (item.mode || item.locationType || "online").toLowerCase(), // 'online', 'in-person', 'hybrid'
     location: item.location || (item.mode === "online" ? "Global / Remote" : "TBD"),
-    prizePool: typeof item.prizePool === "number" ? item.prizePool : parseFloat(item.prizePool || 0),
+    prizePool,
+    prize: item.prize ?? (prizePool > 0 ? `$${prizePool.toLocaleString()}` : null),
     currency: item.currency || "USD",
-    tags: Array.isArray(item.tags) ? item.tags : Array.isArray(item.categories) ? item.categories : ["General"],
+    tags,
+    techStack,
     featured: Boolean(item.featured),
     registrationUrl: item.registrationUrl || item.link || "#",
     participantsCount: item.participantsCount || item.attendees || 0,
