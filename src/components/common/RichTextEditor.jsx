@@ -123,7 +123,7 @@ const RichTextEditor = forwardRef(({
       // Check if the value is markdown that needs conversion
       const isMarkdown = !value || value.trim().startsWith("#") || 
                         value.includes("**") || value.includes("*") || 
-                        value.includes("-\s") || value.includes("1.\s");
+                        /(^|\n)[-*]\s/.test(value) || /(^|\n)\d+\.\s/.test(value);
       
       if (isMarkdown && value) {
         // Convert markdown to HTML
