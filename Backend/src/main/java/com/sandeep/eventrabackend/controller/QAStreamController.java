@@ -41,7 +41,7 @@ public class QAStreamController {
             return ResponseEntity.badRequest().build();
         }
         String id = "q-" + UUID.randomUUID().toString().substring(0, 8);
-        SessionQuestion q = new SessionQuestion(id, payload.getSessionId(), payload.getAuthorName(), payload.getQuestionText());
+        SessionQuestion q = new SessionQuestion(id, payload.getSessionId(), authentication.getName(), payload.getQuestionText());
         questionsDatabase.put(id, q);
         return ResponseEntity.ok(q);
     }
