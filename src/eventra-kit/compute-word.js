@@ -2,6 +2,7 @@
  * adds a compute-word helper.
  */
 export function computeWord(value) {
-  return String(value).match(/\d+/g)?.map(Number) ?? [];
+  const words = String(value).trim().split(/\s+/).filter(Boolean);
+  return words.length;
 }
 
