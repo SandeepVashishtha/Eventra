@@ -117,17 +117,35 @@ This is an automated message. Please do not reply to this email.
   }
 
   /**
+   * Process an array of tasks in controlled batches to avoid rate limits.
+   * @param {Array} items - Items to process
+   * @param {number} concurrency - Max parallel tasks per batch
+   * @param {Function} taskFn - Async function to call for each item
+   * @returns {Promise<Array>} Array of settled results in original order
+   */
+  async processInBatches(items, concurrency, taskFn) {
+    const results = [];
+    for (let i = 0; i < items.length; i += concurrency) {
+      const batch = items.slice(i, i + concurrency);
+      const settled = await Promise.allSettled(batch.map(taskFn));
+      results.push(...settled);
+    }
+    return results;
+  }
+
+  /**
    * Dispatch cancellation emails to every attendee and collect settled results
    */
   async dispatchCancellationEmails(event, attendees) {
-    return Promise.allSettled(
-      attendees.map(attendee =>
+    return this.processInBatches(
+      attendees,
+      10,
+      (attendee) =>
         this.notifyAttendee(
           attendee.email,
           event,
           { firstName: attendee.firstName, lastName: attendee.lastName }
         )
-      )
     );
   }
 
