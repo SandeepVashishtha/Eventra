@@ -69,9 +69,10 @@ public class PaymentController {
                     "error", e.getMessage()
             ));
         } catch (Exception e) {
+            log.error("Failed to create payment plan", e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", "Failed to create payment plan: " + e.getMessage()
+                    "error", "Failed to create payment plan"
             ));
         }
     }
@@ -97,14 +98,16 @@ public class PaymentController {
             return ResponseEntity.ok(result);
             
         } catch (StripeException e) {
+            log.error("Stripe error during payment initialization", e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", "Stripe error: " + e.getMessage()
+                    "error", "Payment processing error"
             ));
         } catch (Exception e) {
+            log.error("Failed to initialize Stripe payment", e);
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
-                    "error", e.getMessage()
+                    "error", "Failed to initialize payment"
             ));
         }
     }
@@ -137,14 +140,16 @@ public class PaymentController {
             return ResponseEntity.ok(result);
             
         } catch (StripeException e) {
+            log.error("Stripe error during payment method setup", e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", "Stripe error: " + e.getMessage()
+                    "error", "Payment processing error"
             ));
         } catch (Exception e) {
+            log.error("Failed to setup payment method", e);
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
-                    "error", e.getMessage()
+                    "error", "Failed to setup payment method"
             ));
         }
     }
@@ -177,14 +182,16 @@ public class PaymentController {
             return ResponseEntity.ok(result);
             
         } catch (StripeException e) {
+            log.error("Stripe error during upfront payment confirmation", e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", "Stripe error: " + e.getMessage()
+                    "error", "Payment processing error"
             ));
         } catch (Exception e) {
+            log.error("Failed to confirm upfront payment", e);
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
-                    "error", e.getMessage()
+                    "error", "Failed to confirm payment"
             ));
         }
     }
@@ -224,9 +231,10 @@ public class PaymentController {
             return ResponseEntity.ok(status);
             
         } catch (Exception e) {
+            log.error("Failed to retrieve payment plan status", e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", e.getMessage()
+                    "error", "Failed to retrieve payment plan status"
             ));
         }
     }
@@ -252,9 +260,10 @@ public class PaymentController {
             ));
             
         } catch (Exception e) {
+            log.error("Failed to retrieve payments for registration {}", registrationId, e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", e.getMessage()
+                    "error", "Failed to retrieve payments"
             ));
         }
     }
@@ -280,9 +289,10 @@ public class PaymentController {
             ));
             
         } catch (Exception e) {
+            log.error("Failed to retrieve installment schedule for registration {}", registrationId, e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", e.getMessage()
+                    "error", "Failed to retrieve installment schedule"
             ));
         }
     }
@@ -305,14 +315,16 @@ public class PaymentController {
             return ResponseEntity.ok(result);
             
         } catch (StripeException e) {
+            log.error("Stripe error during payment retry", e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", "Stripe error: " + e.getMessage()
+                    "error", "Payment processing error"
             ));
         } catch (Exception e) {
+            log.error("Failed to retry payment {}", paymentId, e);
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
-                    "error", e.getMessage()
+                    "error", "Failed to retry payment"
             ));
         }
     }
@@ -338,14 +350,16 @@ public class PaymentController {
             ));
             
         } catch (StripeException e) {
+            log.error("Stripe error retrieving payment methods", e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", "Stripe error: " + e.getMessage()
+                    "error", "Payment processing error"
             ));
         } catch (Exception e) {
+            log.error("Failed to retrieve payment methods for registration {}", registrationId, e);
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
-                    "error", e.getMessage()
+                    "error", "Failed to retrieve payment methods"
             ));
         }
     }
@@ -372,9 +386,10 @@ public class PaymentController {
             ));
             
         } catch (Exception e) {
+            log.error("Failed to check QR code status for registration {}", registrationId, e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", e.getMessage()
+                    "error", "Failed to check QR code status"
             ));
         }
     }
@@ -400,9 +415,10 @@ public class PaymentController {
             ));
             
         } catch (Exception e) {
+            log.error("Failed to cancel payment plan {}", paymentPlanId, e);
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
-                    "error", e.getMessage()
+                    "error", "Failed to cancel payment plan"
             ));
         }
     }
@@ -427,9 +443,10 @@ public class PaymentController {
             ));
             
         } catch (Exception e) {
+            log.error("Failed to check active payment plan for registration {}", registrationId, e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", e.getMessage()
+                    "error", "Failed to check payment plan status"
             ));
         }
     }
@@ -508,14 +525,16 @@ public class PaymentController {
             ));
 
         } catch (StripeException e) {
+            log.error("Stripe webhook signature verification failed", e);
             return ResponseEntity.status(400).body(Map.of(
                     "success", false,
-                    "error", "Stripe webhook error: " + e.getMessage()
+                    "error", "Invalid webhook signature"
             ));
         } catch (Exception e) {
+            log.error("Failed to process Stripe webhook", e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", "Webhook processing error: " + e.getMessage()
+                    "error", "Webhook processing failed"
             ));
         }
     }
@@ -535,9 +554,10 @@ public class PaymentController {
                     "message", "Payment statistics endpoint (implementation pending)"
             ));
         } catch (Exception e) {
+            log.error("Failed to retrieve payment statistics for event {}", eventId, e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", e.getMessage()
+                    "error", "Failed to retrieve payment statistics"
             ));
         }
     }
@@ -555,9 +575,10 @@ public class PaymentController {
                     "message", "User payment history endpoint (implementation pending)"
             ));
         } catch (Exception e) {
+            log.error("Failed to retrieve user payment history", e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", e.getMessage()
+                    "error", "Failed to retrieve payment history"
             ));
         }
     }
