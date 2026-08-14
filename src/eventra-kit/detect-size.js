@@ -2,6 +2,7 @@
  * adds a detect-size helper.
  */
 export function detectSize(value) {
-  return String(value).slice(-1);
+  if (Array.isArray(value) || typeof value === 'string') return value.length;
+  return String(value).length;
 }
 
