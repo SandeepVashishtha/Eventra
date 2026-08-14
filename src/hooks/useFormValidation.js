@@ -27,6 +27,7 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
 
   const validationRulesRef = useRef(validationRules);
   const initialStateRef = useRef(initialState);
+  const valuesRef = useRef(initialState);
   const optionsRef = useRef({ debounceMs, validateOnBlur });
 
   const [values, setValues] = useState(initialState);
