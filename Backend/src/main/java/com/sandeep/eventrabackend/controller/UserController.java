@@ -136,7 +136,7 @@ public class UserController {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
 
         // Check if username is being changed and if new username already exists
-        if (!user.getUsername().equals(request.getUsername()) && 
+        if (!java.util.Objects.equals(user.getUsername(), request.getUsername()) && 
                 userRepository.existsByUsername(request.getUsername())) {
             throw new UserAlreadyExistsException("Username already exists: " + request.getUsername());
         }
