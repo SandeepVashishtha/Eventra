@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import * as CountChar from '../count-char.js';
+import { countChar } from '../count-char.js';
 
 describe('count-char', () => {
-  it('exports a module', () => {
-    expect(CountChar).toBeDefined();
+  it('counts occurrences of a character', () => {
+    expect(countChar('banana', 'a')).toBe(3);
+    expect(countChar('hello', 'l')).toBe(2);
+    expect(countChar('abc', 'z')).toBe(0);
   });
 });
-
