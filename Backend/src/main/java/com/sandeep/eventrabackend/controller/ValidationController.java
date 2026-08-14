@@ -110,9 +110,12 @@ public class ValidationController {
 
     @PostMapping("/phone")
     @Operation(summary = "Validate phone number format")
-    public ResponseEntity<?> validatePhone(@RequestBody PhoneRequest request) {
+    public ResponseEntity<?> validatePhone(@RequestBody(required = false) PhoneRequest request) {
+        if (request == null || request.getPhone() == null) {
+            return ResponseEntity.ok(Map.of("valid", false, "message", "Phone number is required"));
+        }
         String phone = request.getPhone();
-        if (phone == null || !PHONE_PATTERN.matcher(phone).matches()) {
+        if (!PHONE_PATTERN.matcher(phone).matches()) {
             return ResponseEntity.ok(Map.of("valid", false, "message", "Phone number is invalid"));
         }
         return ResponseEntity.ok(Map.of("valid", true));
