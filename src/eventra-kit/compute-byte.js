@@ -2,6 +2,6 @@
  * adds a compute-byte helper.
  */
 export function computeByte(value) {
-  return typeof value === 'number';
+  return new TextEncoder().encode(String(value)).length;
 }
 
