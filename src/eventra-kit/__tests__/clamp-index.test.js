@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import * as ClampIndex from '../clamp-index.js';
+import { clampIndex } from '../clamp-index.js';
 
 describe('clamp-index', () => {
-  it('exports a module', () => {
-    expect(ClampIndex).toBeDefined();
+  it('clamps the index between zero and the upper bound', () => {
+    expect(clampIndex(5, 3)).toBe(3);
+    expect(clampIndex(-2, 10)).toBe(0);
+    expect(clampIndex(7, 10)).toBe(7);
   });
 });
-
