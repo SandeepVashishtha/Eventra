@@ -95,8 +95,9 @@ if (isSentryEnabled && typeof window !== "undefined") {
  * @returns {string} Unique numeric string hash.
  */
 function simpleHash(str) {
+  const safeStr = typeof str === "string" ? str : String(str || "");
   let hash = 0;
-  for (let i = 0; i < str.length; i += 1) {
+  for (let i = 0; i < safeStr.length; i += 1) {
     const char = str.charCodeAt(i);
     hash = (hash << 5) - hash + char;
     hash |= 0;
@@ -488,7 +489,7 @@ export const getErrorLog = () => {
  */
 export const getFeatureErrorLog = (featureName) => {
   const logs = readFromLocalStorage(STORAGE_KEYS.FEATURE_ERRORS);
-  if (Array.isArray(logs)) return [];
+  if (!logs || Array.isArray(logs) || typeof logs !== "object") return [];
   return logs[featureName] || [];
 };
 
