@@ -4,6 +4,7 @@ import com.sandeep.eventrabackend.dto.request.CreateLostItemRequest;
 import com.sandeep.eventrabackend.dto.request.UpdateLostItemRequest;
 import com.sandeep.eventrabackend.dto.response.ErrorResponse;
 import com.sandeep.eventrabackend.dto.response.LostItemResponse;
+import com.sandeep.eventrabackend.security.CustomUserDetails;
 import com.sandeep.eventrabackend.service.LostItemService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -18,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -264,10 +266,15 @@ public class LostItemController {
     private Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
-            return null;
+            throw new SecurityException("Authentication required");
         }
         
         Object principal = authentication.getPrincipal();
+        
+        if (principal instanceof CustomUserDetails) {
+            return ((CustomUserDetails) principal).getUser().getId();
+        }
+        
         if (principal instanceof Map) {
             Map<?, ?> principalMap = (Map<?, ?>) principal;
             Object userIdObj = principalMap.get("userId");
@@ -276,8 +283,18 @@ public class LostItemController {
             }
         }
         
-        // If the principal is a string (username/email), we might need to look it up
-        // For now, return null if we can't extract the user ID
-        return null;
+        if (principal instanceof UserDetails) {
+            String username = ((UserDetails) principal).getUsername();
+            if (username != null) {
+                return lostItemService.getUserIdByEmail(username);
+            }
+        }
+        
+        if (principal instanceof String) {
+            String identifier = (String) principal;
+            return lostItemService.getUserIdByEmail(identifier);
+        }
+        
+        throw new SecurityException("Unable to resolve user ID from authentication");
     }
 }

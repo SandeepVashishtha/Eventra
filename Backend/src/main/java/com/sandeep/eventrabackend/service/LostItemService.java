@@ -255,4 +255,10 @@ public class LostItemService {
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
+
+    public Long getUserIdByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .map(User::getId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+    }
 }
