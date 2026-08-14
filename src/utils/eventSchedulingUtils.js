@@ -230,8 +230,38 @@ export const buildScheduleUpdatePayload = (eventId, start, end) => ({
   endDate: end.toISOString(),
 });
 
-export const rangesOverlap = (first, second) =>
-  first.start < second.end && second.start < first.end;
+/**
+ * Safely checks if two sessions overlap in time by normalizing their start and end
+ * timestamps into UTC epoch milliseconds before comparison.
+ * Returns false if either session is missing or contains invalid date values.
+ *
+ * @param {Object} sessionA
+ * @param {Object} sessionB
+ * @returns {boolean}
+ */
+export const checkScheduleOverlap = (sessionA, sessionB) => {
+  if (!sessionA || !sessionB) return false;
+
+  const extractTime = (val) => {
+    if (!val) return NaN;
+    if (val instanceof Date) return val.getTime();
+    if (typeof val === "number") return val;
+    return new Date(val).getTime();
+  };
+
+  const startA = extractTime(sessionA.start || sessionA.startTime || sessionA.startDate);
+  const endA = extractTime(sessionA.end || sessionA.endTime || sessionA.endDate);
+  const startB = extractTime(sessionB.start || sessionB.startTime || sessionB.startDate);
+  const endB = extractTime(sessionB.end || sessionB.endTime || sessionB.endDate);
+
+  if ([startA, endA, startB, endB].some(Number.isNaN)) {
+    return false;
+  }
+
+  return startA < endB && startB < endA;
+};
+
+export const rangesOverlap = (first, second) => checkScheduleOverlap(first, second);
 
 export const detectScheduleConflicts = (candidateEvent, events = []) => {
   const candidate = normalizeScheduledEvent(candidateEvent);
