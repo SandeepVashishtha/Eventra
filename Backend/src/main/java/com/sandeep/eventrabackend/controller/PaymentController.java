@@ -3,7 +3,10 @@ package com.sandeep.eventrabackend.controller;
 import com.sandeep.eventrabackend.model.EventRegistration;
 import com.sandeep.eventrabackend.model.Payment;
 import com.sandeep.eventrabackend.model.PaymentPlan;
+import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.EventRegistrationRepository;
+import com.sandeep.eventrabackend.repository.PaymentRepository;
+import com.sandeep.eventrabackend.repository.UserRepository;
 import com.sandeep.eventrabackend.service.PaymentPlanService;
 import com.sandeep.eventrabackend.service.StripeService;
 import com.stripe.exception.StripeException;
@@ -16,9 +19,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/payments")
@@ -34,6 +40,12 @@ public class PaymentController {
 
     @Autowired
     private EventRegistrationRepository eventRegistrationRepository;
+
+    @Autowired
+    private PaymentRepository paymentRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     /**
      * Create a new payment plan for installment payments
@@ -527,13 +539,21 @@ public class PaymentController {
     @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> getPaymentStatsForEvent(@PathVariable Long eventId) {
         try {
-            // Implementation would query payment repository for event statistics
-            // This is a placeholder that would be implemented based on specific requirements
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "eventId", eventId,
-                    "message", "Payment statistics endpoint (implementation pending)"
-            ));
+            List<Payment> payments = paymentRepository.findByRegistration_Event_Id(eventId);
+            List<Payment> completed = paymentRepository.findCompletedPaymentsByEventId(eventId);
+
+            Map<String, Object> stats = new LinkedHashMap<>();
+            stats.put("success", true);
+            stats.put("eventId", eventId);
+            stats.put("totalPayments", payments.size());
+            stats.put("completedPayments", completed.size());
+            stats.put("totalRevenue", completed.stream()
+                    .map(Payment::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add));
+            stats.put("statusBreakdown", payments.stream()
+                    .collect(Collectors.groupingBy(Payment::getStatus, Collectors.counting())));
+
+            return ResponseEntity.ok(stats);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
@@ -547,12 +567,19 @@ public class PaymentController {
      */
     @GetMapping("/user/history")
     @PreAuthorize("hasAnyAuthority('USER', 'ORGANIZER', 'ADMIN')")
-    public ResponseEntity<?> getUserPaymentHistory() {
+    public ResponseEntity<?> getUserPaymentHistory(Authentication authentication) {
         try {
-            // Implementation would return payment history for the authenticated user
+            User user = userRepository.findByEmail(authentication.getName())
+                    .orElseThrow(() -> new IllegalArgumentException("User not found for email: " + authentication.getName()));
+
+            List<Map<String, Object>> history = paymentRepository.findByRegistration_User_Id(user.getId()).stream()
+                    .sorted(Comparator.comparing(Payment::getCreatedAt).reversed())
+                    .map(this::toPaymentSummary)
+                    .collect(Collectors.toList());
+
             return ResponseEntity.ok(Map.of(
                     "success", true,
-                    "message", "User payment history endpoint (implementation pending)"
+                    "payments", history
             ));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of(
@@ -560,5 +587,21 @@ public class PaymentController {
                     "error", e.getMessage()
             ));
         }
+    }
+
+    private Map<String, Object> toPaymentSummary(Payment payment) {
+        Map<String, Object> summary = new LinkedHashMap<>();
+        summary.put("id", payment.getId());
+        summary.put("amount", payment.getAmount());
+        summary.put("currency", payment.getCurrency());
+        summary.put("paymentMethod", payment.getPaymentMethod());
+        summary.put("paymentProvider", payment.getPaymentProvider());
+        summary.put("status", payment.getStatus());
+        summary.put("installmentNumber", payment.getInstallmentNumber());
+        summary.put("totalInstallments", payment.getTotalInstallments());
+        summary.put("transactionId", payment.getTransactionId());
+        summary.put("paidAt", payment.getPaidAt());
+        summary.put("createdAt", payment.getCreatedAt());
+        return summary;
     }
 }
