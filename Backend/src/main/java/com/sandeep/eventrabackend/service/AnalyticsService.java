@@ -21,14 +21,17 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Duration;
+import java.time.temporal.WeekFields;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,6 +41,9 @@ public class AnalyticsService {
     private static final String[] BREAKDOWN_COLORS = {
             "#6366f1", "#ec4899", "#10b981", "#f59e0b", "#06b6d4"
     };
+
+    // Index 1 = Sunday .. 7 = Saturday, matching the ISO-derived weekday index.
+    private static final String[] DAYS = {"", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 
     private final EventAnalyticsRepository eventRepo;
     private final RegistrationAnalyticsRepository regRepo;
@@ -115,22 +121,62 @@ public class AnalyticsService {
             default       -> LocalDateTime.now().minusMonths(safePeriods);
         };
 
-        List<Object[]> raw = switch (granularity.toLowerCase()) {
-            case "daily"  -> regRepo.findDailyTrend(from, eventIds);
-            case "weekly" -> regRepo.findWeeklyTrend(from, eventIds);
-            default       -> regRepo.findMonthlyTrend(from, eventIds);
+        List<TrendBucket> buckets = switch (granularity.toLowerCase()) {
+            case "daily"  -> dailyBuckets(regRepo.findDailyTrend(from, eventIds));
+            case "weekly" -> weeklyBuckets(regRepo.findDailyTrend(from, eventIds));
+            default       -> monthlyBuckets(regRepo.findMonthlyTrend(from, eventIds));
         };
 
         final long[] cumulative = {0};
-        return raw.stream().map(row -> {
-            long count = ((Number) row[1]).longValue();
-            cumulative[0] += count;
-            return RegistrationTrendDTO.builder()
-                .period(row[0].toString())
-                .registrationCount(count)
-                .cumulativeTotal(cumulative[0])
-                .build();
-        }).collect(Collectors.toList());
+        return buckets.stream()
+            .map(b -> RegistrationTrendDTO.builder()
+                .period(b.period())
+                .registrationCount(b.count())
+                .cumulativeTotal(cumulative[0] += b.count())
+                .build())
+            .collect(Collectors.toList());
+    }
+
+    private List<TrendBucket> dailyBuckets(List<Object[]> rows) {
+        return rows.stream()
+                .map(row -> new TrendBucket(row[0].toString(), ((Number) row[1]).longValue()))
+                .collect(Collectors.toList());
+    }
+
+    private List<TrendBucket> weeklyBuckets(List<Object[]> dailyRows) {
+        Map<Long, Long> weekly = new TreeMap<>();
+        for (Object[] row : dailyRows) {
+            LocalDate day = toLocalDate(row[0]);
+            long yearWeek = day.get(WeekFields.ISO.weekBasedYear()) * 100L
+                    + day.get(WeekFields.ISO.weekOfWeekBasedYear());
+            weekly.merge(yearWeek, ((Number) row[1]).longValue(), Long::sum);
+        }
+        return weekly.entrySet().stream()
+                .map(e -> new TrendBucket(String.valueOf(e.getKey()), e.getValue()))
+                .collect(Collectors.toList());
+    }
+
+    private List<TrendBucket> monthlyBuckets(List<Object[]> rows) {
+        return rows.stream()
+                .map(row -> {
+                    int yyyyMm = ((Number) row[0]).intValue();
+                    String period = (yyyyMm / 100) + "-" + String.format("%02d", yyyyMm % 100);
+                    return new TrendBucket(period, ((Number) row[1]).longValue());
+                })
+                .collect(Collectors.toList());
+    }
+
+    private LocalDate toLocalDate(Object value) {
+        if (value instanceof LocalDate localDate) {
+            return localDate;
+        }
+        if (value instanceof java.sql.Date sqlDate) {
+            return sqlDate.toLocalDate();
+        }
+        return LocalDate.parse(value.toString());
+    }
+
+    private record TrendBucket(String period, long count) {
     }
 
     // ── 3. Most popular events ────────────────────────────────────────────────
@@ -190,19 +236,27 @@ public class AnalyticsService {
 
     // ── 5. Peak registration periods ─────────────────────────────────────────
     public List<Map<String, Object>> getPeakPeriods() {
-        String[] days = {"", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
-        return regRepo.findPeakPeriods(resolveEventScope()).stream()
-            .limit(10)
-            .map(row -> {
-                Map<String, Object> m = new LinkedHashMap<>();
-                int dow = ((Number) row[0]).intValue();
-                int hr  = ((Number) row[1]).intValue();
-                m.put("dayOfWeek",  days[dow]);
-                m.put("hour",       String.format("%02d:00", hr));
-                m.put("count",      ((Number) row[2]).longValue());
-                return m;
-            })
-            .collect(Collectors.toList());
+        Map<String, Long> aggregated = new LinkedHashMap<>();
+        for (Object[] row : regRepo.findPeakPeriods(resolveEventScope())) {
+            LocalDate day = toLocalDate(row[0]);
+            int hour = ((Number) row[1]).intValue();
+            int dowIndex = (day.getDayOfWeek().getValue() % 7) + 1;
+            String key = dowIndex + "|" + hour;
+            aggregated.merge(key, ((Number) row[2]).longValue(), Long::sum);
+        }
+
+        return aggregated.entrySet().stream()
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+                .limit(10)
+                .map(e -> {
+                    String[] parts = e.getKey().split("\\|");
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("dayOfWeek", DAYS[Integer.parseInt(parts[0])]);
+                    m.put("hour", String.format("%02d:00", Integer.parseInt(parts[1])));
+                    m.put("count", e.getValue());
+                    return m;
+                })
+                .collect(Collectors.toList());
     }
 
     // ── 6. Organizer insights ────────────────────────────────────────────────
