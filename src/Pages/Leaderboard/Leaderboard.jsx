@@ -207,9 +207,13 @@ export default function LeaderBoard() {
       return;
     }
 
+    // Capture the previous contributors BEFORE scheduling state update
+    const prevContributors = prevContributorsRef.current;
+
     setStreaks((prevStreaks) => {
       const updatedStreaks = { ...prevStreaks };
-      const prevRanks = new Map(prevContributorsRef.current.map((c, idx) => [c.username, idx + 1]));
+      // Use the captured previous contributors to build prevRanks
+      const prevRanks = new Map(prevContributors.map((c, idx) => [c.username, idx + 1]));
 
       contributors.forEach((c, newIdx) => {
         const username = c.username;
@@ -230,6 +234,7 @@ export default function LeaderBoard() {
       return updatedStreaks;
     });
 
+    // Update the ref AFTER scheduling the state update
     prevContributorsRef.current = contributors;
   }, [contributors]);
 
