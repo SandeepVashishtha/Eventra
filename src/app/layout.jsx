@@ -3,6 +3,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { DrawerProvider } from "@/context/DrawerContext";
+import { SessionRecoveryProvider } from "@/context/SessionRecoveryContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,13 +27,15 @@ export default function RootLayout({ children }) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-[#f4fbf7] text-zinc-900 selection:bg-emerald-200 selection:text-emerald-950">
-        <DrawerProvider>
-          <Navbar />
-          <div className="flex-1">
-            {children}
-          </div>
-          <Footer />
-        </DrawerProvider>
+        <SessionRecoveryProvider>
+          <DrawerProvider>
+            <Navbar />
+            <div className="flex-1">
+              {children}
+            </div>
+            <Footer />
+          </DrawerProvider>
+        </SessionRecoveryProvider>
       </body>
     </html>
   );
