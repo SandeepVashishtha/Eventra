@@ -1,0 +1,11 @@
+.matchmaking-hub-container {
+  font-family: inherit;
+}
+
+.profile-match-card {
+  transition: all 0.25s ease-in-out;
+}
+
+.profile-match-card:hover {
+  transform: translateY(-2px);
+}
