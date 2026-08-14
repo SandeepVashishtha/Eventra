@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import * as CreateDict from '../create-dict.js';
+import { createDict } from '../create-dict.js';
 
 describe('create-dict', () => {
-  it('exports a module', () => {
-    expect(CreateDict).toBeDefined();
+  it('builds a dictionary from key-value pairs', () => {
+    expect(createDict([['a', 1], ['b', 2]])).toEqual({ a: 1, b: 2 });
+    expect(createDict([])).toEqual({});
   });
 });
-
