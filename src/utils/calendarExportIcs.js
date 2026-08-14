@@ -50,11 +50,18 @@ export function exportToIcs(event, timezone = "UTC") {
     "END:VCALENDAR"
   ].join("\n");
 
+  if (typeof window === "undefined" || typeof document === "undefined") {
+    console.warn("[ICS] Export is only supported in browser environments");
+    return;
+  }
+
   const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
   a.download = `${title.toLowerCase().replace(/[^a-z0-9]/g, "_")}.ics`;
+  document.body.appendChild(a);
   a.click();
+  document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
