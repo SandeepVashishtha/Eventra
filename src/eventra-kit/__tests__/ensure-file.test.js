@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import * as EnsureFile from '../ensure-file.js';
+import { ensureFile } from '../ensure-file.js';
 
 describe('ensure-file', () => {
-  it('exports a module', () => {
-    expect(EnsureFile).toBeDefined();
+  it('coerces a value into a file path string', () => {
+    expect(ensureFile(42)).toBe('42');
+    expect(ensureFile('abc')).toBe('abc');
+    expect(ensureFile(true)).toBe('true');
   });
 });
-
