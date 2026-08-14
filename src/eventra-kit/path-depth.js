@@ -1,3 +1,4 @@
+import { normalizePath } from './normalize-path.js';
 
 /**
  * adds a path depth helper.
