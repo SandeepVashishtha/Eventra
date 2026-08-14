@@ -151,6 +151,10 @@ const useSearch = (options = {}) => {
     const urlQuery = searchParams.get(urlParam) || "";
     if (urlQuery !== query) {
       setQueryState(urlQuery);
+      setDebouncedQuery(
+        sanitize ? prepareSafeSearchQuery(urlQuery) : urlQuery
+      );
+      setIsSearching(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, urlParam, syncUrl]);
