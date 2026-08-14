@@ -1,0 +1,12 @@
+.venue-walkthrough-container {
+  font-family: inherit;
+}
+
+.map-canvas-box {
+  background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+.dark .map-canvas-box {
+  background-image: radial-gradient(#334155 1px, transparent 1px);
+}
