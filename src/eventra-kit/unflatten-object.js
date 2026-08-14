@@ -1,3 +1,4 @@
+import { setPathValue } from './set-path-value.js';
 
 /**
  * adds an object unflattener.
