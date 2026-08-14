@@ -165,6 +165,7 @@ function decodePdfLiteralString(value) {
 /**
  * Extracts readable text literals from raw PDF bytes.
  * Works for uncompressed text objects; compressed streams may yield little text.
+ * Uses a linear character-by-character parser to avoid regex backtracking.
  * @param {Uint8Array} bytes
  * @returns {string}
  */
@@ -173,26 +174,71 @@ export function extractTextFromPdfBytes(bytes) {
 
   const raw = new TextDecoder("latin1").decode(bytes);
   const chunks = [];
+  const MAX_INPUT = 2 * 1024 * 1024;
+  const input = raw.length > MAX_INPUT ? raw.slice(0, MAX_INPUT) : raw;
+  const len = input.length;
 
-  const literalRegex = /\((?:\\.|[^\\)])*\)/g;
-  let match;
-  while ((match = literalRegex.exec(raw)) !== null) {
-    const decoded = decodePdfLiteralString(match[0].slice(1, -1));
-    const cleaned = decoded.replace(/[^\x09\x0A\x0D\x20-\x7E]/g, " ").replace(/\s+/g, " ").trim();
-    if (cleaned.length >= 2) {
-      chunks.push(cleaned);
+  let i = 0;
+  while (i < len) {
+    if (input[i] === "(") {
+      i++;
+      let str = "";
+      let depth = 1;
+      while (i < len && depth > 0) {
+        const ch = input[i];
+        if (ch === "\\" && i + 1 < len) {
+          const next = input[i + 1];
+          if (next === "(" || next === ")" || next === "\\") {
+            str += next;
+            i += 2;
+          } else if (next === "n") { str += "\n"; i += 2; }
+          else if (next === "r") { str += "\r"; i += 2; }
+          else if (next === "t") { str += "\t"; i += 2; }
+          else if (next >= "0" && next <= "7") {
+            let oct = "";
+            let j = i + 1;
+            while (j < len && j < i + 4 && input[j] >= "0" && input[j] <= "7") {
+              oct += input[j];
+              j++;
+            }
+            str += String.fromCharCode(parseInt(oct, 8));
+            i = j;
+          } else {
+            str += next;
+            i += 2;
+          }
+        } else if (ch === "(") {
+          depth++;
+          str += ch;
+          i++;
+        } else if (ch === ")") {
+          depth--;
+          if (depth > 0) str += ch;
+          i++;
+        } else {
+          str += ch;
+          i++;
+        }
+      }
+      const cleaned = str.replace(/[^\x09\x0A\x0D\x20-\x7E]/g, " ").replace(/\s+/g, " ").trim();
+      if (cleaned.length >= 2) {
+        chunks.push(cleaned);
+      }
+    } else {
+      i++;
     }
   }
 
   const hexRegex = /<([0-9A-Fa-f\s]+)>/g;
-  while ((match = hexRegex.exec(raw)) !== null) {
+  let match;
+  while ((match = hexRegex.exec(input)) !== null) {
     const hex = match[1].replace(/\s/g, "");
     if (hex.length < 4 || hex.length % 2 !== 0) continue;
 
     let text = "";
     let valid = true;
-    for (let i = 0; i < hex.length; i += 2) {
-      const code = parseInt(hex.slice(i, i + 2), 16);
+    for (let j = 0; j < hex.length; j += 2) {
+      const code = parseInt(hex.slice(j, j + 2), 16);
       if (code >= 32 && code <= 126) {
         text += String.fromCharCode(code);
       } else if (code === 9 || code === 10 || code === 13) {
