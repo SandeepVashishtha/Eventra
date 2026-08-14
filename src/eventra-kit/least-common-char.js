@@ -2,6 +2,8 @@
 /**
  * adds a least common char helper.
  */
+import { charFrequency } from './char-frequency.js';
+
 export function leastCommonChar(text) {
   const freq = charFrequency(text);
   let best = '';
