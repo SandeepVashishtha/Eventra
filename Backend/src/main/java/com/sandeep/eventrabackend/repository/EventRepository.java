@@ -44,12 +44,29 @@ public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecific
             + "WHERE e.id = :id AND (e.capacity IS NULL OR e.capacity > e.registeredCount)")
     int incrementRegisteredCountAtomically(@Param("id") Long id);
 
+    @Modifying
+    @Query(value = "DELETE FROM event_attendees WHERE event_id = :eventId", nativeQuery = true)
+    void deleteAttendeeRowsByEventId(@Param("eventId") Long eventId);
+
+    /**
+     * Removes the given user from the event_attendees join table.
+     * Used before deleting a user so no orphaned attendee rows remain.
+     */
+    @Modifying
+    @Query(value = "DELETE FROM event_attendees WHERE user_id = :userId", nativeQuery = true)
+    void deleteAttendeeRowsByUserId(@Param("userId") Long userId);
+
     /**
      * Case-insensitive search over title OR description.
      * Used by {@code GET /api/events/search} (#15364).
      */
     List<Event> findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
             String title, String description);
+
+    /**
+     * Find events by category.
+     */
+    List<Event> findByCategory(String category);
 
     /**
      * Grouped aggregate query for category statistics (Issue #16693).
