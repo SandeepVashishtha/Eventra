@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import * as CheckRecord from '../check-record.js';
+import { checkRecord } from '../check-record.js';
 
 describe('check-record', () => {
-  it('exports a module', () => {
-    expect(CheckRecord).toBeDefined();
+  it('checks whether a value is a record', () => {
+    expect(checkRecord({ a: 1 })).toBe(true);
+    expect(checkRecord([1])).toBe(false);
+    expect(checkRecord(null)).toBe(false);
   });
 });
-
