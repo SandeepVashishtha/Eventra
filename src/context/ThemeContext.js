@@ -114,9 +114,9 @@ export const ThemeProvider = ({ children }) => {
       // Also persist to localStorage so it survives the next cold load
       // before the next validateSession() completes.
       if (profileTheme === "system") {
-        safeStorage.removeItem("theme");
+        safeStorage.removeItem(THEME_STORAGE_KEY);
       } else {
-        safeStorage.setItem("theme", profileTheme);
+        safeStorage.setItem(THEME_STORAGE_KEY, profileTheme);
       }
     }
 
