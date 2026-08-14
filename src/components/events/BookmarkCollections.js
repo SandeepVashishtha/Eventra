@@ -15,6 +15,7 @@ const BookmarkCollections = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [newCollectionName, setNewCollectionName] = useState("");
+  const [expandedCollectionId, setExpandedCollectionId] = useState(null);
 
   const filteredCollections = useMemo(() => {
     const searched = searchCollections(collections, searchQuery);
@@ -66,7 +67,9 @@ const BookmarkCollections = ({
   };
 
   const handleView = (collection) => {
-    console.log("Open collection:", collection);
+    setExpandedCollectionId((prev) =>
+      prev === collection.id ? null : collection.id
+    );
   };
 
   return (
@@ -165,6 +168,7 @@ const BookmarkCollections = ({
             <BookmarkCollectionCard
               key={collection.id}
               collection={collection}
+              expanded={expandedCollectionId === collection.id}
               onRename={handleRename}
               onDelete={handleDelete}
               onView={handleView}

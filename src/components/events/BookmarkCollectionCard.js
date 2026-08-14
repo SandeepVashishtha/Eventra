@@ -2,6 +2,7 @@ import { Folder, Edit2, Trash2, Calendar, Eye } from "lucide-react";
 
 const BookmarkCollectionCard = ({
   collection,
+  expanded = false,
   onRename,
   onDelete,
   onView,
@@ -9,6 +10,9 @@ const BookmarkCollectionCard = ({
   if (!collection) return null;
 
   const eventCount = collection.events?.length || 0;
+  const visibleEvents = expanded
+    ? collection.events
+    : collection.events.slice(0, 3);
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 p-6">
@@ -70,7 +74,7 @@ const BookmarkCollectionCard = ({
           className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 transition"
         >
           <Eye size={18} />
-          View
+          {expanded ? "Hide" : "View"}
         </button>
 
         <button
@@ -102,7 +106,7 @@ const BookmarkCollectionCard = ({
 
           <div className="space-y-2">
 
-            {collection.events.slice(0, 3).map((event) => (
+            {visibleEvents.map((event) => (
               <div
                 key={event.id}
                 className="flex justify-between items-center rounded-lg bg-slate-50 dark:bg-slate-800 px-3 py-2"
@@ -119,7 +123,7 @@ const BookmarkCollectionCard = ({
               </div>
             ))}
 
-            {eventCount > 3 && (
+            {!expanded && eventCount > 3 && (
               <p className="text-xs text-slate-500 text-center">
                 +{eventCount - 3} more event{eventCount - 3 > 1 ? "s" : ""}
               </p>
