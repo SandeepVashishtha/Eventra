@@ -207,9 +207,13 @@ public class TicketController {
                               "time": "2026-08-12T10:00:00"}]"""))),
             @ApiResponse(responseCode = "403", description = "Forbidden - organizer/admin access required")
     })
-    public ResponseEntity<List<Map<String, Object>>> checkInHistory(@RequestParam(required = false) Long eventId) {
+    public ResponseEntity<List<Map<String, Object>>> checkInHistory(Authentication authentication,
+            @RequestParam(required = false) Long eventId) {
         if (eventId == null) {
             return ResponseEntity.ok(List.of());
+        }
+        if (!isAuthorizedForEvent(eventId, authentication)) {
+            return forbiddenList();
         }
         List<Map<String, Object>> entries = ticketCheckInRepository
                 .findByEventIdOrderByCheckedInAtDesc(eventId)
@@ -242,9 +246,13 @@ public class TicketController {
                              "remainingAttendees": 55, "attendancePercentage": 45}"""))),
             @ApiResponse(responseCode = "403", description = "Forbidden - organizer/admin access required")
     })
-    public ResponseEntity<Map<String, Object>> ticketStats(@RequestParam(required = false) Long eventId) {
+    public ResponseEntity<Map<String, Object>> ticketStats(Authentication authentication,
+            @RequestParam(required = false) Long eventId) {
         if (eventId == null) {
             return ResponseEntity.ok(emptyStats());
+        }
+        if (!isAuthorizedForEvent(eventId, authentication)) {
+            return forbidden();
         }
         long total = eventRegistrationRepository.countByEvent_IdAndStatus(eventId, "CONFIRMED");
         long checkedIn = ticketCheckInRepository.countByEventId(eventId);
@@ -296,6 +304,10 @@ public class TicketController {
         response.put("valid", false);
         response.put("message", "You are not authorized to manage this event.");
         return ResponseEntity.status(403).body(response);
+    }
+
+    private ResponseEntity<List<Map<String, Object>>> forbiddenList() {
+        return ResponseEntity.status(403).body(List.of());
     }
 
     private String displayName(EventRegistration reg) {
