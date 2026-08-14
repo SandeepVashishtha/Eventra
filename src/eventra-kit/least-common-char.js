@@ -1,3 +1,4 @@
+import { charFrequency } from './char-frequency.js';
 
 /**
  * adds a least common char helper.
