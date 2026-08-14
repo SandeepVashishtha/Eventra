@@ -168,7 +168,7 @@ export const generateSharingUrl = (shareData = {}, platform = "") => {
       return `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
 
     case "messenger": {
-      const fbAppId = process.env.REACT_APP_FACEBOOK_APP_ID;
+      const fbAppId = import.meta.env.REACT_APP_FACEBOOK_APP_ID;
       if (fbAppId) {
         return `https://www.facebook.com/dialog/send?app_id=${fbAppId}&link=${encodedUrl}&redirect_uri=${encodedUrl}`;
       }
@@ -284,7 +284,7 @@ export const openShareWindow = (url, platform = "facebook") => {
  * @returns {Object} Sharing data object
  */
 export const generateEventSharingData = (event = {}, baseUrl = null) => {
-  const deployedDomain = process.env.REACT_APP_PUBLIC_URL || "eventra.sandeepvashishtha.tech";
+  const deployedDomain = import.meta.env.REACT_APP_PUBLIC_URL || "eventra.sandeepvashishtha.tech";
 
   if (!baseUrl) {
     if (typeof window !== "undefined") {
@@ -295,7 +295,7 @@ export const generateEventSharingData = (event = {}, baseUrl = null) => {
         baseUrl = window.location.origin;
       }
     } else {
-      baseUrl = process.env.REACT_APP_PUBLIC_URL || `https://${deployedDomain}`;
+      baseUrl = import.meta.env.REACT_APP_PUBLIC_URL || `https://${deployedDomain}`;
     }
   }
 
