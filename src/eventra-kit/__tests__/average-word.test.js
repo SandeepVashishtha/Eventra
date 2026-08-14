@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import * as AverageWord from '../average-word.js';
+import { averageWord } from '../average-word.js';
 
 describe('average-word', () => {
-  it('exports a module', () => {
-    expect(AverageWord).toBeDefined();
+  it('computes the average word length of a text', () => {
+    expect(averageWord('hello world')).toBe(5);
+    expect(averageWord('a bb')).toBe(1.5);
+    expect(averageWord('')).toBe(0);
   });
 });
-
