@@ -373,7 +373,8 @@ public class AdminService {
      * their {@code createdAt}, not event registrations (Issue #11232).
      */
     public List<RegistrationTrendDTO> getUserGrowthTrend(int months) {
-        LocalDateTime from = LocalDateTime.now().minusMonths(months);
+        int safeMonths = Math.max(1, Math.min(months, 24));
+        LocalDateTime from = LocalDateTime.now().minusMonths(safeMonths);
         List<Object[]> raw = userRepository.findMonthlySignupTrend(from);
 
         final long[] cumulative = { 0 };
