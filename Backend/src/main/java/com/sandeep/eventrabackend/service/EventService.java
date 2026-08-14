@@ -18,6 +18,7 @@ import com.sandeep.eventrabackend.dto.response.RegistrationResponse;
 import com.sandeep.eventrabackend.dto.response.AchievementBadgeResponse;
 import com.sandeep.eventrabackend.dto.response.UserAchievementsResponse;
 import com.sandeep.eventrabackend.dto.response.WaitlistResponse;
+import com.sandeep.eventrabackend.event.EventCancelledEvent;
 import com.sandeep.eventrabackend.exception.EventFullException;
 import com.sandeep.eventrabackend.exception.EventNotFoundException;
 import com.sandeep.eventrabackend.exception.RegistrationClosedException;
@@ -49,6 +50,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -130,7 +132,7 @@ public class EventService {
         private final UserRepository userRepository;
         private final EventRoleService eventRoleService;
         private final EventStreamService eventStreamService;
-        private final StripeService stripeService;
+        private final ApplicationEventPublisher eventPublisher;
 
         public EventService(
                         EventRepository eventRepository,
@@ -143,7 +145,7 @@ public class EventService {
                         UserRepository userRepository,
                         EventRoleService eventRoleService,
                         EventStreamService eventStreamService,
-                        StripeService stripeService) {
+                        ApplicationEventPublisher eventPublisher) {
                 this.eventRepository = eventRepository;
                 this.eventRegistrationRepository = eventRegistrationRepository;
                 this.eventWaitlistRepository = eventWaitlistRepository;
@@ -154,7 +156,7 @@ public class EventService {
                 this.userRepository = userRepository;
                 this.eventRoleService = eventRoleService;
                 this.eventStreamService = eventStreamService;
-                this.stripeService = stripeService;
+                this.eventPublisher = eventPublisher;
         }
 
         /**
@@ -696,7 +698,7 @@ public class EventService {
 
                 Event saved = eventRepository.save(event);
                 if (!Boolean.FALSE.equals(request.getNotifyAttendees())) {
-                        notifyCancellation(saved, request.getReason());
+                        eventPublisher.publishEvent(new EventCancelledEvent(saved.getId(), request.getReason()));
                 }
 
                 return toEventResponse(saved);
@@ -766,53 +768,6 @@ public class EventService {
                                 .map(entry -> entry.getUser().getEmail())
                                 .forEach(emails::add);
                 return List.copyOf(emails);
-        }
-
-        private void notifyCancellation(Event event, String reason) {
-                String message = event.getTitle() + " has been cancelled. Reason: " + reason;
-                String refundPolicy = event.getRefundPolicy();
-                Integer refundPercent = event.getRefundPercent();
-                boolean refundDue = refundPolicy != null
-                                && !"NONE".equalsIgnoreCase(refundPolicy);
-
-                eventRegistrationRepository.findByEvent_IdAndStatus(event.getId(), "CONFIRMED")
-                                .forEach(registration -> {
-                                        notificationRepository.save(Notification.builder()
-                                                        .user(registration.getUser())
-                                                        .title("Event cancelled")
-                                                        .message(message)
-                                                        .build());
-
-                                        if (refundDue
-                                                        && registration.isPaymentCompleted()
-                                                        && registration.getStripePaymentIntentId() != null) {
-                                                try {
-                                                        stripeService.refundPayment(
-                                                                        registration.getStripePaymentIntentId(),
-                                                                        refundPolicy,
-                                                                        refundPercent);
-                                                } catch (Exception e) {
-                                                        log.error(
-                                                                        "Failed to refund payment for registration {} on cancelled event {}: {}",
-                                                                        registration.getId(),
-                                                                        event.getId(),
-                                                                        e.getMessage());
-                                                }
-                                        }
-                                });
-
-                eventWaitlistRepository
-                                .findByEvent_IdAndStatusOrderByPositionAscJoinedAtAsc(event.getId(),
-                                                EventWaitlist.STATUS_WAITING)
-                                .forEach(entry -> {
-                                        notificationRepository.save(Notification.builder()
-                                                        .user(entry.getUser())
-                                                        .title("Event cancelled")
-                                                        .message(message)
-                                                        .build());
-                                        entry.setStatus(EventWaitlist.STATUS_EVENT_CANCELLED);
-                                        eventWaitlistRepository.save(entry);
-                                });
         }
 
         /**
