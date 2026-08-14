@@ -20,6 +20,7 @@ const SearchEmptyState = ({
   browseLabel = "Browse",
   browsePath = "/",
   onClear,
+  popularTags = [],
   // eslint-disable-next-line no-unused-vars
   variant: _variant = "search",
   title: customTitle,
@@ -38,8 +39,6 @@ const SearchEmptyState = ({
     "Try adjusting your search or explore other sections on Eventra.";
 
   const suggestions = DEFAULT_SUGGESTIONS;
-
-  const popularTags = [];
 
   return (
     <EmptyState
