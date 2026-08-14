@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { apiUtils, API_ENDPOINTS } from '../../config/api';
 
 // Stripe publishable key (should be configured via environment variables)
 const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_your_publishable_key';
@@ -238,20 +238,13 @@ const InstallmentPayment = () => {
   const [paymentIntent, setPaymentIntent] = useState(null);
   const [actionRequired, setActionRequired] = useState(false);
 
-  // API base URL
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
-
   // Fetch payment plan details
   const fetchPaymentPlan = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await axios.get(`${API_BASE_URL}/payments/plans/${registrationId}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const response = await apiUtils.get(API_ENDPOINTS.PAYMENTS.PLANS(registrationId));
       
       setPaymentPlan(response.data);
       
@@ -272,12 +265,7 @@ const InstallmentPayment = () => {
   // Initialize Stripe customer and setup intent
   const initializeStripe = useCallback(async () => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/payments/initialize/${registrationId}`, {}, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await apiUtils.post(API_ENDPOINTS.PAYMENTS.INITIALIZE(registrationId));
       
       setSetupIntent(response.data);
       return response.data;
@@ -296,15 +284,9 @@ const InstallmentPayment = () => {
         throw new Error('Payment plan not initialized');
       }
       
-      const response = await axios.post(
-        `${API_BASE_URL}/payments/setup-method/${setupIntent.paymentPlanId}`,
-        { paymentMethodId },
-        {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-            'Content-Type': 'application/json',
-          },
-        }
+      const response = await apiUtils.post(
+        API_ENDPOINTS.PAYMENTS.SETUP_METHOD(setupIntent.paymentPlanId),
+        { paymentMethodId }
       );
       
       setPaymentIntent(response.data);
@@ -324,15 +306,9 @@ const InstallmentPayment = () => {
         throw new Error('Payment intent not created');
       }
       
-      const response = await axios.post(
-        `${API_BASE_URL}/payments/confirm-upfront/${setupIntent.paymentPlanId}`,
-        { paymentMethodId },
-        {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-            'Content-Type': 'application/json',
-          },
-        }
+      const response = await apiUtils.post(
+        API_ENDPOINTS.PAYMENTS.CONFIRM_UPFRONT(setupIntent.paymentPlanId),
+        { paymentMethodId }
       );
       
       return response.data;
@@ -393,15 +369,8 @@ const InstallmentPayment = () => {
       setLoading(true);
       setError(null);
       
-      const response = await axios.post(
-        `${API_BASE_URL}/payments/retry/${paymentId}`,
-        {},
-        {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-            'Content-Type': 'application/json',
-          },
-        }
+      const response = await apiUtils.post(
+        API_ENDPOINTS.PAYMENTS.RETRY(paymentId)
       );
       
       setPaymentIntent(response.data);

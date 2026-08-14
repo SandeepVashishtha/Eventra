@@ -310,6 +310,13 @@ export const API_ENDPOINTS = {
     PHONE: buildApiUrl("/validate/phone"),
   },
   CONTACT: buildApiUrl("/contact"),
+  PAYMENTS: {
+    PLANS: (registrationId) => buildApiUrl(`/payments/plans/${registrationId}`),
+    INITIALIZE: (registrationId) => buildApiUrl(`/payments/initialize/${registrationId}`),
+    SETUP_METHOD: (paymentPlanId) => buildApiUrl(`/payments/setup-method/${paymentPlanId}`),
+    CONFIRM_UPFRONT: (paymentPlanId) => buildApiUrl(`/payments/confirm-upfront/${paymentPlanId}`),
+    RETRY: (paymentId) => buildApiUrl(`/payments/retry/${paymentId}`),
+  },
 };
 
 /**
