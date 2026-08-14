@@ -70,12 +70,9 @@ public class RateLimitService {
             Map.Entry<String, Counter> entry = iterator.next();
             Counter counter = entry.getValue();
             synchronized (counter) {
-                if (counter.windowStart.isBefore(cutoff) && counter.requests == 0
-                        || !counter.windowStart.plus(window).isAfter(cutoff)) {
-                    // Drop counters whose window has fully elapsed.
-                    if (!clock.instant().isBefore(counter.windowStart.plus(window))) {
-                        iterator.remove();
-                    }
+                // Drop counters whose window has fully elapsed.
+                if (!counter.windowStart.plus(window).isAfter(cutoff)) {
+                    iterator.remove();
                 }
             }
         }
