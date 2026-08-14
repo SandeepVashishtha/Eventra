@@ -72,6 +72,7 @@ const GLOBAL_DEFAULTS = {
   language: "en",
   reducedMotion: false,
   fontSize: "medium",
+  lowBandwidthMode: false,
 };
 
 const NAMESPACE_DEFAULTS = {
