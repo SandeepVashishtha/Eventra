@@ -1,7 +1,7 @@
 /**
  * adds a detect-char helper.
  */
-export function detectChar(value) {
-  return value.split(' ').filter(Boolean).length;
+export function detectChar(text, char) {
+  return String(text).includes(char);
 }
 
