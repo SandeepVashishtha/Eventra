@@ -51,6 +51,7 @@ export default function DashboardPage() {
   const [editLastName, setEditLastName] = useState("");
   const [editUsername, setEditUsername] = useState("");
   const [saveSuccess, setSaveSuccess] = useState(false);
+const [profileError, setProfileError] = useState("");
 
   useEffect(() => {
     async function loadDashboardData() {
@@ -140,21 +141,14 @@ export default function DashboardPage() {
         localStorage.setItem("eventra_user", JSON.stringify(newProf));
       }
       setSaveSuccess(true);
+      setProfileError("");
       setTimeout(() => {
         setSaveSuccess(false);
         setIsEditingProfile(false);
       }, 1000);
     } catch (err) {
-      const newProf = { ...profile, firstName: editFirstName, lastName: editLastName, username: editUsername };
-      setProfile(newProf);
-      if (typeof window !== "undefined") {
-        localStorage.setItem("eventra_user", JSON.stringify(newProf));
-      }
-      setSaveSuccess(true);
-      setTimeout(() => {
-        setSaveSuccess(false);
-        setIsEditingProfile(false);
-      }, 1000);
+      console.warn("Error updating profile", err);
+      setProfileError("Failed to update profile. Please try again.");
     }
   };
 
@@ -266,7 +260,7 @@ export default function DashboardPage() {
             {/* Profile Action Buttons */}
             <div className="flex items-center gap-3 w-full md:w-auto justify-end">
               <button
-                onClick={() => setIsEditingProfile(true)}
+                onClick={() => { setIsEditingProfile(true); setProfileError(""); }}
                 className="inline-flex items-center gap-2 px-4 py-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-xs font-bold rounded-xl transition-all cursor-pointer"
               >
                 <Edit3 className="w-4 h-4 text-zinc-600" />
@@ -533,6 +527,12 @@ export default function DashboardPage() {
               <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold rounded-xl flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-[#00b887]" />
                 <span>Profile updated successfully!</span>
+              </div>
+            )}
+
+            {profileError && (
+              <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold rounded-xl flex items-center gap-2">
+                <span>{profileError}</span>
               </div>
             )}
 
