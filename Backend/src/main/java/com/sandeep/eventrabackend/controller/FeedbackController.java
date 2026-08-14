@@ -16,6 +16,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -37,6 +38,7 @@ public class FeedbackController {
     private final FeedbackService feedbackService;
 
     @PostMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(
             summary = "Submit feedback for an event",
             description = "Allows an attendee to rate and comment on an event they registered for."
@@ -58,7 +60,9 @@ public class FeedbackController {
     public ResponseEntity<FeedbackResponse> submitFeedback(
             @Valid @RequestBody FeedbackRequest request,
             Authentication authentication) {
-        
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         FeedbackResponse response = feedbackService.submitFeedback(authentication.getName(), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -70,6 +74,7 @@ public class FeedbackController {
     }
 
     @GetMapping("/organizers/{organizerId}/score")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get organizer score", description = "Returns the average rating and review count for an organizer. Only the organizer or an administrator may access this endpoint.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Organizer score fetched successfully"),
@@ -81,10 +86,14 @@ public class FeedbackController {
     public ResponseEntity<Map<String, Object>> getOrganizerScore(
             @PathVariable Long organizerId,
             Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         return ResponseEntity.ok(feedbackService.getOrganizerScore(organizerId, authentication.getName()));
     }
 
     @GetMapping("/organizers/{organizerId}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get organizer feedback", description = "Returns feedback submitted for past events owned by an organizer. Only the organizer or an administrator may access this endpoint.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Organizer feedback fetched successfully",
@@ -97,6 +106,9 @@ public class FeedbackController {
     public ResponseEntity<List<FeedbackResponse>> getOrganizerFeedback(
             @PathVariable Long organizerId,
             Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         return ResponseEntity.ok(feedbackService.getOrganizerFeedback(organizerId, authentication.getName()));
     }
 }

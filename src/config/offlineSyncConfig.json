@@ -1,7 +1,0 @@
-{
-  "maxQueueSize": 15,
-  "maxRetries": 5,
-  "defaultConflictStrategy": "server-wins",
-  "enableBackgroundSync": true,
-  "enableRollback": true
-}
