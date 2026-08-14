@@ -23,8 +23,23 @@ public class SessionRecoveryController {
     }
 
     @PostMapping
-    public ResponseEntity<Map<String, Object>> save(@RequestBody Map<String, Object> body, Authentication authentication) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(sessionRecoveryService.save(authentication.getName(), body));
+    public ResponseEntity<?> save(
+            @RequestBody(required = false) Map<String, Object> body,
+            Authentication authentication) {
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        if (body == null || body.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "Bad Request",
+                    "message", "Session recovery payload cannot be null or empty."
+            ));
+        }
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(sessionRecoveryService.save(authentication.getName(), body));
     }
 
     @GetMapping

@@ -32,7 +32,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
         String path = request.getRequestURI();
 
-        if (path != null && path.matches("^/api/v1/hackathons/[^/]+/register$") && "POST".equalsIgnoreCase(request.getMethod())) {
+        if (path != null && path.matches("^/api/hackathons/[^/]+/register$") && "POST".equalsIgnoreCase(request.getMethod())) {
             String clientIp = getClientIp(request);
             Bucket bucket = buckets.computeIfAbsent(clientIp, k -> createNewBucket());
 
