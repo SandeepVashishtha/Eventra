@@ -2,8 +2,9 @@
 /**
  * adds a count helper.
  */
-export function countOccurrences(array, value) {
-  return array.filter(v => v === value).length;
+export function countOccurrences(value, target) {
+  const items = Array.isArray(value) ? value : String(value).split('');
+  return items.filter((v) => v === target).length;
 }
 
 export function countBy(array, keyFn) {
