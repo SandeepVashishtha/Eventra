@@ -77,5 +77,16 @@ public class User {
 
     @Convert(converter = JsonMapAttributeConverter.class)
     @Column(name = "preferences", columnDefinition = "TEXT")
+    @Builder.Default
     private Map<String, Object> preferences = new HashMap<>();
+
+    public String getName() {
+        if (firstName == null && lastName == null) {
+            return username != null ? username : email;
+        }
+        String first = firstName != null ? firstName : "";
+        String last = lastName != null ? lastName : "";
+        String full = (first + " " + last).trim();
+        return full.isEmpty() ? (username != null ? username : email) : full;
+    }
 }
