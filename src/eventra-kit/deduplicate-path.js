@@ -2,6 +2,6 @@
  * adds a deduplicate-path helper.
  */
 export function deduplicatePath(value) {
-  return String(value).slice(-1);
+  return [...new Set(String(value).split(/\s+/).filter(Boolean))].join(' ');
 }
 
