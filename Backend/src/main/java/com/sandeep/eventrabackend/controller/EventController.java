@@ -30,6 +30,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
+import java.util.Objects;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -338,6 +339,10 @@ public class EventController {
                         @Parameter(description = "ID of the event") @PathVariable Long id,
                         @Valid @RequestBody CsvWaitlistImportRequest request,
                         Authentication authentication) {
+
+                if (!Objects.equals(id, request.getEventId())) {
+                        throw new IllegalArgumentException("Event id in path must match the event id in the request body");
+                }
 
                 return ResponseEntity.ok(eventService.importLegacyWaitlist(request, authentication.getName()));
         }
