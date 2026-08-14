@@ -1,9 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CalendarDays, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const EventCTA = () => {
   const [showModal, setShowModal] = useState(false);
+
+  const closeModal = () => setShowModal(false);
+
+  useEffect(() => {
+    if (!showModal) return;
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") closeModal();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showModal]);
 
   return (
     <section 
@@ -63,9 +74,19 @@ const EventCTA = () => {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeModal();
+          }}
+        >
           {/* UPDATED: Modal card background, border, and text */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 w-full max-w-md relative text-center dark:border dark:border-gray-700">
+          <div
+            className="bg-white dark:bg-gray-800 rounded-2xl p-8 w-full max-w-md relative text-center dark:border dark:border-gray-700"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Join our community"
+          >
             <h3 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Join Our Community</h3>
             <p className="text-gray-700 dark:text-gray-200 text-lg">
               To participate in events, please explore the event cards listed on
@@ -74,7 +95,7 @@ const EventCTA = () => {
             {/* The close button works well in both themes. */}
             <button
               className="mt-6 px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
-              onClick={() => setShowModal(false)}
+              onClick={closeModal}
             >
               Close
             </button>
