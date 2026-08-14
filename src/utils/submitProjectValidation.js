@@ -18,7 +18,23 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const GITHUB_REGEX = /^(https?:\/\/)?(www\.)?github\.com\/[\w.-]+\/[\w.-]+(\/.*)?$/i;
 const URL_REGEX = /^(https?:\/\/)?([\w-]+(\.[\w-]+)+)(\/[\w-./?%&=]*)?$/i;
 
-const isValidProjectImage = (value) => value.startsWith("data:image/") || URL_REGEX.test(value);
+const SAFE_IMAGE_DATA_PREFIXES = [
+  "data:image/png;",
+  "data:image/jpeg;",
+  "data:image/jpg;",
+  "data:image/webp;",
+  "data:image/gif;",
+];
+
+// Reject data:image/svg+xml (and any other non-raster data URI) because an
+// SVG can carry <script>/event handlers and execute in the viewer's session
+// (stored XSS) when rendered as a project image.
+const isValidProjectImage = (value) => {
+  if (typeof value !== "string") return false;
+  if (SAFE_IMAGE_DATA_PREFIXES.some((p) => value.startsWith(p))) return true;
+  if (value.startsWith("data:image/")) return false;
+  return URL_REGEX.test(value);
+};
 
 const isOutOfBounds = (value, min, max) => {
   const length = value.trim().length;
