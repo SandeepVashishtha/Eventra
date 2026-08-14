@@ -198,8 +198,8 @@ public class HackathonController {
                     )
             )
     })
-    public ResponseEntity<List<HackathonResponse>> getAllHackathons(@PageableDefault(size = 20, sort = "startDate") Pageable pageable) {
-        return ResponseEntity.ok(hackathonService.getAllHackathons());
+    public ResponseEntity<Page<HackathonResponse>> getAllHackathons(@PageableDefault(size = 20, sort = "startDate") Pageable pageable) {
+        return ResponseEntity.ok(hackathonService.getAllHackathons(pageable));
     }
 
     @GetMapping("/{id}")
