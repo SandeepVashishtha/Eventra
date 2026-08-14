@@ -152,6 +152,7 @@ public class SecurityConfig {
                                 "/api/events/{id}",
                                 "/api/events/{id}/availability",
                                 "/api/events/{id}/seats",
+                                "/api/events/{id}/schedule",
                                 "/api/events/{id}/feed.ics",
                                 "/api/events/stream",
                                 "/api/events/{id}/stream"
