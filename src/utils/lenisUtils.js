@@ -39,6 +39,21 @@ export function notifyLenisResize(delayMs = 150) {
 }
 
 /**
+ * Generates a CSS aspect-ratio style object for a bounding box.
+ * Used by the event grid to reserve image space and avoid layout thrashing.
+ * @param {number} [width=16] - Aspect ratio width
+ * @param {number} [height=9] - Aspect ratio height
+ * @returns {{ aspectRatio: string, width: string, height: string }}
+ */
+export function getImageAspectRatioStyle(width = 16, height = 9) {
+  return {
+    aspectRatio: `${width} / ${height}`,
+    width: "100%",
+    height: "auto",
+  };
+}
+
+/**
  * Stop Lenis scrolling (useful for modals)
  */
 export const stopScroll = () => {
