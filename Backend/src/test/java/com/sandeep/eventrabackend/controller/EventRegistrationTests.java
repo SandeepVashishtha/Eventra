@@ -581,6 +581,47 @@ public class EventRegistrationTests {
                 .andExpect(jsonPath("$.registrationStatus").value("CONFIRMED"));
     }
 
+    @Test
+    @DisplayName("#18837 - manual promotion increments registeredCount and returns correct spotsRemaining")
+    void testManualPromotionIncrementsRegisteredCount() throws Exception {
+        Event event = eventRepository.findById(eventId).orElseThrow();
+        event.setCapacity(1);
+        eventRepository.save(event);
+
+        mockMvc.perform(post("/api/events/" + eventId + "/register")
+                        .with(user("user1@example.com")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.spotsRemaining").value(0));
+
+        String response = mockMvc.perform(post("/api/events/" + eventId + "/waitlist")
+                        .with(user("user2@example.com")))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        Long waitlistId = Long.valueOf(response.replaceAll(".*\"id\":(\\d+).*", "$1"));
+
+        event = eventRepository.findById(eventId).orElseThrow();
+        event.setCapacity(2);
+        eventRepository.save(event);
+
+        mockMvc.perform(post("/api/events/" + eventId + "/waitlist/" + waitlistId + "/promote")
+                        .with(user("admin@example.com").authorities(() -> "ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userEmail").value("user2@example.com"))
+                .andExpect(jsonPath("$.registrationStatus").value("CONFIRMED"))
+                .andExpect(jsonPath("$.spotsRemaining").value(0));
+
+        event = eventRepository.findById(eventId).orElseThrow();
+        assertEquals(2, event.getRegisteredCount(),
+                "manual promotion must increment registeredCount");
+
+        mockMvc.perform(get("/api/events/" + eventId + "/availability"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.registeredCount").value(2))
+                .andExpect(jsonPath("$.spotsLeft").value(0))
+                .andExpect(jsonPath("$.full").value(true));
+    }
+
     // ── Issue #2104 — Concurrent registration ────────────────────────────────
 
     @Test

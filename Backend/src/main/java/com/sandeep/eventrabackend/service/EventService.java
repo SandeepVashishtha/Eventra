@@ -1211,8 +1211,6 @@ public class EventService {
                 }
 
                 RegistrationResponse response = promoteEntry(event, entry);
-                // Mirrors promoteWaitlistAfterVacancy: manual promotion also consumes a seat.
-                event.setRegisteredCount(event.getRegisteredCount() + 1);
                 eventRepository.save(event);
                 broadcastAvailability(event);
                 return response;
@@ -1436,8 +1434,6 @@ public class EventService {
                                 continue;
                         }
                         promoteEntry(event, entry);
-                        // Track occupancy in-memory instead of re-querying the DB each iteration.
-                        event.setRegisteredCount(event.getRegisteredCount() + 1);
                         promotionsRemaining--;
                 }
 
@@ -1471,6 +1467,8 @@ public class EventService {
                                 .message("A spot opened for " + event.getTitle()
                                                 + ". You have been automatically registered.")
                                 .build());
+
+                event.setRegisteredCount(event.getRegisteredCount() + 1);
 
                 Integer spotsRemaining = (event.getCapacity() == null)
                                 ? null
