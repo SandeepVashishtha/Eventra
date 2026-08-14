@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import * as CountLength from '../count-length.js';
+import { countLength } from '../count-length.js';
 
 describe('count-length', () => {
-  it('exports a module', () => {
-    expect(CountLength).toBeDefined();
+  it('counts occurrences of the target in the value', () => {
+    expect(countLength('banana', 'na')).toBe(2);
+    expect(countLength('abc', 'x')).toBe(0);
+    expect(countLength('aaa', 'a')).toBe(3);
   });
 });
-
