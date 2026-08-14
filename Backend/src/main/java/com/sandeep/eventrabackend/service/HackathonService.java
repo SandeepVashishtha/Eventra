@@ -273,6 +273,7 @@ public class HackathonService {
     }
 
     @Transactional
+    @CacheEvict(value = "hackathons", key = "#id")
     public void deleteHackathon(Long id, String userEmail) {
         Hackathon hackathon = hackathonRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new HackathonNotFoundException("Hackathon not found with id: " + id));
