@@ -1,15 +1,18 @@
 package com.sandeep.eventrabackend.controller;
 
 import com.sandeep.eventrabackend.model.EventRegistration;
+import com.sandeep.eventrabackend.model.EventRole;
 import com.sandeep.eventrabackend.model.Payment;
 import com.sandeep.eventrabackend.model.PaymentPlan;
 import com.sandeep.eventrabackend.repository.EventRegistrationRepository;
+import com.sandeep.eventrabackend.service.EventRoleService;
 import com.sandeep.eventrabackend.service.PaymentPlanService;
 import com.sandeep.eventrabackend.service.StripeService;
 import com.stripe.exception.StripeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -34,6 +37,9 @@ public class PaymentController {
 
     @Autowired
     private EventRegistrationRepository eventRegistrationRepository;
+
+    @Autowired
+    private EventRoleService eventRoleService;
 
     /**
      * Create a new payment plan for installment payments
@@ -543,8 +549,23 @@ public class PaymentController {
      * Get payment statistics for an event (for organizers)
      */
     @GetMapping("/stats/event/{eventId}")
-    @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN')")
-    public ResponseEntity<?> getPaymentStatsForEvent(@PathVariable Long eventId) {
+    @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<?> getPaymentStatsForEvent(
+            @PathVariable Long eventId,
+            Authentication authentication) {
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        boolean hasAccess = eventRoleService.hasRole(eventId, authentication.getName(), EventRole.ORGANIZER);
+        if (!hasAccess) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
+                    "success", false,
+                    "error", "Access denied: You are not authorized to view payment statistics for this event."
+            ));
+        }
+
         try {
             // Implementation would query payment repository for event statistics
             // This is a placeholder that would be implemented based on specific requirements
