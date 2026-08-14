@@ -1,3 +1,4 @@
+import { combinations } from './combinations.js';
 
 /**
  * adds a pair combos helper.
