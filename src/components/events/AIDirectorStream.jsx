@@ -108,7 +108,9 @@ const AIDirectorStream = () => {
     if (!canManageTransitions()) return;
     
     // Simulate transition - add speaker to active speakers
-    setActiveSpeakers(prev => [...prev, speakerId]);
+    setActiveSpeakers(prev =>
+      prev.includes(speakerId) ? prev : [...prev, speakerId]
+    );
     setPendingTransitions(prev => prev.filter(id => id !== speakerId));
     addLog(`Speaker ${speakerId} transitioned to live stage`);
     
