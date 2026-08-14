@@ -98,8 +98,8 @@ public class LostItemService {
         LostItem lostItem = lostItemRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Lost item not found with id: " + id));
         
-        // Only allow update by the user who found the item or admin
-        if (lostItem.getFoundBy() != null && lostItem.getFoundBy().getId() != userId) {
+        // Only allow update by the user who found the item
+        if (lostItem.getFoundBy() == null || !lostItem.getFoundBy().getId().equals(userId)) {
             throw new RuntimeException("You are not authorized to update this lost item");
         }
         
@@ -169,8 +169,8 @@ public class LostItemService {
         LostItem lostItem = lostItemRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Lost item not found with id: " + id));
         
-        // Only allow deletion by the user who found the item or admin
-        if (lostItem.getFoundBy() != null && lostItem.getFoundBy().getId() != userId) {
+        // Only allow deletion by the user who found the item
+        if (lostItem.getFoundBy() == null || !lostItem.getFoundBy().getId().equals(userId)) {
             throw new RuntimeException("You are not authorized to delete this lost item");
         }
         
