@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 @RestController
@@ -38,11 +39,11 @@ public class PlagiarismController {
     @PostMapping("/export-report")
     public ResponseEntity<byte[]> exportCsvReport(@RequestBody List<SubmissionComparison> comparisons) {
         String csvData = plagiarismService.generateCsvAuditReport(comparisons);
-        byte[] output = csvData.getBytes();
+        byte[] output = csvData.getBytes(StandardCharsets.UTF_8);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=plagiarism_audit_report.csv")
-                .contentType(MediaType.parseMediaType("text/csv"))
+                .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
                 .body(output);
     }
 }
