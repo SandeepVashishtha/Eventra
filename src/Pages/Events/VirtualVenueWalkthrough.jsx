@@ -274,10 +274,13 @@ const VirtualVenueWalkthrough = () => {
                       width: room.coordinates.width,
                       height: room.coordinates.height,
                       transformStyle: "preserve-3d",
-                      // Animate height offset on hover or selection
+                      // Animate height offset on selection. (A `hover:translateZ`
+                      // value is a Tailwind class, not a valid CSS transform
+                      // function, so the browser dropped the whole declaration
+                      // and the base translateZ(8px) never applied either.)
                       transform: isSelected
                         ? `translateZ(${room.coordinates.z}) scale(1.03)`
-                        : `translateZ(8px) hover:translateZ(20px)`,
+                        : "translateZ(8px)",
                       borderColor: isSelected ? "#818cf8" : "rgba(255,255,255,0.05)",
                       boxShadow: isSelected
                         ? `0 20px 40px -10px ${room.glowColor}, inset 0 0 16px rgba(255,255,255,0.1)`
