@@ -1,3 +1,4 @@
+import { isAscii } from './is-ascii.js';
 
 /**
  * adds a unicode check.
