@@ -278,7 +278,7 @@ const VirtualVenueWalkthrough = () => {
                       // Animate height offset on hover or selection
                       transform: isSelected
                         ? `translateZ(${room.coordinates.z}) scale(1.03)`
-                        : `translateZ(8px) hover:translateZ(20px)`,
+                        : "translateZ(8px)",
                       borderColor: isSelected ? "#818cf8" : "rgba(255,255,255,0.05)",
                       boxShadow: isSelected
                         ? `0 20px 40px -10px ${room.glowColor}, inset 0 0 16px rgba(255,255,255,0.1)`
