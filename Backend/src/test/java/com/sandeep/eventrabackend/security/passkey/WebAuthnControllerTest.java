@@ -251,4 +251,23 @@ class WebAuthnControllerTest {
 
         verify(credentialRepository).save(any());
     }
+
+    @Test
+    @DisplayName("Cross-account credential overwrite is rejected when repository save throws IllegalArgumentException")
+    void crossAccountCredentialOverwriteIsRejected() {
+        String challenge = (String) controller.generateRegisterChallenge(auth("attacker@example.com")).getBody().get("challenge");
+
+        Map<String, String> payload = Map.of(
+                "credentialId", "existing-victim-cred-id",
+                "userEmail", "attacker@example.com",
+                "publicKey", "-----BEGIN PUBLIC KEY-----MIIB-----END PUBLIC KEY-----",
+                "challenge", challenge);
+
+        org.mockito.Mockito.doThrow(new IllegalArgumentException("Credential ID is already registered to another account."))
+                .when(credentialRepository).save(any());
+
+        assertThrows(IllegalArgumentException.class,
+                () -> controller.verifyRegistration(payload, auth("attacker@example.com")));
+    }
 }
+
