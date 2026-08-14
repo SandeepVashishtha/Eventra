@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -99,7 +100,7 @@ public class LostItemService {
                 .orElseThrow(() -> new ResourceNotFoundException("Lost item not found with id: " + id));
         
         // Only allow update by the user who found the item or admin
-        if (lostItem.getFoundBy() != null && lostItem.getFoundBy().getId() != userId) {
+        if (lostItem.getFoundBy() != null && !Objects.equals(lostItem.getFoundBy().getId(), userId)) {
             throw new RuntimeException("You are not authorized to update this lost item");
         }
         
@@ -170,7 +171,7 @@ public class LostItemService {
                 .orElseThrow(() -> new ResourceNotFoundException("Lost item not found with id: " + id));
         
         // Only allow deletion by the user who found the item or admin
-        if (lostItem.getFoundBy() != null && lostItem.getFoundBy().getId() != userId) {
+        if (lostItem.getFoundBy() != null && !Objects.equals(lostItem.getFoundBy().getId(), userId)) {
             throw new RuntimeException("You are not authorized to delete this lost item");
         }
         
