@@ -1,7 +1,7 @@
 /**
  * adds a calculate-circle helper.
  */
-export function calculateCircle(value, separator) {
-  return value.join(separator);
+export function calculateCircle(value) {
+  return Math.PI * value * value;
 }
 
