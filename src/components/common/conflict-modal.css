@@ -1,0 +1,25 @@
+.conflict-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.conflict-modal-card {
+  background-color: white;
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  max-w: 28rem;
+  width: 100%;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.dark .conflict-modal-card {
+  background-color: #0f172a;
+  border: 1px solid #1e293b;
+}

@@ -1,142 +1,80 @@
-import { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
-import { AlertTriangle, Server, X, Edit3 } from "lucide-react";
-import "./OfflineConflictModal.css";
-import { useFocusTrap } from "hooks/useFocusTrap";
+import React, { useState } from "react";
+import { AlertTriangle, Check, RefreshCw } from "lucide-react";
+import "./conflict-modal.css";
 
-export default function OfflineConflictModal() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [conflictData, setConflictData] = useState(null);
+export default function OfflineConflictModal({
+  isOpen = true,
+  localData = { title: "Draft Workshop Info", description: "Learn React offline" },
+  serverData = { title: "Workshop Cloud Info", description: "Learn React and Tailwind" },
+  onResolve,
+  onClose
+}) {
+  const [resolved, setResolved] = useState({});
 
-  const handleResolve = (resolution) => {
-    if (!conflictData) return;
-    const { item, serverState } = conflictData;
-    const localPayload = item?.payload || {};
-    const serverPayload = serverState || {};
+  if (!isOpen) return null;
 
-    window.dispatchEvent(new CustomEvent("eventra-offline-conflict-resolved", {
-      detail: {
-        itemId: item.id,
-        resolution, // "local", "server", or "merge"
-        mergedPayload: resolution === "merge" ? { ...serverPayload, ...localPayload } : null
-      }
-    }));
-    setIsOpen(false);
-    setConflictData(null);
+  const handleSelect = (field, value) => {
+    setResolved(prev => ({ ...prev, [field]: value }));
   };
 
-  const { containerRef } = useFocusTrap(isOpen, () => handleResolve("server"));
-
-  useEffect(() => {
-    const handleConflict = (e) => {
-      if (e.detail) {
-        setConflictData(e.detail);
-        setIsOpen(true);
-      }
+  const handleConfirm = () => {
+    const finalData = {
+      title: resolved.title !== undefined ? resolved.title : serverData.title,
+      description: resolved.description !== undefined ? resolved.description : serverData.description
     };
-    window.addEventListener("eventra-offline-conflict", handleConflict);
-    return () => window.removeEventListener("eventra-offline-conflict", handleConflict);
-  }, []);
+    if (onResolve) onResolve(finalData);
+  };
 
-  if (!isOpen || !conflictData) return null;
-
-  const { item, serverState } = conflictData;
-  const localPayload = item?.payload || {};
-  const serverPayload = serverState || {};
-
-  // Find all unique keys to compare
-  const allKeys = Array.from(new Set([...Object.keys(localPayload), ...Object.keys(serverPayload)]))
-    .filter(key => key !== "id" && key !== "userId" && key !== "eventId" && key !== "timestamp");
-
-  return createPortal(
-    <div className="ocm-modal-overlay">
-      <div
-        ref={containerRef}
-        className="ocm-modal-container"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="ocm-title"
-        tabIndex={-1}
-      >
-        {/* Header */}
-        <div className="ocm-header">
-          <div className="flex items-center gap-3">
-            <div className="ocm-warning-icon">
-              <AlertTriangle size={20} aria-hidden="true" />
+  return (
+    <div className="conflict-modal-overlay">
+      <div className="conflict-modal-card">
+        <div className="flex items-center gap-2 mb-4 text-amber-500">
+          <AlertTriangle className="w-6 h-6 animate-bounce" />
+          <h3 className="text-lg font-bold">Data Sync Conflict</h3>
+        </div>
+        <p className="text-xs text-slate-500 mb-4">
+          Changes made offline conflict with the latest server data. Select the values to keep:
+        </p>
+        
+        <div className="flex flex-col gap-4 mb-6">
+          {["title", "description"].map((field) => (
+            <div key={field} className="border border-slate-200 dark:border-slate-800 p-3 rounded-xl bg-slate-50 dark:bg-slate-950">
+              <span className="text-[10px] font-bold text-slate-400 uppercase">{field}</span>
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <button
+                  type="button"
+                  onClick={() => handleSelect(field, localData[field])}
+                  className={`p-2 rounded text-xs text-left border ${
+                    resolved[field] === localData[field] ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/20 text-indigo-650" : "border-slate-200 dark:border-slate-800"
+                  }`}
+                >
+                  <span className="block font-bold opacity-60">Local</span>
+                  {localData[field]}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelect(field, serverData[field])}
+                  className={`p-2 rounded text-xs text-left border ${
+                    resolved[field] === serverData[field] ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/20 text-indigo-650" : "border-slate-200 dark:border-slate-800"
+                  }`}
+                >
+                  <span className="block font-bold opacity-60">Server</span>
+                  {serverData[field]}
+                </button>
+              </div>
             </div>
-            <div>
-              <h3 id="ocm-title" className="text-base font-bold text-white">Offline Synchronization Conflict</h3>
-              <p className="text-xs text-slate-400">
-                The offline action failed because the server version changed in the meantime.
-              </p>
-            </div>
-          </div>
-          <button onClick={() => handleResolve("server")} aria-label="Dismiss conflict — keep server version" className="text-slate-400 hover:text-white transition-colors">
-            <X size={18} aria-hidden="true" />
-          </button>
+          ))}
         </div>
 
-        {/* Comparison Area */}
-        <div className="ocm-body">
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div className="ocm-panel-title flex items-center gap-1.5 text-indigo-400">
-              <Edit3 size={14} />
-              <span>Your Offline Changes</span>
-            </div>
-            <div className="ocm-panel-title flex items-center gap-1.5 text-rose-400">
-              <Server size={14} />
-              <span>Current Server Version</span>
-            </div>
-          </div>
-
-          <div className="ocm-diff-list">
-            {allKeys.map((key) => {
-              const localVal = localPayload[key] !== undefined ? String(localPayload[key]) : "--";
-              const serverVal = serverPayload[key] !== undefined ? String(serverPayload[key]) : "--";
-              const isDifferent = localVal !== serverVal;
-
-              return (
-                <div key={key} className={`ocm-diff-row ${isDifferent ? 'ocm-diff-changed' : ''}`}>
-                  <div className="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-1.5">{key.replace(/([A-Z])/g, ' $1')}</div>
-                  <div className="grid grid-cols-2 gap-4 text-xs">
-                    <div className="ocm-diff-val local bg-indigo-500/5 border border-indigo-500/10 text-indigo-200">
-                      {localVal}
-                    </div>
-                    <div className="ocm-diff-val server bg-rose-500/5 border border-rose-500/10 text-rose-200">
-                      {serverVal}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Footer resolutions */}
-        <div className="ocm-footer">
-          <button
-            className="ocm-btn ocm-btn-secondary"
-            onClick={() => handleResolve("server")}
-          >
-            Discard Local & Keep Server
+        <div className="flex justify-end gap-3">
+          <button onClick={onClose} className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-650">
+            Cancel
           </button>
-
-          <button
-            className="ocm-btn ocm-btn-primary"
-            onClick={() => handleResolve("local")}
-          >
-            Overwrite Server with Local
-          </button>
-
-          <button
-            className="ocm-btn ocm-btn-accent"
-            onClick={() => handleResolve("merge")}
-          >
-            Merge Both Changes
+          <button onClick={handleConfirm} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-750 text-white rounded-xl text-xs font-bold flex items-center gap-1">
+            <Check className="w-4 h-4" /> Resolve Conflicts
           </button>
         </div>
       </div>
-    </div>,
-    document.body
+    </div>
   );
 }
