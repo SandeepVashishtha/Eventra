@@ -1,7 +1,7 @@
 /**
  * adds a diff-array helper.
  */
-export function diffArray(value) {
-  return value === undefined;
+export function diffArray(a, b) {
+  return a.filter(x => !b.includes(x));
 }
 
