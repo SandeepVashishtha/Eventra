@@ -3,7 +3,7 @@
  * adds a large number helper.
  */
 export function formatLargeNumber(value) {
-  const tiers = [[1e9, 'B'], [1e6, 'M'], [1e3, 'K']];
+  const tiers = [[1e12, 'T'], [1e9, 'B'], [1e6, 'M'], [1e3, 'K']];
   for (let i = 0; i < tiers.length; i++) {
     const [divisor, suffix] = tiers[i];
     if (value >= divisor) {
