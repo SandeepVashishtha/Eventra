@@ -322,3 +322,35 @@ export const bootstrapWorkspace = async (token, config, onProgress = () => {}) =
   onProgress("done");
   return { repoUrl, fullName, cloneUrl, collaboratorResults, ownerLogin };
 };
+
+/**
+ * Constructs a safe Git clone command by validating repository URLs against
+ * trusted GitHub repository formats and sanitizing branch reference characters to
+ * prevent command injection vulnerabilities.
+ *
+ * @param {string} repoUrl - The target GitHub repository URL.
+ * @param {string} [branch="main"] - The git branch to clone.
+ * @returns {string} The safe git clone command string.
+ * @throws {Error} If repoUrl or branch fail security validation.
+ */
+export const buildCloneCommand = (repoUrl, branch = "main") => {
+  if (!repoUrl || typeof repoUrl !== "string") {
+    throw new Error("Repository URL is required and must be a string.");
+  }
+
+  const cleanUrl = repoUrl.trim();
+  const GITHUB_URL_REGEX = /^https:\/\/(?:[a-zA-Z0-9_-]+\.)?github\.com\/[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+(?:\.git)?$/i;
+
+  if (!GITHUB_URL_REGEX.test(cleanUrl)) {
+    throw new Error("Invalid or untrusted repository URL. Only trusted GitHub repository URLs are allowed.");
+  }
+
+  const cleanBranch = (typeof branch === "string" ? branch.trim() : "main") || "main";
+  const SAFE_BRANCH_REGEX = /^[a-zA-Z0-9_.\-\/]+$/;
+
+  if (!SAFE_BRANCH_REGEX.test(cleanBranch) || cleanBranch.includes("..") || cleanBranch.startsWith("-")) {
+    throw new Error("Invalid branch name. Branch names may only contain letters, numbers, slashes, dashes, and dots.");
+  }
+
+  return `git clone --depth 1 -b "${cleanBranch}" "${cleanUrl}"`;
+};
