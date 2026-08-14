@@ -211,4 +211,78 @@ public class AuthPasswordResetTests {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Invalid or expired password reset token"));
     }
+
+    @Test
+    @DisplayName("POST /api/auth/reset-password never discloses the raw token or its hash (#17079)")
+    void testRequestPasswordResetDoesNotExposeToken() throws Exception {
+        ResetPasswordRequest request = new ResetPasswordRequest();
+        request.setEmail("testuser@example.com");
+
+        String responseBody = mockMvc.perform(post("/api/auth/reset-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("If an account exists for that email, a password reset link has been sent."))
+                .andExpect(jsonPath("$.token").doesNotExist())
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+
+        // The raw token (or any token-bearing field) must never appear in the HTTP response.
+        assertFalse(responseBody.contains("token"),
+                "Raw reset token must never be disclosed in the API response");
+        assertFalse(responseBody.contains("resetToken"));
+        assertFalse(responseBody.contains("tokenHash"));
+
+        // Only a SHA-256 hex digest is persisted, never the raw token.
+        PasswordResetToken stored = passwordResetTokenRepository.findAll().get(0);
+        assertEquals(64, stored.getTokenHash().length());
+        assertTrue(stored.getTokenHash().matches("[0-9a-f]{64}"));
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/reset-password/confirm consumes the token; a second use of the same token fails (#17079)")
+    void testConfirmPasswordResetConsumesToken() throws Exception {
+        String rawToken = "single-use-reset-token-77777";
+        String tokenHash = hashToken(rawToken);
+
+        passwordResetTokenRepository.save(PasswordResetToken.builder()
+                .user(testUser)
+                .tokenHash(tokenHash)
+                .expiresAt(LocalDateTime.now().plusMinutes(30))
+                .used(false)
+                .build());
+
+        ConfirmResetPasswordRequest firstUse = ConfirmResetPasswordRequest.builder()
+                .token(rawToken)
+                .newPassword("firstNewPass123")
+                .build();
+
+        mockMvc.perform(post("/api/auth/reset-password/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(firstUse)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Password has been successfully reset."));
+
+        // The same raw token is now invalidated: reset-password must consume, not regenerate.
+        ConfirmResetPasswordRequest secondUse = ConfirmResetPasswordRequest.builder()
+                .token(rawToken)
+                .newPassword("secondNewPass123")
+                .build();
+
+        mockMvc.perform(post("/api/auth/reset-password/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(secondUse)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Invalid or expired password reset token"));
+
+        // The password set by the first (successful) use remains effective.
+        LoginRequest login = new LoginRequest();
+        login.setUsernameOrEmail("testuser@example.com");
+        login.setPassword("firstNewPass123");
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(login)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("testuser@example.com"));
+    }
 }
