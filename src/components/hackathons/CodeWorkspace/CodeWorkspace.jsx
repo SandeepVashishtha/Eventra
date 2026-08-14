@@ -6,7 +6,7 @@ import "./workspace.css";
 export default function CodeWorkspace({ teamId = "team-alpha" }) {
   const [code, setCode] = useState(`// Welcome to Eventra Collaborative Code Space
 function greetTeam() {
-  console.log("Hello from ${teamId}!");
+  console.log(\`Hello from ${teamId}!\`);
 }
 greetTeam();`);
   const [language, setLanguage] = useState("javascript");
