@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import * as BuildHash from '../build-hash.js';
+import { buildHash } from '../build-hash.js';
 
 describe('build-hash', () => {
-  it('exports a module', () => {
-    expect(BuildHash).toBeDefined();
+  it('builds a numeric hash from a string', () => {
+    expect(buildHash('abc')).toBe(294);
+    expect(buildHash('a')).toBe(97);
+    expect(buildHash('')).toBe(0);
   });
 });
-
