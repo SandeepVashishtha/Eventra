@@ -109,11 +109,20 @@ public class ValidationController {
     }
 
     @PostMapping("/phone")
-    @Operation(summary = "Validate phone number format")
+    @Operation(
+            summary = "Validate phone number format",
+            description = "Rejects malformed phone numbers with 400 Bad Request."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Validation succeeded",
+                    content = @Content(schema = @Schema(implementation = ValidationResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid phone number format",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     public ResponseEntity<?> validatePhone(@RequestBody PhoneRequest request) {
         String phone = request.getPhone();
         if (phone == null || !PHONE_PATTERN.matcher(phone).matches()) {
-            return ResponseEntity.ok(Map.of("valid", false, "message", "Phone number is invalid"));
+            return ResponseEntity.badRequest().body(buildError("Invalid phone number format", "/api/validate/phone"));
         }
         return ResponseEntity.ok(Map.of("valid", true));
     }
