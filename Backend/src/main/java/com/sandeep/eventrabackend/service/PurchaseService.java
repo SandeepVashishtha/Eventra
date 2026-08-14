@@ -4,7 +4,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Purchase service preventing capacity write skew overselling (#16469).
@@ -12,39 +12,38 @@ import java.util.concurrent.locks.ReentrantLock;
 @Service
 public class PurchaseService {
 
-    private final Map<String, Integer> ticketTiers = new ConcurrentHashMap<>();
-    private final ReentrantLock eventLock = new ReentrantLock();
-    private int eventCapacity = 200;
-    private int totalSold = 0;
+    private final Map<String, AtomicInteger> ticketTiers = new ConcurrentHashMap<>();
+    private final AtomicInteger totalSold = new AtomicInteger(0);
+    private final int eventCapacity = 200;
 
     public PurchaseService() {
-        ticketTiers.put("VIP", 50);
-        ticketTiers.put("GENERAL", 150);
+        ticketTiers.put("VIP", new AtomicInteger(50));
+        ticketTiers.put("GENERAL", new AtomicInteger(150));
     }
 
     /**
-     * Enforce pessimistic write lock patterns on parent event scope capacities.
+     * Enforce atomic capacity checks and decrements to prevent overselling.
      */
     @Transactional
-    public boolean purchaseTicket(String tier, int quantity) {
+    public synchronized boolean purchaseTicket(String tier, int quantity) {
         if (quantity <= 0) {
             return false;
         }
-        eventLock.lock();
-        try {
-            int tierCapacity = ticketTiers.getOrDefault(tier, 0);
-            if (tierCapacity >= quantity && (totalSold + quantity) <= eventCapacity) {
-                ticketTiers.put(tier, tierCapacity - quantity);
-                totalSold += quantity;
-                return true;
-            }
+        AtomicInteger tierCapacity = ticketTiers.get(tier);
+        if (tierCapacity == null) {
             return false;
-        } finally {
-            eventLock.unlock();
         }
+        int currentTier = tierCapacity.get();
+        int currentTotal = totalSold.get();
+        if (currentTier >= quantity && (currentTotal + quantity) <= eventCapacity) {
+            tierCapacity.addAndGet(-quantity);
+            totalSold.addAndGet(quantity);
+            return true;
+        }
+        return false;
     }
 
     public int getRemainingCapacity() {
-        return eventCapacity - totalSold;
+        return eventCapacity - totalSold.get();
     }
 }
