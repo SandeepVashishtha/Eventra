@@ -382,7 +382,7 @@ export const apiUtils = {
 
 export default API;
 
-export { ApiError, RateLimitError, normalizeApiError, getApiErrorStatus, getApiErrorMessage };
+export { ApiError, RateLimitError, normalizeApiError, getApiErrorStatus, getApiErrorMessage } from "./api/errors.js";
 
 // Centralized configuration cache store for fallback endpoints
 export const apiConfigCache = {
