@@ -53,6 +53,12 @@ export const searchCertificates = (certificates = [], query = "") => {
   );
 };
 
+const certificateYear = (issueDate) => {
+  if (!issueDate) return "";
+  const year = new Date(issueDate).getFullYear();
+  return Number.isNaN(year) ? "" : year.toString();
+};
+
 /**
  * Filter certificates by issue year, category, and status.
  */
@@ -63,11 +69,9 @@ export const filterCertificates = (
   status = "All"
 ) => {
   return certificates.filter((certificate) => {
-    const certificateYear = certificate.issueDate
-      ? new Date(certificate.issueDate).getFullYear().toString()
-      : "";
+    const certificateYearValue = certificateYear(certificate.issueDate);
 
-    const matchesYear = year === "All" || certificateYear === year;
+    const matchesYear = year === "All" || certificateYearValue === year;
     const matchesCategory = category === "All" || certificate.category === category;
     const matchesStatus = status === "All" || certificate.status === status;
 
@@ -82,10 +86,8 @@ export const getCertificateYears = (certificates = []) => {
   return [
     ...new Set(
       certificates
-        .filter((certificate) => certificate.issueDate)
-        .map((certificate) =>
-          new Date(certificate.issueDate).getFullYear().toString()
-        )
+        .filter((certificate) => certificateYear(certificate.issueDate))
+        .map((certificate) => certificateYear(certificate.issueDate))
     ),
   ].sort((a, b) => b.localeCompare(a));
 };
