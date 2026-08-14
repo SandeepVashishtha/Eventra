@@ -1,3 +1,4 @@
+import { sortAlphabetically } from './sort-alphabetically.js';
 
 /**
  * adds a descending sorter.
