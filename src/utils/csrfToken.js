@@ -170,7 +170,7 @@ export function csrfFetch(url, options = {}) {
 }
 
 export function rotateCSRFToken(newToken) {
-  if (newToken && typeof newToken === "string") {
+  if (newToken && typeof newToken === "string" && !PLACEHOLDER_PATTERN.test(newToken)) {
     // Update cookies
     setCookie(CSRF_COOKIE_NAME, newToken, {
       path: "/",
