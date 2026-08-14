@@ -1,8 +1,6 @@
 package com.sandeep.eventrabackend.service;
 
 import com.sandeep.eventrabackend.dto.request.ChangePasswordRequest;
-import com.sandeep.eventrabackend.dto.request.UpdateUserProfileRequest;
-import com.sandeep.eventrabackend.dto.response.UserProfileResponse;
 import com.sandeep.eventrabackend.exception.PasswordMismatchException;
 import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.UserRepository;
@@ -22,43 +20,6 @@ public class UserService {
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
-    }
-
-
-    // Uses authenticated email extracted from Spring Security JWT context
-    // to identify and update the currently logged-in user
-    private static final int MAX_NAME_LENGTH = 100;
-
-    private static String sanitizeName(String name, String fieldName) {
-        if (name == null) return null;
-        String trimmed = name.trim();
-        if (trimmed.isEmpty()) return null;
-        if (trimmed.length() > MAX_NAME_LENGTH) {
-            throw new IllegalArgumentException(fieldName + " must be " + MAX_NAME_LENGTH + " characters or less.");
-        }
-        if (trimmed.chars().anyMatch(Character::isISOControl)) {
-            throw new IllegalArgumentException(fieldName + " contains invalid characters.");
-        }
-        return trimmed;
-    }
-
-    @Transactional
-    public UserProfileResponse updateProfile(
-            String authenticatedEmail,
-            UpdateUserProfileRequest request
-    ) {
-
-        User user = userRepository.findByEmail(authenticatedEmail)
-                .orElseThrow(() ->
-                        new UsernameNotFoundException(
-                                "Authenticated user not found"));
-
-        user.setFirstName(sanitizeName(request.getFirstName(), "First name"));
-        user.setLastName(sanitizeName(request.getLastName(), "Last name"));
-
-        User updatedUser = userRepository.save(user);
-
-        return mapToProfileResponse(updatedUser);
     }
 
     @Transactional
@@ -85,18 +46,5 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         user.setPasswordChangedAt(LocalDateTime.now());
         userRepository.save(user);
-    }
-
-    private UserProfileResponse mapToProfileResponse(User user) {
-
-        return UserProfileResponse.builder()
-                .id(user.getId())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .username(user.getUsername())
-                .email(user.getEmail())
-                .role(user.getRole() != null ? user.getRole().name() : null)
-                .preferences(user.getPreferences())
-                .build();
     }
 }
