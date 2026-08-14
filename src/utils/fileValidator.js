@@ -44,6 +44,11 @@ const FILE_SIGNATURES = {
   "image/webp": [0x52, 0x49, 0x46, 0x46],
 };
 
+// WebP files are RIFF containers, so the base signature ("RIFF") alone also
+// matches WAV/AVI. Require the "WEBP" marker at offset 8 as well.
+const WEBP_MARKER = [0x57, 0x45, 0x42, 0x50]; // "WEBP"
+const WEBP_MARKER_OFFSET = 8;
+
 /**
  * Checks if file bytes match expected magic bytes for a given MIME type.
  * @param {Uint8Array} bytes - First bytes of the file
@@ -53,7 +58,14 @@ const FILE_SIGNATURES = {
 function matchesMagicBytes(bytes, mimeType) {
   const signature = FILE_SIGNATURES[mimeType];
   if (!signature) return true; // No signature defined, skip check
-  return signature.every((byte, index) => bytes[index] === byte);
+  const baseMatch = signature.every((byte, index) => bytes[index] === byte);
+  if (!baseMatch) return false;
+  if (mimeType === "image/webp") {
+    return WEBP_MARKER.every(
+      (byte, index) => bytes[WEBP_MARKER_OFFSET + index] === byte
+    );
+  }
+  return true;
 }
 
 /**
@@ -62,7 +74,7 @@ function matchesMagicBytes(bytes, mimeType) {
  * @param {number} length - Number of bytes to read
  * @returns {Promise<Uint8Array>}
  */
-function readFirstBytes(file, length = 8) {
+function readFirstBytes(file, length = 12) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(new Uint8Array(reader.result));
