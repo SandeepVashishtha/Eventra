@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import * as ComputeWord from '../compute-word.js';
+import { computeWord } from '../compute-word.js';
 
 describe('compute-word', () => {
-  it('exports a module', () => {
-    expect(ComputeWord).toBeDefined();
+  it('counts the words of the input', () => {
+    expect(computeWord('hello world')).toBe(2);
+    expect(computeWord('')).toBe(0);
+    expect(computeWord('one')).toBe(1);
   });
 });
-
