@@ -79,13 +79,14 @@ const useLocalStorage = (key, initialValue) => {
   });
 
   const setValue = useCallback((value) => {
+    const next = typeof value === "function" ? value(storedValue) : value;
     try {
-      storageManager.set(key, value);
-      setStoredValue(value);
+      storageManager.set(key, next);
+      setStoredValue(next);
     } catch (error) {
       logger.error(`Error saving to localStorage (${key}):`, error);
     }
-  }, [key]);
+  }, [key, storedValue]);
 
   return [storedValue, setValue];
 };
