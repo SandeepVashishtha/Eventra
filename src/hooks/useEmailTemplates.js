@@ -213,7 +213,7 @@ export const useEmailTemplates = (eventId, organizerEmail = null) => {
   const getCurrentUserEmail = useCallback(async () => {
     try {
       // This would be replaced with actual auth context in a real implementation
-      const userResponse = await apiUtils.get(API_ENDPOINTS.USER.ME);
+      const userResponse = await apiUtils.get(API_ENDPOINTS.USERS.PROFILE);
       return userResponse.data?.email;
     } catch (err) {
       console.warn('Could not fetch current user email:', err);
