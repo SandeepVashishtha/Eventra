@@ -1,3 +1,4 @@
+import { frequencyMap } from './frequency-map.js';
 
 /**
  * adds a frequency sorter.
