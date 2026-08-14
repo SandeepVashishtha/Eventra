@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import * as CreateNumber from '../create-number.js';
+import { createNumber } from '../create-number.js';
 
 describe('create-number', () => {
-  it('exports a module', () => {
-    expect(CreateNumber).toBeDefined();
+  it('converts the input to a number', () => {
+    expect(createNumber('42')).toBe(42);
+    expect(createNumber('3.5')).toBe(3.5);
+    expect(createNumber(7)).toBe(7);
   });
 });
-
