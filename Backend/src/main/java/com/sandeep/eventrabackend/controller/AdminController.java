@@ -338,7 +338,7 @@ public class AdminController {
             @Parameter(description = "Maximum number of events to return", example = "10")
             @RequestParam(defaultValue = "10") int limit
     ) {
-        return ResponseEntity.ok(adminService.getPopularEvents(limit));
+        return ResponseEntity.ok(adminService.getPopularEvents(Math.min(Math.max(limit, 1), 100)));
     }
 
     // ══════════════════════════════════════════════════════════════════════
