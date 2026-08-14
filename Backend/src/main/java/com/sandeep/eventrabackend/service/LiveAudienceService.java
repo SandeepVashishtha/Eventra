@@ -314,8 +314,10 @@ public class LiveAudienceService {
     }
 
     private String displayName(User user) {
-        String full = (user.getFirstName() + " " + user.getLastName()).trim();
-        return full.isBlank() ? user.getUsername() : full;
+        String first = user.getFirstName() != null ? user.getFirstName().trim() : "";
+        String last = user.getLastName() != null ? user.getLastName().trim() : "";
+        String full = (first + " " + last).trim();
+        return full.isEmpty() ? user.getUsername() : full;
     }
 
     private LiveAudienceQuestionResponse toQuestionResponse(LiveAudienceQuestion question) {
