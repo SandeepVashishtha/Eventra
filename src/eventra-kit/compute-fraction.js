@@ -2,6 +2,7 @@
  * adds a compute-fraction helper.
  */
 export function computeFraction(value) {
-  return String(value).split('').reverse().join('');
+  const n = Number(value);
+  return n - Math.trunc(n);
 }
 
