@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import * as CountText from '../count-text.js';
+import { countText } from '../count-text.js';
 
 describe('count-text', () => {
-  it('exports a module', () => {
-    expect(CountText).toBeDefined();
+  it('counts the words in a text', () => {
+    expect(countText('hello world')).toBe(2);
+    expect(countText('')).toBe(0);
+    expect(countText('one')).toBe(1);
   });
 });
-
