@@ -240,6 +240,7 @@ export const checkEmailAvailability = (email, options = {}) => {
       ...options,
     },
   );
+};
 
 export const checkUsernameAvailability = (username, options = {}) => {
   if (!username || typeof username !== "string" || !username.trim()) {
@@ -254,6 +255,7 @@ export const checkUsernameAvailability = (username, options = {}) => {
       ...options,
     },
   );
+};
 
 export const checkPhoneValidation = (phone, options = {}) =>
   requestValidation(options.endpoint || "/api/validate/phone", {
