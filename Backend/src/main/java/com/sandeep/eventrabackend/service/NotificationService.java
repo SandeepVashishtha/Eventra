@@ -7,16 +7,43 @@ import com.sandeep.eventrabackend.repository.NotificationRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 
 @Service
 public class NotificationService {
 
+    private static final int MAX_BUFFER_CAPACITY = 5000;
+    private final Queue<Notification> notificationBuffer = new ConcurrentLinkedQueue<>();
     private final NotificationRepository notificationRepository;
 
     public NotificationService(NotificationRepository notificationRepository) {
         this.notificationRepository = notificationRepository;
+    }
+
+    /**
+     * Enqueues an outgoing notification into the bounded in-memory buffer.
+     * Evicts the oldest notification when maximum capacity is reached to prevent
+     * unbounded heap growth and OutOfMemoryError crashes.
+     */
+    public void enqueue(Notification notification) {
+        if (notification == null) return;
+
+        while (notificationBuffer.size() >= MAX_BUFFER_CAPACITY) {
+            notificationBuffer.poll(); // Evict oldest entry (FIFO)
+        }
+        notificationBuffer.offer(notification);
+    }
+
+    public List<Notification> getBufferedNotifications() {
+        return new ArrayList<>(notificationBuffer);
+    }
+
+    public void clearBuffer() {
+        notificationBuffer.clear();
     }
 
     @Transactional(readOnly = true)
