@@ -20,6 +20,7 @@ export function computeSponsorBoothMetrics(leads = []) {
   let boothVisits = 0;
   let jobClicks = 0;
   let chatInitiations = 0;
+  let qrScans = 0;
 
   for (const lead of list) {
     const action = String(lead?.action || "").trim();
@@ -29,11 +30,12 @@ export function computeSponsorBoothMetrics(leads = []) {
       chatInitiations += 1;
     } else if (/^Applied:/i.test(action)) {
       jobClicks += 1;
+    } else if (/^QR/i.test(action)) {
+      qrScans += 1;
     }
   }
 
-  const qrScans = list.length;
-  const engagementBase = boothVisits > 0 ? boothVisits : 0;
+  const engagementBase = boothVisits + qrScans;
   const engagementRate =
     engagementBase > 0
       ? Number((((jobClicks + chatInitiations) / engagementBase) * 100).toFixed(1))
