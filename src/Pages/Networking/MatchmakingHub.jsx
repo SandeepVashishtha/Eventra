@@ -1,100 +1,79 @@
-import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import { useAuth } from "context/AuthContext";
-import { fetchRecommendedConnections } from "utils/aiMatchmaking";
-import { Calendar, MessageSquare, Zap, Star } from "lucide-react";
-import { toast } from "react-toastify";
+import React, { useState } from "react";
+import { UserCheck, Filter, Search } from "lucide-react";
+import ProfileCard from "./ProfileCard";
+import "./matchmaking.css";
 
-// 1. IMPORT THE MASTER SKIN LAYOUT SHELL
-import DashboardLayout from "components/Layout/DashboardLayout";
+export default function MatchmakingHub() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedSkill, setSelectedSkill] = useState("All");
 
-const MatchmakingHub = () => {
-  const { eventId = "networking-hub" } = useParams();
-  const { user } = useAuth();
-  const [connections, setConnections] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [profiles, setProfiles] = useState([
+    { id: 1, name: "Siddharth Sharma", skills: ["React", "UI/UX", "Tailwind"], role: "Frontend Dev", experience: "Intermediate" },
+    { id: 2, name: "Prerna Gupta", skills: ["Spring Boot", "PostgreSQL", "Docker"], role: "Backend Dev", experience: "Advanced" },
+    { id: 3, name: "Rohan Das", skills: ["Figma", "Adobe XD", "Wireframing"], role: "Product Designer", experience: "Beginner" },
+    { id: 4, name: "Ananya Sen", skills: ["React Native", "Firebase", "Redux"], role: "Mobile Engineer", experience: "Advanced" }
+  ]);
 
-  useEffect(() => {
-    const loadMatches = async () => {
-      const results = await fetchRecommendedConnections(user || {}, eventId);
-      setConnections(results);
-      setLoading(false);
-    };
-    loadMatches();
-  }, [eventId, user]);
-
-  const handleSchedule = (connection) => {
-    toast.success(`Meeting request sent to ${connection.name}!`);
+  const handleInvite = (id) => {
+    alert(`Invite sent to ${profiles.find((p) => p.id === id).name}!`);
   };
 
+  const filteredProfiles = profiles.filter((profile) => {
+    const matchesSearch = profile.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      profile.role.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSkill = selectedSkill === "All" || profile.skills.includes(selectedSkill);
+    return matchesSearch && matchesSkill;
+  });
+
   return (
-    // 2. WRAP EVERYTHING INSIDE THE LAYOUT SHELL
-    <DashboardLayout>
-      <div className="max-w-6xl mx-auto px-4 py-12">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl">
-            <Zap className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">AI Matchmaking Hub</h1>
-            <p className="text-gray-500">Smart networking recommendations based on your profile and event history.</p>
-          </div>
+    <div className="matchmaking-hub-container p-6 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm max-w-5xl mx-auto my-8">
+      <div className="flex flex-wrap justify-between items-center gap-4 mb-6 border-b border-slate-200 dark:border-slate-800 pb-4">
+        <div>
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+            <UserCheck className="text-indigo-600 dark:text-indigo-400 w-7 h-7" />
+            Hackathon Matchmaking Hub
+          </h2>
+          <p className="text-sm text-slate-500 mt-1">Connect with compatible teammates based on skills and roles</p>
+        </div>
+      </div>
+
+      <div className="search-filters-bar flex flex-wrap items-center gap-4 bg-white dark:bg-slate-950 p-4 border border-slate-200 dark:border-slate-850 rounded-2xl mb-6 shadow-sm">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search by name or role..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm text-slate-800 dark:text-slate-100"
+          />
         </div>
 
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="animate-pulse bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 h-64" />
-            ))}
-          </div>
+        <div className="flex items-center gap-2">
+          <Filter className="w-4 h-4 text-slate-400" />
+          <select
+            value={selectedSkill}
+            onChange={(e) => setSelectedSkill(e.target.value)}
+            className="border border-slate-200 dark:border-slate-850 bg-slate-50 dark:bg-slate-900 px-3 py-2 rounded-xl text-xs text-slate-700 dark:text-slate-200 focus:outline-none"
+          >
+            <option value="All">All Skills</option>
+            <option value="React">React</option>
+            <option value="Spring Boot">Spring Boot</option>
+            <option value="Figma">Figma</option>
+            <option value="Tailwind">Tailwind</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredProfiles.length === 0 ? (
+          <div className="col-span-full text-center py-12 text-slate-400 font-medium">No matching profiles found.</div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {connections.map((conn) => (
-              <div key={conn.id} className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col h-full hover:shadow-xl transition-shadow">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-4">
-                    <img src={conn.avatar} alt={conn.name} className="w-14 h-14 rounded-full border-2 border-indigo-100 dark:border-indigo-900"  loading="lazy" />
-                    <div>
-                      <h3 className="font-bold text-lg dark:text-white">{conn.name}</h3>
-                      <p className="text-sm text-gray-500">{conn.role}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 px-2.5 py-1 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 rounded-full text-xs font-bold">
-                    <Star className="w-3 h-3" /> {conn.matchScore}%
-                  </div>
-                </div>
-
-                <div className="p-3 bg-indigo-50 dark:bg-indigo-900/10 rounded-xl mb-4 text-sm text-indigo-800 dark:text-indigo-300">
-                  <span className="font-semibold block mb-1">Why you match:</span>
-                  {conn.matchReason}
-                </div>
-
-                <div className="flex flex-wrap gap-2 mb-6">
-                  {conn.skills.map(skill => (
-                    <span key={skill} className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-md text-gray-600 dark:text-gray-300">
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-
-                <div className="mt-auto flex gap-3">
-                  <button
-                    onClick={() => handleSchedule(conn)}
-                    className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
-                  >
-                    <Calendar className="w-4 h-4" /> Meet
-                  </button>
-                  <button className="flex-1 py-2.5 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:border-indigo-600 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors">
-                    <MessageSquare className="w-4 h-4" /> Message
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+          filteredProfiles.map((profile) => (
+            <ProfileCard key={profile.id} profile={profile} onInvite={() => handleInvite(profile.id)} />
+          ))
         )}
       </div>
-    </DashboardLayout>
+    </div>
   );
-};
-
-export default MatchmakingHub;
+}
