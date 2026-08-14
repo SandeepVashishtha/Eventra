@@ -25,13 +25,15 @@ import {
 import { registerForEvent, registerForHackathon, upvoteProject } from "@/lib/api";
 
 export default function DetailDrawer({ isOpen, onClose, type, data }) {
-  const [actionDone, setActionDone] = useState(false);
-  const [actionLoading, setActionLoading] = useState(false);
+const [actionDone, setActionDone] = useState(false);
+const [actionLoading, setActionLoading] = useState(false);
+const [actionError, setActionError] = useState("");
   const [upvotes, setUpvotes] = useState(data?.upvotes || 0);
 
   React.useEffect(() => {
     setActionDone(false);
     setActionLoading(false);
+    setActionError("");
     setUpvotes(data?.upvotes || 0);
   }, [data, isOpen]);
 
@@ -82,7 +84,7 @@ export default function DetailDrawer({ isOpen, onClose, type, data }) {
       }
     } catch (err) {
       console.warn("Action error", err);
-      setActionDone(true);
+      setActionError("Something went wrong. Please try again.");
     } finally {
       setActionLoading(false);
     }
@@ -302,6 +304,12 @@ export default function DetailDrawer({ isOpen, onClose, type, data }) {
 
           {/* Fixed Drawer Footer CTA */}
           <div className="p-5 border-t border-zinc-100 bg-zinc-50/80 space-y-2">
+            {actionError && (
+              <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-center text-xs font-bold">
+                {actionError}
+              </div>
+            )}
+
             {actionDone ? (
               <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-center text-xs font-bold flex items-center justify-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-[#00b887]" />
