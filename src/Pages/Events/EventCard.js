@@ -12,7 +12,7 @@ import { useMyEvents } from "context/MyEventsContext";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
-import { BookmarkCheck, Bookmark, MapPin, Calendar, Clock, ArrowRight } from "lucide-react";
+import { BookmarkCheck, Bookmark, MapPin, Calendar, Clock, ArrowRight, Columns2 } from "lucide-react";
 import { categories, getCategoryByValue } from "constants/eventDefaults";
 
 import { isEventBookmarked, addBookmarkedEvent, removeBookmarkedEvent } from "utils/bookmarkUtils";
@@ -20,7 +20,7 @@ import SeatsRemaining from "components/common/SeatsRemaining";
 import SellingFastBadge from "components/common/SellingFastBadge";
 import useEventAvailability from "hooks/useEventAvailability";
 
-const EventCard = ({ event, position, isHighlighted = false }) => {
+const EventCard = ({ event, position, isHighlighted = false, onCompare, isSelected = false }) => {
   const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
   const [imageFailed, setImageFailed] = useState(false);
   const titleId = useId();
@@ -74,7 +74,9 @@ const EventCard = ({ event, position, isHighlighted = false }) => {
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -4 }}
       transition={{ type: "spring", stiffness: 300, damping: 24 }}
-      className="group relative flex flex-col rounded-2xl overflow-hidden bg-card-bg border border-border hover:border-primary shadow-premium-sm hover:shadow-premium-md transition-all duration-300"
+      className={`group relative flex flex-col rounded-2xl overflow-hidden bg-card-bg border border-border hover:border-primary shadow-premium-sm hover:shadow-premium-md transition-all duration-300 ${
+        isSelected ? "ring-2 ring-indigo-500 border-indigo-500" : ""
+      }`}
     >
       {/* Banner / Cover image */}
       <div className="relative h-48 overflow-hidden bg-bg-secondary">
@@ -129,18 +131,40 @@ const EventCard = ({ event, position, isHighlighted = false }) => {
         </div>
 
         {/* Save Toggle button */}
-        <button
-          onClick={handleBookmarkToggle}
-          aria-label={isBookmarked ? "Remove bookmark" : "Bookmark event"}
-          aria-pressed={isBookmarked}
-          className={`absolute top-4 right-4 rounded-lg p-2 backdrop-blur-md border transition-all duration-200 ${
-            isBookmarked
-              ? "bg-primary text-white border-primary/20"
-              : "bg-black/40 border-white/10 text-white/80 hover:bg-white/10 hover:text-white"
-          }`}
-        >
-          {isBookmarked ? <BookmarkCheck size={14} /> : <Bookmark size={14} />}
-        </button>
+        <div className="absolute top-4 right-4 flex flex-col gap-2">
+          <button
+            onClick={handleBookmarkToggle}
+            aria-label={isBookmarked ? "Remove bookmark" : "Bookmark event"}
+            aria-pressed={isBookmarked}
+            className={`rounded-lg p-2 backdrop-blur-md border transition-all duration-200 ${
+              isBookmarked
+                ? "bg-primary text-white border-primary/20"
+                : "bg-black/40 border-white/10 text-white/80 hover:bg-white/10 hover:text-white"
+            }`}
+          >
+            {isBookmarked ? <BookmarkCheck size={14} /> : <Bookmark size={14} />}
+          </button>
+
+          {onCompare && (
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onCompare(event);
+              }}
+              aria-label={isSelected ? "Remove from comparison" : "Add to comparison"}
+              aria-pressed={isSelected}
+              title={isSelected ? "Remove from comparison" : "Compare this event"}
+              className={`rounded-lg p-2 backdrop-blur-md border transition-all duration-200 ${
+                isSelected
+                  ? "bg-indigo-600 text-white border-indigo-400/40"
+                  : "bg-black/40 border-white/10 text-white/80 hover:bg-white/10 hover:text-white"
+              }`}
+            >
+              <Columns2 size={14} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Info Body */}
