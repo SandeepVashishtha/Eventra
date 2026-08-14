@@ -216,25 +216,36 @@ export const getTimezoneOffsetInfo = (date = new Date(), timezone = getUserTimez
     const h = String(Math.floor(absMinutes / 60)).padStart(2, '0');
     const m = String(absMinutes % 60).padStart(2, '0');
 
-    // Heuristic DST check: compare current offset against January offset for the same timezone
+    // Heuristic DST check: compare the current offset against both the January
+    // and July offsets for the same timezone. DST always uses the larger offset,
+    // so the standard offset is the smaller of the two. This works for both
+    // northern-hemisphere (DST in July) and southern-hemisphere (DST in January)
+    // timezones.
     const janDate = new Date(targetDate.getFullYear(), 0, 1);
-    const janParts = Object.fromEntries(
-      formatter.formatToParts(janDate).map((p) => [p.type, p.value])
-    );
-    const janWallUtc = Date.UTC(
-      parseInt(janParts.year, 10),
-      parseInt(janParts.month, 10) - 1,
-      parseInt(janParts.day, 10),
-      parseInt(janParts.hour, 10) % 24,
-      parseInt(janParts.minute, 10)
-    );
-    const janOffset = Math.round((janWallUtc - janDate.getTime()) / 60000);
+    const julDate = new Date(targetDate.getFullYear(), 6, 1);
+    const offsetFor = (date) => {
+      const parts = Object.fromEntries(
+        formatter.formatToParts(date).map((p) => [p.type, p.value])
+      );
+      const wallUtc = Date.UTC(
+        parseInt(parts.year, 10),
+        parseInt(parts.month, 10) - 1,
+        parseInt(parts.day, 10),
+        parseInt(parts.hour, 10) % 24,
+        parseInt(parts.minute, 10)
+      );
+      return Math.round((wallUtc - date.getTime()) / 60000);
+    };
+    const janOffset = offsetFor(janDate);
+    const julOffset = offsetFor(julDate);
+    const standardOffset = Math.min(janOffset, julOffset);
+    const isDSTActive = offsetMinutes !== standardOffset;
 
     return {
       offsetMinutes,
       formattedOffset: `UTC${sign}${h}:${m}`,
       timeZoneName: parts.timeZoneName || timezone,
-      isDST: offsetMinutes !== janOffset,
+      isDST: janOffset !== julOffset && isDSTActive,
     };
   } catch {
     return {
