@@ -92,9 +92,6 @@ public class ZkpVerifierService {
         }
             return false;
         }
-        if (payload == null || payload.getEventId() == null || payload.getProofHash() == null || payload.getNullifierHash() == null) {
-            return false;
-        }
 
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
