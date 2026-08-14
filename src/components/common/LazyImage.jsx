@@ -28,6 +28,7 @@ const LazyImage = ({
   imgStyle,
   useWebP = false,
   onError,
+  onLoad,
   previewSrc,
   // Low bandwidth mode options
   lowBandwidthPlaceholder = true,
@@ -176,6 +177,7 @@ const LazyImage = ({
       onLoad={(e) => {
         setLoaded(true);
         handleLoad?.(e);
+        onLoad?.(e);
       }}
       onError={handleOnError}
       className={`lazy-img ${
