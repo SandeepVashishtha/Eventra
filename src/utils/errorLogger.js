@@ -527,3 +527,4 @@ export const exportErrorLogAsJSON = () => {
 };
 
 export default logError;
+export { persistToLocalStorage as persistErrors };
