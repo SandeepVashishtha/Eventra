@@ -44,6 +44,10 @@ export class WebRTCPeerManager {
    * Create a peer connection for a target peer ID
    */
   createPeerConnection(targetPeerId) {
+    if (typeof RTCPeerConnection === "undefined") {
+      console.warn("[WebRTC] RTCPeerConnection is not supported in this environment");
+      return null;
+    }
     if (this.peerConnections.has(targetPeerId)) {
       return this.peerConnections.get(targetPeerId);
     }
