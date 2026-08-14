@@ -259,6 +259,15 @@ export const getAvailableTimeSlots = (
   trackId,
   occupiedSlots = []
 ) => {
+  if (
+    !Number.isFinite(slotDurationMinutes) ||
+    slotDurationMinutes <= 0 ||
+    !(startDate instanceof Date) ||
+    !(endDate instanceof Date)
+  ) {
+    return [];
+  }
+
   const slots = [];
   let currentTime = new Date(startDate);
   const endTime = new Date(endDate);
