@@ -110,7 +110,7 @@ export default function LeaderBoard() {
     return ts ? t("leaderboard.statusCached", { time: formatLastUpdated(ts, t) }) : "";
   });
   const [search, setSearch] = useState("");
-  const [, setRecentSearches] = useLocalStorage(
+  const [recentSearches, setRecentSearches] = useLocalStorage(
     STORAGE_KEYS.RECENT_SEARCHES,
     { queries: [], lastUpdated: Date.now() }
   );
@@ -311,12 +311,16 @@ export default function LeaderBoard() {
     setCurrentPage(1);
 
     if (query.trim().length >= 2) {
-      setRecentSearches((prev) => {
-        const queries = [query, ...prev.queries.filter((q) => q !== query)].slice(0, 5);
-        return { queries, lastUpdated: Date.now() };
-      });
+      // useLocalStorage's setter is value-only (it stringifies a function to
+      // undefined), so compute the next value from the current stored value
+      // and pass a plain object instead of a functional updater (issue #18821).
+      const prevQueries = Array.isArray(recentSearches?.queries)
+        ? recentSearches.queries
+        : [];
+      const queries = [query, ...prevQueries.filter((q) => q !== query)].slice(0, 5);
+      setRecentSearches({ queries, lastUpdated: Date.now() });
     }
-  }, [setRecentSearches]);
+  }, [setRecentSearches, recentSearches]);
 
   const handleRefresh = useCallback(async () => {
     if (isRefreshing) return;
