@@ -2,6 +2,8 @@
  * Lenis Smooth Scroll Debouncing & Image Aspect-Ratio Bounding Box Utility (#13911)
  */
 
+let resizeTimeout;
+
 /**
  * Scroll to a specific element smoothly
  * @param {string|HTMLElement} target - CSS selector or target HTML element
