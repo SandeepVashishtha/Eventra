@@ -51,9 +51,8 @@ public class EmailSender {
             // - etc.
             
             // Log the email details (for development/debugging)
-            System.out.println("[
-Email Sent] To: " + to + ", Subject: " + subject + 
-                            ", Message ID: " + messageId + 
+            System.out.println("[Email Sent] To: " + to + ", Subject: " + subject +
+                            ", Message ID: " + messageId +
                             ", Is HTML: " + isHtml);
             
             return messageId;

@@ -1,209 +1,176 @@
 /* eslint-disable */
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const CrowdDensityHeatmap = () => {
-  const [systemActive, setSystemActive] = useState(false);
+  const [isPolling, setIsPolling] = useState(false);
+  const [activeConnections, setActiveConnections] = useState(0);
+  const [criticalZones, setCriticalZones] = useState(0);
   
-  // Edge AI Metrics
-  const [activeCameras, setActiveCameras] = useState(0); 
-  const [cvProcessingTime, setCvProcessingTime] = useState(0); // ms per frame
-  const [totalHeadsCounted, setTotalHeadsCounted] = useState(0);
-  const [bottleneckAlerts, setBottleneckAlerts] = useState(0);
+  // Heatmap Points { x, y, intensity (0-100), radius }
+  const [heatmapPoints, setHeatmapPoints] = useState([
+      { id: 'zone-1', x: 20, y: 30, intensity: 20, radius: 40, label: 'Main Entrance' },
+      { id: 'zone-2', x: 70, y: 40, intensity: 30, radius: 60, label: 'Food Court' },
+      { id: 'zone-3', x: 50, y: 80, intensity: 40, radius: 80, label: 'Main Stage' },
+      { id: 'zone-4', x: 85, y: 75, intensity: 15, radius: 35, label: 'VIP Lounge' }
+  ]);
   
   const [sysLog, setSysLog] = useState([
-    { id: 1, time: '20:00:00', type: 'SYS', msg: 'YOLOv8 Edge Models deployed to 124 IP Cameras.' },
-    { id: 2, time: '20:00:02', type: 'SYS', msg: 'Awaiting WebSocket telemetry stream...' }
+    { id: 1, time: '16:00:00', type: 'SYS', msg: 'WLAN Controller API connection established. Awaiting AP logs.' }
   ]);
 
-  // Visualizer State
-  const [activeZone, setActiveZone] = useState('NOMINAL'); // NOMINAL, DENSE, CRITICAL
-  const [bboxes, setBboxes] = useState([]);
-  const canvasRef = useRef(null);
-
   useEffect(() => {
-    let loop;
-    
-    if (systemActive) {
-      loop = setInterval(() => {
-          setActiveCameras(124);
-          setCvProcessingTime(18 + Math.random() * 4); // ~18ms inference time
-          
-          let baseHeads = 420;
-          if (activeZone === 'DENSE') baseHeads = 950;
-          if (activeZone === 'CRITICAL') baseHeads = 1800;
-          
-          const currentCount = baseHeads + Math.floor(Math.random() * 50);
-          setTotalHeadsCounted(currentCount);
-
-          // Generate simulated YOLOv8 bounding boxes
-          const numBoxes = Math.min(80, Math.floor(currentCount / 10)); // Cap visual boxes for performance
-          const newBboxes = Array.from({ length: numBoxes }).map((_, i) => ({
-              id: i,
-              x: 5 + Math.random() * 90,
-              y: 20 + Math.random() * 75,
-              w: 3 + Math.random() * 3,
-              h: 5 + Math.random() * 4,
-              conf: (0.85 + Math.random() * 0.14).toFixed(2)
-          }));
-          setBboxes(newBboxes);
-          
-          // Bottleneck Logic
-          if (activeZone === 'CRITICAL' && Math.random() > 0.8) {
-              setBottleneckAlerts(prev => prev + 1);
-              addLog('CRIT', 'SEVERE BOTTLENECK DETECTED: Stage 2 Entrance (Density > 4 pax/sqm).');
-              addLog('ACTION', 'Auto-dispatching crowd control teams to sector B4.');
-          }
-
-      }, 500); // 2fps simulation update for UI
-    }
-    
-    return () => { if (loop) clearInterval(loop); };
-  }, [systemActive, activeZone]);
-
-  const setDensityState = (state) => {
-      if (!systemActive) return;
-      setActiveZone(state);
+      let pollingInterval;
       
-      if (state === 'NOMINAL') addLog('SUCCESS', 'Crowd flow normalized. No bottlenecks detected.');
-      else if (state === 'DENSE') addLog('WARN', 'High density detected at main thoroughfare. Monitoring.');
-      else if (state === 'CRITICAL') addLog('CRIT', 'Dangerous density spike. Potential crowd crush risk.');
-  };
+      if (isPolling) {
+          pollingInterval = setInterval(() => {
+              // Simulate incoming MAC address RSSI logs
+              setActiveConnections(prev => {
+                  const shift = (Math.random() - 0.3) * 5000; 
+                  return Math.max(10000, Math.min(85000, prev + shift));
+              });
 
-  const toggleSystem = () => {
-    if (!systemActive) {
-      setSystemActive(true);
-      addLog('SYS', 'Command Center Heatmap Online. Ingesting YOLOv8 telemetry.');
-    } else {
-      setSystemActive(false);
-      setActiveCameras(0);
-      setCvProcessingTime(0);
-      setTotalHeadsCounted(0);
-      setBboxes([]);
-      setActiveZone('NOMINAL');
-      addLog('WARN', 'Edge AI Heatmap Offline. Reverting to manual crowd observation.');
-    }
+              // Mutate heatmap points based on simulated crowd movement
+              let currentCritical = 0;
+              setHeatmapPoints(prev => prev.map(pt => {
+                  // Random drift for intensity
+                  const intensityShift = (Math.random() - 0.4) * 8; 
+                  let newIntensity = Math.max(10, Math.min(100, pt.intensity + intensityShift));
+                  
+                  // Stage usually gets more crowded over time
+                  if (pt.id === 'zone-3' && newIntensity < 90 && Math.random() > 0.7) {
+                      newIntensity += 5;
+                  }
+                  
+                  if (newIntensity > 85) currentCritical++;
+                  
+                  // Slight coordinate drift
+                  const dx = (Math.random() - 0.5) * 1.5;
+                  const dy = (Math.random() - 0.5) * 1.5;
+                  
+                  return {
+                      ...pt,
+                      intensity: newIntensity,
+                      x: Math.max(10, Math.min(90, pt.x + dx)),
+                      y: Math.max(10, Math.min(90, pt.y + dy))
+                  };
+              }));
+              
+              setCriticalZones(currentCritical);
+
+              if (currentCritical > 0 && Math.random() > 0.8) {
+                  addLog('CRIT', `Crowd Crush Warning! Density exceeded 5 pax/sqm at ${heatmapPoints.find(p => p.intensity > 85)?.label || 'Sector 7'}`);
+              } else if (Math.random() > 0.9) {
+                  addLog('SYS', 'Ingested 4,502 new MAC address RSSI vectors from AP Group [Alpha].');
+              }
+
+          }, 1000);
+      } else {
+          setActiveConnections(0);
+          setCriticalZones(0);
+          setHeatmapPoints(prev => prev.map(pt => ({ ...pt, intensity: 10 }))); // Reset to low
+      }
+      
+      return () => { if (pollingInterval) clearInterval(pollingInterval); };
+  }, [isPolling, heatmapPoints]);
+
+  const togglePolling = () => {
+      setIsPolling(!isPolling);
+      if (!isPolling) {
+          addLog('ACTION', 'Initiating live Wi-Fi triangulation and ML density mapping.');
+      } else {
+          addLog('WARN', 'Halted AP log ingestion. Heatmap offline.');
+      }
   };
 
   const addLog = (type, msg) => {
     const now = new Date();
-    const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}.${Math.floor(Math.random()*999).toString().padStart(3,'0')}`;
+    const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
     setSysLog(prev => [{ id: Date.now()+Math.random(), time: timeStr, type, msg }, ...prev].slice(0, 6));
   };
 
+  // Helper to convert intensity to a heat color (Blue -> Green -> Yellow -> Red)
+  const getHeatColor = (intensity) => {
+      if (intensity < 30) return `rgba(59, 130, 246, ${intensity / 100})`; // Blue
+      if (intensity < 60) return `rgba(34, 197, 94, ${intensity / 100})`;  // Green
+      if (intensity < 85) return `rgba(234, 179, 8, ${intensity / 100})`;  // Yellow
+      return `rgba(239, 68, 68, ${intensity / 100})`;                      // Red
+  };
+
   return (
-    <div className="min-h-screen bg-[#020508] flex items-center justify-center font-sans p-6 text-slate-300">
+    <div className="min-h-screen bg-[#06080f] flex items-center justify-center font-sans p-6 text-slate-300">
       
       <div className="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-start relative">
         
         {/* Left Side: Control Hub (Col span 7) */}
         <div className="lg:col-span-7 space-y-6">
-          <div className="inline-block bg-cyan-900/40 text-cyan-400 border border-cyan-500/30 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-2 flex items-center w-max">
-            <span className="mr-2">👁️</span> Edge AI Computer Vision
+          <div className="inline-block bg-orange-900/40 text-orange-400 border border-orange-500/30 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-2 flex items-center w-max">
+            <span className="mr-2">📡</span> Backend Data Pipelines & Algorithms
           </div>
           <h1 className="text-4xl md:text-5xl font-black text-white leading-tight">
-            Real-time Crowd Density <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-500">Heatmaps via CCTV</span>.
+            Dynamic Crowd Density <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-500 to-red-500">Wi-Fi Heatmap</span>.
           </h1>
           <p className="text-slate-400 text-sm leading-relaxed mb-6">
-            Dangerous crowd bottlenecks form unexpectedly at narrow pathways or stage entrances, leading to potential crowd crush incidents before security is even aware. Eventra solves this by processing existing IP security camera feeds directly on edge devices using a lightweight object detection model (YOLOv8) to count heads in real-time. This anonymized telemetry data is streamed via WebSockets to a React-based interactive heatmap UI in the central command center, allowing security to proactively dispatch teams to thin out dense areas.
+            Security teams have zero visibility into crowd bottlenecks until a dangerous crush occurs, relying entirely on visual radio reports from staff on the ground. Eventra solves this by building a backend algorithm that ingests anonymized device connection logs from the existing festival Wi-Fi access points. Using signal strength (RSSI) triangulation, the software mathematically estimates crowd density and renders a real-time glowing heatmap overlay on the interactive security dashboard map.
           </p>
 
-          <div className="bg-[#060a12] rounded-3xl p-6 border border-slate-800 shadow-xl relative overflow-hidden flex flex-col h-[400px]">
+          <div className="bg-[#0b101a] rounded-3xl p-6 border border-slate-800 shadow-xl relative overflow-hidden flex flex-col h-[400px]">
              
              <div className="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center">
-                 <span className="text-cyan-500 text-lg mr-2">🎛️</span> YOLOv8 Edge Telemetry
+                 <span className="text-orange-500 text-lg mr-2">🎛️</span> Triangulation Engine
                </h3>
                
                <div className="flex space-x-2">
                  <button 
-                   onClick={toggleSystem}
+                   onClick={togglePolling}
                    className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition shadow-md flex items-center ${
-                     systemActive ? 'bg-slate-800 text-slate-500 border border-slate-700' :
-                     'bg-cyan-600 hover:bg-cyan-500 text-black shadow-[0_0_15px_rgba(34,211,238,0.4)]'
+                     isPolling ? 'bg-slate-800 text-slate-400 border border-slate-700' :
+                     'bg-orange-600 text-white border border-orange-500 hover:bg-orange-500 shadow-[0_0_15px_rgba(234,88,12,0.4)]'
                    }`}
                  >
-                   {systemActive ? 'Halt Telemetry Stream' : 'Initialize Edge Models'}
+                   {isPolling ? 'Halt Telemetry' : 'Engage Wi-Fi Polling'}
                  </button>
                </div>
              </div>
 
-             <div className="grid grid-cols-4 gap-4 mb-6">
+             <div className="grid grid-cols-2 gap-4 mb-6">
                
-               {/* Head Count */}
-               <div className={`col-span-1 p-4 rounded-xl border flex flex-col justify-center relative overflow-hidden transition-all duration-300 ${
-                 activeZone === 'CRITICAL' ? 'bg-red-950/40 border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.3)]' : 
-                 activeZone === 'DENSE' ? 'bg-orange-950/40 border-orange-500/50' :
-                 systemActive ? 'bg-cyan-950/20 border-cyan-900/50' : 'bg-slate-900 border-slate-800'
+               {/* Active Connections */}
+               <div className={`p-4 rounded-xl border flex flex-col justify-center relative overflow-hidden transition-all duration-300 ${
+                 isPolling ? 'bg-blue-950/20 border-blue-900/50' : 'bg-slate-900 border-slate-800'
                }`}>
                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest block mb-2 text-ellipsis overflow-hidden whitespace-nowrap">
-                   Heads Counted
+                   Unique MAC Addresses
                  </span>
                  <div className="flex items-end">
-                   <span className={`text-3xl font-black font-mono leading-none transition-colors duration-300 ${
-                     activeZone === 'CRITICAL' ? 'text-red-400 animate-pulse' : 
-                     activeZone === 'DENSE' ? 'text-orange-400' : 'text-cyan-400'
-                   }`}>
-                     {totalHeadsCounted.toLocaleString()}
+                   <span className={`text-3xl font-black font-mono leading-none transition-colors duration-300 ${isPolling ? 'text-blue-400' : 'text-slate-600'}`}>
+                     {activeConnections.toLocaleString()}
                    </span>
                  </div>
                </div>
 
-               {/* Active Cameras */}
-               <div className={`col-span-1 p-4 rounded-xl border flex flex-col justify-center relative overflow-hidden transition-all duration-300 ${
-                 systemActive ? 'bg-slate-800 border-slate-700' : 'bg-slate-900 border-slate-800'
+               {/* Critical Zones */}
+               <div className={`p-4 rounded-xl border flex flex-col justify-center relative overflow-hidden transition-all duration-300 ${
+                 criticalZones > 0 ? 'bg-red-950/30 border-red-900/50' : 'bg-slate-900 border-slate-800'
                }`}>
                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest block mb-2 text-ellipsis overflow-hidden whitespace-nowrap">
-                   Active CCTVs
+                   Critical Crush Zones
                  </span>
                  <div className="flex items-end">
-                   <span className={`text-2xl font-black font-mono leading-none ${
-                     systemActive ? 'text-slate-300' : 'text-slate-600'
-                   }`}>
-                     {activeCameras}
+                   <span className={`text-3xl font-black font-mono leading-none transition-colors duration-300 ${criticalZones > 0 ? 'text-red-500 animate-pulse' : 'text-slate-600'}`}>
+                     {criticalZones}
                    </span>
-                 </div>
-               </div>
-               
-               {/* Inference Time */}
-               <div className={`col-span-1 p-4 rounded-xl border flex flex-col justify-center relative overflow-hidden transition-all duration-300 ${
-                 systemActive ? 'bg-slate-800 border-slate-700' : 'bg-slate-900 border-slate-800'
-               }`}>
-                 <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest block mb-2 text-ellipsis overflow-hidden whitespace-nowrap">
-                   CV Inference
-                 </span>
-                 <div className="flex items-end">
-                   <span className={`text-2xl font-black font-mono leading-none ${
-                     systemActive ? 'text-slate-300' : 'text-slate-600'
-                   }`}>
-                     {systemActive ? cvProcessingTime.toFixed(1) : '0.0'}
-                   </span>
-                   <span className="text-[10px] font-bold text-slate-500 ml-1 pb-1">ms</span>
-                 </div>
-               </div>
-               
-               {/* Bottleneck Alerts */}
-               <div className={`col-span-1 p-4 rounded-xl border flex flex-col justify-center relative overflow-hidden transition-all duration-300 ${
-                 bottleneckAlerts > 0 ? 'bg-red-950/40 border-red-500/50' : 'bg-slate-900 border-slate-800'
-               }`}>
-                 <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest block mb-2 text-ellipsis overflow-hidden whitespace-nowrap">
-                   Crush Alerts
-                 </span>
-                 <div className="flex items-end">
-                   <span className={`text-2xl font-black font-mono leading-none ${
-                     bottleneckAlerts > 0 ? 'text-red-400' : 'text-slate-600'
-                   }`}>
-                     {bottleneckAlerts}
-                   </span>
+                   <span className="text-sm font-bold text-slate-500 ml-2 pb-1 uppercase">Detected</span>
                  </div>
                </div>
 
              </div>
-
+             
              {/* System Log */}
-             <div className="flex-1 bg-[#020306] rounded-xl border border-slate-800 p-4 font-mono text-[10px] overflow-hidden relative flex flex-col shadow-inner mt-auto">
+             <div className="flex-1 bg-[#04060a] rounded-xl border border-slate-800 p-4 font-mono text-[10px] overflow-hidden relative flex flex-col shadow-inner mt-auto">
                <span className="text-slate-500 uppercase font-bold tracking-widest block mb-2 border-b border-slate-800 pb-2 flex justify-between">
-                 <span>WebSocket Stream Ledger</span>
-                 {systemActive && <span className="text-cyan-400 font-black animate-pulse">STREAMING 124x JSON PAYLOADS</span>}
+                 <span>WLAN Access Point Logs</span>
+                 {isPolling && <span className="text-orange-400 font-black animate-pulse">TRIANGULATING...</span>}
                </span>
                
                <div className="flex-1 overflow-y-auto space-y-1.5 text-slate-400 pr-2">
@@ -211,10 +178,10 @@ const CrowdDensityHeatmap = () => {
                    <div key={log.id} className="flex items-start animate-fade-in-up">
                      <span className="text-slate-600 mr-2 shrink-0">[{log.time}]</span>
                      <span className={
-                       log.type === 'SUCCESS' ? 'text-emerald-400 font-bold' : 
-                       log.type === 'CRIT' ? 'text-red-500 font-bold uppercase bg-red-900/30 px-1' :
-                       log.type === 'WARN' ? 'text-orange-400 font-bold' :
-                       log.type === 'ACTION' ? 'text-cyan-400 font-bold' : 'text-slate-400'
+                       log.type === 'ACTION' ? 'text-orange-400 font-bold' : 
+                       log.type === 'CRIT' ? 'text-white font-bold bg-red-600 px-1' :
+                       log.type === 'WARN' ? 'text-amber-500 font-bold' :
+                       log.type === 'SYS' ? 'text-slate-300 font-bold' : 'text-slate-400'
                      }>{log.msg}</span>
                    </div>
                  ))}
@@ -229,147 +196,91 @@ const CrowdDensityHeatmap = () => {
           
           <div className="w-full max-w-[420px] flex flex-col items-center">
             
-            {/* Visualizer Container */}
-            <div className={`w-full rounded-[1.5rem] border-[4px] border-[#0f172a] shadow-[0_0_50px_rgba(0,0,0,0.8)] relative flex flex-col h-[400px] overflow-hidden font-sans mb-6 transition-colors duration-1000 ${
-                !systemActive ? 'bg-slate-900' : 'bg-[#060a12]'
-            }`}>
+            {/* SecOps Dashboard Visualizer */}
+            <div className={`w-full bg-[#111827] rounded-[1.5rem] border-[4px] border-slate-800 shadow-[0_0_50px_rgba(0,0,0,0.8)] relative flex flex-col h-[520px] overflow-hidden font-sans mb-6 transition-all duration-500`}>
               
-              <div className="absolute top-0 inset-x-0 p-3 text-center z-40 pointer-events-none flex justify-between bg-black/80 border-b border-white/5 backdrop-blur-md">
-                <span className="text-[8px] font-black uppercase tracking-widest text-cyan-400">COMMAND CENTER</span>
-                <span className="text-[8px] font-mono text-slate-400">CAM_NODE_042</span>
+              <div className="bg-slate-900 border-b border-slate-800 p-3 flex justify-between items-center shadow-md z-10 relative">
+                  <div className="flex items-center space-x-2">
+                      <div className="w-6 h-6 bg-red-600/20 border border-red-500 rounded flex items-center justify-center text-red-500 text-xs font-black">!</div>
+                      <span className="text-[10px] text-slate-300 font-bold uppercase tracking-widest">SecOps Command</span>
+                  </div>
+                  {criticalZones > 0 && (
+                      <span className="absolute top-0 right-0 h-full bg-red-600 text-white text-[9px] font-black uppercase tracking-widest flex items-center px-4 animate-pulse">
+                          Deploy Crowd Control
+                      </span>
+                  )}
               </div>
 
-              <div className="flex-1 relative flex flex-col overflow-hidden pt-12">
+              {/* Map Area */}
+              <div className="flex-1 bg-slate-950 relative overflow-hidden flex flex-col">
                   
-                  {!systemActive ? (
-                     <div className="absolute inset-0 flex items-center justify-center">
-                         <span className="text-[10px] font-black text-slate-700 uppercase tracking-widest">FEED OFFLINE</span>
-                     </div>
-                  ) : (
-                    <div className="w-full h-full relative z-20 flex flex-col">
-                        
-                        {/* Upper Half: YOLOv8 Camera Feed Overlay */}
-                        <div className="h-1/2 relative bg-slate-950 border-b border-slate-800 overflow-hidden">
-                            {/* Fake Crowd Background (Gradients/Shapes) */}
-                            <div className="absolute inset-0 bg-slate-900">
-                                {/* Horizon / Stage */}
-                                <div className="absolute top-10 inset-x-0 h-10 bg-indigo-900/30 blur-xl"></div>
-                                {/* Crowd Mass (Darker at bottom) */}
-                                <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-black to-transparent"></div>
-                            </div>
+                  {/* Grid / Blueprint Base */}
+                  <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:30px_30px]"></div>
+                  
+                  {/* Map Geometry Outlines */}
+                  <div className="absolute top-[30%] left-[20%] w-[100px] h-[50px] border border-slate-700/50 rounded flex items-center justify-center text-[8px] text-slate-600 uppercase font-bold">Entrance</div>
+                  <div className="absolute top-[40%] left-[70%] w-[80px] h-[80px] border border-slate-700/50 rounded-full flex items-center justify-center text-[8px] text-slate-600 uppercase font-bold">Food Court</div>
+                  <div className="absolute top-[80%] left-[50%] -translate-x-1/2 w-[180px] h-[40px] border border-slate-700/50 bg-slate-900/50 rounded flex items-center justify-center text-[10px] text-slate-500 uppercase font-black">Main Stage</div>
+                  
+                  {/* Heatmap Overlay */}
+                  <div className="absolute inset-0 pointer-events-none mix-blend-screen">
+                      {heatmapPoints.map(pt => (
+                          <div 
+                              key={pt.id}
+                              className="absolute transition-all duration-1000 ease-in-out"
+                              style={{
+                                  left: `${pt.x}%`,
+                                  top: `${pt.y}%`,
+                                  transform: 'translate(-50%, -50%)',
+                                  width: `${pt.radius * 2}px`,
+                                  height: `${pt.radius * 2}px`,
+                                  background: `radial-gradient(circle, ${getHeatColor(pt.intensity)} 0%, transparent 70%)`,
+                                  filter: 'blur(10px)',
+                                  opacity: isPolling ? 1 : 0
+                              }}
+                          ></div>
+                      ))}
+                  </div>
+                  
+                  {/* Density Markers */}
+                  {isPolling && heatmapPoints.map(pt => (
+                      <div 
+                          key={`marker-${pt.id}`}
+                          className="absolute transition-all duration-1000 ease-in-out flex flex-col items-center pointer-events-none z-10"
+                          style={{
+                              left: `${pt.x}%`,
+                              top: `${pt.y}%`,
+                              transform: 'translate(-50%, -50%)'
+                          }}
+                      >
+                          {pt.intensity > 85 && (
+                              <div className="bg-red-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest shadow-lg animate-bounce">
+                                  CRUSH RISK
+                              </div>
+                          )}
+                          <div className={`mt-1 text-[9px] font-mono font-bold ${pt.intensity > 85 ? 'text-red-400' : 'text-slate-400'}`}>
+                              {pt.intensity.toFixed(0)}%
+                          </div>
+                      </div>
+                  ))}
 
-                            {/* YOLO Bounding Boxes */}
-                            {bboxes.map(box => {
-                                let colorClass = 'border-cyan-400 bg-cyan-400/10';
-                                let textClass = 'text-cyan-400';
-                                
-                                if (activeZone === 'DENSE') {
-                                    colorClass = 'border-orange-400 bg-orange-400/10';
-                                    textClass = 'text-orange-400';
-                                } else if (activeZone === 'CRITICAL') {
-                                    colorClass = 'border-red-500 bg-red-500/20';
-                                    textClass = 'text-red-500';
-                                }
-
-                                return (
-                                    <div 
-                                        key={box.id}
-                                        className={`absolute border-[1px] transition-all duration-75 ${colorClass}`}
-                                        style={{ left: `${box.x}%`, top: `${box.y}%`, width: `${box.w}%`, height: `${box.h}%` }}
-                                    >
-                                        {/* Class label & confidence (only show for a few to avoid clutter) */}
-                                        {box.id % 5 === 0 && (
-                                            <div className={`absolute -top-3 -left-px bg-black px-0.5 text-[4px] font-mono border-t border-l border-r ${colorClass} ${textClass}`}>
-                                                head {box.conf}
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                            
-                            <div className="absolute bottom-1 right-2 text-[6px] font-mono text-cyan-400 bg-black/60 px-1">
-                                YOLOv8n_tensorrt | {cvProcessingTime.toFixed(1)}ms
-                            </div>
-                        </div>
-
-                        {/* Lower Half: Festival Global Heatmap */}
-                        <div className="h-1/2 relative bg-[#0a0f1a]">
-                            <div className="absolute top-2 left-2 text-[6px] font-black uppercase tracking-widest text-slate-500 z-30">
-                                GLOBAL DENSITY HEATMAP
-                            </div>
-                            
-                            {/* Grid Map */}
-                            <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'linear-gradient(#1e293b 1px, transparent 1px), linear-gradient(90deg, #1e293b 1px, transparent 1px)', backgroundSize: '15px 15px' }}></div>
-                            
-                            {/* Stages */}
-                            <div className="absolute top-4 left-4 w-12 h-8 border border-slate-600 bg-slate-800 rounded-sm flex items-center justify-center text-[5px] text-slate-500 font-black">STAGE 1</div>
-                            <div className="absolute bottom-4 right-4 w-12 h-8 border border-slate-600 bg-slate-800 rounded-sm flex items-center justify-center text-[5px] text-slate-500 font-black">STAGE 2</div>
-
-                            {/* Heatmap Blobs based on state */}
-                            <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-1000 mix-blend-screen pointer-events-none blur-xl`}
-                                 style={{
-                                     width: activeZone === 'CRITICAL' ? '200px' : activeZone === 'DENSE' ? '140px' : '80px',
-                                     height: activeZone === 'CRITICAL' ? '120px' : activeZone === 'DENSE' ? '80px' : '50px',
-                                     background: activeZone === 'CRITICAL' 
-                                         ? 'radial-gradient(circle, rgba(239,68,68,0.8) 0%, rgba(249,115,22,0.6) 40%, rgba(34,211,238,0.2) 80%, transparent 100%)' 
-                                         : activeZone === 'DENSE'
-                                         ? 'radial-gradient(circle, rgba(249,115,22,0.6) 0%, rgba(234,179,8,0.4) 50%, rgba(34,211,238,0.2) 80%, transparent 100%)'
-                                         : 'radial-gradient(circle, rgba(34,211,238,0.5) 0%, rgba(59,130,246,0.3) 50%, transparent 100%)'
-                                 }}
-                            ></div>
-                            
-                            {/* Warning overlay on heatmap */}
-                            {activeZone === 'CRITICAL' && (
-                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-20 border-2 border-red-500 rounded-full animate-ping opacity-50 pointer-events-none"></div>
-                            )}
-
-                        </div>
-
-                    </div>
+                  {/* Offline Overlay */}
+                  {!isPolling && (
+                      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
+                          <div className="text-center">
+                              <span className="text-slate-500 text-4xl mb-2 block">📡</span>
+                              <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest border border-slate-700 bg-slate-900 px-4 py-2 rounded">Awaiting Telemetry</span>
+                          </div>
+                      </div>
                   )}
-                
+
               </div>
             </div>
 
-            {/* Triggers */}
-            <div className="w-full bg-[#060a12] p-4 rounded-xl border border-slate-800">
-               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-3 text-center">Simulate Crowd Flow</span>
-               
-               <div className="grid grid-cols-3 gap-2 mb-2">
-                 <button 
-                   onClick={() => setDensityState('NOMINAL')}
-                   disabled={!systemActive || activeZone === 'NOMINAL'}
-                   className={`py-3 rounded-lg font-black uppercase tracking-widest text-[8px] transition border flex items-center justify-center ${
-                     !systemActive || activeZone === 'NOMINAL' ? 'bg-slate-900 border-slate-800 text-slate-700 cursor-not-allowed' : 
-                     'bg-cyan-950/40 border-cyan-600 text-cyan-400 hover:bg-cyan-900/60 shadow-[0_0_15px_rgba(34,211,238,0.3)]'
-                   }`}
-                 >
-                   🚶 Normal
-                 </button>
-                 
-                 <button 
-                   onClick={() => setDensityState('DENSE')}
-                   disabled={!systemActive || activeZone === 'DENSE'}
-                   className={`py-3 rounded-lg font-black uppercase tracking-widest text-[8px] transition border flex items-center justify-center ${
-                     !systemActive || activeZone === 'DENSE' ? 'bg-slate-900 border-slate-800 text-slate-700 cursor-not-allowed' : 
-                     'bg-orange-950/40 border-orange-600 text-orange-400 hover:bg-orange-900/60 shadow-[0_0_15px_rgba(249,115,22,0.3)]'
-                   }`}
-                 >
-                   🏃 Dense
-                 </button>
-
-                 <button 
-                   onClick={() => setDensityState('CRITICAL')}
-                   disabled={!systemActive || activeZone === 'CRITICAL'}
-                   className={`py-3 rounded-lg font-black uppercase tracking-widest text-[8px] transition border flex items-center justify-center ${
-                     !systemActive || activeZone === 'CRITICAL' ? 'bg-slate-900 border-slate-800 text-slate-700 cursor-not-allowed' : 
-                     'bg-red-950/40 border-red-600 text-red-500 hover:bg-red-900/60 shadow-[0_0_15px_rgba(239,68,68,0.3)]'
-                   }`}
-                 >
-                   ⚠️ CRUSH RISK
-                 </button>
-               </div>
-
+            {/* Hint Box */}
+            <div className="w-full bg-[#0b101a] p-4 rounded-xl border border-orange-900/30 text-[10px] text-slate-400 text-center">
+               <span className="font-bold text-orange-400 uppercase block mb-1">Wi-Fi Telemetry Aggregation:</span>
+               Click <span className="text-white font-bold bg-orange-600 border border-orange-500 px-1 rounded">Engage Wi-Fi Polling</span>. The backend ingests MAC address connection logs and triangulates device coordinates. The SecOps dashboard renders a dynamic, glowing heatmap. When density at the Main Stage exceeds safe limits, the system triggers a <span className="text-red-500 font-black">CRUSH RISK</span> alert.
             </div>
 
           </div>

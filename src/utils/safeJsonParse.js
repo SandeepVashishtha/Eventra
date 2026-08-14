@@ -1,7 +1,21 @@
+function hasPrototypePollution(obj) {
+  if (obj === null || typeof obj !== 'object') return false;
+  for (const key in obj) {
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+      return true;
+    }
+    if (hasPrototypePollution(obj[key])) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function safeJsonParse(str, fallback = null, validator = null) {
   if (typeof str !== "string") return fallback;
   try {
     const parsed = JSON.parse(str);
+    if (hasPrototypePollution(parsed)) return fallback;
     if (validator && typeof validator === "function") {
       return validator(parsed) ? parsed : fallback;
     }

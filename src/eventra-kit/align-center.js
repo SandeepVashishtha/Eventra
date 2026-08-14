@@ -1,4 +1,6 @@
 
+import { padBoth } from './pad-both.js';
+
 /**
  * adds a center align helper.
  */

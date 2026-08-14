@@ -10,6 +10,7 @@ import { useAuth } from "context/AuthContext";
 import { hostHackathon } from "services/hackathonService";
 import { sanitizeInputText } from "utils/inputSanitization";
 import { REQUIRED_FIELDS, validateHostHackathonForm } from "utils/hostHackathonValidation";
+import RichTextEditor from "components/common/RichTextEditor";
 
 const HostHackathon = () => {
   const prefersReducedMotion = useReducedMotion();
@@ -429,14 +430,16 @@ const HostHackathon = () => {
               <DocumentTextIcon className="w-5 h-5 mr-2 text-primary" />
               Description <span className="text-red-500 ml-1">*</span>
             </label>
-            <textarea
+            <RichTextEditor
               name="description"
               value={formData.description}
-              onChange={handleChange}
-              ref={inputRefs.description}
-              rows="4"
+              onChange={(e) => {
+                const newFormData = { ...formData, [e.target.name]: e.target.value };
+                setFormData(newFormData);
+              }}
               placeholder="Briefly describe your hackathon"
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-bg text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all duration-300"
+              maxLength={500}
+              className="w-full"
             />
             {errors.description && (
               <p className="text-red-500 text-xs mt-1">{errors.description}</p>

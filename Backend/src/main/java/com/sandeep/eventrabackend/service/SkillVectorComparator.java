@@ -24,14 +24,16 @@ public class SkillVectorComparator {
         double normB = 0.0;
 
         for (String key : vectorA.keySet()) {
-            int valA = vectorA.getOrDefault(key, 0);
-            int valB = vectorB.getOrDefault(key, 0);
+            int valA = vectorA.getOrDefault(key, 0) != null ? vectorA.getOrDefault(key, 0) : 0;
+            Integer valBObj = vectorB.get(key);
+            int valB = valBObj != null ? valBObj : 0;
 
             dotProduct += valA * valB;
             normA += valA * valA;
         }
 
-        for (int valB : vectorB.values()) {
+        for (Integer valBObj : vectorB.values()) {
+            int valB = valBObj != null ? valBObj : 0;
             normB += valB * valB;
         }
 
@@ -51,8 +53,10 @@ public class SkillVectorComparator {
 
         for (Map.Entry<String, Integer> entry : applicantSkills.entrySet()) {
             String skill = entry.getKey();
-            int applicantProficiency = entry.getValue();
-            int currentTeamProficiency = teamCurrentSkills.getOrDefault(skill, 0);
+            Integer applicantProficiencyObj = entry.getValue();
+            int applicantProficiency = applicantProficiencyObj != null ? applicantProficiencyObj : 0;
+            Integer currentTeamProficiencyObj = teamCurrentSkills.get(skill);
+            int currentTeamProficiency = currentTeamProficiencyObj != null ? currentTeamProficiencyObj : 0;
 
             // Large complementarity score if team is weak (e.g. 0-30%) and applicant is strong (70-100%)
             int gap = Math.max(0, 100 - currentTeamProficiency);
@@ -76,8 +80,10 @@ public class SkillVectorComparator {
         String primarySkill = null;
         double bestFill = -1.0;
         for (Map.Entry<String, Integer> entry : applicantSkills.entrySet()) {
+            Integer proficiencyObj = entry.getValue();
+            int proficiency = proficiencyObj != null ? proficiencyObj : 0;
             int gap = Math.max(0, 100 - teamCurrentSkills.getOrDefault(entry.getKey(), 0));
-            double fill = (gap / 100.0) * entry.getValue();
+            double fill = (gap / 100.0) * proficiency;
             if (fill > bestFill) {
                 bestFill = fill;
                 primarySkill = entry.getKey();

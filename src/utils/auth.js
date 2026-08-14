@@ -25,12 +25,17 @@ export function decodeJwtPayload(token) {
 
     const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
 
-    const jsonPayload = decodeURIComponent(
-      atob(padded)
-        .split("")
-        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-        .join("")
-    );
+    let jsonPayload;
+    try {
+      jsonPayload = decodeURIComponent(
+        atob(padded)
+          .split("")
+          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+          .join("")
+      );
+    } catch {
+      return null;
+    }
 
     return safeJsonParse(jsonPayload, {});
   } catch {

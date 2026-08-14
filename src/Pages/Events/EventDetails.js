@@ -4,7 +4,8 @@ import "./EventDetails.print.css";
 import CountdownTimer from "components/common/CountdownTimer";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Helmet } from "react-helmet-async";
-import { sanitizeMarkdown } from "utils/sanitizeHtml";
+import { sanitizeMarkdown, sanitizeHtml } from "utils/sanitizeHtml";
+import { isMarkdown, markdownToHtml } from "utils/descriptionMigration";
 import { toast } from "react-toastify";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import useKeyboardShortcuts from "hooks/useKeyboardShortcuts";
@@ -60,6 +61,7 @@ import {
   saveSessionNote,
   deleteSessionNote,
 } from "utils/sessionNotesUtils";
+import LostAndFoundBoard from "components/events/LostAndFoundBoard";
 
 const formatEventDate = (dateValue) => {
   if (!dateValue) return { short: "TBD", full: "Date TBD", relative: "" };
@@ -97,6 +99,31 @@ const formatEventDate = (dateValue) => {
 };
 
 const padNumber = (value) => String(value).padStart(2, "0");
+
+/**
+ * Prepare description content for rendering
+ * Handles both HTML and Markdown content automatically
+ * @param {string} description - Event description
+ * @returns {string} Sanitized HTML ready for rendering
+ */
+const prepareDescriptionContent = (description) => {
+  if (!description || typeof description !== "string") return "";
+  
+  const trimmed = description.trim();
+  
+  // Already HTML content
+  if (trimmed.startsWith("<") && (trimmed.includes("<p>") || trimmed.includes("<h2>") || trimmed.includes("<h3>") || trimmed.includes("<ul>") || trimmed.includes("<ol>"))) {
+    return sanitizeHtml(description, { profile: "RICH_TEXT" });
+  }
+  
+  // Markdown content - convert to HTML
+  if (isMarkdown(description)) {
+    return markdownToHtml(description);
+  }
+  
+  // Plain text - wrap in paragraph tags
+  return sanitizeHtml(`<p>${description}</p>`, { profile: "RICH_TEXT" });
+};
 
 const toCalendarDate = (dateValue) => {
   if (!dateValue) return "";
@@ -584,7 +611,7 @@ ${window.location.href}
               <div
                 className="mt-4 max-w-2xl text-gray-600 dark:text-gray-300 prose prose-indigo dark:prose-invert"
                 dangerouslySetInnerHTML={{
-                  __html: sanitizeMarkdown(event.description, marked.parse),
+                  __html: prepareDescriptionContent(event.description),
                 }}
               />
             </div>
@@ -929,7 +956,7 @@ ${window.location.href}
                 <div
                   className="mt-3 text-gray-700 dark:text-gray-300 text-sm leading-6 prose prose-indigo dark:prose-invert"
                   dangerouslySetInnerHTML={{
-                    __html: sanitizeMarkdown(event.description, marked.parse),
+                    __html: prepareDescriptionContent(event.description),
                   }}
                 />
               </div>
@@ -1030,10 +1057,15 @@ ${window.location.href}
             <EventRecommendations currentEventId={event.id} currentCategory={event.category || event.categories?.[0]} />
           </div>
 
+          {/* Lost and Found Board — Crowdsourced Lost & Found with image recognition (#11923) */}
+          <div className="mt-8">
+            <LostAndFoundBoard />
+          </div>
+
           {/* Similar Events — multi-signal recommendation section (#7754)
               Scores candidates by category, shared tags, type, mode, and difficulty
               so the user is surfaced events that genuinely match what they viewed. */}
-          <div className="mt-4">
+          <div className="mt-8">
             <SimilarEvents currentEvent={event} />
           </div>
         </div>

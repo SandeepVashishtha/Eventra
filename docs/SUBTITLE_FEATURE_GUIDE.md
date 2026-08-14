@@ -414,7 +414,7 @@ eventSource.onerror = () => {
 - `GET /api/v1/subtitles/event/{eventId}` - Get all subtitles for an event
 - `GET /api/v1/subtitles/event/{eventId}/active` - Get active subtitles for an event
 - `GET /api/v1/subtitles/event/{eventId}/recent` - Get recent subtitles (paginated)
-- `GET /api/v1/subtitles/session/{sessionId}` - Get subtitles by session
+- `GET /api/v1/subtitles/session/{sessionId}/subtitles` - Get subtitles by session
 - `GET /api/v1/subtitles/user/{userId}` - Get subtitles by user
 - `PUT /api/v1/subtitles/{id}` - Update a subtitle
 - `POST /api/v1/subtitles/{id}/finalize` - Mark a subtitle as final

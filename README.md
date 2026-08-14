@@ -133,6 +133,7 @@ Start here:
 - Dashboard and profile surfaces for users and organizers
 - Real-time and offline-friendly UX utilities
 - Feedback, recommendation, and community engagement modules
+- **Direct Google Sheets export** with OAuth 2.0 authentication for attendee and event data
 - Extensive utility and behavior test coverage
 
 ## Tech Stack

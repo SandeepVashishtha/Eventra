@@ -1,4 +1,6 @@
 
+import { getPathValue } from './get-path-value.js';
+
 /**
  * adds a path check helper.
  */

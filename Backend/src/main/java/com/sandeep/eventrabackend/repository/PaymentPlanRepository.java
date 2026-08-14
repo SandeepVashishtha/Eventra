@@ -22,8 +22,6 @@ public interface PaymentPlanRepository extends JpaRepository<PaymentPlan, Long> 
 
     Optional<PaymentPlan> findByStripeSetupIntentId(String stripeSetupIntentId);
 
-    Optional<PaymentPlan> findByStripeSubscriptionId(String stripeSubscriptionId);
-
     @Query("SELECT pp FROM PaymentPlan pp WHERE pp.registration.event.id = :eventId AND pp.status = 'ACTIVE'")
     List<PaymentPlan> findActivePaymentPlansByEventId(@Param("eventId") Long eventId);
 

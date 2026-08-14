@@ -4,7 +4,10 @@ import { useAuth } from '../../context/AuthContext';
 import './Auth.css';
 
 const GOOGLE_SCRIPT_SRC = 'https://accounts.google.com/gsi/client';
-const GOOGLE_CLIENT_ID = process.env.VITE_GOOGLE_CLIENT_ID || process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
+const GOOGLE_CLIENT_ID =
+  import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+  (typeof process !== 'undefined' && process.env.REACT_APP_GOOGLE_CLIENT_ID) ||
+  '';
 
 const loadGoogleScript = () => {
   if (typeof window === 'undefined') return Promise.reject(new Error('Browser required'));

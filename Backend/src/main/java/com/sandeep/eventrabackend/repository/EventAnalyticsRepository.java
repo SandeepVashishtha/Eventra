@@ -8,18 +8,25 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 
 @Repository
 public interface EventAnalyticsRepository extends JpaRepository<Event, Long> {
 
+    // Scoped variants accept a nullable collection of event IDs: null = global,
+    // non-null = restrict to those events (e.g. a caller's accessible events).
+
+    @Query("SELECT COUNT(e) FROM Event e WHERE (:eventIds IS NULL OR e.id IN :eventIds)")
+    long countEvents(@Param("eventIds") Collection<Long> eventIds);
+
     // "Active" = public, non-cancelled event whose date is in the future
-    @Query("SELECT COUNT(e) FROM Event e WHERE e.eventDate > :now AND e.isPublic = TRUE AND (e.status IS NULL OR e.status <> 'CANCELLED')")
-    long countActiveEvents(@Param("now") LocalDateTime now);
+    @Query("SELECT COUNT(e) FROM Event e WHERE e.eventDate > :now AND e.isPublic = TRUE AND (e.status IS NULL OR e.status <> 'CANCELLED') AND (:eventIds IS NULL OR e.id IN :eventIds)")
+    long countActiveEvents(@Param("now") LocalDateTime now, @Param("eventIds") Collection<Long> eventIds);
 
     // "Completed" = public, non-cancelled event whose date is in the past
-    @Query("SELECT COUNT(e) FROM Event e WHERE e.eventDate <= :now AND e.isPublic = TRUE AND (e.status IS NULL OR e.status <> 'CANCELLED')")
-    long countCompletedEvents(@Param("now") LocalDateTime now);
+    @Query("SELECT COUNT(e) FROM Event e WHERE e.eventDate <= :now AND e.isPublic = TRUE AND (e.status IS NULL OR e.status <> 'CANCELLED') AND (:eventIds IS NULL OR e.id IN :eventIds)")
+    long countCompletedEvents(@Param("now") LocalDateTime now, @Param("eventIds") Collection<Long> eventIds);
 
     // Uses registeredCount (denormalised counter already on Event — free query!)
     // Returns: [id, title, registeredCount, capacity, utilization]
@@ -30,31 +37,34 @@ public interface EventAnalyticsRepository extends JpaRepository<Event, Long> {
                e.capacity,
                (e.registeredCount * 1.0 / NULLIF(e.capacity, 0))
         FROM Event e
+        WHERE (:eventIds IS NULL OR e.id IN :eventIds)
         ORDER BY e.registeredCount DESC
         """)
-    List<Object[]> findMostPopularEvents(Pageable pageable);
+    List<Object[]> findMostPopularEvents(@Param("eventIds") Collection<Long> eventIds, Pageable pageable);
 
     // Per-category registration distribution. Returns: [category, count]
     @Query("""
         SELECT e.category, COUNT(e)
         FROM Event e
         WHERE e.category IS NOT NULL AND e.category <> ''
+          AND (:eventIds IS NULL OR e.id IN :eventIds)
         GROUP BY e.category
         ORDER BY COUNT(e) DESC
         """)
-    List<Object[]> findCategoryBreakdown(Pageable pageable);
+    List<Object[]> findCategoryBreakdown(@Param("eventIds") Collection<Long> eventIds, Pageable pageable);
 
     // Average utilization across events that have a capacity set
     @Query("""
         SELECT AVG(e.registeredCount * 1.0 / NULLIF(e.capacity, 0))
         FROM Event e
         WHERE e.capacity IS NOT NULL AND e.capacity > 0
+          AND (:eventIds IS NULL OR e.id IN :eventIds)
         """)
-    Double findAverageCapacityUtilization();
+    Double findAverageCapacityUtilization(@Param("eventIds") Collection<Long> eventIds);
 
     // Total unique participants via confirmed registrations
-    @Query("SELECT COUNT(DISTINCT r.user.id) FROM EventRegistration r WHERE r.status = 'CONFIRMED'")
-    long countUniqueParticipants();
+    @Query("SELECT COUNT(DISTINCT r.user.id) FROM EventRegistration r WHERE r.status = 'CONFIRMED' AND (:eventIds IS NULL OR r.event.id IN :eventIds)")
+    long countUniqueParticipants(@Param("eventIds") Collection<Long> eventIds);
 
     // Events a user owns or manages (owner or member of the event team)
     @Query("""

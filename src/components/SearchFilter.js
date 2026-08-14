@@ -1,20 +1,17 @@
+import useSearch from "hooks/useSearch";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import useDebounce from "../hooks/useDebounce";
 import EmptyState from "./common/EmptyState";
 import "./styles/components.css";
 
 const SearchFilter = () => {
-  const getInitialSearchParam = () => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      return params.get("search") || "";
-    }
-    return "";
-  };
-
-  const [searchTerm, setSearchTerm] = useState(getInitialSearchParam);
-  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  // Fix: useSearch replaces manual URL read + useDebounce + manual URL sync
+  // Adds sanitization, search history, and proper React Router URL sync.
+  const { query: searchTerm, debouncedQuery: debouncedSearchTerm, setQuery: setSearchTerm } = useSearch({
+    urlParam: "search",
+    debounceMs: 300,
+    sanitize: true,
+  });
 
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedLocation, setSelectedLocation] = useState("all");
@@ -46,23 +43,7 @@ const SearchFilter = () => {
     { value: "tokyo", label: "Tokyo" },
   ];
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-
-      if (debouncedSearchTerm) {
-        params.set("search", debouncedSearchTerm);
-      } else {
-        params.delete("search");
-      }
-
-      const newUrl =
-        window.location.pathname +
-        (params.toString() ? `?${params.toString()}` : "");
-
-      window.history.replaceState(null, "", newUrl);
-    }
-  }, [debouncedSearchTerm]);
+  // Fix: URL sync now handled by useSearch hook above
 
   useEffect(() => {
     const handlePopState = () => {

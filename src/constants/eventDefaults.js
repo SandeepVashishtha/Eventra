@@ -88,6 +88,8 @@ export const getInitialFormData = () => ({
   ],
   banner: null,
   bannerPreview: null,
+  gallery: [],
+  galleryPreviews: [],
 });
 
 // Backward-compatible factory - each call returns a fresh copy

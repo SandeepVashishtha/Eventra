@@ -21,6 +21,19 @@ const DANGEROUS_EXTENSIONS = [
 const DEFAULT_MAX_SIZE_MB = 5;
 
 /**
+ * Extract a normalized lowercase extension (with a leading dot) from a filename.
+ * Returns "" when the filename has no extension, so extension checks can be
+ * skipped instead of treating the whole filename as an extension.
+ * @param {string} filename
+ * @returns {string}
+ */
+const getFileExtension = (filename) => {
+  const cleanName = filename.trim().replace(/\.+$/, "");
+  if (!cleanName.includes(".")) return "";
+  return "." + cleanName.split(".").pop().toLowerCase();
+};
+
+/**
  * Magic byte signatures for file type verification.
  * Each entry maps a MIME type to its expected byte pattern.
  */
@@ -115,17 +128,16 @@ export async function validateImageFile(file, options = {}) {
   }
 
   // Check file extension
-  const cleanName = file.name.trim().replace(/\.+$/, "");
-  const ext = "." + cleanName.split(".").pop().toLowerCase();
+  const ext = getFileExtension(file.name);
 
-  if (DANGEROUS_EXTENSIONS.includes(ext)) {
+  if (ext && DANGEROUS_EXTENSIONS.includes(ext)) {
     return {
       valid: false,
       error: `File extension "${ext}" is not allowed for security reasons`,
     };
   }
 
-  if (!allowedExtensions.includes(ext)) {
+  if (ext && !allowedExtensions.includes(ext)) {
     return {
       valid: false,
       error: `File extension "${ext}" is not a recognized or allowed image format`,
@@ -164,17 +176,16 @@ export function validateFile(file, options = {}) {
     return { valid: false, error: "File is empty" };
   }
 
-  const fileName = file.name.toLowerCase();
-  const ext = "." + fileName.split(".").pop();
+  const ext = getFileExtension(file.name);
 
-  if (DANGEROUS_EXTENSIONS.includes(ext)) {
+  if (ext && DANGEROUS_EXTENSIONS.includes(ext)) {
     return {
       valid: false,
       error: `File extension "${ext}" is blocked for security`,
     };
   }
 
-  if (options.allowedExtensions && !options.allowedExtensions.includes(ext)) {
+  if (ext && options.allowedExtensions && !options.allowedExtensions.includes(ext)) {
     return {
       valid: false,
       error: `Extension "${ext}" not allowed. Accepted: ${options.allowedExtensions.join(", ")}`,

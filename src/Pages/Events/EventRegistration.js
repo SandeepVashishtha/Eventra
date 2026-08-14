@@ -527,8 +527,8 @@ const EventRegistration = () => {
             const records = await getGlobalWaitlist(user.id);
             const onWaitlist = records.some(
               (r) =>
-                r.userId === user.id &&
-                r.eventId === parseInt(eventId, 10) &&
+                String(r.userId) === String(user.id) &&
+                String(r.eventId) === String(eventId) &&
                 r.status === "waiting"
             );
             if (onWaitlist) {

@@ -10,7 +10,9 @@
  * are cached to prevent privacy leaks and stale data exposure.
  */
 const CACHE_NAME = 'eventra-cache-v4';
+const LOW_BANDWIDTH_CACHE_NAME = 'eventra-low-bw-cache-v1';
 const BACKGROUND_SYNC_TAG = 'eventra-offline-queue-sync';
+const LOW_BANDWIDTH_TTL = 24 * 60 * 60 * 1000; // 24 hours cache TTL for low bandwidth mode
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -170,6 +172,22 @@ const log = (...args) => {
     console.log(...args);
   }
 };
+
+// Track low bandwidth mode state
+let isLowBandwidthModeEnabled = false;
+
+// Listen for low bandwidth mode changes from client
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'LOW_BANDWIDTH_MODE_CHANGED') {
+    isLowBandwidthModeEnabled = event.data.enabled;
+    log(`[Service Worker] Low Bandwidth Mode ${isLowBandwidthModeEnabled ? 'ENABLED' : 'DISABLED'}`);
+    
+    // Clear low bandwidth cache when mode is disabled
+    if (!isLowBandwidthModeEnabled) {
+      caches.delete(LOW_BANDWIDTH_CACHE_NAME).catch(() => {});
+    }
+  }
+});
 
 const addAllSafely = async (cache, assets) => {
   const uniqueAssets = [...new Set(assets)];
@@ -541,6 +559,78 @@ function handleNavigateFetch(event) {
 }
 
 /**
+ * Handle aggressive caching for JSON payloads in Low Bandwidth Mode.
+ *
+ * When low bandwidth mode is enabled, JSON responses are cached aggressively
+ * with a 24-hour TTL. Only JSON content-type responses are cached.
+ *
+ * @param {FetchEvent} event - The fetch event
+ * @param {URL} requestUrl - The parsed request URL
+ */
+function handleLowBandwidthJsonFetch(event, requestUrl) {
+  event.respondWith(
+    caches.open(LOW_BANDWIDTH_CACHE_NAME).then((cache) => {
+      return cache.match(event.request).then((cachedResponse) => {
+        const now = Date.now();
+        
+        if (cachedResponse) {
+          // Check if cached response is still fresh
+          const cachedAt = cachedResponse.headers.get('x-low-bw-cached-at');
+          const age = cachedAt ? now - parseInt(cachedAt, 10) : Infinity;
+          
+          if (age < LOW_BANDWIDTH_TTL) {
+            log(`[Service Worker] Serving cached JSON from low bandwidth cache: ${requestUrl.pathname}`);
+            return cachedResponse;
+          }
+          
+          // Stale: serve cached but fetch fresh in background
+          log(`[Service Worker] Serving stale JSON, revalidating: ${requestUrl.pathname}`);
+          
+          fetch(event.request.clone())
+            .then((response) => {
+              if (response.status === 200 && response.headers.get('content-type')?.includes('application/json')) {
+                const responseCopy = response.clone();
+                const headers = new Headers(responseCopy.headers);
+                headers.set('x-low-bw-cached-at', now.toString());
+                
+                const newResponse = new Response(responseCopy.body, {
+                  status: responseCopy.status,
+                  statusText: responseCopy.statusText,
+                  headers: headers,
+                });
+                
+                cache.put(event.request, newResponse).catch(() => {});
+              }
+            })
+            .catch(() => {});
+          
+          return cachedResponse;
+        }
+        
+        // Cache miss: fetch from network
+        return fetch(event.request).then((response) => {
+          if (response.status === 200 && response.headers.get('content-type')?.includes('application/json')) {
+            const responseCopy = response.clone();
+            const headers = new Headers(responseCopy.headers);
+            headers.set('x-low-bw-cached-at', now.toString());
+            
+            const newResponse = new Response(responseCopy.body, {
+              status: responseCopy.status,
+              statusText: responseCopy.statusText,
+              headers: headers,
+            });
+            
+            cache.put(event.request, newResponse).catch(() => {});
+            return newResponse;
+          }
+          return response;
+        });
+      });
+    })
+  );
+}
+
+/**
  * Handle caching for static assets.
  *
  * For hashed assets (e.g., in /assets/), we use a strict Cache-First strategy
@@ -640,12 +730,24 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3. SECURITY: Network-First strategy for API routes with sensitive data filtering
+  // 3. LOW BANDWIDTH MODE: Aggressive JSON caching when enabled
+  if (isLowBandwidthModeEnabled && (
+    requestUrl.pathname.startsWith('/api/') || 
+    requestUrl.pathname.includes('.json')
+  )) {
+    // Check if this is likely a JSON response
+    if (requestUrl.pathname.startsWith('/api/') || requestUrl.pathname.endsWith('.json')) {
+      handleLowBandwidthJsonFetch(event, requestUrl);
+      return;
+    }
+  }
+
+  // 4. SECURITY: Network-First strategy for API routes with sensitive data filtering
   if (requestUrl.pathname.startsWith('/api/')) {
     handleApiFetch(event, requestUrl);
     return;
   }
 
-  // 4. Cache-First or Stale-While-Revalidate strategy for static assets
+  // 5. Cache-First or Stale-While-Revalidate strategy for static assets
   handleStaticFetch(event, requestUrl);
 });

@@ -1,4 +1,6 @@
 
+import { countFrequency } from './count-frequency.js';
+
 /**
  * adds a mode helper.
  */

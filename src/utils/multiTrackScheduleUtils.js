@@ -302,6 +302,7 @@ export const getAvailableTimeSlots = (
 export const calculateTrackUtilization = (sessions, tracks, eventStart, eventEnd) => {
   const trackUtilization = {};
   const totalEventMinutes = (new Date(eventEnd) - new Date(eventStart)) / (1000 * 60);
+  const safeTotalEventMinutes = Number.isFinite(totalEventMinutes) && totalEventMinutes > 0 ? totalEventMinutes : 0;
   let totalUsedMinutes = 0;
 
   tracks.forEach(track => {
@@ -310,21 +311,27 @@ export const calculateTrackUtilization = (sessions, tracks, eventStart, eventEnd
 
     trackSessions.forEach(session => {
       const duration = (new Date(session.endTime) - new Date(session.startTime)) / (1000 * 60);
-      usedMinutes += duration;
+      if (Number.isFinite(duration) && duration > 0) {
+        usedMinutes += duration;
+      }
     });
+
+    const utilization = safeTotalEventMinutes > 0 ? (usedMinutes / safeTotalEventMinutes) * 100 : 0;
 
     trackUtilization[track.id] = {
       trackName: track.name,
       usedMinutes,
-      totalMinutes: totalEventMinutes,
-      utilization: ((usedMinutes / totalEventMinutes) * 100).toFixed(2) + '%',
+      totalMinutes: safeTotalEventMinutes,
+      utilization: utilization.toFixed(2) + '%',
       sessionCount: trackSessions.length,
     };
 
     totalUsedMinutes += usedMinutes;
   });
 
-  const ratio = totalUsedMinutes / (totalEventMinutes * tracks.length);
+  const denominator = safeTotalEventMinutes * tracks.length;
+  const ratio = denominator > 0 ? totalUsedMinutes / denominator : 0;
+
   return {
     trackUtilization,
     overallUtilization: (ratio * 100).toFixed(2) + '%',

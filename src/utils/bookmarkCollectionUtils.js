@@ -5,11 +5,18 @@ export const createCollection = (
   collections = [],
   name
 ) => {
+  if (typeof name !== "string" || !name.trim()) {
+    return collections;
+  }
+  const cleanName = name.trim();
+  if (collections.some((c) => c.name.toLowerCase() === cleanName.toLowerCase())) {
+    return collections;
+  }
   return [
     ...collections,
     {
       id: Date.now().toString(),
-      name,
+      name: cleanName,
       events: [],
       createdAt: new Date().toISOString(),
     },

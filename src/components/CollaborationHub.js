@@ -1,3 +1,4 @@
+import useSearch from "hooks/useSearch";
 import StatusBadge from "./common/StatusBadge";
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -6,6 +7,7 @@ import useDebounce from '../hooks/useDebounce.js';
 import { toast } from 'react-toastify';
 import './common/common-components.css';
 import CharacterCounter from "./common/CharacterCounter";
+import RichTextEditor from "./common/RichTextEditor";
 import { sanitizeInputText } from "../utils/inputSanitization";
 import EventMaterials from "./common/EventMaterials";
 import { Plus, Search, Check, X, Briefcase as BriefcaseIcon, DollarSign, Calendar, Users, Send, MessageCircle } from 'lucide-react';
@@ -39,8 +41,8 @@ const collaborationRequestSchema = z.object({
 const CollaborationHub = () => {
   const prefersReducedMotion = useReducedMotion();
   const [activeSection, setActiveSection] = useState('opportunities');
-  const [searchQuery, setSearchQuery] = useState('');
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  // Fix: useSearch replaces raw useDebounce — adds sanitization and URL sync
+  const { query: searchQuery, debouncedQuery: debouncedSearchQuery, setQuery: setSearchQuery } = useSearch({ syncUrl: false, debounceMs: 300 });
 
   const mockMaterials = [
     { id: 'slides-1', title: 'Tech Summit 2025 Keynote Presentation', type: 'ppt', size: '14.2 MB', url: '#' },
@@ -657,21 +659,23 @@ const CollaborationHub = () => {
               <div className="form-group flex flex-col gap-2">
                 <label htmlFor="collab-desc" className="text-xs font-bold text-slate-700 dark:text-slate-300">Description *</label>
                 <div className="space-y-2">
-                  <textarea
+                  <RichTextEditor
                     id="collab-desc"
                     name="description"
                     value={newRequest.description}
-                    onChange={handleRequestChange}
-                    rows="4"
+                    onChange={(e) => {
+                      const newRequestData = { ...newRequest, [e.target.name]: e.target.value };
+                      setNewRequest(newRequestData);
+                    }}
                     maxLength={300}
                     placeholder="Describe partnership goals / Sponsorship details / Collaboration ideas..."
-                    className={`w-full rounded-xl border bg-white dark:bg-gray-900 px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition ${
+                    className={`w-full rounded-xl bg-white dark:bg-gray-900 text-gray-900 dark:text-white ${
                       requestErrors.description ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'
                     }`}
                     aria-required="true"
                     aria-invalid={requestErrors.description ? "true" : "false"}
                     aria-describedby={requestErrors.description ? "desc-error" : "desc-hint"}
-                  ></textarea>
+                  />
                   <div className="flex justify-end">
                     <CharacterCounter
                       current={newRequest.description.length}

@@ -269,6 +269,21 @@ const DEBOUNCE_DELAY = 1000;
  *                                        `errors.banner` on failure. Signature:
  *                                        `(e: ChangeEvent<HTMLInputElement>) =>
  *                                        void`.
+ *
+ * // ── Image Gallery ──────────────────────────────────────────────────────────
+ *
+ * @returns {Function} handleGalleryChange - Updates the gallery array with a new
+ *                                        array of File objects. Signature:
+ *                                        `(newGallery: File[]) => void`.
+ * @returns {Function} handleGalleryPreviewsChange - Updates the galleryPreviews
+ *                                        array with a new array of preview URLs.
+ *                                        Signature: `(newPreviews: string[]) => void`.
+ * @returns {Function} addImagesToGallery - Adds multiple image files to the
+ *                                        gallery. Validates MIME type and size.
+ *                                        Signature: `(files: FileList | File[]) => void`.
+ * @returns {Function} removeImageFromGallery - Removes an image from the
+ *                                        gallery by index and cleans up object URLs.
+ *                                        Signature: `(index: number) => void`.
  */
 export const useEventForm = () => {
   const { user } = useAuth();
@@ -287,7 +302,7 @@ export const useEventForm = () => {
     dismissRestoredBanner,
   } = useFormDraft(scopedDraftKey, getInitialFormData, {
     debounceMs: DEBOUNCE_DELAY,
-    exclude: ["banner", "bannerPreview"],
+    exclude: ["banner", "bannerPreview", "gallery", "galleryPreviews"],
   });
 
   // 📊 State Management
@@ -305,10 +320,17 @@ export const useEventForm = () => {
 
   // Sync category field with categories for backward compatibility
   useEffect(() => {
-    if (formData.categories && formData.categories.length > 0 && formData.category !== formData.categories[0]) {
+    if (formData.categories && formData.categories.length > 0) {
+      if (formData.category !== formData.categories[0]) {
+        setFormData(prev => ({
+          ...prev,
+          category: prev.categories[0]
+        }));
+      }
+    } else if (formData.category !== "") {
       setFormData(prev => ({
         ...prev,
-        category: prev.categories[0]
+        category: ""
       }));
     }
   }, [formData.categories, formData.category, setFormData]);
@@ -331,7 +353,7 @@ export const useEventForm = () => {
       ...eventData,
       category: eventData.categories && eventData.categories.length > 0 
         ? eventData.categories[0] 
-        : eventData.category || "",
+        : "",
       categories: eventData.categories || [],
       description: sanitizeHtml(eventData.description || ""),
     };
@@ -670,7 +692,7 @@ export const useEventForm = () => {
   const hasUnsavedChanges = useMemo(() => {
     const baseline = initialFormData();
     return Object.entries(formData).some(([key, value]) => {
-      if (["banner", "bannerPreview"].includes(key)) return false;
+      if (["banner", "bannerPreview", "gallery", "galleryPreviews"].includes(key)) return false;
       if (typeof value === "string") return value.trim() !== (baseline[key] || "");
       if (Array.isArray(value)) return value.length > 0;
       if (typeof value === "object" && value !== null) {
@@ -705,6 +727,63 @@ export const useEventForm = () => {
       return { ...prev, banner: file, bannerPreview: objectUrl };
     });
     setErrors((prev) => ({ ...prev, banner: "" }));
+  }, [setFormData]);
+
+  // 🖼️ Gallery handlers
+  const handleGalleryChange = useCallback((newGallery) => {
+    setFormData((prev) => ({ ...prev, gallery: newGallery }));
+  }, [setFormData]);
+
+  const handleGalleryPreviewsChange = useCallback((newPreviews) => {
+    setFormData((prev) => ({ ...prev, galleryPreviews: newPreviews }));
+  }, [setFormData]);
+
+  // Add images to gallery from files
+  const addImagesToGallery = useCallback((files) => {
+    if (!files || files.length === 0) return;
+
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
+    const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+
+    Promise.all(Array.from(files).map(file => {
+      return new Promise(resolve => {
+        if (!allowedTypes.includes(file.type) || file.size > MAX_SIZE) {
+          resolve(null);
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = (e) => resolve({ file, preview: e.target.result });
+        reader.readAsDataURL(file);
+      });
+    })).then(results => {
+      const validResults = results.filter(r => r !== null);
+      if (validResults.length === 0) return;
+
+      setFormData((prev) => ({
+        ...prev,
+        gallery: [...prev.gallery, ...validResults.map(r => r.file)],
+        galleryPreviews: [...prev.galleryPreviews, ...validResults.map(r => r.preview)]
+      }));
+    });
+  }, [setFormData]);
+
+  // Remove image from gallery by index
+  const removeImageFromGallery = useCallback((index) => {
+    setFormData((prev) => {
+      const newGallery = [...prev.gallery];
+      const newPreviews = [...prev.galleryPreviews];
+      
+      // Cleanup object URL if needed
+      const preview = prev.galleryPreviews[index];
+      if (preview && preview.startsWith("blob:")) {
+        URL.revokeObjectURL(preview);
+      }
+      
+      newGallery.splice(index, 1);
+      newPreviews.splice(index, 1);
+      
+      return { ...prev, gallery: newGallery, galleryPreviews: newPreviews };
+    });
   }, [setFormData]);
 
   // Browser guard for unsaved changes
@@ -786,5 +865,10 @@ export const useEventForm = () => {
     handleDiscardDraft,
     hasUnsavedChanges,
     handleImageUpload,
+    // Gallery handlers
+    handleGalleryChange,
+    handleGalleryPreviewsChange,
+    addImagesToGallery,
+    removeImageFromGallery,
   };
 };
