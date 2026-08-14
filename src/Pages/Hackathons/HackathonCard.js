@@ -19,7 +19,7 @@ import { generateEventSharingData } from "utils/shareUtils";
 const CountdownTimer = ({ targetDate, label }) => {
   const timeLeft = useCountdown(targetDate);
 
-  if (!timeLeft) {
+  if (timeLeft.ended) {
     return (
       <span className="text-xs font-semibold text-red-500 dark:text-red-400">Deadline passed</span>
     );
@@ -48,7 +48,7 @@ const CountdownTimer = ({ targetDate, label }) => {
 const UrgencyBadge = ({ startDate, endDate, status }) => {
   const timeLeft = useCountdown(status === "upcoming" ? startDate : endDate);
 
-  if (status === "completed" || !timeLeft || timeLeft.days >= 3) {
+  if (status === "completed" || timeLeft.ended || timeLeft.days >= 3) {
     return null;
   }
 
