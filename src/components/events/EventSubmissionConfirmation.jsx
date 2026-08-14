@@ -6,6 +6,7 @@ import {
   Hash,
   Users,
 } from "lucide-react";
+import { useRef } from "react";
 
 const EventSubmissionConfirmation = ({
   submission = {
@@ -35,6 +36,12 @@ const EventSubmissionConfirmation = ({
   const isOnTime =
     submission.deadlineStatus.toLowerCase() === "on time";
 
+  const detailsRef = useRef(null);
+
+  const scrollToDetails = () => {
+    detailsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
     <section className="mx-auto w-full max-w-3xl rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8 dark:border-slate-800 dark:bg-slate-950">
       {/* Success Header */}
@@ -58,7 +65,7 @@ const EventSubmissionConfirmation = ({
 
       {/* Submission ID */}
       <div className="mt-8 rounded-2xl border border-indigo-100 bg-indigo-50 p-4 dark:border-indigo-900/40 dark:bg-indigo-900/10">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3" ref={detailsRef}>
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-indigo-600 shadow-sm dark:bg-slate-900 dark:text-indigo-400">
             <Hash size={18} />
           </div>
@@ -186,9 +193,7 @@ const EventSubmissionConfirmation = ({
       <div className="mt-8 flex flex-col gap-3 sm:flex-row">
         <button
           type="button"
-          onClick={() =>
-            console.log("View submission:", submission.id)
-          }
+          onClick={scrollToDetails}
           className="flex-1 rounded-xl bg-indigo-600 px-5 py-3 text-xs font-bold text-white transition hover:bg-indigo-700"
         >
           View Submitted Information
