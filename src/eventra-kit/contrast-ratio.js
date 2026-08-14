@@ -3,6 +3,8 @@ import { hexToRgb } from './hex-to-rgb.js';
 /**
  * adds a contrast helper.
  */
+import { hexToRgb } from './hex-to-rgb.js';
+
 export function contrastRatio(first, second) {
   const lum = (hex) => {
     const { r, g, b } = hexToRgb(hex);
