@@ -2,7 +2,7 @@ import React from 'react';
 import { render, waitForElementToBeRemoved, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter, MemoryRouter, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from '../context/AuthContext';
+import { AuthProvider } from './context/AuthContext';
 
 /**
  * ============================================================================
