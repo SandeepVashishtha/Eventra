@@ -4,6 +4,9 @@ import { colorToHex } from './color-to-hex.js';
 /**
  * adds a color blend helper.
  */
+import { hexToRgb } from './hex-to-rgb.js';
+import { colorToHex } from './color-to-hex.js';
+
 export function blendColors(first, second, t = 0.5) {
   const a = hexToRgb(first);
   const b = hexToRgb(second);
