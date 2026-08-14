@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import * as SentenceCase from '../sentence-case.js';
+import { sentenceCase } from '../sentence-case.js';
 
 describe('sentence-case', () => {
-  it('exports a module', () => {
-    expect(SentenceCase).toBeDefined();
+  it('capitalizes the first letter of every sentence', () => {
+    expect(sentenceCase('hello world. foo')).toBe('Hello world. Foo');
+    expect(sentenceCase('HELLO!')).toBe('Hello!');
   });
 });
-
