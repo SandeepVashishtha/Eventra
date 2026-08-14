@@ -31,7 +31,7 @@ Because the future is not something we wait for.
 The future is something we create.
 Thank you.`;
 
-  const scriptWords = script.split(/\\s+/);
+  const scriptWords = script.split(/\s+/);
 
   useEffect(() => {
     let loop;
