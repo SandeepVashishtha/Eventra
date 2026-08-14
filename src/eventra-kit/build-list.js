@@ -1,7 +1,7 @@
 /**
  * adds a build-list helper.
  */
-export function buildList(value) {
-  return value.split(' ').filter(Boolean).length;
+export function buildList(text, separator = ' ') {
+  return String(text).split(separator);
 }
 
