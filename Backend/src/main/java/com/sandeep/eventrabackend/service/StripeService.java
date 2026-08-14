@@ -266,68 +266,63 @@ public class StripeService {
             return;
         }
         
-        try {
-            Long regId = Long.parseLong(registrationId);
-            Integer installmentNumber = installmentNumberStr != null ? Integer.parseInt(installmentNumberStr) : 1;
-            Integer totalInstallments = totalInstallmentsStr != null ? Integer.parseInt(totalInstallmentsStr) : 1;
-            
-            // Find the payment in database
-            Optional<Payment> paymentOptional = paymentRepository.findByStripePaymentIntentId(paymentIntentId);
+        Long regId = Long.parseLong(registrationId);
+        Integer installmentNumber = installmentNumberStr != null ? Integer.parseInt(installmentNumberStr) : 1;
+        Integer totalInstallments = totalInstallmentsStr != null ? Integer.parseInt(totalInstallmentsStr) : 1;
+        
+        // Find the payment in database
+        Optional<Payment> paymentOptional = paymentRepository.findByStripePaymentIntentId(paymentIntentId);
 
-            // Idempotency: skip if this payment intent was already completed
-            if (paymentOptional.isPresent() && "COMPLETED".equals(paymentOptional.get().getStatus())) {
-                return;
-            }
-            
-            Payment payment;
-            if (paymentOptional.isPresent()) {
-                payment = paymentOptional.get();
-            } else {
-                // Create new payment record
-                payment = new Payment();
-                payment.setStripePaymentIntentId(paymentIntentId);
-                payment.setTransactionId(paymentIntent.getLatestChargeObject() != null ?
-                        paymentIntent.getLatestChargeObject().getId() : null);
-                payment.setAmount(new BigDecimal(paymentIntent.getAmount()).divide(new BigDecimal(100)));
-                payment.setCurrency(paymentIntent.getCurrency().toUpperCase());
-                payment.setPaymentMethod(paymentIntent.getPaymentMethod());
-                payment.setPaymentProvider("STRIPE");
-                payment.setInstallmentNumber(installmentNumber);
-                payment.setTotalInstallments(totalInstallments);
+        // Idempotency: skip if this payment intent was already completed
+        if (paymentOptional.isPresent() && "COMPLETED".equals(paymentOptional.get().getStatus())) {
+            return;
+        }
+        
+        Payment payment;
+        if (paymentOptional.isPresent()) {
+            payment = paymentOptional.get();
+        } else {
+            // Create new payment record
+            payment = new Payment();
+            payment.setStripePaymentIntentId(paymentIntentId);
+            payment.setTransactionId(paymentIntent.getLatestChargeObject() != null ?
+                    paymentIntent.getLatestChargeObject().getId() : null);
+            payment.setAmount(new BigDecimal(paymentIntent.getAmount()).divide(new BigDecimal(100)));
+            payment.setCurrency(paymentIntent.getCurrency().toUpperCase());
+            payment.setPaymentMethod(paymentIntent.getPaymentMethod());
+            payment.setPaymentProvider("STRIPE");
+            payment.setInstallmentNumber(installmentNumber);
+            payment.setTotalInstallments(totalInstallments);
 
-                // Load the MANAGED EventRegistration to avoid a detached entity / broken FK
-                EventRegistration registration = eventRegistrationRepository.findById(regId)
-                        .orElseThrow(() -> new IllegalArgumentException(
-                                "EventRegistration not found for id: " + regId));
-                payment.setRegistration(registration);
+            // Load the MANAGED EventRegistration to avoid a detached entity / broken FK
+            EventRegistration registration = eventRegistrationRepository.findById(regId)
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "EventRegistration not found for id: " + regId));
+            payment.setRegistration(registration);
+        }
+        
+        // Update payment status
+        payment.setStatus("COMPLETED");
+        payment.setPaidAt(LocalDateTime.now());
+        paymentRepository.save(payment);
+        
+        // Check if this is the last installment
+        if (installmentNumber.equals(totalInstallments)) {
+            // Mark payment plan as completed
+            Optional<PaymentPlan> paymentPlanOptional = paymentPlanRepository.findByRegistration_Id(regId);
+            if (paymentPlanOptional.isPresent()) {
+                PaymentPlan paymentPlan = paymentPlanOptional.get();
+                paymentPlan.setStatus("COMPLETED");
+                paymentPlan.setCompletedAt(LocalDateTime.now());
+                paymentPlanRepository.save(paymentPlan);
+                
+                // Update registration payment status and persist it within the same transaction
+                EventRegistration registration = paymentPlan.getRegistration();
+                registration.setPaymentStatus("COMPLETED");
+                registration.setQrActivated(true);
+                registration.setQrActivationDate(LocalDateTime.now());
+                eventRegistrationRepository.save(registration);
             }
-            
-            // Update payment status
-            payment.setStatus("COMPLETED");
-            payment.setPaidAt(LocalDateTime.now());
-            paymentRepository.save(payment);
-            
-            // Check if this is the last installment
-            if (installmentNumber.equals(totalInstallments)) {
-                // Mark payment plan as completed
-                Optional<PaymentPlan> paymentPlanOptional = paymentPlanRepository.findByRegistration_Id(regId);
-                if (paymentPlanOptional.isPresent()) {
-                    PaymentPlan paymentPlan = paymentPlanOptional.get();
-                    paymentPlan.setStatus("COMPLETED");
-                    paymentPlan.setCompletedAt(LocalDateTime.now());
-                    paymentPlanRepository.save(paymentPlan);
-                    
-                    // Update registration payment status and persist it within the same transaction
-                    EventRegistration registration = paymentPlan.getRegistration();
-                    registration.setPaymentStatus("COMPLETED");
-                    registration.setQrActivated(true);
-                    registration.setQrActivationDate(LocalDateTime.now());
-                    eventRegistrationRepository.save(registration);
-                }
-            }
-            
-        } catch (Exception e) {
-            System.err.println("Error handling payment intent succeeded: " + e.getMessage());
         }
     }
 
@@ -341,39 +336,34 @@ public class StripeService {
             return;
         }
         
-        try {
-            Long regId = Long.parseLong(registrationId);
-            
-            Optional<Payment> paymentOptional = paymentRepository.findByStripePaymentIntentId(paymentIntentId);
+        Long regId = Long.parseLong(registrationId);
+        
+        Optional<Payment> paymentOptional = paymentRepository.findByStripePaymentIntentId(paymentIntentId);
 
-            // Idempotency: skip if this payment intent was already marked failed
-            if (paymentOptional.isPresent() && "FAILED".equals(paymentOptional.get().getStatus())) {
-                return;
-            }
-            
-            Payment payment;
-            if (paymentOptional.isPresent()) {
-                payment = paymentOptional.get();
-            } else {
-                // Create a failed payment record linked to the MANAGED registration
-                payment = new Payment();
-                payment.setStripePaymentIntentId(paymentIntentId);
-                payment.setPaymentProvider("STRIPE");
-                EventRegistration registration = eventRegistrationRepository.findById(regId)
-                        .orElseThrow(() -> new IllegalArgumentException(
-                                "EventRegistration not found for id: " + regId));
-                payment.setRegistration(registration);
-            }
-            
-            payment.setStatus("FAILED");
-            payment.setFailedAt(LocalDateTime.now());
-            payment.setFailureReason(paymentIntent.getLastPaymentError() != null ? 
-                    paymentIntent.getLastPaymentError().getMessage() : "Payment failed");
-            paymentRepository.save(payment);
-            
-        } catch (Exception e) {
-            System.err.println("Error handling payment intent failed: " + e.getMessage());
+        // Idempotency: skip if this payment intent was already marked failed
+        if (paymentOptional.isPresent() && "FAILED".equals(paymentOptional.get().getStatus())) {
+            return;
         }
+        
+        Payment payment;
+        if (paymentOptional.isPresent()) {
+            payment = paymentOptional.get();
+        } else {
+            // Create a failed payment record linked to the MANAGED registration
+            payment = new Payment();
+            payment.setStripePaymentIntentId(paymentIntentId);
+            payment.setPaymentProvider("STRIPE");
+            EventRegistration registration = eventRegistrationRepository.findById(regId)
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "EventRegistration not found for id: " + regId));
+            payment.setRegistration(registration);
+        }
+        
+        payment.setStatus("FAILED");
+        payment.setFailedAt(LocalDateTime.now());
+        payment.setFailureReason(paymentIntent.getLastPaymentError() != null ? 
+                paymentIntent.getLastPaymentError().getMessage() : "Payment failed");
+        paymentRepository.save(payment);
     }
 
     // Calculate installment schedule
