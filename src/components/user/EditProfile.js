@@ -221,7 +221,7 @@ const EditProfile = () => {
 
     if (form.skills && form.skills.length > 0) filled++;
 
-    return Math.round((filled / 10) * 100);
+    return Math.round((filled / 11) * 100);
   }, [form, user]);
 
   const completionPercentage = useMemo(() => calculateCompletion(), [calculateCompletion]);
