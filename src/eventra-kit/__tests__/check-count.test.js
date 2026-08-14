@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import * as CheckCount from '../check-count.js';
+import { checkCount } from '../check-count.js';
 
 describe('check-count', () => {
-  it('exports a module', () => {
-    expect(CheckCount).toBeDefined();
+  it('checks whether the input count is positive', () => {
+    expect(checkCount(5)).toBe(true);
+    expect(checkCount(0)).toBe(false);
+    expect(checkCount(-3)).toBe(false);
   });
 });
-
