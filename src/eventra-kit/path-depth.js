@@ -2,6 +2,8 @@
 /**
  * adds a path depth helper.
  */
+import { normalizePath } from './normalize-path.js';
+
 export function pathDepth(path) {
   return normalizePath(path).split('/').filter(Boolean).length;
 }
