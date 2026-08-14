@@ -77,14 +77,490 @@ const assertReauthAllowsRequest = (config) => {
   }
 };
 
+// ============================================================================
+// 1. CONCURRENT REFRESH LOCK & REQUEST QUEUE (MUTEX)
+// ============================================================================
+
+class RefreshTokenMutex {
+  constructor() {
+    this.isRefreshing = false;
+    this.failedQueue = [];
+  }
+
+  subscribe(resolve, reject) {
+    this.failedQueue.push({ resolve, reject });
+  }
+
+  processQueue(error, token = null) {
+    this.failedQueue.forEach((prom) => {
+      if (error) {
+        prom.reject(error);
+      } else {
+        prom.resolve(token);
+      }
+    });
+    this.failedQueue = [];
+  }
+}
+
+const refreshTokenMutex = new RefreshTokenMutex();
+
+// ============================================================================
+// 2. IN-FLIGHT REQUEST DEDUPLICATOR
+// ============================================================================
+
+class RequestDeduplicator {
+  constructor() {
+    this.inFlightRequests = new Map();
+  }
+
+  getCacheKey(config) {
+    const method = config.method?.toUpperCase() || "GET";
+    const url = config.url || "";
+    const params = JSON.stringify(config.params || {});
+    return `${method}:${url}:${params}`;
+  }
+
+  execute(config, fetcher) {
+    const key = this.getCacheKey(config);
+
+    if (config.method?.toUpperCase() !== "GET" || config.skipDeduplication) {
+      return fetcher();
+    }
+
+    if (this.inFlightRequests.has(key)) {
+      logger.info(`[Deduplicator] Collapsing duplicate in-flight GET request: ${key}`);
+      return this.inFlightRequests.get(key);
+    }
+
+    const promise = fetcher().finally(() => {
+      this.inFlightRequests.delete(key);
+    });
+
+    this.inFlightRequests.set(key, promise);
+    return promise;
+  }
+}
+
+export const requestDeduplicator = new RequestDeduplicator();
+
+// ============================================================================
+// 3. STALE-WHILE-REVALIDATE (SWR) & ETAG CACHE ENGINE
+// ============================================================================
+
+class ApiCacheEngine {
+  constructor(defaultTTL = 60_000) {
+    this.cache = new Map();
+    this.defaultTTL = defaultTTL;
+    this.taggedKeys = new Map();
+  }
+
+  generateKey(config) {
+    const method = config.method?.toUpperCase() || "GET";
+    const url = config.url || "";
+    const params = JSON.stringify(config.params || {});
+    return `cache:${method}:${url}:${params}`;
+  }
+
+  get(config) {
+    const key = this.generateKey(config);
+    const cached = this.cache.get(key);
+    if (!cached) return null;
+
+    const isExpired = Date.now() > cached.expiresAt;
+    return { ...cached, isStale: isExpired };
+  }
+
+  set(config, response, options = {}) {
+    if (config.method?.toUpperCase() !== "GET") return;
+
+    const key = this.generateKey(config);
+    const ttl = options.ttl || this.defaultTTL;
+    const etag = response.headers?.etag || response.headers?.get?.("etag") || null;
+
+    const entry = {
+      data: response.data,
+      status: response.status,
+      headers: response.headers,
+      etag,
+      expiresAt: Date.now() + ttl,
+      updatedAt: Date.now(),
+    };
+
+    this.cache.set(key, entry);
+
+    if (options.tags && Array.isArray(options.tags)) {
+      options.tags.forEach((tag) => {
+        if (!this.taggedKeys.has(tag)) this.taggedKeys.set(tag, new Set());
+        this.taggedKeys.get(tag).add(key);
+      });
+    }
+  }
+
+  invalidateTag(tag) {
+    if (this.taggedKeys.has(tag)) {
+      const keys = this.taggedKeys.get(tag);
+      keys.forEach((key) => this.cache.delete(key));
+      this.taggedKeys.delete(tag);
+      logger.info(`[ApiCache] Invalidated cache tag: ${tag}`);
+    }
+  }
+
+  clear() {
+    this.cache.clear();
+    this.taggedKeys.clear();
+  }
+}
+
+export const apiCacheEngine = new ApiCacheEngine();
+
+// ============================================================================
+// 4. CIRCUIT BREAKER STATE MACHINE
+// ============================================================================
+
+export const CircuitState = Object.freeze({
+  CLOSED: "CLOSED",
+  OPEN: "OPEN",
+  HALF_OPEN: "HALF_OPEN",
+});
+
+class CircuitBreaker {
+  constructor(options = {}) {
+    this.failureThreshold = options.failureThreshold || 5;
+    this.resetTimeout = options.resetTimeout || 30_000;
+    this.state = CircuitState.CLOSED;
+    this.failureCount = 0;
+    this.nextAttempt = Date.now();
+  }
+
+  canExecute() {
+    if (this.state === CircuitState.CLOSED) return true;
+    if (this.state === CircuitState.OPEN) {
+      if (Date.now() > this.nextAttempt) {
+        this.state = CircuitState.HALF_OPEN;
+        logger.warn("[CircuitBreaker] Transitioning to HALF_OPEN state.");
+        return true;
+      }
+      return false;
+    }
+    return true; // HALF_OPEN allows test probe
+  }
+
+  onSuccess() {
+    this.failureCount = 0;
+    if (this.state === CircuitState.HALF_OPEN) {
+      this.state = CircuitState.CLOSED;
+      logger.info("[CircuitBreaker] Circuit successfully recovered to CLOSED.");
+    }
+  }
+
+  onFailure(status) {
+    if (status && status < 500 && status !== 429) return; // Ignore client 4xx errors
+
+    this.failureCount += 1;
+    if (this.failureCount >= this.failureThreshold || this.state === CircuitState.HALF_OPEN) {
+      this.state = CircuitState.OPEN;
+      this.nextAttempt = Date.now() + this.resetTimeout;
+      logger.error(
+        `[CircuitBreaker] Threshold breached. Circuit OPEN until ${new Date(this.nextAttempt).toISOString()}`
+      );
+    }
+  }
+}
+
+export const globalCircuitBreaker = new CircuitBreaker();
+
+// ============================================================================
+// 5. TOKEN BUCKET CLIENT-SIDE RATE LIMITER
+// ============================================================================
+
+class ClientRateLimiter {
+  constructor(capacity = 20, fillRatePerSec = 5) {
+    this.capacity = capacity;
+    this.tokens = capacity;
+    this.fillRate = fillRatePerSec;
+    this.lastRefill = Date.now();
+  }
+
+  refill() {
+    const now = Date.now();
+    const deltaSec = (now - this.lastRefill) / 1000;
+    this.tokens = Math.min(this.capacity, this.tokens + deltaSec * this.fillRate);
+    this.lastRefill = now;
+  }
+
+  async acquire() {
+    this.refill();
+    if (this.tokens >= 1) {
+      this.tokens -= 1;
+      return true;
+    }
+
+    const waitMs = Math.ceil((1 - this.tokens) / (this.fillRate / 1000));
+    logger.warn(`[ClientRateLimiter] Throttling request client-side for ${waitMs}ms`);
+    await new Promise((res) => setTimeout(res, waitMs));
+    return this.acquire();
+  }
+}
+
+export const clientRateLimiter = new ClientRateLimiter();
+
+// ============================================================================
+// 6. OFFLINE QUEUE & REPLAY ENGINE
+// ============================================================================
+
+class OfflineRequestQueue {
+  constructor() {
+    this.storageKey = "eventra_offline_request_queue_v1";
+    this.queue = this.load();
+    this.isProcessing = false;
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("online", () => this.replayQueue());
+    }
+  }
+
+  load() {
+    try {
+      if (typeof localStorage === "undefined") return [];
+      return JSON.parse(localStorage.getItem(this.storageKey) || "[]");
+    } catch {
+      return [];
+    }
+  }
+
+  save() {
+    try {
+      if (typeof localStorage !== "undefined") {
+        localStorage.setItem(this.storageKey, JSON.stringify(this.queue));
+      }
+    } catch (e) {
+      logger.error("[OfflineQueue] Failed to save offline requests", e);
+    }
+  }
+
+  enqueue(config) {
+    if (!MUTATING_METHODS.has(config.method?.toUpperCase())) return;
+
+    const payload = {
+      id: typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+      url: config.url,
+      method: config.method,
+      data: config.data,
+      headers: config.headers,
+      createdAt: new Date().toISOString(),
+    };
+
+    this.queue.push(payload);
+    this.save();
+    logger.info(`[OfflineQueue] Enqueued offline mutation (${payload.method} ${payload.url})`);
+  }
+
+  async replayQueue(apiInstance) {
+    if (this.isProcessing || this.queue.length === 0 || !apiInstance) return;
+    this.isProcessing = true;
+    logger.info(`[OfflineQueue] Connection restored. Replaying ${this.queue.length} buffered requests...`);
+
+    const pending = [...this.queue];
+    this.queue = [];
+    this.save();
+
+    for (const item of pending) {
+      try {
+        await apiInstance({
+          url: item.url,
+          method: item.method,
+          data: item.data,
+          headers: { ...item.headers, "X-Eventra-Replayed-Request": "true" },
+        });
+        logger.info(`[OfflineQueue] Successfully replayed: ${item.method} ${item.url}`);
+      } catch (err) {
+        logger.error(`[OfflineQueue] Replay failed for ${item.method} ${item.url}`, err);
+      }
+    }
+    this.isProcessing = false;
+  }
+}
+
+export const offlineRequestQueue = new OfflineRequestQueue();
+
+// ============================================================================
+// 7. TELEMETRY & NETWORK METRICS MONITOR
+// ============================================================================
+
+class ApiTelemetryTracker {
+  constructor() {
+    this.metrics = new Map();
+  }
+
+  record(config, durationMs, success, status) {
+    const key = `${config.method?.toUpperCase() || "GET"} ${config.url || "unknown"}`;
+    const stats = this.metrics.get(key) || {
+      calls: 0,
+      failures: 0,
+      totalDuration: 0,
+      minLatency: Infinity,
+      maxLatency: 0,
+      statusCodes: {},
+    };
+
+    stats.calls += 1;
+    if (!success) stats.failures += 1;
+    stats.totalDuration += durationMs;
+    stats.minLatency = Math.min(stats.minLatency, durationMs);
+    stats.maxLatency = Math.max(stats.maxLatency, durationMs);
+    stats.statusCodes[status || "NETWORK_ERROR"] = (stats.statusCodes[status || "NETWORK_ERROR"] || 0) + 1;
+
+    this.metrics.set(key, stats);
+  }
+
+  getReport() {
+    const report = {};
+    this.metrics.forEach((v, k) => {
+      report[k] = {
+        calls: v.calls,
+        failures: v.failures,
+        avgLatencyMs: Math.round(v.totalDuration / v.calls),
+        minLatencyMs: v.minLatency,
+        maxLatencyMs: v.maxLatency,
+        statusCodes: v.statusCodes,
+      };
+    });
+    return report;
+  }
+}
+
+export const apiTelemetryTracker = new ApiTelemetryTracker();
+
+// ============================================================================
+// 8. MIDDLEWARE PIPELINE ENGINE
+// ============================================================================
+
+class MiddlewarePipeline {
+  constructor() {
+    this.beforeHooks = [];
+    this.afterHooks = [];
+    this.errorHooks = [];
+  }
+
+  useBefore(fn) { this.beforeHooks.push(fn); }
+  useAfter(fn) { this.afterHooks.push(fn); }
+  useError(fn) { this.errorHooks.push(fn); }
+
+  async runBefore(config) {
+    let current = config;
+    for (const hook of this.beforeHooks) {
+      current = (await hook(current)) || current;
+    }
+    return current;
+  }
+
+  async runAfter(response) {
+    let current = response;
+    for (const hook of this.afterHooks) {
+      current = (await hook(current)) || current;
+    }
+    return current;
+  }
+
+  async runError(error) {
+    for (const hook of this.errorHooks) {
+      await hook(error);
+    }
+  }
+}
+
+export const middlewarePipeline = new MiddlewarePipeline();
+
+// ============================================================================
+// 9. MOCK & SANDBOX ADAPTER
+// ============================================================================
+
+class ApiMockRegistry {
+  constructor() {
+    this.handlers = new Map();
+    this.enabled = false;
+  }
+
+  enable() { this.enabled = true; }
+  disable() { this.enabled = false; }
+
+  mock(method, urlPattern, handler) {
+    const key = `${method.toUpperCase()}:${urlPattern}`;
+    this.handlers.set(key, handler);
+  }
+
+  match(config) {
+    if (!this.enabled) return null;
+    const method = config.method?.toUpperCase();
+    const url = config.url;
+
+    for (const [key, handler] of this.handlers.entries()) {
+      const [m, pattern] = key.split(":");
+      if (m === method && (url === pattern || url?.includes(pattern))) {
+        return handler;
+      }
+    }
+    return null;
+  }
+}
+
+export const apiMockRegistry = new ApiMockRegistry();
+
+// ============================================================================
+// EXISTING / UPGRADED INTERCEPTORS
+// ============================================================================
+
 export const createRequestInterceptor = (isDev) => async (config) => {
   assertReauthAllowsRequest(config);
+
+  if (!globalCircuitBreaker.canExecute()) {
+    throw new ApiError("Circuit breaker is OPEN. Requests blocked to protect service.", {
+      status: 503,
+      data: { code: "CIRCUIT_OPEN" },
+    });
+  }
+
+  await clientRateLimiter.acquire();
+
+  config._startTime = Date.now();
+  config = await middlewarePipeline.runBefore(config);
+
+  const mockHandler = apiMockRegistry.match(config);
+  if (mockHandler) {
+    logger.info(`[MockEngine] Intercepting ${config.method} ${config.url}`);
+    const mockData = await mockHandler(config);
+    config.adapter = async () => ({
+      data: mockData,
+      status: 200,
+      statusText: "OK",
+      headers: {},
+      config,
+    });
+  }
+
   if (isDev) {
     logger.info(`[API ${config.method?.toUpperCase()}]`, config.url || "");
   }
 
   if (_authToken && _authToken !== "cookie-managed") {
     config.headers["Authorization"] = `Bearer ${_authToken}`;
+  }
+
+  const cached = apiCacheEngine.get(config);
+  if (cached && !cached.isStale && !config.bypassCache) {
+    logger.info(`[ApiCache] Cache hit for ${config.url}`);
+    config.adapter = async () => ({
+      data: cached.data,
+      status: cached.status,
+      headers: { ...cached.headers, "x-from-cache": "true" },
+      config,
+    });
+    return config;
+  }
+
+  if (cached?.etag) {
+    config.headers["If-None-Match"] = cached.etag;
   }
 
   const method = config.method?.toUpperCase();
@@ -100,9 +576,9 @@ export const createRequestInterceptor = (isDev) => async (config) => {
       config.headers["Idempotency-Key"] =
         typeof crypto !== "undefined" && crypto.randomUUID
           ? crypto.randomUUID()
-          : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-              const r = Math.random() * 16 | 0;
-              return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+          : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+              const r = (Math.random() * 16) | 0;
+              return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
             });
     }
   }
@@ -110,16 +586,45 @@ export const createRequestInterceptor = (isDev) => async (config) => {
 };
 
 export const createResponseInterceptor = (API) => {
-  const fulfill = (response) => {
-    const headerValue = response.headers?.["x-server-time"] || response.headers?.["date"] || (typeof response.headers?.get === 'function' ? (response.headers.get("x-server-time") || response.headers.get("date")) : null);
+  const fulfill = async (response) => {
+    const duration = Date.now() - (response.config._startTime || Date.now());
+    apiTelemetryTracker.record(response.config, duration, true, response.status);
+    globalCircuitBreaker.onSuccess();
+
+    if (response.status === 304) {
+      const cached = apiCacheEngine.get(response.config);
+      if (cached) {
+        response.data = cached.data;
+        response.status = 200;
+      }
+    } else {
+      apiCacheEngine.set(response.config, response, response.config.cacheOptions);
+    }
+
+    const headerValue =
+      response.headers?.["x-server-time"] ||
+      response.headers?.["date"] ||
+      (typeof response.headers?.get === "function"
+        ? response.headers.get("x-server-time") || response.headers.get("date")
+        : null);
+
     if (headerValue) syncServerTimeFromHeader(headerValue);
-    return response;
+    return middlewarePipeline.runAfter(response);
   };
 
   const reject = async (error) => {
     const config = error.config || {};
     const status = error?.response?.status;
     const errorCode = error?.response?.data?.code;
+    const duration = Date.now() - (config._startTime || Date.now());
+
+    apiTelemetryTracker.record(config, duration, false, status);
+    globalCircuitBreaker.onFailure(status);
+    await middlewarePipeline.runError(error);
+
+    if (!error.response && typeof window !== "undefined" && !navigator.onLine) {
+      offlineRequestQueue.enqueue(config);
+    }
 
     if (status === 401) {
       if (errorCode === "REQUIRES_REAUTH" && _onRequiresReauth) {
@@ -148,8 +653,9 @@ export const createResponseInterceptor = (API) => {
         );
       }
       await new Promise((r) => setTimeout(r, delay));
-      return API(config);
+      return requestDeduplicator.execute(config, () => API(config));
     }
+
     const normalized = normalizeApiError(error);
     logCategorizedError(normalized, null, {
       type: "api",
@@ -163,6 +669,7 @@ export const createResponseInterceptor = (API) => {
 
   return { fulfill, reject };
 };
+
 const normalizeApiErrorWithTimeout = (error, timeoutMs) => {
   const config = error.config || {};
   const status = error?.response?.status;
@@ -174,33 +681,46 @@ const normalizeApiErrorWithTimeout = (error, timeoutMs) => {
   ) {
     return new ApiError(
       `Request timed out after ${timeoutMs / 1000}s: ${config.method?.toUpperCase()} ${config.url}`,
-      { status, isTimeout: true },
+      { status, isTimeout: true }
     );
   }
 
   if (!error.response) {
     return new ApiError(
       error.message || `Network error: ${config.method?.toUpperCase()} ${config.url}`,
-      { status, isNetworkError: true },
+      { status, isNetworkError: true }
     );
   }
 
   if (status === 429) {
     return new RateLimitError(
       error.response?.data?.message || "Too many requests, please try again later.",
-      { status, data: error.response?.data || null },
+      { status, data: error.response?.data || null }
     );
   }
 
   return new ApiError(
     error.response?.data?.message || error.message || `Request failed with status ${status}`,
-    { status, data: error.response?.data || null },
+    { status, data: error.response?.data || null }
   );
 };
 
-export function setupRequestInterceptor(api, { isDev, buildApiUrl, getAuthToken,   }) {
+export function setupRequestInterceptor(api, { isDev, buildApiUrl, getAuthToken }) {
   api.interceptors.request.use(async (config) => {
     assertReauthAllowsRequest(config);
+
+    if (!globalCircuitBreaker.canExecute()) {
+      throw new ApiError("Circuit breaker is OPEN. Requests blocked to protect service.", {
+        status: 503,
+        data: { code: "CIRCUIT_OPEN" },
+      });
+    }
+
+    await clientRateLimiter.acquire();
+
+    config._startTime = Date.now();
+    config = await middlewarePipeline.runBefore(config);
+
     if (isDev) {
       logger.info(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
     }
@@ -208,6 +728,21 @@ export function setupRequestInterceptor(api, { isDev, buildApiUrl, getAuthToken,
     const authToken = getAuthToken();
     if (authToken && authToken !== "cookie-managed") {
       config.headers["Authorization"] = `Bearer ${authToken}`;
+    }
+
+    const cached = apiCacheEngine.get(config);
+    if (cached && !cached.isStale && !config.bypassCache) {
+      config.adapter = async () => ({
+        data: cached.data,
+        status: cached.status,
+        headers: { ...cached.headers, "x-from-cache": "true" },
+        config,
+      });
+      return config;
+    }
+
+    if (cached?.etag) {
+      config.headers["If-None-Match"] = cached.etag;
     }
 
     const method = config.method?.toUpperCase();
@@ -224,7 +759,7 @@ export function setupRequestInterceptor(api, { isDev, buildApiUrl, getAuthToken,
           });
           throw new CSRFError(
             `CSRF token required for ${method} request. Please ensure the CSRF token is available in the meta tag or cookie.`,
-            { status: 403 },
+            { status: 403 }
           );
         } else {
           logger.security("csrf_token_missing", {
@@ -238,13 +773,14 @@ export function setupRequestInterceptor(api, { isDev, buildApiUrl, getAuthToken,
       }
 
       if (!config.headers["Idempotency-Key"]) {
-        config.headers["Idempotency-Key"] = typeof crypto !== "undefined" && crypto.randomUUID
-          ? crypto.randomUUID()
-          : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-              const r = Math.random() * 16 | 0;
-              const v = c === "x" ? r : (r & 0x3 | 0x8);
-              return v.toString(16);
-            });
+        config.headers["Idempotency-Key"] =
+          typeof crypto !== "undefined" && crypto.randomUUID
+            ? crypto.randomUUID()
+            : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+                const r = (Math.random() * 16) | 0;
+                const v = c === "x" ? r : (r & 0x3) | 0x8;
+                return v.toString(16);
+              });
       }
     }
 
@@ -252,19 +788,59 @@ export function setupRequestInterceptor(api, { isDev, buildApiUrl, getAuthToken,
   });
 }
 
-export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthorized, getOnRequiresReauth, setAuthToken: applyAuthToken, setRefreshToken: applyRefreshToken }) {
+export function setupResponseInterceptor(
+  api,
+  {
+    isDev,
+    timeoutMs,
+    getOnUnauthorized,
+    getOnRequiresReauth,
+    setAuthToken: applyAuthToken,
+    setRefreshToken: applyRefreshToken,
+  }
+) {
   api.interceptors.response.use(
-    (response) => {
-      const headerValue = response.headers?.["x-server-time"] || response.headers?.["date"] || (typeof response.headers?.get === 'function' ? (response.headers.get("x-server-time") || response.headers.get("date")) : null);
+    async (response) => {
+      const duration = Date.now() - (response.config._startTime || Date.now());
+      apiTelemetryTracker.record(response.config, duration, true, response.status);
+      globalCircuitBreaker.onSuccess();
+
+      if (response.status === 304) {
+        const cached = apiCacheEngine.get(response.config);
+        if (cached) {
+          response.data = cached.data;
+          response.status = 200;
+        }
+      } else {
+        apiCacheEngine.set(response.config, response, response.config.cacheOptions);
+      }
+
+      const headerValue =
+        response.headers?.["x-server-time"] ||
+        response.headers?.["date"] ||
+        (typeof response.headers?.get === "function"
+          ? response.headers.get("x-server-time") || response.headers.get("date")
+          : null);
+
       if (headerValue) {
         syncServerTimeFromHeader(headerValue);
       }
-      return response;
+
+      return middlewarePipeline.runAfter(response);
     },
     async (error) => {
       const config = error.config || {};
       const status = error?.response?.status;
       const errorCode = error?.response?.data?.code;
+      const duration = Date.now() - (config._startTime || Date.now());
+
+      apiTelemetryTracker.record(config, duration, false, status);
+      globalCircuitBreaker.onFailure(status);
+      await middlewarePipeline.runError(error);
+
+      if (!error.response && typeof window !== "undefined" && !navigator.onLine) {
+        offlineRequestQueue.enqueue(config);
+      }
 
       const onUnauthorized = getOnUnauthorized();
       const onRequiresReauth = getOnRequiresReauth ? getOnRequiresReauth() : null;
@@ -278,6 +854,18 @@ export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthori
 
         if (!config._retry && !config.url?.includes("/auth/refresh")) {
           config._retry = true;
+
+          if (refreshTokenMutex.isRefreshing) {
+            return new Promise((resolve, reject) => {
+              refreshTokenMutex.subscribe((token) => {
+                config.headers["Authorization"] = `Bearer ${token}`;
+                resolve(api(config));
+              }, reject);
+            });
+          }
+
+          refreshTokenMutex.isRefreshing = true;
+
           try {
             if (!_refreshToken) {
               throw new Error("No refresh token available");
@@ -288,6 +876,7 @@ export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthori
             });
             const nextAccess = refreshRes?.data?.token;
             const nextRefresh = refreshRes?.data?.refreshToken;
+
             if (nextAccess) {
               if (applyAuthToken) applyAuthToken(nextAccess);
               else setAuthToken(nextAccess);
@@ -298,6 +887,8 @@ export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthori
               if (applyRefreshToken) applyRefreshToken(nextRefresh);
               else setRefreshToken(nextRefresh);
             }
+
+            refreshTokenMutex.processQueue(null, nextAccess);
             return api(config);
           } catch (refreshError) {
             logger.error("Token refresh failed. Locking user out.", refreshError);
@@ -305,10 +896,15 @@ export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthori
             else setAuthToken(null);
             if (applyRefreshToken) applyRefreshToken(null);
             else setRefreshToken(null);
+
+            refreshTokenMutex.processQueue(refreshError, null);
+
             if (onUnauthorized) {
               onUnauthorized();
             }
             throw normalizeApiErrorWithTimeout(refreshError, timeoutMs);
+          } finally {
+            refreshTokenMutex.isRefreshing = false;
           }
         }
         if (onUnauthorized) {
@@ -331,13 +927,14 @@ export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthori
 
         if (isDev) {
           logger.info(
-            `[API ${config.method?.toUpperCase()}] ${config.url} returned ${status}, retrying in ${delay}ms (attempt ${config._retryCount})...`,
+            `[API ${config.method?.toUpperCase()}] ${config.url} returned ${status}, retrying in ${delay}ms (attempt ${config._retryCount})...`
           );
         }
 
         await new Promise((resolve) => setTimeout(resolve, delay));
-        return api(config);
+        return requestDeduplicator.execute(config, () => api(config));
       }
+
       const normalized = normalizeApiErrorWithTimeout(error, timeoutMs);
       logCategorizedError(normalized, null, {
         type: "api",
@@ -347,6 +944,6 @@ export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthori
         retryCount,
       });
       throw normalized;
-    },
+    }
   );
 }
