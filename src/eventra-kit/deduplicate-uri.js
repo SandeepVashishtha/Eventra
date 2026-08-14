@@ -2,6 +2,6 @@
  * adds a deduplicate-uri helper.
  */
 export function deduplicateUri(value) {
-  return typeof value === 'string';
+  return Array.isArray(value) ? [...new Set(value)] : [];
 }
 
