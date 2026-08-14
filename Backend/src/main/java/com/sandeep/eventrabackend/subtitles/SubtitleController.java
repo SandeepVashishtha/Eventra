@@ -436,8 +436,6 @@ public class SubtitleController {
         }
         throw new IllegalArgumentException("eventId or sessionId is required to create a subtitle.");
     }
-        throw new AccessDeniedException("You can only view your own subtitles.");
-    }
 
     private User currentUser(Authentication authentication) {
         String email = authentication != null ? authentication.getName() : null;
