@@ -1,4 +1,5 @@
 import { parseTimeToMinutes } from "./eventCreationUtils";
+import { parseTimeString } from "./timezoneUtils.js";
 export const validateForm = (formData) => {
   const newErrors = {};
 
@@ -63,7 +64,11 @@ export const validateForm = (formData) => {
     // Normalize date to YYYY-MM-DD format before combining with time
     const rawDate = formData.isMultiDay ? formData.startDate : formData.date;
     const dateStr = rawDate?.includes("T") ? rawDate.split("T")[0] : rawDate;
-    const eventStart = new Date(`${dateStr}T${formData.startTime}`);
+    const parsedTime = parseTimeString(formData.startTime);
+    const eventStart =
+      parsedTime && dateStr
+        ? new Date(dateStr + "T" + String(parsedTime.hours).padStart(2, "0") + ":" + String(parsedTime.minutes).padStart(2, "0"))
+        : new Date(`${dateStr}T${formData.startTime}`);
 
     if (registrationStart && isNaN(registrationStart.getTime())) {
       newErrors.registrationStart = "Invalid registration start date";
