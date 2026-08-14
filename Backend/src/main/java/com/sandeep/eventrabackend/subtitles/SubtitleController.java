@@ -80,31 +80,37 @@ public class SubtitleController {
      * Get subtitle by ID
      */
     @GetMapping("/{id}")
-    public ResponseEntity<SubtitleDTO> getSubtitleById(@PathVariable Long id) {
-        Optional<Subtitle> subtitle = subtitleService.getSubtitleById(id);
-        return subtitle
-                .map(SubtitleDTO::fromEntity)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+    public ResponseEntity<SubtitleDTO> getSubtitleById(@PathVariable Long id,
+            Authentication authentication) {
+        Subtitle subtitle = subtitleService.getSubtitleById(id).orElse(null);
+        if (subtitle == null) {
+            return ResponseEntity.notFound().build();
+        }
+        assertCanModifyEvent(subtitle.getEventId(), authentication);
+        return ResponseEntity.ok(SubtitleDTO.fromEntity(subtitle));
     }
     
     /**
      * Get subtitle by UUID
      */
     @GetMapping("/uuid/{uuid}")
-    public ResponseEntity<SubtitleDTO> getSubtitleByUuid(@PathVariable String uuid) {
-        Optional<Subtitle> subtitle = subtitleService.getSubtitleByUuid(uuid);
-        return subtitle
-                .map(SubtitleDTO::fromEntity)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+    public ResponseEntity<SubtitleDTO> getSubtitleByUuid(@PathVariable String uuid,
+            Authentication authentication) {
+        Subtitle subtitle = subtitleService.getSubtitleByUuid(uuid).orElse(null);
+        if (subtitle == null) {
+            return ResponseEntity.notFound().build();
+        }
+        assertCanModifyEvent(subtitle.getEventId(), authentication);
+        return ResponseEntity.ok(SubtitleDTO.fromEntity(subtitle));
     }
     
     /**
      * Get subtitles by event ID
      */
     @GetMapping("/event/{eventId}")
-    public ResponseEntity<List<SubtitleDTO>> getSubtitlesByEventId(@PathVariable Long eventId) {
+    public ResponseEntity<List<SubtitleDTO>> getSubtitlesByEventId(@PathVariable Long eventId,
+            Authentication authentication) {
+        assertCanModifyEvent(eventId, authentication);
         List<Subtitle> subtitles = subtitleService.getSubtitlesByEventId(eventId);
         List<SubtitleDTO> dtos = subtitles.stream()
                 .map(SubtitleDTO::fromEntity)
@@ -116,7 +122,9 @@ public class SubtitleController {
      * Get active subtitles for an event
      */
     @GetMapping("/event/{eventId}/active")
-    public ResponseEntity<List<SubtitleDTO>> getActiveSubtitlesByEventId(@PathVariable Long eventId) {
+    public ResponseEntity<List<SubtitleDTO>> getActiveSubtitlesByEventId(@PathVariable Long eventId,
+            Authentication authentication) {
+        assertCanModifyEvent(eventId, authentication);
         List<Subtitle> subtitles = subtitleService.getActiveSubtitlesByEventId(eventId);
         List<SubtitleDTO> dtos = subtitles.stream()
                 .map(SubtitleDTO::fromEntity)
@@ -130,7 +138,9 @@ public class SubtitleController {
     @GetMapping("/event/{eventId}/recent")
     public ResponseEntity<Page<SubtitleDTO>> getRecentSubtitlesByEventId(
             @PathVariable Long eventId,
-            @PageableDefault(size = 20, sort = "createdAt,desc") Pageable pageable) {
+            @PageableDefault(size = 20, sort = "createdAt,desc") Pageable pageable,
+            Authentication authentication) {
+        assertCanModifyEvent(eventId, authentication);
         Page<Subtitle> page = subtitleService.getRecentSubtitlesByEventId(eventId, pageable);
         Page<SubtitleDTO> dtoPage = page.map(SubtitleDTO::fromEntity);
         return ResponseEntity.ok(dtoPage);
