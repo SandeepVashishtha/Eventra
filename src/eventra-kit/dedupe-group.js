@@ -1,7 +1,8 @@
 /**
  * adds a dedupe-group helper.
  */
-export function dedupeGroup(value, separator) {
-  return value.split(separator);
+export function dedupeGroup(value) {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(value)];
 }
 
