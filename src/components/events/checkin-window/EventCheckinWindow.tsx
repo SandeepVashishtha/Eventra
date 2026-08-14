@@ -78,6 +78,35 @@ const getMinutesFromTime = (time: string): number => {
   return hours * 60 + minutes;
 };
 
+const getCurrentMinutesInTimezone = (timezone?: string): number => {
+  const date = new Date();
+  const timeZone = timezone && timezone.trim() ? timezone : undefined;
+
+  if (timeZone) {
+    try {
+      const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone,
+        hour: "numeric",
+        minute: "numeric",
+        hourCycle: "h23",
+      }).formatToParts(date);
+
+      const hour = Number(
+        parts.find((part) => part.type === "hour")?.value ?? "0",
+      );
+      const minute = Number(
+        parts.find((part) => part.type === "minute")?.value ?? "0",
+      );
+      return hour * 60 + minute;
+    } catch {
+      // Invalid timezone id — fall back to the caller's local time.
+      return date.getHours() * 60 + date.getMinutes();
+    }
+  }
+
+  return date.getHours() * 60 + date.getMinutes();
+};
+
 const getWindowState = (
   config: EventCheckinWindowConfig | null,
 ): CheckInWindowState => {
@@ -92,10 +121,7 @@ const getWindowState = (
     return "not-configured";
   }
 
-  const currentDate = new Date();
-
-  const currentMinutes =
-    currentDate.getHours() * 60 + currentDate.getMinutes();
+  const currentMinutes = getCurrentMinutesInTimezone(config.timezone);
 
   if (currentMinutes < startMinutes) {
     return "upcoming";
