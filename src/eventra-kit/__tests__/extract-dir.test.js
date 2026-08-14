@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import * as ExtractDir from '../extract-dir.js';
+import { extractDir } from '../extract-dir.js';
 
 describe('extract-dir', () => {
-  it('exports a module', () => {
-    expect(ExtractDir).toBeDefined();
+  it('returns the directory part of a path', () => {
+    expect(extractDir('/home/user/docs/report.txt')).toBe('/home/user/docs');
+    expect(extractDir('a/b/c')).toBe('a/b');
+    expect(extractDir('report.txt')).toBe('');
   });
 });
-
