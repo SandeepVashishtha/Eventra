@@ -16,6 +16,9 @@ import com.sandeep.eventrabackend.repository.EventTeamMemberRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -107,12 +110,13 @@ public class EventRoleService {
     }
 
     @Transactional(readOnly = true)
-    public List<EventRoleAuditResponse> getAuditLog(Long eventId, String actorEmail) {
+    public Page<EventRoleAuditResponse> getAuditLog(Long eventId, String actorEmail, int page, int size) {
         requireRole(eventId, actorEmail, EventRole.ORGANIZER);
-        return auditLogRepository.findByEventIdOrderByChangedAtDesc(eventId)
-                .stream()
-                .map(this::toAuditResponse)
-                .toList();
+        int clampedSize = Math.min(Math.max(size, 1), 100);
+        int safePage = Math.max(page, 0);
+        Pageable pageable = PageRequest.of(safePage, clampedSize);
+        return auditLogRepository.findByEventIdOrderByChangedAtDesc(eventId, pageable)
+                .map(this::toAuditResponse);
     }
 
     private EventTeamMember upsertRole(Event event, User target, EventRole newRole, User actor, String action) {

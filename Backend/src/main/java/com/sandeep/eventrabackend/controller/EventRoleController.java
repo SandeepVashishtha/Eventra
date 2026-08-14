@@ -6,6 +6,7 @@ import com.sandeep.eventrabackend.dto.response.EventTeamMemberResponse;
 import com.sandeep.eventrabackend.service.EventRoleService;
 import jakarta.validation.Valid;
 import java.util.List;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -36,9 +37,11 @@ public class EventRoleController {
     }
 
     @GetMapping("/audit")
-    public ResponseEntity<List<EventRoleAuditResponse>> getAuditLog(
+    public ResponseEntity<Page<EventRoleAuditResponse>> getAuditLog(
             @PathVariable Long eventId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size,
             Authentication authentication) {
-        return ResponseEntity.ok(eventRoleService.getAuditLog(eventId, authentication.getName()));
+        return ResponseEntity.ok(eventRoleService.getAuditLog(eventId, authentication.getName(), page, size));
     }
 }
