@@ -1,0 +1,7 @@
+.live-poll-manager {
+  font-family: inherit;
+}
+
+.poll-vote-card {
+  transition: all 0.3s ease;
+}
