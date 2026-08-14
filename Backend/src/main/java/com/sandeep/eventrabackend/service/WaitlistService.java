@@ -1,5 +1,7 @@
 package com.sandeep.eventrabackend.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class WaitlistService {
 
+    private static final Logger log = LoggerFactory.getLogger(WaitlistService.class);
     private static final String PROMOTION_TOKEN_KEY_PREFIX = "waitlist:promotion-token:";
     private static final Duration PROMOTION_TOKEN_TTL = Duration.ofHours(24);
 
@@ -51,10 +54,15 @@ public class WaitlistService {
         // Atomic, cross-instance, TTL-bounded dedup: SET NX is the source of truth.
         // Fails closed if Redis is unavailable rather than silently re-introducing
         // the double-claim risk.
-        Boolean acquired = redisTemplate.opsForValue()
-                .setIfAbsent(key(promotionToken), "1", PROMOTION_TOKEN_TTL);
-        if (acquired == null || !acquired) {
-            return false; // Already processed by this or another instance
+        try {
+            Boolean acquired = redisTemplate.opsForValue()
+                    .setIfAbsent(key(promotionToken), "1", PROMOTION_TOKEN_TTL);
+            if (acquired == null || !acquired) {
+                return false; // Already processed by this or another instance
+            }
+        } catch (Exception e) {
+            log.error("Redis failure during promotion token acquisition for token: {}", promotionToken, e);
+            return false; // Fail closed on Redis failure
         }
 
         processedPromotionTokens.add(promotionToken);
@@ -68,7 +76,12 @@ public class WaitlistService {
         if (processedPromotionTokens.contains(promotionToken)) {
             return true;
         }
-        return Boolean.TRUE.equals(redisTemplate.hasKey(key(promotionToken)));
+        try {
+            return Boolean.TRUE.equals(redisTemplate.hasKey(key(promotionToken)));
+        } catch (Exception e) {
+            log.error("Redis failure checking promotion token status: {}", promotionToken, e);
+            return false; // Fail closed on Redis failure
+        }
     }
 
     private String key(String promotionToken) {
