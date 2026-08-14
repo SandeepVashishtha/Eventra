@@ -1,3 +1,4 @@
+import { randomSubset } from './random-subset.js';
 
 /**
  * adds a no-replacement sampler.
