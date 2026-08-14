@@ -1,9 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import * as ExtractPath from '../extract-path.js';
+import { extractPath } from '../extract-path.js';
 
 describe('extract-path', () => {
-  it('exports a module', () => {
-    expect(ExtractPath).toBeDefined();
+  it('extracts the path from a URL', () => {
+    expect(extractPath('https://x.com/a/b?q=1')).toBe('/a/b');
   });
 });
-
