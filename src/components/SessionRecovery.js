@@ -91,7 +91,15 @@ const SessionRecovery = () => {
     try {
       const session = await restoreRecoverySessionById?.(sessionId);
       if (session && typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('sessionRestored', { detail: session.draftData || session }));
+        let draftData = session.draftData || session;
+        if (typeof draftData === 'string') {
+          try {
+            draftData = JSON.parse(draftData);
+          } catch {
+            // keep as string if parsing fails
+          }
+        }
+        window.dispatchEvent(new CustomEvent('sessionRestored', { detail: draftData }));
         window.dispatchEvent(new CustomEvent('cloudSessionRestored', { detail: session }));
       }
       dismissRecoveryPrompt?.();
