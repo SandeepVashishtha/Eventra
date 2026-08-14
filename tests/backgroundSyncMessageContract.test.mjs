@@ -67,6 +67,11 @@ assert.ok(
     `useOfflineSync only accepts [${acceptedTypes.join(", ")}]`,
 );
 
+assert.ok(
+  /addEventListener\(\s*['"]message['"]/.test(hookCode),
+  "useOfflineSync must register a message event listener",
+);
+
 // ── Background sync tag must be shared between SW and the offline queue ──────
 const swTags = (swCode.match(/BACKGROUND_SYNC_TAG\s*=\s*['"][^'"]+['"]/g) || []).map(
   (m) => m.match(/['"]([^'"]+)['"]/)[1],

@@ -102,6 +102,7 @@ export default function useOfflineSync() {
     };
 
     window.addEventListener("online", handleOnline);
+    window.addEventListener("message", handleServiceWorkerMessage);
     window.addEventListener("eventra-background-sync", handleSyncRequested);
     window.addEventListener("eventra-offline-queue-updated", handleSyncRequested);
     window.addEventListener("eventra-session-restored", handleSyncRequested);
@@ -109,6 +110,7 @@ export default function useOfflineSync() {
 
     return () => {
       window.removeEventListener("online", handleOnline);
+      window.removeEventListener("message", handleServiceWorkerMessage);
       window.removeEventListener("eventra-background-sync", handleSyncRequested);
       window.removeEventListener("eventra-offline-queue-updated", handleSyncRequested);
       window.removeEventListener("eventra-session-restored", handleSyncRequested);

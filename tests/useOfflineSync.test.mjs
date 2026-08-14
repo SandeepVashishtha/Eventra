@@ -300,6 +300,34 @@ const runAll = async () => {
   assert.equal(currentQueue.length, 0, "Queue should be cleared after successful check-in replay");
   console.log("  pass  TICKET_CHECK_IN routes to check-in endpoint!");
 
+  // Test 6: SW EVENTRA_BACKGROUND_SYNC message triggers queue replay
+  console.log("Running Test 6: Service Worker EVENTRA_BACKGROUND_SYNC message triggers sync replay");
+  resetReact();
+  currentAuth = {
+    token: "mock-token",
+    user: { id: "u1" },
+    isAuthenticated: () => true,
+    loading: false,
+  };
+  currentQueue = [
+    { id: "sw-item-1", userId: "u1", payload: { val: 100 } },
+  ];
+  fetchCalls = [];
+  renderHook();
+
+  const msgEvent = new window.Event("message");
+  msgEvent.data = { type: "EVENTRA_BACKGROUND_SYNC" };
+  window.dispatchEvent(msgEvent);
+  await new Promise((resolve) => setTimeout(resolve, 50));
+
+  assert.equal(
+    fetchCalls.length,
+    1,
+    "Sync should be triggered when Service Worker posts EVENTRA_BACKGROUND_SYNC message"
+  );
+  assert.equal(currentQueue.length, 0, "Queue should be cleared after SW background sync");
+  console.log("  pass  Service Worker message triggers sync replay!");
+
   console.log("All useOfflineSync tests passed successfully!");
 };
 
