@@ -1,7 +1,7 @@
 /**
  * adds a create-path helper.
  */
-export function createPath(value, target) {
-  return value.indexOf(target);
+export function createPath(parts) {
+  return Array.isArray(parts) ? parts.join('/') : String(parts);
 }
 
