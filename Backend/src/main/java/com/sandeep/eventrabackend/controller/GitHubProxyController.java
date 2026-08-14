@@ -1,32 +1,31 @@
 package com.sandeep.eventrabackend.controller;
 
-import com.sandeep.eventrabackend.service.GitHubProxyService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.util.Map;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/github-proxy")
-@Tag(name = "GitHub Proxy", description = "Allowlisted proxy for public GitHub API reads")
+@RequestMapping("/api/github")
 public class GitHubProxyController {
 
-    private final GitHubProxyService gitHubProxyService;
+    private final GitHubSyncService githubSyncService;
 
-    public GitHubProxyController(GitHubProxyService gitHubProxyService) {
-        this.gitHubProxyService = gitHubProxyService;
+    public GitHubProxyController(GitHubSyncService githubSyncService) {
+        this.githubSyncService = githubSyncService;
     }
 
-    @GetMapping
-    @Operation(summary = "Proxy an allowlisted GitHub API path")
-    public ResponseEntity<String> proxy(
-            @RequestParam("path") String path,
-            @RequestParam Map<String, String> allParams) {
-        return gitHubProxyService.proxy(path, allParams);
+    @PostMapping("/webhook")
+    public ResponseEntity<String> handleGithubWebhook(
+            @RequestBody String payload,
+            @RequestHeader("X-Hub-Signature-256") String signature) {
+
+        if (signature == null || signature.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Signature header is missing");
+        }
+
+        boolean success = githubSyncService.syncIssuePayload(payload);
+        if (success) {
+            return ResponseEntity.ok("Leaderboard synced successfully!");
+        }
+        return ResponseEntity.internalServerError().body("Failed to sync issue payload");
     }
 }
