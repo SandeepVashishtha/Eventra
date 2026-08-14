@@ -35,6 +35,13 @@ export function createRateLimiter({
   initialTokens,
   channelName,
 } = {}) {
+  if (!Number.isFinite(maxTokens) || maxTokens <= 0) {
+    throw new RangeError("maxTokens must be a positive finite number");
+  }
+  if (!Number.isFinite(refillRate) || refillRate <= 0) {
+    throw new RangeError("refillRate must be a positive finite number");
+  }
+
   let tokens = initialTokens ?? maxTokens;
   let lastRefill = Date.now();
   let lockedUntil = 0;
@@ -70,6 +77,10 @@ export function createRateLimiter({
      * @returns {boolean}
      */
     tryConsume(cost = 1) {
+      if (!Number.isFinite(cost) || cost <= 0) {
+        throw new RangeError("cost must be a positive finite number");
+      }
+
       if (Date.now() < lockedUntil) return false;
 
       refill();
@@ -189,6 +200,10 @@ export function createRateLimiter({
  * @returns {Function} Rate-limited function
  */
 export function withRateLimit(fn, options = {}) {
+  if (typeof fn !== "function") {
+    throw new TypeError("withRateLimit requires a function as its first argument");
+  }
+
   const {
     cost = 1,
     mode = "throw",
