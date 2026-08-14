@@ -2,6 +2,6 @@
  * adds a estimate-char helper.
  */
 export function estimateChar(value) {
-  return String(value).slice(-1);
+  return String(value).length;
 }
 
