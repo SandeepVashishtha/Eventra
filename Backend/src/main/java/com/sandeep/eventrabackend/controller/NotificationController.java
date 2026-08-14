@@ -285,7 +285,7 @@ public class NotificationController {
             )
     })
     public ResponseEntity<TemplateResponse> getTemplate(
-            @PathVariable Long eventId,
+            @PathVariable String eventId,
             @PathVariable String templateType,
             Authentication authentication) {
         String organizerEmail = authentication.getName();
