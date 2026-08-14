@@ -221,6 +221,7 @@ public class EventService {
                 return eventRepository.findById(id)
                                 .filter(Event::isPublic)
                                 .filter(event -> !"CANCELLED".equals(event.getStatus()))
+                                .filter(event -> !"DELETED".equals(event.getStatus()))
                                 .orElseThrow(() -> new EventNotFoundException(
                                                 "Event not found with id: " + id));
         }
