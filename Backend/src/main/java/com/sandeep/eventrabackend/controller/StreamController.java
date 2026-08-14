@@ -36,13 +36,13 @@ public class StreamController {
     public ResponseEntity<SseEmitter> subscribe(
             @PathVariable String topic,
             Authentication authentication) {
-        String normalized = topic == null ? "" : topic.trim().toLowerCase();
+        String normalized = topic == null ? "" : topic.trim().toLowerCase(java.util.Locale.ROOT);
         if (AUTH_REQUIRED_TOPICS.contains(normalized)
                 && (authentication == null || !authentication.isAuthenticated())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         try {
-            return ResponseEntity.ok(eventStreamService.createEmitter(topic));
+            return ResponseEntity.ok(eventStreamService.createEmitter(normalized));
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         } catch (IllegalStateException ex) {

@@ -4,6 +4,7 @@ import com.sandeep.eventrabackend.dto.request.CreateLostItemRequest;
 import com.sandeep.eventrabackend.dto.request.UpdateLostItemRequest;
 import com.sandeep.eventrabackend.dto.response.ErrorResponse;
 import com.sandeep.eventrabackend.dto.response.LostItemResponse;
+import com.sandeep.eventrabackend.security.CustomUserDetails;
 import com.sandeep.eventrabackend.service.LostItemService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -268,6 +269,9 @@ public class LostItemController {
         }
         
         Object principal = authentication.getPrincipal();
+        if (principal instanceof CustomUserDetails customUserDetails) {
+            return customUserDetails.getUser().getId();
+        }
         if (principal instanceof Map) {
             Map<?, ?> principalMap = (Map<?, ?>) principal;
             Object userIdObj = principalMap.get("userId");
@@ -276,8 +280,6 @@ public class LostItemController {
             }
         }
         
-        // If the principal is a string (username/email), we might need to look it up
-        // For now, return null if we can't extract the user ID
         return null;
     }
 }
