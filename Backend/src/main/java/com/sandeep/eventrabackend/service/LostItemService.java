@@ -211,10 +211,10 @@ public class LostItemService {
         
         if (lostItem.getFoundBy() != null) {
             response.setFoundById(lostItem.getFoundBy().getId());
-            response.setFoundByName(lostItem.getFoundBy().getName());
+            response.setFoundByName((lostItem.getFoundBy().getFirstName() + " " + lostItem.getFoundBy().getLastName()).trim());
             response.setFoundByEmail(lostItem.getFoundBy().getEmail());
         }
-        
+
         response.setTitle(lostItem.getTitle());
         response.setDescription(lostItem.getDescription());
         response.setImageUrl(lostItem.getImageUrl());
@@ -225,19 +225,19 @@ public class LostItemService {
         response.setLocationFound(lostItem.getLocationFound());
         response.setContactEmail(lostItem.getContactEmail());
         response.setContactPhone(lostItem.getContactPhone());
-        
+
         if (lostItem.getStatus() != null) {
             response.setStatus(lostItem.getStatus().name());
         }
-        
+
         response.setClaimed(lostItem.isClaimed());
         response.setClaimedById(lostItem.getClaimedById());
-        
+
         if (lostItem.getClaimedById() != null) {
             try {
                 User claimedBy = userRepository.findById(lostItem.getClaimedById()).orElse(null);
                 if (claimedBy != null) {
-                    response.setClaimedByName(claimedBy.getName());
+                    response.setClaimedByName((claimedBy.getFirstName() + " " + claimedBy.getLastName()).trim());
                 }
             } catch (Exception e) {
                 // Ignore if user not found
