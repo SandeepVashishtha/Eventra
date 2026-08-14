@@ -158,7 +158,7 @@ const useEventListing = () => {
 
       const normalizedEvents = apiEvents.map(normalizeEventItem);
       setEvents(normalizedEvents);
-      setServerPaged(isPaged);
+      setServerPaged(Array.isArray(responseData.content));
       setLastUpdated(new Date());
 
       setPagination({
