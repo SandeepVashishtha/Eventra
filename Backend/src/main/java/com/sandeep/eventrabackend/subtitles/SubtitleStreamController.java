@@ -6,9 +6,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.http.*;
+
 
 import java.io.IOException;
 import java.util.*;
@@ -285,8 +288,13 @@ public class SubtitleStreamController {
                     .data(dto));
         } catch (IOException e) {
             log.error("Error sending subtitle via SSE: {}", e.getMessage());
+            try {
+                emitter.completeWithError(e);
+            } catch (Exception ignored) {
+            }
         }
     }
+
     
     /**
      * Broadcast a subtitle to all clients subscribed to an event
@@ -464,6 +472,23 @@ public class SubtitleStreamController {
     }
 
     /**
+     * Listener for SubtitleCreatedEvent to trigger real-time SSE broadcasts.
+     */
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
+    public void onSubtitleCreated(SubtitleCreatedEvent event) {
+        if (event == null || event.getSubtitle() == null) {
+            return;
+        }
+        Subtitle subtitle = event.getSubtitle();
+        if (subtitle.getEventId() != null) {
+            notifyEventSubscribers(subtitle.getEventId(), subtitle);
+        }
+        if (subtitle.getSessionId() != null) {
+            notifySessionSubscribers(subtitle.getSessionId(), subtitle);
+        }
+    }
+
+    /**
      * Notify all event subscribers about a new subtitle
      * 
      * This method is called by the service when a new subtitle is created
@@ -481,3 +506,4 @@ public class SubtitleStreamController {
         broadcastToSession(sessionId, subtitle);
     }
 }
+
