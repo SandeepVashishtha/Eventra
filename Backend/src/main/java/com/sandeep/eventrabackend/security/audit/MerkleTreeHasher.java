@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.*;
@@ -44,8 +45,7 @@ public class MerkleTreeHasher {
             for (int i = 0; i < currentLevel.size(); i += 2) {
                 String left = currentLevel.get(i);
                 String right = (i + 1 < currentLevel.size()) ? currentLevel.get(i + 1) : left;
-                String combined = left + right;
-                String hash = sha256(combined);
+                String hash = combineAndHash(left, right);
                 nextLevel.add(hash);
             }
 
@@ -72,6 +72,40 @@ public class MerkleTreeHasher {
         } catch (Exception ex) {
             logger.error("SHA-256 hashing failed", ex);
             throw new RuntimeException("Failed to compute SHA-256 hash", ex);
+        }
+    }
+
+    /**
+     * Combines two node values with domain separation and hashes the result.
+     * Each operand is length-prefixed before concatenation, preventing
+     * delimiter-free second-preimage collisions (e.g. "ab"+"c" == "a"+"bc").
+     * 
+     * @param left Left node value
+     * @param right Right node value
+     * @return Hex-encoded SHA-256 hash of the domain-separated pair
+     * @throws RuntimeException if hashing fails
+     */
+    public String combineAndHash(String left, String right) {
+        try {
+            byte[] leftBytes = left.getBytes(StandardCharsets.UTF_8);
+            byte[] rightBytes = right.getBytes(StandardCharsets.UTF_8);
+            ByteArrayOutputStream out = new ByteArrayOutputStream(leftBytes.length + rightBytes.length + 8);
+            appendLengthPrefixed(out, leftBytes);
+            appendLengthPrefixed(out, rightBytes);
+            return bytesToHex(MessageDigest.getInstance("SHA-256").digest(out.toByteArray()));
+        } catch (Exception ex) {
+            logger.error("SHA-256 hashing failed", ex);
+            throw new RuntimeException("Failed to compute SHA-256 hash", ex);
+        }
+    }
+
+    private static void appendLengthPrefixed(ByteArrayOutputStream out, byte[] bytes) {
+        out.write((bytes.length >>> 24) & 0xFF);
+        out.write((bytes.length >>> 16) & 0xFF);
+        out.write((bytes.length >>> 8) & 0xFF);
+        out.write(bytes.length & 0xFF);
+        for (byte b : bytes) {
+            out.write(b);
         }
     }
 
@@ -163,7 +197,7 @@ public class MerkleTreeHasher {
         for (int i = 0; i < currentLevel.size(); i += 2) {
             String left = currentLevel.get(i);
             String right = (i + 1 < currentLevel.size()) ? currentLevel.get(i + 1) : left;
-            nextLevel.add(sha256(left + right));
+            nextLevel.add(combineAndHash(left, right));
         }
 
         return nextLevel;
@@ -187,9 +221,9 @@ public class MerkleTreeHasher {
 
         for (String sibling : proof) {
             if (leafIndex % 2 == 0) {
-                currentHash = sha256(currentHash + sibling);
+                currentHash = combineAndHash(currentHash, sibling);
             } else {
-                currentHash = sha256(sibling + currentHash);
+                currentHash = combineAndHash(sibling, currentHash);
             }
             leafIndex = leafIndex / 2;
         }
@@ -209,7 +243,7 @@ public class MerkleTreeHasher {
         String previousHash = "";
 
         for (String rootHash : rootHashes) {
-            String chainedHash = sha256(previousHash + rootHash);
+            String chainedHash = combineAndHash(previousHash, rootHash);
             chain.add(chainedHash);
             previousHash = chainedHash;
         }
@@ -232,7 +266,7 @@ public class MerkleTreeHasher {
         String previousHash = "";
 
         for (int i = 0; i < hashChain.size(); i++) {
-            String expectedHash = sha256(previousHash + rootHashes.get(i));
+            String expectedHash = combineAndHash(previousHash, rootHashes.get(i));
             if (!expectedHash.equals(hashChain.get(i))) {
                 return false;
             }
