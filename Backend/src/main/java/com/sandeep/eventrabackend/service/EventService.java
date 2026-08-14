@@ -1,8 +1,5 @@
 package com.sandeep.eventrabackend.service;
 
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-
 import com.sandeep.eventrabackend.dto.request.CancelEventRequest;
 import com.sandeep.eventrabackend.dto.request.CsvWaitlistImportRequest;
 import com.sandeep.eventrabackend.dto.request.EventCreateRequest;
@@ -543,7 +540,6 @@ public class EventService {
          * @throws EventNotFoundException if the event does not exist
          */
         @Transactional
-        @CacheEvict(value = "events", key = "#id")
         public EventResponse updateEvent(Long id, EventUpdateRequest request, String userEmail) {
                 Event event = eventRepository.findById(id)
                                 .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + id));
