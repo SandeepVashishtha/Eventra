@@ -94,25 +94,65 @@ export default function PairCodeEditor({
   const handleRunCode = () => {
     setIsRunning(true);
     setOutput(null);
-    setTimeout(() => {
-      try {
-        if (language === "javascript") {
-          let consoleLogs = [];
-          const customConsole = {
-            log: (...args) => consoleLogs.push(args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' ')),
-            error: (...args) => consoleLogs.push("[Error] " + args.join(' ')),
-          };
-          const runFn = new Function('console', code);
-          runFn(customConsole);
-          setOutput(consoleLogs.length ? consoleLogs.join('\n') : "Code executed cleanly with no logs.");
-        } else {
-          setOutput(`[${language.toUpperCase()} Interpreter Simulation]: Output generated successfully.`);
-        }
-      } catch (err) {
-        setOutput(`Runtime Error: ${err.message}`);
-      }
+
+    if (language !== "javascript") {
+      setOutput(`[${language.toUpperCase()} Interpreter Simulation]: Output generated successfully.`);
       setIsRunning(false);
-    }, 400);
+      return;
+    }
+
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    iframe.sandbox = "allow-scripts";
+    document.body.appendChild(iframe);
+
+    const logs = [];
+    const onMessage = (e) => {
+      if (e.source !== iframe.contentWindow) return;
+      if (e.data?.type === "console") {
+        logs.push(e.data.level === "error" ? `[Error] ${e.data.args}` : e.data.args);
+      } else if (e.data?.type === "done") {
+        cleanup();
+        setOutput(logs.length ? logs.join("\n") : "Code executed cleanly with no logs.");
+        setIsRunning(false);
+      }
+    };
+    window.addEventListener("message", onMessage);
+
+    const cleanup = () => {
+      window.removeEventListener("message", onMessage);
+      iframe.remove();
+    };
+
+    const wrappedCode = `
+<script>
+  (function() {
+    const post = (type, data) => parent.postMessage({ type, ...data }, "*");
+    const safeStringify = (a) => {
+      try { return typeof a === 'object' ? JSON.stringify(a) : String(a); }
+      catch { return String(a); }
+    };
+    const console = {
+      log: (...args) => post("console", { level: "log", args: args.map(safeStringify).join(" ") }),
+      error: (...args) => post("console", { level: "error", args: args.map(safeStringify).join(" ") }),
+      warn: (...args) => post("console", { level: "log", args: args.map(safeStringify).join(" ") }),
+    };
+    try {
+      ${code.replace(/<\/script>/gi, "<\\/script>")}
+    } catch(e) {
+      post("console", { level: "error", args: e.message });
+    }
+    post("done", {});
+  })();
+</script>`;
+
+    iframe.srcdoc = "<!DOCTYPE html><html><body>" + wrappedCode + "</body></html>";
+
+    setTimeout(() => {
+      cleanup();
+      setOutput(logs.length ? logs.join("\n") : "Code executed cleanly with no logs.");
+      setIsRunning(false);
+    }, 5000);
   };
 
   const lineCount = code.split('\n').length;
