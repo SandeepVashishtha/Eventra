@@ -326,10 +326,6 @@ const getEstimatedStatus = (
   const ratio =
     position / total;
 
-  if (position <= 3) {
-    return "high";
-  }
-
   if (ratio <= 0.25) {
     return "high";
   }
