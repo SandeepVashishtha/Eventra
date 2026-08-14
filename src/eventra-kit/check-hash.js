@@ -2,6 +2,6 @@
  * adds a check-hash helper.
  */
 export function checkHash(value) {
-  return String(value).slice(-1);
+  return typeof value === 'string' && /^[a-f0-9]+$/i.test(value);
 }
 
