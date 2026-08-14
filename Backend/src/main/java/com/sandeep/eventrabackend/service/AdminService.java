@@ -51,6 +51,9 @@ public class AdminService {
     private final HackathonRegistrationRepository hackathonRegistrationRepository;
     private final ProjectUpvoteRepository projectUpvoteRepository;
     private final NotificationRepository notificationRepository;
+    private final PaymentRepository paymentRepository;
+    private final PaymentPlanRepository paymentPlanRepository;
+    private final EmailTemplateRepository emailTemplateRepository;
     private final EventService eventService;
 
     // ══════════════════════════════════════════════════════════════════════
@@ -278,6 +281,9 @@ public class AdminService {
         if (!eventRepository.existsById(id)) {
             throw new EntityNotFoundException("Event not found with id: " + id);
         }
+        paymentRepository.deleteByRegistration_Event_Id(id);
+        paymentPlanRepository.deleteByRegistration_Event_Id(id);
+        emailTemplateRepository.deleteByEventId(String.valueOf(id));
         eventRegistrationRepository.deleteByEventId(id);
         eventWaitlistRepository.deleteByEvent_Id(id);
         eventTeamMemberRepository.deleteByEvent_Id(id);

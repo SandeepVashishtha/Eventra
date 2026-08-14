@@ -34,6 +34,8 @@ public interface EmailTemplateRepository extends JpaRepository<EmailTemplate, Lo
      */
     List<EmailTemplate> findByTemplateType(String templateType);
 
+    void deleteByEventId(String eventId);
+
     /**
      * Delete templates by event ID and organizer email
      */
