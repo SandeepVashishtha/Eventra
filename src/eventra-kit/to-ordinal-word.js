@@ -1,3 +1,4 @@
+import { toOrdinal } from './to-ordinal.js';
 
 /**
  * adds an ordinal word helper.
