@@ -38,11 +38,13 @@ public class SubtitleSession {
     /**
      * Current target languages (can be multiple for multilingual streaming)
      */
-    private java.util.Set<String> targetLanguages = new java.util.HashSet<>();
+    @Builder.Default
+    private java.util.Set<String> targetLanguages = java.util.concurrent.ConcurrentHashMap.newKeySet();
     
     /**
      * Session status
      */
+    @Builder.Default
     private SessionStatus status = SessionStatus.ACTIVE;
     
     /**
@@ -68,12 +70,14 @@ public class SubtitleSession {
     /**
      * Statistics for this session
      */
+    @Builder.Default
     private SessionStatistics statistics = new SessionStatistics();
     
     /**
      * Additional metadata
      */
-    private java.util.Map<String, Object> metadata = new java.util.HashMap<>();
+    @Builder.Default
+    private java.util.Map<String, Object> metadata = new java.util.concurrent.ConcurrentHashMap<>();
     
     /**
      * Add a target language to the session

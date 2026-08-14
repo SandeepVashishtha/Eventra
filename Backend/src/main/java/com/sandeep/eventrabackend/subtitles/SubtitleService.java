@@ -10,6 +10,8 @@ import org.springframework.data.domain.Pageable;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 /**
@@ -41,13 +43,13 @@ public class SubtitleService {
     /**
      * In-memory cache for recent subtitles (for low-latency access)
      */
-    private final Map<String, List<Subtitle>> eventSubtitleCache = new HashMap<>();
-    private final Map<String, List<Subtitle>> sessionSubtitleCache = new HashMap<>();
+    private final Map<String, List<Subtitle>> eventSubtitleCache = new ConcurrentHashMap<>();
+    private final Map<String, List<Subtitle>> sessionSubtitleCache = new ConcurrentHashMap<>();
     
     /**
      * Active subtitle sessions (for WebSocket/SSE streaming)
      */
-    private final Map<String, SubtitleSession> activeSessions = new HashMap<>();
+    private final Map<String, SubtitleSession> activeSessions = new ConcurrentHashMap<>();
     
     /**
      * Create a new subtitle
@@ -228,7 +230,7 @@ public class SubtitleService {
         subtitles.sort(Comparator.comparing(Subtitle::getSequenceNumber));
         
         // Add to cache
-        eventSubtitleCache.put("event_" + eventId, subtitles);
+        eventSubtitleCache.put("event_" + eventId, new CopyOnWriteArrayList<>(subtitles));
         
         return subtitles;
     }
@@ -264,7 +266,7 @@ public class SubtitleService {
         subtitles.sort(Comparator.comparing(Subtitle::getSequenceNumber));
         
         // Add to cache
-        sessionSubtitleCache.put("session_" + sessionId, subtitles);
+        sessionSubtitleCache.put("session_" + sessionId, new CopyOnWriteArrayList<>(subtitles));
         
         return subtitles;
     }
@@ -415,12 +417,12 @@ public class SubtitleService {
     private void addToCache(Subtitle subtitle) {
         // Add to event cache
         String eventKey = "event_" + subtitle.getEventId();
-        eventSubtitleCache.computeIfAbsent(eventKey, k -> new ArrayList<>()).add(subtitle);
+        eventSubtitleCache.computeIfAbsent(eventKey, k -> new CopyOnWriteArrayList<>()).add(subtitle);
         
         // Add to session cache
         if (subtitle.getSessionId() != null) {
             String sessionKey = "session_" + subtitle.getSessionId();
-            sessionSubtitleCache.computeIfAbsent(sessionKey, k -> new ArrayList<>()).add(subtitle);
+            sessionSubtitleCache.computeIfAbsent(sessionKey, k -> new CopyOnWriteArrayList<>()).add(subtitle);
         }
         
         // Limit cache size
@@ -431,14 +433,13 @@ public class SubtitleService {
      * Update subtitle in cache
      */
     private void updateCache(Subtitle subtitle) {
+        if (subtitle == null) return;
+
         // Update in event cache
         String eventKey = "event_" + subtitle.getEventId();
         List<Subtitle> eventSubtitles = eventSubtitleCache.get(eventKey);
         if (eventSubtitles != null) {
-            int index = eventSubtitles.indexOf(subtitle);
-            if (index >= 0) {
-                eventSubtitles.set(index, subtitle);
-            }
+            updateListEntry(eventSubtitles, subtitle);
         }
         
         // Update in session cache
@@ -446,11 +447,22 @@ public class SubtitleService {
             String sessionKey = "session_" + subtitle.getSessionId();
             List<Subtitle> sessionSubtitles = sessionSubtitleCache.get(sessionKey);
             if (sessionSubtitles != null) {
-                int index = sessionSubtitles.indexOf(subtitle);
-                if (index >= 0) {
-                    sessionSubtitles.set(index, subtitle);
-                }
+                updateListEntry(sessionSubtitles, subtitle);
             }
+        }
+    }
+
+    private void updateListEntry(List<Subtitle> subtitles, Subtitle subtitle) {
+        int index = -1;
+        for (int i = 0; i < subtitles.size(); i++) {
+            Subtitle sub = subtitles.get(i);
+            if (sub != null && (Objects.equals(sub.getId(), subtitle.getId()) || sub.equals(subtitle))) {
+                index = i;
+                break;
+            }
+        }
+        if (index >= 0) {
+            subtitles.set(index, subtitle);
         }
     }
     
@@ -458,11 +470,13 @@ public class SubtitleService {
      * Remove subtitle from cache
      */
     private void removeFromCache(Subtitle subtitle) {
+        if (subtitle == null) return;
+
         // Remove from event cache
         String eventKey = "event_" + subtitle.getEventId();
         List<Subtitle> eventSubtitles = eventSubtitleCache.get(eventKey);
         if (eventSubtitles != null) {
-            eventSubtitles.removeIf(sub -> sub.getId().equals(subtitle.getId()));
+            eventSubtitles.removeIf(sub -> Objects.equals(sub.getId(), subtitle.getId()) || sub.equals(subtitle));
         }
         
         // Remove from session cache
@@ -470,7 +484,7 @@ public class SubtitleService {
             String sessionKey = "session_" + subtitle.getSessionId();
             List<Subtitle> sessionSubtitles = sessionSubtitleCache.get(sessionKey);
             if (sessionSubtitles != null) {
-                sessionSubtitles.removeIf(sub -> sub.getId().equals(subtitle.getId()));
+                sessionSubtitles.removeIf(sub -> Objects.equals(sub.getId(), subtitle.getId()) || sub.equals(subtitle));
             }
         }
     }
@@ -479,32 +493,34 @@ public class SubtitleService {
      * Trim cache to prevent memory issues
      */
     private void trimCache() {
-        // Trim event cache — must update map entries, not reassign local variable
+        // Trim event cache sizes safely
         eventSubtitleCache.forEach((key, subtitles) -> {
-            if (subtitles.size() > maxHistorySize) {
-                eventSubtitleCache.put(key, new ArrayList<>(subtitles.subList(Math.max(0, subtitles.size() - maxHistorySize), subtitles.size())));
+            while (subtitles.size() > maxHistorySize && !subtitles.isEmpty()) {
+                subtitles.remove(0);
             }
         });
         
-        // Trim session cache — must update map entries, not reassign local variable
+        // Trim session cache sizes safely
         sessionSubtitleCache.forEach((key, subtitles) -> {
-            if (subtitles.size() > bufferSize) {
-                sessionSubtitleCache.put(key, new ArrayList<>(subtitles.subList(Math.max(0, subtitles.size() - bufferSize), subtitles.size())));
+            while (subtitles.size() > bufferSize && !subtitles.isEmpty()) {
+                subtitles.remove(0);
             }
         });
         
-        // Limit number of cached events
+        // Limit total number of cached event keys without mutating map during stream iteration
         if (eventSubtitleCache.size() > 100) {
-            eventSubtitleCache.keySet().stream()
-                    .skip(50)
-                    .forEach(eventSubtitleCache::remove);
+            List<String> keysToRemove = eventSubtitleCache.keySet().stream()
+                    .limit(eventSubtitleCache.size() - 50)
+                    .collect(Collectors.toList());
+            keysToRemove.forEach(eventSubtitleCache::remove);
         }
         
-        // Limit number of cached sessions
+        // Limit total number of cached session keys without mutating map during stream iteration
         if (sessionSubtitleCache.size() > 200) {
-            sessionSubtitleCache.keySet().stream()
-                    .skip(100)
-                    .forEach(sessionSubtitleCache::remove);
+            List<String> keysToRemove = sessionSubtitleCache.keySet().stream()
+                    .limit(sessionSubtitleCache.size() - 100)
+                    .collect(Collectors.toList());
+            keysToRemove.forEach(sessionSubtitleCache::remove);
         }
     }
     
