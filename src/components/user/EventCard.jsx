@@ -57,9 +57,10 @@ const EventCard = memo(({
 }) => {
   const prefersReducedMotion = useReducedMotion();
   const isOffline = useOfflineStatus();
+  const { formatShort } = useDateFormatter();
   const fadeUpVariants = fadeUp(prefersReducedMotion);
   const status = getEventStatus(event);
-  const shortDate = formatShortDate(event?.date);
+  const shortDate = formatShort(event?.date);
 
   // Render tags
   const renderTags = () => {
