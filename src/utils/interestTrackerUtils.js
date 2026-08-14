@@ -31,6 +31,9 @@ export const saveInterestedEvents = (events) => {
  * Add an event to interested list
  */
 export const addInterestedEvent = (event) => {
+  if (!event || typeof event !== "object" || !event.id) {
+    return getInterestedEvents();
+  }
   const events = getInterestedEvents();
 
   const exists = events.some(
@@ -128,9 +131,11 @@ export const sortInterestedEvents = (
 
   switch (sortBy) {
     case "name":
-      return sorted.sort((a, b) =>
-        a.title.localeCompare(b.title)
-      );
+      return sorted.sort((a, b) => {
+        const titleA = String(a?.title || "");
+        const titleB = String(b?.title || "");
+        return titleA.localeCompare(titleB);
+      });
 
     case "date":
       return sorted.sort(
