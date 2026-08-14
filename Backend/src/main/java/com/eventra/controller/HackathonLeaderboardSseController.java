@@ -140,7 +140,11 @@ public class HackathonLeaderboardSseController implements MessageListener, Healt
                 emitter
         );
 
-        sessions.add(session);
+        leaderboardSessions.compute(hackathonId, (id, list) -> {
+            if (list == null) list = new CopyOnWriteArrayList<>();
+            list.add(session);
+            return list;
+        });
         if (activeConnectionsCounter != null) activeConnectionsCounter.increment();
 
         // Register Lifecycles
@@ -367,13 +371,10 @@ public class HackathonLeaderboardSseController implements MessageListener, Healt
     }
 
     private void removeSession(Long hackathonId, ClientSession session) {
-        CopyOnWriteArrayList<ClientSession> sessions = leaderboardSessions.get(hackathonId);
-        if (sessions != null) {
+        leaderboardSessions.computeIfPresent(hackathonId, (id, sessions) -> {
             sessions.remove(session);
-            if (sessions.isEmpty()) {
-                leaderboardSessions.remove(hackathonId);
-            }
-        }
+            return sessions.isEmpty() ? null : sessions;
+        });
     }
 
     public int getTotalActiveConnections() {
