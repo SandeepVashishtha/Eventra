@@ -2,8 +2,9 @@ import { renderHook, act, waitFor } from "@testing-library/react";
 import { useNotificationPoller } from "./useNotificationPoller";
 import { showUndoToast } from "../utils/toast.js";
 
+let mockAuth = { token: "tok-123", user: { id: "user-1" } };
 vi.mock("../context/AuthContext", () => ({
-  useAuth: () => ({ token: "tok-123", user: { id: "user-1" } }),
+  useAuth: () => mockAuth,
 }));
 
 vi.mock("../utils/toast.js", () => ({
@@ -19,9 +20,12 @@ vi.mock("../utils/notificationQueue.js", () => ({
   syncNotificationQueue: vi.fn().mockResolvedValue(undefined),
 }));
 
+const mockIdbGet = vi.fn().mockResolvedValue(undefined);
+const mockIdbDel = vi.fn().mockResolvedValue(undefined);
+
 vi.mock("idb-keyval", () => ({
-  get: vi.fn().mockResolvedValue(undefined),
-  del: vi.fn().mockResolvedValue(undefined),
+  get: (...args) => mockIdbGet(...args),
+  del: (...args) => mockIdbDel(...args),
 }));
 
 const mockGet = vi.fn();
@@ -146,5 +150,42 @@ describe("useNotificationPoller - deleteNotification", () => {
 
     // Undo cancels the commit, so the delete must not reach the server.
     expect(mockDelete).not.toHaveBeenCalled();
+  });
+
+  it("migrates legacy IndexedDB notifications when user logs in after mounting logged-out (#16538)", async () => {
+    const legacyItem = {
+      id: "legacy-1",
+      title: "Legacy Notification",
+      message: "Old event",
+      isRead: false,
+      timestamp: "2026-01-01T00:00:00.000Z",
+    };
+
+    mockIdbGet.mockResolvedValue(JSON.stringify([legacyItem]));
+    mockGet.mockResolvedValue({ data: [] });
+
+    mockAuth = { token: null, user: null };
+
+    const hasCompletedInitialFetchRef = { current: false };
+    const deliverNew = vi.fn();
+
+    const { result, rerender } = renderHook(() =>
+      useNotificationPoller(deliverNew, hasCompletedInitialFetchRef),
+    );
+
+    await waitFor(() => {
+      expect(mockIdbGet).toHaveBeenCalledWith("eventra_notifications");
+    });
+
+    // Now user logs in
+    mockAuth = { token: "tok-abc", user: { id: "user-456" } };
+    rerender();
+
+    await waitFor(() => {
+      expect(result.current.notifications.some((n) => n.id === "legacy-1")).toBe(true);
+    });
+
+    expect(result.current.unreadCount).toBeGreaterThanOrEqual(1);
+    expect(mockIdbDel).toHaveBeenCalledWith("eventra_notifications");
   });
 });
