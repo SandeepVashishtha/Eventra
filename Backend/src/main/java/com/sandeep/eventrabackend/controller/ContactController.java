@@ -40,7 +40,11 @@ public class ContactController {
             @ApiResponse(responseCode = "429", description = "Too many requests",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    public ResponseEntity<ContactResponse> submitContactMessage(@Valid @RequestBody ContactRequest request) {
+    public ResponseEntity<ContactResponse> submitContactMessage(
+            @Valid @RequestBody(required = false) ContactRequest request) {
+        if (request == null) {
+            return ResponseEntity.badRequest().build();
+        }
         ContactResponse response = contactService.submitContactMessage(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
