@@ -188,7 +188,9 @@ public class EventController {
                         @Parameter(description = "Page number (0-based)") @RequestParam(defaultValue = "0") int page,
                         @Parameter(description = "Page size") @RequestParam(defaultValue = "20") int size) {
 
-                Pageable pageable = PageRequest.of(page, size);
+                int clampedSize = Math.min(Math.max(size, 1), 100);
+                int safePage = Math.max(page, 0);
+                Pageable pageable = PageRequest.of(safePage, clampedSize);
                 Page<EventResponse> events = eventService.searchEvents(search, category, startDate, endDate, free,
                                 pageable);
                 return ResponseEntity.ok(events);
