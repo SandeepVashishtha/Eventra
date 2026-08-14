@@ -332,7 +332,7 @@ export const formatReminderDateTime = (
   }
 
   return parsedDate.toLocaleString(
-    "en-IN",
+    undefined,
     {
       day: "2-digit",
       month: "short",
