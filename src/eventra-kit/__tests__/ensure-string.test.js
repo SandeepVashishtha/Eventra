@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import * as EnsureString from '../ensure-string.js';
+import { ensureString } from '../ensure-string.js';
 
 describe('ensure-string', () => {
-  it('exports a module', () => {
-    expect(EnsureString).toBeDefined();
+  it('coerces a value into a string', () => {
+    expect(ensureString(42)).toBe('42');
+    expect(ensureString('abc')).toBe('abc');
+    expect(ensureString(true)).toBe('true');
   });
 });
-
