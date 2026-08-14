@@ -42,9 +42,8 @@ public class AttachmentUploadController {
      */
     @PostMapping("/upload")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<String> uploadAttachment(@RequestParam("file") MultipartFile file) {
-        // Check if file is empty
-        if (file.isEmpty()) {
+    public ResponseEntity<String> uploadAttachment(@RequestParam(value = "file", required = false) MultipartFile file) {
+        if (file == null || file.isEmpty()) {
             return ResponseEntity.badRequest().body("File is empty.");
         }
 
