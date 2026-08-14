@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import * as DedupeGroup from '../dedupe-group.js';
+import { dedupeGroup } from '../dedupe-group.js';
 
 describe('dedupe-group', () => {
-  it('exports a module', () => {
-    expect(DedupeGroup).toBeDefined();
+  it('removes duplicate values', () => {
+    expect(dedupeGroup([1, 1, 2])).toEqual([1, 2]);
+    expect(dedupeGroup(['a', 'b', 'a'])).toEqual(['a', 'b']);
   });
 });
-
