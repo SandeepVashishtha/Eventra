@@ -8,7 +8,8 @@ export function wrapText(text, width) {
   let line = '';
   for (const word of words) {
     if (line.length + word.length > width) {
-      lines.push(line.trim());
+      const trimmed = line.trim();
+      if (trimmed) lines.push(trimmed);
       line = word;
     } else {
       line += ` ${word}`;
