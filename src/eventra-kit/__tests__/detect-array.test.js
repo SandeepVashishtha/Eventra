@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import * as DetectArray from '../detect-array.js';
+import { detectArray } from '../detect-array.js';
 
 describe('detect-array', () => {
-  it('exports a module', () => {
-    expect(DetectArray).toBeDefined();
+  it('checks whether the input is an array', () => {
+    expect(detectArray([1, 2])).toBe(true);
+    expect(detectArray([])).toBe(true);
+    expect(detectArray('abc')).toBe(false);
   });
 });
-
