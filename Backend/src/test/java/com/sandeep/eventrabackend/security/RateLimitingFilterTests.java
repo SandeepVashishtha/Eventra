@@ -23,6 +23,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "app.rate-limit.login.window=1m",
         "app.rate-limit.google.capacity=1",
         "app.rate-limit.google.window=1m",
+        "app.rate-limit.forgot-password.capacity=1",
+        "app.rate-limit.forgot-password.window=1m",
         "app.rate-limit.trusted-proxy-hops=1",
         "app.rate-limit.enabled=true"
 })
@@ -89,5 +91,27 @@ class RateLimitingFilterTests {
                         .content("{}"))
                 .andExpect(status().isTooManyRequests())
                 .andExpect(jsonPath("$.path", is("/api/auth/google")));
+    }
+
+    @Test
+    void returnsTooManyRequestsWhenResetPasswordLimitIsExceeded() throws Exception {
+        // The real password-reset request endpoint is POST /api/auth/reset-password;
+        // the rate-limit rule must cover it so the flow cannot be brute-forced.
+        String clientIp = "203.0.113.30";
+        String validBody = "{\"email\":\"reset@example.com\"}";
+
+        mockMvc.perform(post("/api/auth/reset-password")
+                        .header("X-Forwarded-For", clientIp)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(validBody))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/auth/reset-password")
+                        .header("X-Forwarded-For", clientIp)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(validBody))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.status", is(429)))
+                .andExpect(jsonPath("$.path", is("/api/auth/reset-password")));
     }
 }
