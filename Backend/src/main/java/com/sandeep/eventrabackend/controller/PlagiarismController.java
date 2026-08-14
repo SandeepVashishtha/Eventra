@@ -21,7 +21,11 @@ public class PlagiarismController {
     private PlagiarismDetectionService plagiarismService;
 
     @PostMapping("/analyze")
-    public ResponseEntity<Map<String, Object>> analyzeSubmissions(@RequestBody Map<String, Map<String, String>> teamSubmissions) {
+    public ResponseEntity<Map<String, Object>> analyzeSubmissions(
+            @RequestBody(required = false) Map<String, Map<String, String>> teamSubmissions) {
+        if (teamSubmissions == null || teamSubmissions.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Team submissions cannot be null or empty"));
+        }
         List<SubmissionComparison> comparisons = plagiarismService.analyzeHackathonSubmissions(teamSubmissions);
 
         long highRiskCount = comparisons.stream().filter(c -> "HIGH".equals(c.getRiskLevel())).count();
