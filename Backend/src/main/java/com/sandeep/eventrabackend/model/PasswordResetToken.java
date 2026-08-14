@@ -3,13 +3,17 @@ package com.sandeep.eventrabackend.model;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
+@ToString(exclude = "tokenHash")
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
