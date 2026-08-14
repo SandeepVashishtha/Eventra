@@ -688,13 +688,21 @@ public class EventService {
                         }
                 }
 
-                event.setStatus("CANCELLED");
-                event.setCancellationReason(request.getReason());
-                event.setCancelledAt(request.getCancelledAt() != null ? request.getCancelledAt() : LocalDateTime.now());
-                event.setRefundPolicy(refundPolicy);
-                event.setRefundPercent("PARTIAL".equals(refundPolicy) ? request.getRefundPercent() : null);
+                int cancelled = eventRepository.markCancelled(
+                                id,
+                                request.getReason(),
+                                request.getCancelledAt() != null ? request.getCancelledAt() : LocalDateTime.now(),
+                                refundPolicy,
+                                "PARTIAL".equals(refundPolicy) ? request.getRefundPercent() : null);
 
-                Event saved = eventRepository.save(event);
+                if (cancelled == 0) {
+                        return toEventResponse(eventRepository.findById(id)
+                                        .orElseThrow(() -> new EventNotFoundException(
+                                                        "Event not found with id: " + id)));
+                }
+
+                Event saved = eventRepository.findById(id)
+                                .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + id));
                 if (!Boolean.FALSE.equals(request.getNotifyAttendees())) {
                         notifyCancellation(saved, request.getReason());
                 }
@@ -785,12 +793,15 @@ public class EventService {
 
                                         if (refundDue
                                                         && registration.isPaymentCompleted()
-                                                        && registration.getStripePaymentIntentId() != null) {
+                                                        && registration.getStripePaymentIntentId() != null
+                                                        && !"REFUNDED".equalsIgnoreCase(registration.getPaymentStatus())) {
                                                 try {
                                                         stripeService.refundPayment(
                                                                         registration.getStripePaymentIntentId(),
                                                                         refundPolicy,
                                                                         refundPercent);
+                                                        registration.setPaymentStatus("REFUNDED");
+                                                        eventRegistrationRepository.save(registration);
                                                 } catch (Exception e) {
                                                         log.error(
                                                                         "Failed to refund payment for registration {} on cancelled event {}: {}",

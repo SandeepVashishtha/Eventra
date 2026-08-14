@@ -44,6 +44,21 @@ public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecific
             + "WHERE e.id = :id AND (e.capacity IS NULL OR e.capacity > e.registeredCount)")
     int incrementRegisteredCountAtomically(@Param("id") Long id);
 
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE Event e SET "
+            + "e.status = 'CANCELLED', "
+            + "e.cancellationReason = :reason, "
+            + "e.cancelledAt = :cancelledAt, "
+            + "e.refundPolicy = :refundPolicy, "
+            + "e.refundPercent = :refundPercent "
+            + "WHERE e.id = :id AND e.status <> 'CANCELLED'")
+    int markCancelled(
+            @Param("id") Long id,
+            @Param("reason") String reason,
+            @Param("cancelledAt") LocalDateTime cancelledAt,
+            @Param("refundPolicy") String refundPolicy,
+            @Param("refundPercent") Integer refundPercent);
+
     /**
      * Case-insensitive search over title OR description.
      * Used by {@code GET /api/events/search} (#15364).
