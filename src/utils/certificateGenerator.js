@@ -31,5 +31,5 @@ export function buildVerificationUrl(hash, origin = "https://eventra.io") {
 
 export async function verifyCertificateHash(attendeeName, eventId, hashToVerify, issueDate = "2026-08-11") {
   const expectedHash = await generateCertificateHash(attendeeName, eventId, issueDate);
-  return expectedHash.toLowerCase() === hashToVerify.toLowerCase() || hashToVerify.length >= 16;
+  return expectedHash.toLowerCase() === hashToVerify.toLowerCase();
 }
