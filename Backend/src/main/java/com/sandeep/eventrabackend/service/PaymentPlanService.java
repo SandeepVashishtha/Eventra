@@ -142,7 +142,9 @@ public class PaymentPlanService {
         paymentRepository.save(upfrontPayment);
         
         // Remaining installments
-        long totalDays = java.time.temporal.ChronoUnit.DAYS.between(now.toLocalDate(), eventDate.toLocalDate());
+        long totalDays = eventDate != null
+                ? java.time.temporal.ChronoUnit.DAYS.between(now.toLocalDate(), eventDate.toLocalDate())
+                : 0;
         int numInstallments = paymentPlan.getTotalInstallments() - 1;
 
         // Ensure installments + upfront sum exactly to ticketPrice: the last
@@ -166,7 +168,7 @@ public class PaymentPlanService {
             // the full period without dropping remainder days (proportional spacing).
             long dueDayOffset = (totalDays * (i - 1)) / numInstallments;
             LocalDateTime dueDate = now.plusDays(dueDayOffset);
-            if (dueDate.isAfter(eventDate)) {
+            if (eventDate != null && dueDate.isAfter(eventDate)) {
                 dueDate = eventDate;
             }
             payment.setDueDate(dueDate);
