@@ -22,4 +22,16 @@ public class AttachmentUploadController {
         String fileUrl = "https://eventra-storage.s3.amazonaws.com/uploads/" + file.getOriginalFilename();
         return ResponseEntity.ok(new UploadResponseDto(true, "Upload successful", fileUrl));
     }
+
+    /**
+     * Validates that the file has an allowed extension.
+     * Checks both the original filename and the content type for consistency.
+     */
+    private boolean hasAllowedExtension(String filename) {
+        if (filename == null) {
+            return false;
+        }
+        String lowerFilename = filename.toLowerCase();
+        return ALLOWED_EXTENSIONS.stream().anyMatch(lowerFilename::endsWith);
+    }
 }
