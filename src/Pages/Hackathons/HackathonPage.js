@@ -12,7 +12,6 @@ import HackathonCTA from "./HackathonCTA";
 import Fuse from "fuse.js";
 import { createPortal } from "react-dom";
 import BackToTopButton from "components/common/BackToTopButton";
-// import VirtualizedHackathonGrid from "components/common/VirtualizedHackathonGrid";
 import useDocumentTitle from "hooks/useDocumentTitle";
 import { filterHackathons } from "./hackathonFilterUtils.mjs";
 import { HackathonCardSkeleton } from "components/common/SkeletonLoaders";
