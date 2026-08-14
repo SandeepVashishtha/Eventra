@@ -320,7 +320,8 @@ public class AdminController {
             @Parameter(description = "Number of months to look back", example = "6")
             @RequestParam(defaultValue = "6") int months
     ) {
-        return ResponseEntity.ok(adminService.getUserGrowthTrend(months));
+        int clampedMonths = Math.min(Math.max(months, 1), 36);
+        return ResponseEntity.ok(adminService.getUserGrowthTrend(clampedMonths));
     }
 
     @GetMapping("/analytics/events/popular")
