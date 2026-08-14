@@ -49,16 +49,13 @@ public class PaymentController {
     public ResponseEntity<?> createPaymentPlan(
             Authentication authentication,
             @RequestParam Long registrationId,
-            @RequestParam(required = false, defaultValue = "1000.00") BigDecimal ticketPrice,
-            @RequestParam(required = false, defaultValue = "USD") String currency,
-            @RequestParam(required = false, defaultValue = "25") Integer upfrontPercentage,
-            @RequestParam(required = false, defaultValue = "4") Integer totalInstallments) {
+            @RequestParam(required = false, defaultValue = "1000.00") BigDecimal ticketPrice) {
 
         paymentPlanService.requirePaymentAccessByRegistration(registrationId, authentication.getName());
 
         try {
             PaymentPlan paymentPlan = paymentPlanService.createPaymentPlan(
-                    registrationId, ticketPrice, currency, upfrontPercentage, totalInstallments);
+                    registrationId, ticketPrice);
             
             return ResponseEntity.ok(Map.of(
                     "success", true,
