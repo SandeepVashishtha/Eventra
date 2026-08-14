@@ -14,9 +14,16 @@ export const exportTicketToPdf = async (event, userData) => {
   const title = String(event.title || "Unknown Event").slice(0, 80);
   const attendee = String(userData?.name || userData?.email || "Guest").slice(0, 60);
   const location = String(event.location || "Virtual").slice(0, 60);
-  const eventDate = event.date
-    ? new Date(event.date).toLocaleDateString()
-    : new Date().toLocaleDateString();
+
+  let eventDate;
+  if (event.date) {
+    const parsed = new Date(event.date);
+    eventDate = !Number.isNaN(parsed.getTime())
+      ? parsed.toLocaleDateString()
+      : String(event.date);
+  } else {
+    eventDate = "TBD";
+  }
 
   const ticketId = String(event.id || Date.now());
 
