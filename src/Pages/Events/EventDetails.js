@@ -70,7 +70,7 @@ const formatEventDate = (dateValue) => {
 
   const now = new Date();
   const diffMs = d - now;
-  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
   let relative = "";
   if (diffMs < 0) {
