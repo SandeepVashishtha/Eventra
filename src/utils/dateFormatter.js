@@ -266,7 +266,7 @@ export function getTimeRemaining(targetDate) {
  * @returns {string} Formatted duration string
  */
 export function formatDuration(durationMs) {
-  if (typeof durationMs !== "number" || isNaN(durationMs) || durationMs < 0) {
+  if (typeof durationMs !== "number" || !Number.isFinite(durationMs) || durationMs < 0) {
     return "0m";
   }
 
@@ -283,6 +283,95 @@ export function formatDuration(durationMs) {
 // ============================================================================
 // 4. Calendar Link Generators (Google Calendar & iCal / ICS)
 // ============================================================================
+
+/**
+ * Parses a date input (string, Date, or timestamp) taking into account an optional target IANA timezone.
+ * For naive date strings without explicit UTC/offset designators (e.g. "2026-06-15T10:00:00"),
+ * it interprets the date/time in the context of targetTimezone and converts it to a UTC Date instance.
+ *
+ * @param {string|Date|number} dateInput - Source date input
+ * @param {string} [targetTimezone] - Target IANA timezone
+ * @returns {Date} Timezone-aware Date object
+ */
+export function parseDateInTimezone(dateInput, targetTimezone) {
+  if (dateInput === null || dateInput === undefined || dateInput === "") {
+    return new Date(NaN);
+  }
+
+  if (dateInput instanceof Date) {
+    return dateInput;
+  }
+
+  if (typeof dateInput === "number") {
+    return new Date(dateInput);
+  }
+
+  if (typeof dateInput === "string") {
+    const cleanStr = dateInput.trim();
+    if (!cleanStr) return new Date(NaN);
+
+    // If string carries explicit UTC ("Z") or offset ("+05:30" / "-04:00"), standard Date parser handles it
+    if (/Z$|[+-]\d{2}:?\d{2}$/i.test(cleanStr)) {
+      return new Date(cleanStr);
+    }
+
+    // Try matching ISO-like naive date-time string (e.g. "2026-06-15T10:00:00", "2026-06-15 10:00", "2026-06-15")
+    const match = cleanStr.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?)?/);
+    if (match) {
+      const year = parseInt(match[1], 10);
+      const month = parseInt(match[2], 10) - 1;
+      const day = parseInt(match[3], 10);
+      const hours = match[4] ? parseInt(match[4], 10) : 0;
+      const minutes = match[5] ? parseInt(match[5], 10) : 0;
+      const seconds = match[6] ? parseInt(match[6], 10) : 0;
+
+      const tz = targetTimezone && isValidTimezone(targetTimezone) ? targetTimezone : getUserTimezone();
+      const targetLocalMs = Date.UTC(year, month, day, hours, minutes, seconds);
+
+      try {
+        const formatter = new Intl.DateTimeFormat("en-US", {
+          timeZone: tz,
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false,
+        });
+
+        let utcCandidate = targetLocalMs;
+        for (let i = 0; i < 4; i++) {
+          const parts = Object.fromEntries(
+            formatter.formatToParts(new Date(utcCandidate)).map((p) => [p.type, p.value])
+          );
+
+          const tzYear = parseInt(parts.year, 10);
+          const tzMonth = parseInt(parts.month, 10) - 1;
+          const tzDay = parseInt(parts.day, 10);
+          const tzHour = parseInt(parts.hour, 10) % 24;
+          const tzMinute = parseInt(parts.minute, 10);
+          const tzSecond = parseInt(parts.second, 10);
+
+          const formattedLocalMs = Date.UTC(tzYear, tzMonth, tzDay, tzHour, tzMinute, tzSecond);
+          const delta = targetLocalMs - formattedLocalMs;
+
+          if (delta === 0) return new Date(utcCandidate);
+          utcCandidate += delta;
+        }
+
+        return new Date(utcCandidate);
+      } catch {
+        return new Date(targetLocalMs);
+      }
+    }
+
+    // Fallback for non-standard string formats
+    return new Date(cleanStr);
+  }
+
+  return new Date(dateInput);
+}
 
 /**
  * Formats a JS Date object into ISO 8601 basic format for calendar integration (YYYYMMDDTHHMMSSZ).
@@ -302,13 +391,24 @@ function toCalendarISOString(date) {
  * @param {string|Date} event.endDate - End time
  * @param {string} [event.description] - Event details
  * @param {string} [event.location] - Physical or virtual address
+ * @param {string} [event.timezone] - Timezone of the event
+ * @param {string} [event.timeZone] - Alternative key for event timezone
  * @returns {string} Google Calendar Add-Event URL
  */
 export function generateGoogleCalendarUrl(event = {}) {
-  const { title = "", startDate, endDate, description = "", location = "" } = event;
+  const {
+    title = "",
+    startDate,
+    endDate,
+    description = "",
+    location = "",
+    timezone,
+    timeZone,
+  } = event;
 
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+  const tz = timezone || timeZone || getUserTimezone();
+  const start = parseDateInTimezone(startDate, tz);
+  const end = parseDateInTimezone(endDate, tz);
 
   if (isNaN(start.getTime()) || isNaN(end.getTime())) return "";
 
@@ -322,6 +422,10 @@ export function generateGoogleCalendarUrl(event = {}) {
     location: location,
   });
 
+  if (tz && isValidTimezone(tz)) {
+    params.set("ctz", tz);
+  }
+
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
@@ -331,17 +435,33 @@ export function generateGoogleCalendarUrl(event = {}) {
  * @returns {string} Data URI string containing standard .ics format content
  */
 export function generateICalDataUrl(event = {}) {
-  const { title = "", startDate, endDate, description = "", location = "" } = event;
+  const {
+    title = "",
+    startDate,
+    endDate,
+    description = "",
+    location = "",
+    timezone,
+    timeZone,
+  } = event;
 
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+  const tz = timezone || timeZone || getUserTimezone();
+  const start = parseDateInTimezone(startDate, tz);
+  const end = parseDateInTimezone(endDate, tz);
 
   if (isNaN(start.getTime()) || isNaN(end.getTime())) return "";
 
-  const icsContent = [
+  const icsLines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
     "PRODID:-//Eventra//Eventra Calendar Utils//EN",
+  ];
+
+  if (tz && isValidTimezone(tz)) {
+    icsLines.push(`X-WR-TIMEZONE:${tz}`);
+  }
+
+  icsLines.push(
     "BEGIN:VEVENT",
     `UID:${Date.now()}@eventra.app`,
     `DTSTAMP:${toCalendarISOString(new Date())}`,
@@ -351,8 +471,10 @@ export function generateICalDataUrl(event = {}) {
     `DESCRIPTION:${description.replace(/\n/g, "\\n")}`,
     `LOCATION:${location.replace(/\n/g, "\\n")}`,
     "END:VEVENT",
-    "END:VCALENDAR",
-  ].join("\r\n");
+    "END:VCALENDAR"
+  );
+
+  const icsContent = icsLines.join("\r\n");
 
   return `data:text/calendar;charset=utf8,${encodeURIComponent(icsContent)}`;
 }

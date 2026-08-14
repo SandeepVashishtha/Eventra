@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { FileText, Tag, Users } from "lucide-react";
 import { categories } from "../../../constants/eventDefaults";
 import CharacterCounter from "../CharacterCounter";
+import RichTextEditor from "../RichTextEditor";
 
 const FormField = ({ label, icon: Icon, error, children, required, hint }) => (
   <div className="space-y-2">
@@ -89,26 +90,32 @@ const EventBasicInfo = ({ formData, handleInputChange, handleFieldBlur, errors }
       </FormField>
 
       <FormField label="Description" icon={FileText} error={errors.description} required>
-        <textarea
-          id="description-input"
-          name="description"
+        <RichTextEditor
           value={formData.description}
-          onChange={handleInputChange}
-          onBlur={handleFieldBlur}
-          rows={5}
-          maxLength={500}
-          aria-describedby="description-counter"
+          onChange={(e) => {
+            handleInputChange(e);
+            // Also handle blur for validation
+            if (e.target && e.target.value) {
+              const syntheticBlurEvent = {
+                target: { name: "description", value: e.target.value }
+              };
+              handleFieldBlur(syntheticBlurEvent);
+            }
+          }}
           placeholder="Tell people what your event is about..."
-          className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700
-                   text-gray-900 dark:text-gray-100 focus:outline-none
-                   focus:ring-2 focus:ring-indigo-500 focus:border-transparent
-                   transition-all duration-200 resize-none ${
-                     errors.description ? "border-red-500" : "border-gray-300 dark:border-gray-600"
-                   }`}
+          maxLength={500}
+          className="w-full"
         />
-        <div className="flex justify-end mt-1">
-          <CharacterCounter id="description-counter" value={formData.description} maxLength={500} />
-        </div>
+        {errors.description && (
+          <motion.p
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-red-500 text-sm flex items-center gap-1"
+          >
+            <span role="img" aria-label="error">⚠️</span>
+            {errors.description}
+          </motion.p>
+        )}
       </FormField>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

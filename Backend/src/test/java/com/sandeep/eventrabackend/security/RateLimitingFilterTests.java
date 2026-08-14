@@ -23,7 +23,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "app.rate-limit.login.window=1m",
         "app.rate-limit.google.capacity=1",
         "app.rate-limit.google.window=1m",
-        "app.rate-limit.trusted-proxy-hops=1"
+        "app.rate-limit.trusted-proxy-hops=1",
+        "app.rate-limit.enabled=true"
 })
 class RateLimitingFilterTests {
 

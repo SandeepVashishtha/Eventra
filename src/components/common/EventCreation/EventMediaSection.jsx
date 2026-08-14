@@ -2,6 +2,7 @@ import useFileUpload from "hooks/useFileUpload";
 
 import { motion, AnimatePresence } from "framer-motion";
 import { ImageIcon, Upload, X, Plus } from "lucide-react";
+import ImageGallery from "./ImageGallery";
 
 const MAX_BANNER_SIZE = 5 * 1024 * 1024; // 5MB
 const allowedTypes = [
@@ -88,7 +89,9 @@ const EventMediaSection = ({
   setNewTag, 
   addTag, 
   removeTag, 
-  setIsUploading 
+  setIsUploading,
+  handleGalleryChange,
+  handleGalleryPreviewsChange,
 }) => {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -150,6 +153,18 @@ const EventMediaSection = ({
             </label>
           )}
         </div>
+      </div>
+
+      {/* Image Gallery Section */}
+      <div className="space-y-2">
+        <ImageGallery
+          gallery={formData.gallery || []}
+          galleryPreviews={formData.galleryPreviews || []}
+          onGalleryChange={handleGalleryChange}
+          onPreviewsChange={handleGalleryPreviewsChange}
+          isUploading={isUploading}
+          setIsUploading={setIsUploading}
+        />
       </div>
 
       <div className="space-y-2">

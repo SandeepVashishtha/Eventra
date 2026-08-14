@@ -1,9 +1,34 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { ROLES } from '../../config/roles';
 
 const AIDirectorStream = () => {
+  const { user: authUser } = useAuth();
+  const { eventId } = useParams();
+  const navigate = useNavigate();
+  
   const [directorActive, setDirectorActive] = useState(false);
   const [activeCam, setActiveCam] = useState('CAM 1 (Wide)');
+  const [speakersInGreenRoom, setSpeakersInGreenRoom] = useState([]);
+  const [activeSpeakers, setActiveSpeakers] = useState([]);
+  const [greenRoomConnected, setGreenRoomConnected] = useState(false);
+  const [pendingTransitions, setPendingTransitions] = useState([]);
   
+  // Check if current user can manage transitions
+  const canManageTransitions = useCallback(() => {
+    if (!authUser) return false;
+    const roles = authUser.roles || [];
+    return roles.includes(ROLES.ADMIN) || roles.includes(ROLES.ORGANIZER) || roles.includes(ROLES.SUPER_ADMIN);
+  }, [authUser]);
+
+  // Check if current user is a speaker
+  const isCurrentUserSpeaker = useCallback(() => {
+    if (!authUser) return false;
+    const roles = authUser.roles || [];
+    return roles.includes(ROLES.SPEAKER);
+  }, [authUser]);
+
   // Camera Feeds
   const [cameras] = useState([
     { id: 'CAM 1', name: 'CAM 1 (Wide)', type: 'wide', image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' },
@@ -69,6 +94,42 @@ const AIDirectorStream = () => {
     setAiLog(prev => [{ time: timeString, action: msg }, ...prev].slice(0, 5));
   };
 
+  // Navigate to Green Room
+  const navigateToGreenRoom = useCallback(() => {
+    if (eventId) {
+      navigate(`/events/${eventId}/green-room`);
+    } else {
+      navigate('/green-room');
+    }
+  }, [eventId, navigate]);
+
+  // Handle transition from Green Room to live stage
+  const handleTransitionSpeaker = useCallback((speakerId) => {
+    if (!canManageTransitions()) return;
+    
+    // Simulate transition - add speaker to active speakers
+    setActiveSpeakers(prev => [...prev, speakerId]);
+    setPendingTransitions(prev => prev.filter(id => id !== speakerId));
+    addLog(`Speaker ${speakerId} transitioned to live stage`);
+    
+    // In a real implementation, this would connect to WebRTC and add the speaker's stream
+    // For now, we'll just show a notification
+  }, [canManageTransitions, addLog]);
+
+  // Simulate receiving a transition request from Green Room
+  const simulateGreenRoomConnection = useCallback(() => {
+    // Simulate some speakers in the Green Room
+    const mockSpeakers = [
+      { id: 'speaker-1', name: 'Alice Johnson', role: 'SPEAKER', ready: true },
+      { id: 'speaker-2', name: 'Bob Smith', role: 'SPEAKER', ready: true },
+      { id: 'speaker-3', name: 'Carol Davis', role: 'SPEAKER', ready: false }
+    ];
+    
+    setSpeakersInGreenRoom(mockSpeakers);
+    setGreenRoomConnected(true);
+    addLog('Green Room connected. Speakers ready for transition.');
+  }, [addLog]);
+
   const getActiveImage = () => {
     const cam = cameras.find(c => c.name === activeCam);
     return cam ? cam.image : cameras[0].image;
@@ -90,6 +151,69 @@ const AIDirectorStream = () => {
           <p className="text-neutral-400 text-sm leading-relaxed mb-6">
             Hiring a live technical director to manually switch between 5 camera angles for a 3-day conference stream is prohibitively expensive. Eventra's autonomous AI video switcher ingests static camera feeds and utilizes voice-activity detection (VAD) and facial tracking to automatically cut to the wide shot when the crowd laughs, or cut to the close-up of whoever is currently speaking, fully automating the broadcast.
           </p>
+
+          {/* Green Room Controls - for organizers */}
+          {(canManageTransitions() || isCurrentUserSpeaker()) && (
+            <div className="bg-neutral-900 rounded-xl border border-orange-800 p-4 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-bold text-orange-400 uppercase tracking-widest flex items-center">
+                  <span className="w-2 h-2 bg-orange-500 rounded-full mr-2" />
+                  Speaker Green Room
+                </h3>
+                <button
+                  onClick={navigateToGreenRoom}
+                  className="text-xs bg-orange-600 hover:bg-orange-500 text-white px-3 py-1 rounded-lg transition"
+                >
+                  {isCurrentUserSpeaker() ? 'Join Green Room' : 'View Green Room'}
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                {greenRoomConnected ? (
+                  <div className="text-xs text-neutral-400 mb-2">
+                    {speakersInGreenRoom.length} speakers ready
+                  </div>
+                ) : (
+                  <div className="text-xs text-neutral-500 mb-2">
+                    Green Room not connected
+                  </div>
+                )}
+
+                {canManageTransitions() && (
+                  <div className="space-y-2">
+                    {speakersInGreenRoom
+                      .filter(s => s.ready)
+                      .slice(0, 3)
+                      .map(speaker => (
+                        <button
+                          key={speaker.id}
+                          onClick={() => handleTransitionSpeaker(speaker.id)}
+                          className="w-full flex items-center justify-between bg-orange-900/20 hover:bg-orange-900/30 border border-orange-700/30 rounded-lg px-3 py-2 text-xs transition"
+                        >
+                          <span className="text-white">{speaker.name}</span>
+                          <span className="text-orange-400">→ Transition</span>
+                        </button>
+                      ))}
+                    
+                    {speakersInGreenRoom.length === 0 && (
+                      <button
+                        onClick={simulateGreenRoomConnection}
+                        className="w-full text-xs bg-neutral-800 hover:bg-neutral-700 text-neutral-400 px-3 py-2 rounded-lg transition"
+                      >
+                        Simulate Green Room Connection
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {isCurrentUserSpeaker() && !canManageTransitions() && (
+                  <div className="text-xs bg-neutral-800 text-neutral-400 p-2 rounded">
+                    <p>Wait for organizer to transition you to the live stage</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="bg-black rounded-3xl p-6 border border-neutral-800 shadow-xl relative overflow-hidden flex flex-col h-[480px]">
              
@@ -242,6 +366,23 @@ const AIDirectorStream = () => {
                   <p className="text-slate-600 text-[10px] font-bold">Main Stage Panel • LIVE</p>
                 </div>
               </div>
+
+              {/* Active Speakers Overlay */}
+              {activeSpeakers.length > 0 && (
+                <div className="absolute bottom-6 right-6 z-30 bg-black/80 backdrop-blur px-3 py-2 rounded-lg">
+                  <div className="text-xs text-white font-bold mb-1">Active Speakers</div>
+                  <div className="flex space-x-2">
+                    {activeSpeakers.slice(0, 3).map(speakerId => {
+                      const speaker = speakersInGreenRoom.find(s => s.id === speakerId);
+                      return (
+                        <div key={speakerId} className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center text-[8px] font-bold text-white">
+                          {speaker ? speaker.name[0].toUpperCase() : 'S'}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
           </div>

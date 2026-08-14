@@ -11,6 +11,7 @@ import {
   updateEventDraft,
   publishEventDraft,
 } from "../../utils/eventDraftUtils";
+import RichTextEditor from "../common/RichTextEditor";
 
 const INITIAL_FORM = {
   name: "",
@@ -165,13 +166,17 @@ const EventDraftForm = ({
 
         {/* Description */}
         <FormField label="Description">
-          <textarea
+          <RichTextEditor
             name="description"
             value={formData.description}
-            onChange={handleChange}
-            rows={4}
+            onChange={(e) => {
+              // Convert the event to match the expected format
+              const newFormData = { ...formData, [e.target.name]: e.target.value };
+              setFormData(newFormData);
+            }}
             placeholder="Describe your event..."
-            className={inputClass}
+            maxLength={500}
+            className="w-full"
           />
         </FormField>
 

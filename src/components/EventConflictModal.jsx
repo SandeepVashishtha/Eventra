@@ -4,6 +4,7 @@ import { AlertTriangle, Clock, Calendar, X, ArrowRight, Globe } from 'lucide-rea
 import { formatTimeRange } from '../utils/conflictDetection';
 import { getUserTimezone } from '../utils/timezoneUtils';
 import { useFocusTrap } from '../hooks/useFocusTrap';
+import useScrollLock from 'hooks/useScrollLock';
 
 /**
  * EventConflictModal

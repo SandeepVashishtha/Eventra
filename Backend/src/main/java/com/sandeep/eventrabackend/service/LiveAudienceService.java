@@ -13,6 +13,7 @@ import com.sandeep.eventrabackend.model.LiveAudiencePollVote;
 import com.sandeep.eventrabackend.model.LiveAudienceQuestion;
 import com.sandeep.eventrabackend.model.LiveAudienceQuestionUpvote;
 import com.sandeep.eventrabackend.model.User;
+import com.sandeep.eventrabackend.repository.EventRegistrationRepository;
 import com.sandeep.eventrabackend.repository.EventRepository;
 import com.sandeep.eventrabackend.repository.LiveAudiencePollRepository;
 import com.sandeep.eventrabackend.repository.LiveAudiencePollVoteRepository;
@@ -21,6 +22,7 @@ import com.sandeep.eventrabackend.repository.LiveAudienceQuestionUpvoteRepositor
 import com.sandeep.eventrabackend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,6 +45,7 @@ public class LiveAudienceService {
     private static final List<String> POLL_TYPES = List.of("single", "multiple");
 
     private final EventRepository eventRepository;
+    private final EventRegistrationRepository eventRegistrationRepository;
     private final UserRepository userRepository;
     private final EventRoleService eventRoleService;
     private final LiveAudienceQuestionRepository questionRepository;
@@ -52,9 +55,9 @@ public class LiveAudienceService {
     private final EventStreamService eventStreamService;
 
     @Transactional(readOnly = true)
-    public LiveAudienceDataResponse getInitialData(Long eventId) {
-        requireEvent(eventId);
-        List<LiveAudienceQuestionResponse> questions = getQuestions(eventId);
+    public LiveAudienceDataResponse getInitialData(Long eventId, String email) {
+        requireEventAccess(eventId, email);
+        List<LiveAudienceQuestionResponse> questions = getQuestions(eventId, email);
         LiveAudiencePollResponse activePoll = pollRepository
                 .findByEventIdOrderByCreatedAtDesc(eventId)
                 .stream()
@@ -68,8 +71,8 @@ public class LiveAudienceService {
     }
 
     @Transactional(readOnly = true)
-    public List<LiveAudienceQuestionResponse> getQuestions(Long eventId) {
-        requireEvent(eventId);
+    public List<LiveAudienceQuestionResponse> getQuestions(Long eventId, String email) {
+        requireEventAccess(eventId, email);
         return questionRepository
                 .findByEventIdOrderByUpvotesDescCreatedAtDesc(eventId)
                 .stream()
@@ -78,7 +81,7 @@ public class LiveAudienceService {
     }
     @Transactional
     public LiveAudienceQuestionResponse createQuestion(Long eventId, String text, String email) {
-        requireEvent(eventId);
+        requireEventAccess(eventId, email);
         if (text == null || text.isBlank()) {
             throw new IllegalArgumentException("Question text is required");
         }
@@ -104,7 +107,7 @@ public class LiveAudienceService {
 
     @Transactional
     public LiveAudienceQuestionResponse upvoteQuestion(Long eventId, Long questionId, String email) {
-        requireEvent(eventId);
+        requireEventAccess(eventId, email);
         requireQuestion(eventId, questionId);
         User user = getUser(email);
         if (questionUpvoteRepository.existsByQuestionIdAndUserId(questionId, user.getId())) {
@@ -216,7 +219,7 @@ public class LiveAudienceService {
 
     @Transactional
     public LiveAudiencePollResponse submitVote(Long eventId, Long pollId, String option, String email) {
-        requireEvent(eventId);
+        requireEventAccess(eventId, email);
         LiveAudiencePoll poll = requirePollForUpdate(eventId, pollId);
         if ("closed".equals(poll.getStatus())) {
             throw new IllegalArgumentException("Voting is closed for this poll");
@@ -266,6 +269,24 @@ public class LiveAudienceService {
     private Event requireEvent(Long eventId) {
         return eventRepository.findById(eventId)
                 .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + eventId));
+    }
+
+    /**
+     * Gates live-audience reads/writes on event visibility (#16198). Public events
+     * are open to any authenticated user; private events require the caller to be
+     * an event organizer (or platform admin/legacy owner) or a registered
+     * participant.
+     */
+    private void requireEventAccess(Long eventId, String email) {
+        Event event = requireEvent(eventId);
+        if (event.isPublic()) {
+            return;
+        }
+        boolean organizer = eventRoleService.hasRole(eventId, email, EventRole.ORGANIZER);
+        boolean participant = eventRegistrationRepository.existsByEvent_IdAndUser_Email(eventId, email);
+        if (!organizer && !participant) {
+            throw new AccessDeniedException("You do not have access to this event's live audience.");
+        }
     }
 
     private LiveAudienceQuestion requireQuestion(Long eventId, Long questionId) {

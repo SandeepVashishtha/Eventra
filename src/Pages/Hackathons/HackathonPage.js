@@ -1,3 +1,4 @@
+import useSearch from "hooks/useSearch";
 import { ChevronDown, X } from "lucide-react";
 import { FiRotateCw } from "react-icons/fi";
 import TeamMatchmaking from "./components/TeamMatchmaking";

@@ -3,10 +3,12 @@ package com.sandeep.eventrabackend.controller;
 import com.eventra.service.QrCodeValidationService;
 import com.sandeep.eventrabackend.model.Event;
 import com.sandeep.eventrabackend.model.EventRegistration;
+import com.sandeep.eventrabackend.model.EventRole;
 import com.sandeep.eventrabackend.model.TicketCheckIn;
 import com.sandeep.eventrabackend.repository.EventRegistrationRepository;
 import com.sandeep.eventrabackend.repository.EventRepository;
 import com.sandeep.eventrabackend.repository.TicketCheckInRepository;
+import com.sandeep.eventrabackend.service.EventRoleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -15,8 +17,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -46,6 +52,7 @@ public class TicketController {
     private final EventRepository eventRepository;
     private final TicketCheckInRepository ticketCheckInRepository;
     private final QrCodeValidationService qrCodeValidationService;
+    private final EventRoleService eventRoleService;
 
     @PostMapping("/validate")
     @Operation(summary = "Validate a ticket",
@@ -58,7 +65,8 @@ public class TicketController {
                              "alreadyCheckedIn": false, "message": "Ticket is valid"}"""))),
             @ApiResponse(responseCode = "403", description = "Forbidden - organizer/admin access required")
     })
-    public ResponseEntity<Map<String, Object>> validateTicket(@RequestBody Map<String, Object> payload) {
+    public ResponseEntity<Map<String, Object>> validateTicket(Authentication authentication,
+            @RequestBody Map<String, Object> payload) {
         Long eventId = asLong(payload.get("eventId"));
         Long registrationId = asLong(payload.get("ticketId"));
 
@@ -73,6 +81,11 @@ public class TicketController {
                 || !registration.get().getEvent().getId().equals(eventId)) {
             return ResponseEntity.ok(result(false, null, registrationId, false,
                     "This ticket does not match the selected event."));
+        }
+
+        // Object-level authorization: the caller must organize the event the ticket belongs to.
+        if (!isAuthorizedForEvent(eventId, authentication)) {
+            return forbidden();
         }
 
         EventRegistration reg = registration.get();
@@ -112,7 +125,8 @@ public class TicketController {
                              "message": "Check-in recorded"}"""))),
             @ApiResponse(responseCode = "403", description = "Forbidden - organizer/admin access required")
     })
-    public ResponseEntity<Map<String, Object>> checkIn(@RequestBody Map<String, Object> payload) {
+    public ResponseEntity<Map<String, Object>> checkIn(Authentication authentication,
+            @RequestBody Map<String, Object> payload) {
         Long eventId = asLong(payload.get("eventId"));
         Long registrationId = asLong(payload.get("ticketId"));
 
@@ -127,6 +141,11 @@ public class TicketController {
                 || !registration.get().getEvent().getId().equals(eventId)) {
             return ResponseEntity.ok(result(false, null, registrationId, false,
                     "This ticket does not match the selected event."));
+        }
+
+        // Object-level authorization: the caller must organize the event the ticket belongs to.
+        if (!isAuthorizedForEvent(eventId, authentication)) {
+            return forbidden();
         }
 
         EventRegistration reg = registration.get();
@@ -154,12 +173,21 @@ public class TicketController {
                     "This ticket has already been checked in."));
         }
 
-        ticketCheckInRepository.save(TicketCheckIn.builder()
-                .eventId(eventId)
-                .registrationId(registrationId)
-                .attendeeName(displayName(reg))
-                .checkedInBy(payload.get("checkedInBy") != null ? String.valueOf(payload.get("checkedInBy")) : null)
-                .build());
+        // Two concurrent scans can both pass the exists() check above and race to insert
+        // the same (event, registration) row; the unique constraint then rejects the loser.
+        // Flush eagerly so the violation surfaces here and is mapped to a friendly 409.
+        try {
+            ticketCheckInRepository.saveAndFlush(TicketCheckIn.builder()
+                    .eventId(eventId)
+                    .registrationId(registrationId)
+                    .attendeeName(displayName(reg))
+                    .checkedInBy(payload.get("checkedInBy") != null ? String.valueOf(payload.get("checkedInBy")) : null)
+                    .build());
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(
+                    result(true, displayName(reg), registrationId, true,
+                            "This ticket has already been checked in."));
+        }
 
         Map<String, Object> response = result(true, displayName(reg), registrationId, false,
                 "Check-in recorded successfully.");
@@ -179,9 +207,14 @@ public class TicketController {
                               "time": "2026-08-12T10:00:00"}]"""))),
             @ApiResponse(responseCode = "403", description = "Forbidden - organizer/admin access required")
     })
-    public ResponseEntity<List<Map<String, Object>>> checkInHistory(@RequestParam(required = false) Long eventId) {
+    public ResponseEntity<List<Map<String, Object>>> checkInHistory(Authentication authentication,
+            @RequestParam(required = false) Long eventId) {
         if (eventId == null) {
             return ResponseEntity.ok(List.of());
+        }
+        // Object-level authorization: the caller must organize the event being inspected.
+        if (!isAuthorizedForEvent(eventId, authentication)) {
+            return ResponseEntity.status(403).build();
         }
         List<Map<String, Object>> entries = ticketCheckInRepository
                 .findByEventIdOrderByCheckedInAtDesc(eventId)
@@ -214,9 +247,14 @@ public class TicketController {
                              "remainingAttendees": 55, "attendancePercentage": 45}"""))),
             @ApiResponse(responseCode = "403", description = "Forbidden - organizer/admin access required")
     })
-    public ResponseEntity<Map<String, Object>> ticketStats(@RequestParam(required = false) Long eventId) {
+    public ResponseEntity<Map<String, Object>> ticketStats(Authentication authentication,
+            @RequestParam(required = false) Long eventId) {
         if (eventId == null) {
             return ResponseEntity.ok(emptyStats());
+        }
+        // Object-level authorization: the caller must organize the event being inspected.
+        if (!isAuthorizedForEvent(eventId, authentication)) {
+            return forbidden();
         }
         long total = eventRegistrationRepository.countByEvent_IdAndStatus(eventId, "CONFIRMED");
         long checkedIn = ticketCheckInRepository.countByEventId(eventId);
@@ -249,6 +287,25 @@ public class TicketController {
         stats.put("remainingAttendees", 0L);
         stats.put("attendancePercentage", 0);
         return stats;
+    }
+
+    private boolean isAuthorizedForEvent(Long eventId, Authentication authentication) {
+        if (authentication == null) {
+            return false;
+        }
+        try {
+            eventRoleService.requireRole(eventId, authentication.getName(), EventRole.ORGANIZER);
+            return true;
+        } catch (AccessDeniedException e) {
+            return false;
+        }
+    }
+
+    private ResponseEntity<Map<String, Object>> forbidden() {
+        Map<String, Object> response = new HashMap<>();
+        response.put("valid", false);
+        response.put("message", "You are not authorized to manage this event.");
+        return ResponseEntity.status(403).body(response);
     }
 
     private String displayName(EventRegistration reg) {

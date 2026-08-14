@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { ImageIcon } from 'lucide-react';
 import '../../styles/lazy-image.css';
+import useLowBandwidthMode from 'hooks/useLowBandwidthMode';
 
 /**
  * LazyImage — Drop-in replacement for <img> with:
@@ -28,8 +29,11 @@ const LazyImage = ({
   useWebP = false,
   onError,
   previewSrc,
+  // Low bandwidth mode options
+  lowBandwidthPlaceholder = true,
   ...props
 }) => {
+  const { isEnabled } = useLowBandwidthMode();
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
   const imgRef = useRef(null);
@@ -66,6 +70,64 @@ const LazyImage = ({
     useWebP && src && src.match(/\.(jpe?g|png)$/i)
       ? src.replace(/\.(jpe?g|png)$/i, ".webp")
       : null;
+
+  // Check if we should render low bandwidth placeholder
+  if (isEnabled && lowBandwidthPlaceholder) {
+    // Resolve container styles for placeholder
+    const placeholderStyle = {
+      position: "relative",
+      overflow: "hidden",
+      background: 'linear-gradient(135deg, rgba(107, 114, 128, 0.08) 0%, rgba(75, 85, 99, 0.08) 100%)',
+      minHeight: '40px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: '4px',
+      ...style,
+    };
+
+    if (width !== undefined) {
+      placeholderStyle.width = typeof width === "number" ? `${width}px` : width;
+    }
+
+    if (height !== undefined) {
+      placeholderStyle.height = typeof height === "number" ? `${height}px` : height;
+    }
+
+    if (aspectRatio) {
+      placeholderStyle.aspectRatio = aspectRatio;
+    }
+
+    return (
+      <div 
+        className={`lazy-img-container lbw-active ${className}`} 
+        style={placeholderStyle}
+        role="img"
+        aria-label={alt || 'Image'}
+        title={alt ? `${alt} (Low Bandwidth Mode)` : 'Image not loaded (Low Bandwidth Mode)'}
+      >
+        <svg 
+          viewBox="0 0 24 24" 
+          fill="none" 
+          stroke="currentColor" 
+          strokeWidth="2" 
+          strokeLinecap="round" 
+          strokeLinejoin="round"
+          className="lazy-img-error-icon"
+          aria-hidden="true"
+          style={{
+            width: '24px',
+            height: '24px',
+            color: '#9ca3af',
+            opacity: '0.7',
+          }}
+        >
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
+        </svg>
+        <span className="lbw-bandwidth-indicator">Low BW</span>
+      </div>
+    );
+  }
 
   // Resolve container styles to prevent Cumulative Layout Shift (CLS)
   const containerStyle = {

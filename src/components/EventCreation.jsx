@@ -47,6 +47,8 @@ const EventCreation = () => {
     dismissRestoredBanner,
     lastSavedAt,
     resetForm,
+    handleGalleryChange,
+    handleGalleryPreviewsChange,
   } = useEventForm();
 
   const handlePreview = (e) => {
@@ -177,6 +179,8 @@ const EventCreation = () => {
                     removeTag={removeTag}
                     isUploading={isUploading} // 🔥 FIX: Passed the actual uploading state so the component knows when to show spinners
                     setIsUploading={setIsUploading}
+                    handleGalleryChange={handleGalleryChange}
+                    handleGalleryPreviewsChange={handleGalleryPreviewsChange}
                   />
                 </section>
 
@@ -292,6 +296,30 @@ const EventCreation = () => {
                     )}
                   </div>
                 </div>
+
+                {/* Gallery Preview */}
+                {(formData.galleryPreviews || []).length > 0 && (
+                  <div className="p-4 bg-gray-50 dark:bg-gray-700/30">
+                    <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-3">Event Gallery</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+                      {(formData.galleryPreviews || []).map((preview, index) => (
+                        <div key={preview || index} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600">
+                          <img 
+                            src={preview} 
+                            alt={`Gallery ${index + 1}`} 
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                          {index === 0 && (
+                            <span className="absolute top-1 left-1 px-2 py-1 bg-yellow-400 text-yellow-900 text-xs font-bold rounded">
+                              Cover
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div className="p-8 space-y-8">
                   <div className="space-y-4">

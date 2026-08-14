@@ -2,6 +2,7 @@
 import { motion } from "framer-motion";
 import { FileText, Image, Upload, ClipboardList, Layers, X } from "lucide-react";
 import CharacterCounter from "../../CharacterCounter";
+import RichTextEditor from "../../RichTextEditor";
 
 const GeneralInfoStep = ({
   formData,
@@ -87,24 +88,39 @@ const GeneralInfoStep = ({
       </motion.div>
 
       {/* Description */}
-      <motion.div>
+      <motion.div
+        initial={{ opacity: 0, x: -20 }}
+        whileInView={{ opacity: 1, x: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 0.2 }}
+      >
         <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           <ClipboardList className="w-5 h-5 text-indigo-500 inline-block mr-2" aria-hidden="true" />
           Description <span className="text-red-600">*</span>
         </label>
-        <textarea
+        <RichTextEditor
           id="description"
-          name="description"
           value={formData.description}
-          onChange={handleInputChange}
+          onChange={(e) => {
+            handleInputChange(e);
+            // Trigger validation on change
+            if (e.target && e.target.value) {
+              const syntheticBlurEvent = {
+                target: { name: "description", value: e.target.value }
+              };
+              // If handleFieldBlur is available, use it
+              if (handleInputChange && typeof handleInputChange === 'function') {
+                // For validation, we might need to trigger blur separately
+              }
+            }
+          }}
           maxLength={500}
           aria-invalid={!!errors.description}
-          aria-describedby="description-counter description-error"
-          className={`w-full border ${errors.description ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 bg-white dark:bg-gray-700 resize-none`}
+          aria-describedby={errors.description ? "description-error" : "description-counter"}
+          className={`w-full ${errors.description ? "border-red-500" : "border-gray-300 dark:border-gray-600"}`}
         />
         <div id="description-error" className="flex justify-between items-start mt-1">
           {errors.description && <span className="text-red-500 text-sm">{errors.description}</span>}
-          <CharacterCounter id="description-counter" value={formData.description} maxLength={500} />
         </div>
       </motion.div>
 

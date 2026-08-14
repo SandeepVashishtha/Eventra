@@ -33,12 +33,13 @@ jobs:
             RESP=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
               -H "Accept: application/vnd.github+json" \
               "https://api.github.com/repos/$REPO/pulls/$PR_NUMBER/files?per_page=100&page=$PAGE")
-            COUNT=$(echo "$RESP" | jq 'length')
-            if [ "$COUNT" -eq 0 ]; then
+            COUNT=$(echo "$RESP" | jq 'length' || echo "0")
+            if [ "$COUNT" -eq 0 ] || [ "$COUNT" = "2" ]; then
+              # If count is 0 or it's an error object (length 2), break
               break
             fi
             # Sum additions+deletions for this page, excluding unwanted files
-            PAGE_SUM=$(echo "$RESP" | jq '[.[] | select(.filename != "package-lock.json" and (.filename | test("Mock") | not)) | (.additions + .deletions)] | add // 0')
+            PAGE_SUM=$(echo "$RESP" | jq -e '[.[]? | select(.filename? != "package-lock.json" and (.filename? | test("Mock") | not)) | ((.additions? // 0) + (.deletions? // 0))] | add // 0' || echo "0")
             PAGE_SUM=${PAGE_SUM:-0}
             TOTAL=$((TOTAL + PAGE_SUM))
             PAGE=$((PAGE + 1))
@@ -74,5 +75,5 @@ jobs:
             fi
           done
           
-          # Add the correct size label
-          gh pr edit "$PR_URL" --add-label "$LABEL"
+          # Add the correct size label (will not fail the job if the label is missing in the repo)
+          gh pr edit "$PR_URL" --add-label "$LABEL" || echo "Warning: Could not add label $LABEL. Ensure it exists in the repository."

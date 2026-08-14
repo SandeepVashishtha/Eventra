@@ -1,4 +1,6 @@
 
+import { brightnessOf } from './brightness-of.js';
+
 /**
  * adds a dark color check.
  */

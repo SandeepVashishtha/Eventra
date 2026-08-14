@@ -140,9 +140,9 @@ public class AuthController {
                     Accepts an email address and issues a short-lived, single-use password
                     reset token for the matching account (if one exists).
                     
-                    The raw `resetToken` is returned in the response so the client can
-                    complete the flow; deployments with an email transport should instead
-                    email a reset link and remove the token from the response.
+                    The raw token is never returned in the response; it must be delivered
+                    out-of-band (e.g. emailed as a reset link) so only the account owner
+                    can complete the reset.
                     """
     )
     @ApiResponses({
