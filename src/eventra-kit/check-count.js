@@ -2,6 +2,6 @@
  * adds a check-count helper.
  */
 export function checkCount(value) {
-  return value.length === 0;
+  return typeof value === 'number' && value > 0;
 }
 
