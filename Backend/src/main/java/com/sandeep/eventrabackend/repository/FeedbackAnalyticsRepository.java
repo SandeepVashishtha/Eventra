@@ -21,6 +21,17 @@ public interface FeedbackAnalyticsRepository extends JpaRepository<Feedback, Lon
     @Query("SELECT AVG(f.rating) FROM Feedback f WHERE f.event.id IN :eventIds")
     Double findAverageRatingForEvents(@Param("eventIds") java.util.Collection<Long> eventIds);
 
+    @Query("""
+        SELECT u.id, AVG(f.rating)
+        FROM User u, Event e
+        LEFT JOIN Feedback f ON f.event.id = e.id
+        WHERE (e.ownerId = u.id
+               OR e.id IN (SELECT tm.event.id FROM EventTeamMember tm WHERE tm.user.id = u.id))
+          AND u.id IN :organizerIds
+        GROUP BY u.id
+        """)
+    List<Object[]> findAverageRatingByOrganizers(@Param("organizerIds") java.util.Collection<Long> organizerIds);
+
     @Query("SELECT COUNT(f) FROM Feedback f WHERE (:eventIds IS NULL OR f.event.id IN :eventIds)")
     long countTotalFeedback(@Param("eventIds") Collection<Long> eventIds);
 

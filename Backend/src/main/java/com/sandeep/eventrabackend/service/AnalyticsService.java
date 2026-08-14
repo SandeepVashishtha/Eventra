@@ -26,10 +26,10 @@ import java.time.LocalDateTime;
 import java.time.Duration;
 import java.time.temporal.WeekFields;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -269,23 +269,33 @@ public class AnalyticsService {
         User caller = currentUser();
 
         if (caller.getRole() == Role.ADMIN || caller.getRole() == Role.SUPER_ADMIN) {
-            return eventRepo.findDistinctOwnerIds().stream()
-                    .map(ownerId -> userRepository.findById(ownerId)
-                            .map(owner -> buildOrganizerInsight(
-                                    owner.getId(),
-                                    owner.getFirstName(),
-                                    owner.getLastName(),
-                                    eventRepo.findAccessibleToUser(owner.getId())))
-                            .orElse(null))
-                    .filter(Objects::nonNull)
+            List<Object[]> rows = eventRepo.aggregateOrganizerInsights();
+            List<Long> organizerIds = rows.stream()
+                    .map(row -> ((Number) row[0]).longValue())
+                    .collect(Collectors.toList());
+
+            Map<Long, Double> avgRatings = new HashMap<>();
+            if (!organizerIds.isEmpty()) {
+                feedbackRepo.findAverageRatingByOrganizers(organizerIds)
+                        .forEach(row -> avgRatings.put(
+                                ((Number) row[0]).longValue(),
+                                row[1] != null ? ((Number) row[1]).doubleValue() : 0.0));
+            }
+
+            return rows.stream()
+                    .map(row -> buildOrganizerInsight(
+                            ((Number) row[0]).longValue(),
+                            row[1] != null ? row[1].toString() : "",
+                            row[2] != null ? row[2].toString() : "",
+                            ((Number) row[3]).longValue(),
+                            ((Number) row[4]).longValue(),
+                            row[5] != null ? ((Number) row[5]).doubleValue() : 0.0,
+                            avgRatings.getOrDefault(((Number) row[0]).longValue(), 0.0)))
                     .collect(Collectors.toList());
         }
 
-        return List.of(buildOrganizerInsight(
-                caller.getId(),
-                caller.getFirstName(),
-                caller.getLastName(),
-                eventRepo.findAccessibleToUser(caller.getId())));
+        return List.of(buildOrganizerInsightForUser(
+                caller, eventRepo.findAccessibleToUser(caller.getId())));
     }
 
     /**
@@ -314,12 +324,7 @@ public class AnalyticsService {
                         "User not found with email: " + authentication.getName()));
     }
 
-    private OrganizerInsightDTO buildOrganizerInsight(
-            Long organizerId,
-            String firstName,
-            String lastName,
-            List<Event> events) {
-
+    private OrganizerInsightDTO buildOrganizerInsightForUser(User organizer, List<Event> events) {
         List<Long> eventIds = events.stream()
                 .map(Event::getId)
                 .collect(Collectors.toList());
@@ -334,14 +339,31 @@ public class AnalyticsService {
                 .average()
                 .orElse(0.0);
 
+        return buildOrganizerInsight(
+                organizer.getId(),
+                organizer.getFirstName(),
+                organizer.getLastName(),
+                events.size(),
+                events.stream().mapToLong(Event::getRegisteredCount).sum(),
+                avgCapacityUtilization,
+                avgRating != null ? avgRating : 0.0);
+    }
+
+    private OrganizerInsightDTO buildOrganizerInsight(
+            Long organizerId,
+            String firstName,
+            String lastName,
+            int totalEvents,
+            long totalRegistrations,
+            double avgCapacityUtilization,
+            double averageRating) {
+
         return OrganizerInsightDTO.builder()
                 .organizerId(organizerId)
                 .organizerName(firstName + " " + lastName)
-                .totalEvents(events.size())
-                .totalRegistrations(events.stream()
-                        .mapToLong(Event::getRegisteredCount)
-                        .sum())
-                .averageRating(avgRating != null ? avgRating : 0.0)
+                .totalEvents(totalEvents)
+                .totalRegistrations(totalRegistrations)
+                .averageRating(averageRating)
                 .avgCapacityUtilization(avgCapacityUtilization)
                 .build();
     }
