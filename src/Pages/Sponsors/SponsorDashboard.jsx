@@ -47,16 +47,13 @@ const SponsorDashboard = () => {
   }, []);
 
   useEffect(() => {
-  // Load custom settings
-  const saved = localStorage.getItem("eventra_sponsor_settings");
-
-  if (saved) {
-    try {
-      setSettings(safeJsonParse(saved, {}));
-    } catch (e) {
-      console.error("Failed to parse sponsor settings", e);
-    }
-  }
+  // Load settings from the hook (namespace "sponsor") instead of the stale
+  // raw localStorage key eventra_sponsor_settings that nothing writes anymore.
+  setSettings(
+    sponsorPrefs && Object.keys(sponsorPrefs).length > 0
+      ? sponsorPrefs
+      : DEFAULT_SETTINGS
+  );
 
   // Load captured leads
   const savedLeads = localStorage.getItem("eventra_sponsor_leads");
