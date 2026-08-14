@@ -12,7 +12,6 @@ const BackToTop = ({
   const [visible, setVisible] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
-  const [hasChatbot, setHasChatbot] = useState(false);
 
   const prefersReducedMotion =
     typeof window !== "undefined"
@@ -34,7 +33,6 @@ const BackToTop = ({
     const handleChatbotState = () => {
       if (typeof document === "undefined") return;
       setIsChatbotOpen(document.querySelector('[data-chatbot-open]') !== null);
-      setHasChatbot(document.querySelector('[data-chatbot-launcher]') !== null);
     };
 
     handleChatbotState();
