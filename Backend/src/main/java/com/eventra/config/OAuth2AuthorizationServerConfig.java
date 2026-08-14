@@ -1,16 +1,16 @@
 package com.eventra.config;
 
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
-import org.springframework.security.oauth2.server.authorization.client.InMemoryRegisteredClientRepository;
+import org.springframework.security.oauth2.server.authorization.client.JdbcRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
-import org.springframework.security.web.SecurityFilterChain;
 
 import java.util.UUID;
 
@@ -18,25 +18,34 @@ import java.util.UUID;
 @EnableWebSecurity
 public class OAuth2AuthorizationServerConfig {
 
-    @Bean
-    public RegisteredClientRepository registeredClientRepository() {
-        RegisteredClient spaAndMobileClient = RegisteredClient.withId(UUID.randomUUID().toString())
-                .clientId("eventra-mobile-spa-client")
-                .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
-                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-                .redirectUri("https://app.eventra.io/oauth2/callback")
-                .redirectUri("com.eventra.mobile://oauth2/callback")
-                .scope("openid")
-                .scope("profile")
-                .scope("events.read")
-                .scope("events.write")
-                .clientSettings(ClientSettings.builder()
-                        .requireProofKey(true) // Enforce PKCE (S256)
-                        .requireAuthorizationConsent(true)
-                        .build())
-                .build();
+    private static final String DEFAULT_CLIENT_ID = "eventra-mobile-spa-client";
 
-        return new InMemoryRegisteredClientRepository(spaAndMobileClient);
+    @Bean
+    public RegisteredClientRepository registeredClientRepository(JdbcTemplate jdbcTemplate) {
+        return new JdbcRegisteredClientRepository(jdbcTemplate);
+    }
+
+    @Bean
+    public CommandLineRunner seedOAuth2RegisteredClient(RegisteredClientRepository registeredClientRepository) {
+        return args -> {
+            if (registeredClientRepository.findByClientId(DEFAULT_CLIENT_ID) == null) {
+                registeredClientRepository.save(RegisteredClient.withId(UUID.randomUUID().toString())
+                        .clientId(DEFAULT_CLIENT_ID)
+                        .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
+                        .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                        .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+                        .redirectUri("https://app.eventra.io/oauth2/callback")
+                        .redirectUri("com.eventra.mobile://oauth2/callback")
+                        .scope("openid")
+                        .scope("profile")
+                        .scope("events.read")
+                        .scope("events.write")
+                        .clientSettings(ClientSettings.builder()
+                                .requireProofKey(true)
+                                .requireAuthorizationConsent(true)
+                                .build())
+                        .build());
+            }
+        };
     }
 }
