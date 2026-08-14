@@ -1,7 +1,7 @@
 /**
  * adds a check-space helper.
  */
-export function checkSpace(value) {
-  return value.split(' ').filter(Boolean).length;
+export function checkSpace(text) {
+  return /\s/.test(String(text));
 }
 
