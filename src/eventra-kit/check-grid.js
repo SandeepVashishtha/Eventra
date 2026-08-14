@@ -2,6 +2,8 @@
  * adds a check-grid helper.
  */
 export function checkGrid(value) {
-  return String(value).replace(/[^\w]/gi, '');
+  if (!Array.isArray(value) || value.length === 0) return false;
+  const width = value[0].length;
+  return value.every((row) => Array.isArray(row) && row.length === width);
 }
 
