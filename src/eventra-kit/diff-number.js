@@ -1,7 +1,7 @@
 /**
  * adds a diff-number helper.
  */
-export function diffNumber(value) {
-  return String(value).match(/[a-z]/gi)?.length ?? 0;
+export function diffNumber(a, b) {
+  return Math.abs(a - b);
 }
 
