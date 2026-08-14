@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import * as CountOccurrences from '../count-occurrences.js';
+import { countOccurrences } from '../count-occurrences.js';
 
 describe('count-occurrences', () => {
-  it('exports a module', () => {
-    expect(CountOccurrences).toBeDefined();
+  it('counts occurrences in strings and arrays', () => {
+    expect(countOccurrences('banana', 'a')).toBe(3);
+    expect(countOccurrences([1, 2, 1], 1)).toBe(2);
   });
 });
-
