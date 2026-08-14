@@ -65,12 +65,14 @@ const useLowBandwidthMode = () => {
   const notifyServiceWorker = (enabled) => {
     // Check if service worker is available and ready
     if ('serviceWorker' in navigator && navigator.serviceWorker?.controller) {
-      navigator.serviceWorker.controller.postMessage({
-        type: 'LOW_BANDWIDTH_MODE_CHANGED',
-        enabled: enabled,
-      }).catch(() => {
+      try {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'LOW_BANDWIDTH_MODE_CHANGED',
+          enabled: enabled,
+        });
+      } catch {
         // Service worker might not be ready, that's okay
-      });
+      }
     }
   };
 
