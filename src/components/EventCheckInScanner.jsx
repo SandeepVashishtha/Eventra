@@ -29,6 +29,28 @@ const EventCheckInScanner = ({ eventId, onCheckIn, existingCheckIns = [], regist
   const [isProcessing, setIsProcessing] = useState(false);
   const [groupModalOpen, setGroupModalOpen] = useState(false);
   const [groupPrimaryRegistration, setGroupPrimaryRegistration] = useState(null);
+  const localCheckedInIdsRef = useRef(new Set());
+
+  // Synchronize local checked-in IDs with existingCheckIns prop
+  useEffect(() => {
+    if (Array.isArray(existingCheckIns)) {
+      existingCheckIns.forEach((c) => {
+        if (c && c.registrationId) {
+          localCheckedInIdsRef.current.add(String(c.registrationId));
+        }
+      });
+    }
+  }, [existingCheckIns]);
+
+  // Wrapper callback to track check-in IDs locally and forward to parent
+  const handleCheckInRecord = (checkInRecord, parsedData) => {
+    if (checkInRecord && checkInRecord.registrationId) {
+      localCheckedInIdsRef.current.add(String(checkInRecord.registrationId));
+    }
+    if (onCheckIn) {
+      onCheckIn(checkInRecord, parsedData);
+    }
+  };
 
   // Initialize camera stream
   const startCamera = async () => {
@@ -159,14 +181,21 @@ const EventCheckInScanner = ({ eventId, onCheckIn, existingCheckIns = [], regist
         return;
       }
 
-      // Check for duplicate check-in (non-group)
-      if (hasBeenCheckedIn(registrationId, existingCheckIns)) {
+      // Check for duplicate check-in (non-group) - check both prop and local synchronous set
+      const registrationIdStr = String(registrationId);
+      if (
+        hasBeenCheckedIn(registrationId, existingCheckIns) ||
+        localCheckedInIdsRef.current.has(registrationIdStr)
+      ) {
         toast.warning(
           `${registration?.name || 'Attendee'} already checked in`
         );
         setIsProcessing(false);
         return;
       }
+
+      // Synchronously mark as checked in locally before scheduling parent update
+      localCheckedInIdsRef.current.add(registrationIdStr);
 
       // Record check-in for individual
       const checkInRecord = recordCheckIn({
@@ -179,9 +208,7 @@ const EventCheckInScanner = ({ eventId, onCheckIn, existingCheckIns = [], regist
       setScannedData(parsedData);
 
       // Call parent callback
-      if (onCheckIn) {
-        onCheckIn(checkInRecord, parsedData);
-      }
+      handleCheckInRecord(checkInRecord, parsedData);
 
       toast.success(`✓ ${registration?.name || 'Attendee'} checked in!`);
 
@@ -341,7 +368,7 @@ const EventCheckInScanner = ({ eventId, onCheckIn, existingCheckIns = [], regist
         primaryRegistration={groupPrimaryRegistration}
         registrations={registrations}
         existingCheckIns={existingCheckIns}
-        onCheckIn={onCheckIn}
+        onCheckIn={handleCheckInRecord}
         eventId={eventId}
       />
     </div>
