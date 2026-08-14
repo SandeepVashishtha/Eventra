@@ -1176,15 +1176,8 @@ export const generateBulkAIInsights = async (events = [], profile = {}, options 
 // ============================================================================
 
 export {
-  AI_SERVICE_CONFIG,
-  configureAIService,
-  clearAICache,
-  getAITelemetry,
-  logAITelemetry,
-  resetAITelemetry,
   CircuitBreaker,
   createCacheKey,
-  createProfileHash,
 };
 
 export default {
