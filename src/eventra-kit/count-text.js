@@ -2,6 +2,7 @@
  * adds a count-text helper.
  */
 export function countText(value) {
-  return String(value).match(/[a-z]/gi)?.length ?? 0;
+  const words = String(value).trim().split(/\s+/).filter(Boolean);
+  return words.length;
 }
 
