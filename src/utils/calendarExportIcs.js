@@ -2,14 +2,26 @@
  * Export Event Schedule to ICS Format with VTIMEZONE and DST boundary support.
  */
 
+import { getTimezoneOffsetInfo } from "./timezoneUtils.js";
+
+const formatOffset = (offsetMinutes) => {
+  const sign = offsetMinutes >= 0 ? "+" : "-";
+  const absMinutes = Math.abs(offsetMinutes);
+  const hh = String(Math.floor(absMinutes / 60)).padStart(2, "0");
+  const mm = String(absMinutes % 60).padStart(2, "0");
+  return `${sign}${hh}${mm}`;
+};
+
 export function buildVTimezoneBlock(tz = "UTC") {
+  const standard = getTimezoneOffsetInfo(new Date(), tz);
+  const offset = formatOffset(standard.offsetMinutes);
   return `BEGIN:VTIMEZONE
 TZID:${tz}
 X-LIC-LOCATION:${tz}
 BEGIN:STANDARD
-TZOFFSETFROM:+0000
-TZOFFSETTO:+0000
-TZNAME:UTC
+TZOFFSETFROM:${offset}
+TZOFFSETTO:${offset}
+TZNAME:${standard.timeZoneName || tz}
 DTSTART:19700101T000000
 END:STANDARD
 END:VTIMEZONE`;
