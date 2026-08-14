@@ -3,6 +3,7 @@
  * adds a shortest-word helper.
  */
 export function shortestWord(text) {
-  return String(text).split(/\s+/).filter(Boolean).reduce((best, w) => (w.length < best.length ? w : best), '');
+  const words = String(text).split(/\s+/).filter(Boolean);
+  return words.reduce((best, w) => (w.length < best.length ? w : best), words[0] ?? '');
 }
 
