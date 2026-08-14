@@ -2,6 +2,6 @@
  * adds a estimate-prop helper.
  */
 export function estimateProp(value) {
-  return String(value).padStart(10, '0');
+  return value == null ? 0 : Object.keys(value).length;
 }
 
