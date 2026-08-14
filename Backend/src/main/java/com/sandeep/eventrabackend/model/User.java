@@ -78,4 +78,8 @@ public class User {
     @Convert(converter = JsonMapAttributeConverter.class)
     @Column(name = "preferences", columnDefinition = "TEXT")
     private Map<String, Object> preferences = new HashMap<>();
+
+    public String getName() {
+        return ((firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "")).trim();
+    }
 }
