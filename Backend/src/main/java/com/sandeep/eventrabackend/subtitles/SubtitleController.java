@@ -138,7 +138,7 @@ public class SubtitleController {
     /**
      * Get subtitles by session ID
      */
-    @GetMapping("/session/{sessionId}")
+    @GetMapping("/session/{sessionId}/subtitles")
     public ResponseEntity<List<SubtitleDTO>> getSubtitlesBySessionId(@PathVariable String sessionId) {
         List<Subtitle> subtitles = subtitleService.getSubtitlesBySessionId(sessionId);
         List<SubtitleDTO> dtos = subtitles.stream()
@@ -435,8 +435,6 @@ public class SubtitleController {
                             "Subtitle session not found: " + sessionId));
         }
         throw new IllegalArgumentException("eventId or sessionId is required to create a subtitle.");
-    }
-        throw new AccessDeniedException("You can only view your own subtitles.");
     }
 
     private User currentUser(Authentication authentication) {

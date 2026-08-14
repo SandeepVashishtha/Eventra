@@ -128,7 +128,7 @@ public class WebAuthnController {
         return value == null ? "" : value.trim().toLowerCase();
     }
 
-    private static final class ChallengeEntry {
+    static final class ChallengeEntry {
         private final String challenge;
         private final Instant createdAt;
 

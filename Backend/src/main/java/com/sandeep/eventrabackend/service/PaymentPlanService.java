@@ -295,11 +295,7 @@ public class PaymentPlanService {
             payment.setStripeCustomerId(paymentPlan.getStripeCustomerId());
             paymentRepository.save(payment);
         }
-        
-        // Update payment plan with first payment intent
-        paymentPlan.setStripeSubscriptionId(paymentIntent.getId());
-        paymentPlanRepository.save(paymentPlan);
-        
+
         Map<String, String> response = new HashMap<>();
         response.put("paymentIntentId", paymentIntent.getId());
         response.put("clientSecret", paymentIntent.getClientSecret());
@@ -339,8 +335,8 @@ public class PaymentPlanService {
         if ("succeeded".equals(paymentIntent.getStatus())) {
             payment.setStatus("COMPLETED");
             payment.setPaidAt(LocalDateTime.now());
-            payment.setTransactionId(paymentIntent.getCharges().getData().isEmpty() ? 
-                    null : paymentIntent.getCharges().getData().get(0).getId());
+            payment.setTransactionId(paymentIntent.getLatestChargeObject() != null ?
+                    paymentIntent.getLatestChargeObject().getId() : null);
             paymentRepository.save(payment);
             
             // Schedule remaining installments

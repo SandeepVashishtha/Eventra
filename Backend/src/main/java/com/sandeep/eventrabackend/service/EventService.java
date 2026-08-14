@@ -467,13 +467,6 @@ public class EventService {
                 return categoryCounts;
         }
 
-        /**
-         * Creates a new event.
-         *
-         * @param request event creation details
-         * @return the saved event
-         */
-        @Transactional
         private static final Set<String> ALLOWED_CATEGORIES = Set.of(
                 "Tech", "Art", "Music", "Sports", "Education", "Networking", "Other"
         );
@@ -1210,6 +1203,11 @@ public class EventService {
          * @return registration confirmation response
          */
         @Transactional
+        public RegistrationResponse registerUserForEvent(Long eventId, String userEmail) {
+                return registerUserForEvent(eventId, userEmail, null);
+        }
+
+        @Transactional
         public RegistrationResponse registerUserForEvent(Long eventId, String userEmail, String seatId) {
                 return registerUserForEvent(eventId, userEmail, seatId, false);
         }
@@ -1221,23 +1219,17 @@ public class EventService {
                         String seatId,
                         boolean showProfileInAttendeeDirectory) {
 
-                ObjectOptimisticLockingFailureException lastConflict = null;
-
                 for (int attempt = 1; attempt <= MAX_REGISTRATION_RETRIES; attempt++) {
                         try {
                                 return executeRegistration(eventId, userEmail, seatId, showProfileInAttendeeDirectory);
 
                         } catch (ObjectOptimisticLockingFailureException ex) {
-                                lastConflict = ex;
-
                                 log.warn(
                                                 "Optimistic lock conflict on event {} (attempt {}/{})",
                                                 eventId,
                                                 attempt,
                                                 MAX_REGISTRATION_RETRIES);
                         } catch (org.springframework.dao.PessimisticLockingFailureException ex) {
-                                lastConflict = ex;
-
                                 log.warn(
                                                 "Pessimistic lock conflict on event {} (attempt {}/{})",
                                                 eventId,

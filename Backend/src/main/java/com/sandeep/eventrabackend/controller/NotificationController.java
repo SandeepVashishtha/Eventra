@@ -289,6 +289,6 @@ public class NotificationController {
             @PathVariable String templateType,
             Authentication authentication) {
         String organizerEmail = authentication.getName();
-        return ResponseEntity.ok(emailTemplateService.getTemplate(eventId, templateType, organizerEmail));
+        return ResponseEntity.ok(emailTemplateService.getTemplate(String.valueOf(eventId), templateType, organizerEmail));
     }
 }
