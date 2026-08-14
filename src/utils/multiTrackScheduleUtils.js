@@ -177,7 +177,7 @@ export const calculateOverlapMinutes = (session1, session2) => {
 
 /**
  * Auto-assign sessions to tracks using a greedy algorithm
- * @param {Array} sessions - Unassigned sessions
+ * @param {Array} sessions - All sessions (assigned and unassigned)
  * @param {Array} tracks - Available tracks
  * @returns {Array} Sessions with assigned tracks
  */
@@ -190,15 +190,27 @@ export const autoAssignSessionsToTracks = (sessions, tracks) => {
     trackOccupancy.set(track.id, []);
   });
 
-  // Sort sessions by duration (longest first) for better packing
-  assignedSessions.sort((a, b) => {
-    const durationA = new Date(a.endTime) - new Date(a.startTime);
-    const durationB = new Date(b.endTime) - new Date(b.startTime);
-    return durationB - durationA;
+  // Seed occupancy with already-assigned sessions so the greedy placement
+  // never overlaps sessions the user assigned manually.
+  assignedSessions.forEach(session => {
+    if (session.trackId) {
+      const occupancy = trackOccupancy.get(session.trackId) || [];
+      occupancy.push(session);
+      trackOccupancy.set(session.trackId, occupancy);
+    }
   });
 
+  // Sort unassigned sessions by duration (longest first) for better packing
+  const unassignedSessions = assignedSessions
+    .filter(session => !session.trackId)
+    .sort((a, b) => {
+      const durationA = new Date(a.endTime) - new Date(a.startTime);
+      const durationB = new Date(b.endTime) - new Date(b.startTime);
+      return durationB - durationA;
+    });
+
   // Assign each session to the best available track
-  assignedSessions.forEach(session => {
+  unassignedSessions.forEach(session => {
     const bestTrack = findBestAvailableTrack(session, tracks, trackOccupancy);
     if (bestTrack) {
       session.trackId = bestTrack.id;

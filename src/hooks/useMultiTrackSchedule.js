@@ -290,7 +290,7 @@ export const useMultiTrackSchedule = (eventId) => {
         throw new Error('All sessions are already assigned');
       }
 
-      const assigned = autoAssignSessionsToTracks(unassignedSessions, state.tracks);
+      const assigned = autoAssignSessionsToTracks(state.sessions, state.tracks);
       const updatedSessions = state.sessions.map(s => {
         const assignedSession = assigned.find(a => a.id === s.id);
         return assignedSession || s;
