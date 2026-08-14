@@ -136,8 +136,12 @@ export default function useAdvancedEventSearch(events = [], { debounceMs = 250 }
 
   // ---- Filter + sort pipeline ----
   const results = useMemo(() => {
-    const from = filters.dateFrom ? new Date(filters.dateFrom) : null;
-    const to   = filters.dateTo   ? new Date(filters.dateTo)   : null;
+    const from = filters.dateFrom
+      ? new Date(filters.dateFrom + "T00:00:00")
+      : null;
+    const to = filters.dateTo
+      ? new Date(filters.dateTo + "T23:59:59.999")
+      : null;
 
     return events
       .filter((event) => {
