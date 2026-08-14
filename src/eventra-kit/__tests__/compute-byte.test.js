@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import * as ComputeByte from '../compute-byte.js';
+import { computeByte } from '../compute-byte.js';
 
 describe('compute-byte', () => {
-  it('exports a module', () => {
-    expect(ComputeByte).toBeDefined();
+  it('computes the UTF-8 byte length of a string', () => {
+    expect(computeByte('abc')).toBe(3);
+    expect(computeByte('é')).toBe(2);
+    expect(computeByte('')).toBe(0);
   });
 });
-
