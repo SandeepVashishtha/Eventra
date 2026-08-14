@@ -11,6 +11,11 @@
   "dependencies": {
     "@headlessui/react": "2.2.10",
     "@heroicons/react": "^2.2.0",
+    "@tiptap/extension-link": "^2.8.0",
+    "@tiptap/extension-placeholder": "^2.8.0",
+    "@tiptap/pm": "^2.8.0",
+    "@tiptap/react": "^2.8.0",
+    "@tiptap/starter-kit": "^2.8.0",
     "@sentry/browser": "^10.69.0",
     "@sentry/react": "^10.69.0",
     "@sendgrid/mail": "^8.1.4",
