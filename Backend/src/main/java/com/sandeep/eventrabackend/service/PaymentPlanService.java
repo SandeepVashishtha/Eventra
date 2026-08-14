@@ -67,6 +67,14 @@ public class PaymentPlanService {
         if (ticketPrice == null || ticketPrice.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Ticket price must be greater than zero");
         }
+
+        // The registration's ticket price is the source of truth once set:
+        // reject requests that try to change it (e.g. lower it) after creation.
+        if (registration.getTicketPrice() != null
+                && registration.getTicketPrice().compareTo(ticketPrice) != 0) {
+            throw new IllegalArgumentException(
+                    "Ticket price does not match the price set for this registration");
+        }
         
         if (upfrontPercentage == null || upfrontPercentage < 0 || upfrontPercentage > 100) {
             upfrontPercentage = 25; // Default to 25%
