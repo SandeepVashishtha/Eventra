@@ -1,3 +1,4 @@
+import { hashToIndex } from './hash-to-index.js';
 
 /**
  * adds a bucket hash helper.

@@ -1,3 +1,4 @@
+import { hashStringToNumber } from './hash-string-to-number.js';
 
 /**
  * adds a hash index helper.
