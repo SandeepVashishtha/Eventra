@@ -1,9 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import * as DedupeRecord from '../dedupe-record.js';
+import { dedupeRecord } from '../dedupe-record.js';
 
 describe('dedupe-record', () => {
-  it('exports a module', () => {
-    expect(DedupeRecord).toBeDefined();
+  it('removes duplicate records by key', () => {
+    expect(dedupeRecord([{ id: 1 }, { id: 1 }, { id: 2 }])).toEqual([{ id: 1 }, { id: 2 }]);
   });
 });
-
