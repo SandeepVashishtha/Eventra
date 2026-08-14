@@ -59,6 +59,8 @@ public class CouponService implements ApplicationRunner {
             throw new CouponRedemptionException("Interrupted while acquiring coupon lock for code: " + code, e);
         }
         if (!acquired) {
+            // Not acquired: no other holder will release this entry for us.
+            locks.remove(code, lock);
             throw new CouponRedemptionException(
                     "Timed out after " + LOCK_WAIT_SECONDS + "s acquiring coupon lock for code: " + code);
         }
@@ -66,8 +68,9 @@ public class CouponService implements ApplicationRunner {
         try {
             // Release the lock when the transaction finishes, whether it
             // commits or rolls back (#14507) — afterCommit alone leaks the
-            // lock permanently on rollback.
-            syncAdapter.registerReleaseOnCompletion(lock);
+            // lock permanently on rollback — then evict the per-code entry so
+            // the lock map stays bounded.
+            syncAdapter.registerReleaseOnCompletion(lock, () -> locks.remove(code, lock));
 
             // Atomic, DB-backed decrement guarded by remaining > 0, executed in
             // the current transaction; rollback restores the slot.
