@@ -1,59 +1,29 @@
 /**
- * FIDO2 WebAuthn Passkey Client Wrapper (#14041)
+ * Client-side WebAuthn challenge verification mapping utilities (#17672)
  */
 
-export async function isPasskeySupported() {
-  return (
-    typeof window !== "undefined" &&
-    window.PublicKeyCredential &&
-    typeof window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === "function" &&
-    (await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable())
-  );
-}
-
-export async function registerPasskeyBiometrics(userEmail = "user@example.com") {
-  if (typeof navigator === "undefined" || !navigator.credentials) {
-    return {
-      credentialId: "passkey-sim-" + Math.random().toString(36).substring(2, 10),
-      type: "public-key",
-      userEmail,
-    };
+export async function createPasskeyCredentials(challengeBase64, username) {
+  if (typeof window === "undefined" || !window.navigator.credentials) {
+    return { success: false, error: "WebAuthn not supported." };
   }
 
-  const challenge = new Uint8Array(32);
-  crypto.getRandomValues(challenge);
+  // Convert challenge token to ArrayBuffer
+  const challenge = Uint8Array.from(atob(challengeBase64), c => c.charCodeAt(0));
+  const userId = new TextEncoder().encode(username);
 
-  const userIdBytes = new TextEncoder().encode(userEmail);
-
-  const publicKeyOptions = {
+  const publicKeyCredentialCreationOptions = {
     challenge,
-    rp: { name: "Eventra Platform", id: window.location.hostname || "localhost" },
-    user: {
-      id: userIdBytes,
-      name: userEmail,
-      displayName: userEmail.split("@")[0],
-    },
-    pubKeyCredParams: [{ alg: -7, type: "public-key" }],
-    authenticatorSelection: {
-      authenticatorAttachment: "platform",
-      userVerification: "required",
-    },
+    rp: { name: "Eventra Inc.", id: window.location.hostname },
+    user: { id: userId, name: username, displayName: username },
+    pubKeyCredParams: [{ alg: -7, type: "public-key" }], // ES256 algorithm support
     timeout: 60000,
+    attestation: "direct"
   };
 
   try {
-    const credential = await navigator.credentials.create({ publicKey: publicKeyOptions });
-    return {
-      credentialId: credential.id,
-      type: credential.type,
-      userEmail,
-    };
-  } catch (err) {
-    console.warn("[WebAuthn] Passkey creation fallback simulation used:", err);
-    return {
-      credentialId: "passkey-sim-" + Math.random().toString(36).substring(2, 10),
-      type: "public-key",
-      userEmail,
-    };
+    const credential = await navigator.credentials.create({ publicKey: publicKeyCredentialCreationOptions });
+    return { success: true, credential };
+  } catch (e) {
+    return { success: false, error: e.message };
   }
 }
