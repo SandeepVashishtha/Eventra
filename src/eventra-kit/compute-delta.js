@@ -1,7 +1,7 @@
 /**
  * adds a compute-delta helper.
  */
-export function computeDelta(value, target) {
-  return value.indexOf(target);
+export function computeDelta(a, b) {
+  return Math.abs(a - b);
 }
 
