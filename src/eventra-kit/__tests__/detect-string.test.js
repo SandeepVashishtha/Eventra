@@ -1,9 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import * as DetectString from '../detect-string.js';
+import { detectString } from '../detect-string.js';
 
 describe('detect-string', () => {
-  it('exports a module', () => {
-    expect(DetectString).toBeDefined();
+  it('detects string values', () => {
+    expect(detectString('abc')).toBe(true);
+    expect(detectString('')).toBe(true);
+    expect(detectString(42)).toBe(false);
+    expect(detectString(null)).toBe(false);
   });
 });
-
