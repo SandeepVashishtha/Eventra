@@ -381,20 +381,9 @@ const EventTicket = ({ event, user, onClose }) => {
                       <Sparkles size={11} style={{ color: theme.accent }} />
                       EVENT AGENDA
                     </span>
-                    <ul className="ud-ticket-agenda-list mt-1 space-y-2 text-xs text-zinc-300">
-                      <li className="flex justify-between items-center border-b border-white/5 pb-1">
-                        <span>1. Welcome & Keynote</span>
-                        <span className="text-zinc-400 font-semibold">10:00 AM</span>
-                      </li>
-                      <li className="flex justify-between items-center border-b border-white/5 pb-1">
-                        <span>2. Technical Deep-Dive</span>
-                        <span className="text-zinc-400 font-semibold">11:30 AM</span>
-                      </li>
-                      <li className="flex justify-between items-center border-b border-white/5 pb-1">
-                        <span>3. Interactive Q&A</span>
-                        <span className="text-zinc-400 font-semibold">02:00 PM</span>
-                      </li>
-                    </ul>
+                    <p className="mt-1 text-xs text-zinc-400">
+                      Full agenda will be shared at check-in.
+                    </p>
                   </div>
 
                   <div className="ud-ticket-info-item">
