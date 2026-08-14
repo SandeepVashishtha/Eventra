@@ -3,6 +3,8 @@ import { hexToRgb } from './hex-to-rgb.js';
 /**
  * adds a hue shift helper.
  */
+import { hexToRgb } from './hex-to-rgb.js';
+
 export function shiftHue(hex, shift) {
   const { r, g, b } = hexToRgb(hex);
   const max = Math.max(r, g, b) / 255;
