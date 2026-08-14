@@ -288,6 +288,41 @@ public class AuthService {
                 "message", "If an account exists for that email, a password reset link has been sent.");
     }
 
+    /**
+     * Confirms a password reset using the raw single-use token and sets the new password.
+     *
+     * @param rawToken raw unhashed reset token provided by the user
+     * @param newPassword the new password to set
+     * @return a map with generic success message
+     */
+    @Transactional
+    public Map<String, String> confirmPasswordReset(String rawToken, String newPassword) {
+        if (rawToken == null || rawToken.isBlank()) {
+            throw new IllegalArgumentException("Reset token is required");
+        }
+        if (newPassword == null || newPassword.length() < 8) {
+            throw new IllegalArgumentException("Password must be at least 8 characters");
+        }
+
+        String tokenHash = hashToken(rawToken);
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByTokenHashAndUsedFalse(tokenHash)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid or expired password reset token"));
+
+        if (resetToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Password reset token has expired");
+        }
+
+        User user = resetToken.getUser();
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setPasswordChangedAt(LocalDateTime.now());
+        userRepository.save(user);
+
+        resetToken.setUsed(true);
+        passwordResetTokenRepository.save(resetToken);
+
+        return Map.of("message", "Password has been successfully reset.");
+    }
+
     private String generateResetToken() {
         SecureRandom secureRandom = new SecureRandom();
         byte[] bytes = new byte[RESET_TOKEN_BYTE_LENGTH];

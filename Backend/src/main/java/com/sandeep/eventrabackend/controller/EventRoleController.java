@@ -6,7 +6,9 @@ import com.sandeep.eventrabackend.dto.response.EventTeamMemberResponse;
 import com.sandeep.eventrabackend.service.EventRoleService;
 import jakarta.validation.Valid;
 import java.util.List;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,24 +23,36 @@ public class EventRoleController {
     }
 
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<EventTeamMemberResponse>> getTeam(
             @PathVariable Long eventId,
             Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         return ResponseEntity.ok(eventRoleService.getTeam(eventId, authentication.getName()));
     }
 
     @PutMapping
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<EventTeamMemberResponse> assignRole(
             @PathVariable Long eventId,
             @Valid @RequestBody EventRoleAssignmentRequest request,
             Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         return ResponseEntity.ok(eventRoleService.assignRole(eventId, request, authentication.getName()));
     }
 
     @GetMapping("/audit")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<EventRoleAuditResponse>> getAuditLog(
             @PathVariable Long eventId,
             Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         return ResponseEntity.ok(eventRoleService.getAuditLog(eventId, authentication.getName()));
     }
 }

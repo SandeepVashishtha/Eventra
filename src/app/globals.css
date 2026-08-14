@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f4fbf7;
+  --foreground: #064e3b;
+  --mint-primary: #00b887;
+  --mint-dark: #065f46;
+  --mint-light: #e6f7f0;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background-color: #f4fbf7;
+  color: #0f172a;
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+}
+
+/* Custom Forest Mint selection */
+::selection {
+  background-color: #a7f3d0;
+  color: #064e3b;
+}
+
+

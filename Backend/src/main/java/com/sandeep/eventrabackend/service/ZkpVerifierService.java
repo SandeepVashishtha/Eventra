@@ -87,9 +87,9 @@ public class ZkpVerifierService {
             return false;
         }
         if (!payload.getEventId().matches("^[0-9]+$")) {
+        if (payload.getSeverity() != null && !payload.getSeverity().matches("^(LOW|MEDIUM|CRITICAL)$")) {
             return false;
         }
-        if (payload == null || payload.getEventId() == null || payload.getProofHash() == null || payload.getNullifierHash() == null) {
             return false;
         }
 
