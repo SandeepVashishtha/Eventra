@@ -4,7 +4,7 @@
  */
 export function medianHigh(array) {
   const sorted = [...array].sort((a, b) => a - b);
-  const mid = Math.ceil(sorted.length / 2);
+  const mid = Math.floor(sorted.length / 2);
   return sorted[mid];
 }
 
