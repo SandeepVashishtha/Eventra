@@ -191,19 +191,6 @@ const RegistrationCapacityReservation = ({
     onExpired,
   ]);
 
-  useEffect(() => {
-    if (
-      reserved &&
-      remainingSeconds === 0
-    ) {
-      onExpired?.();
-    }
-  }, [
-    reserved,
-    remainingSeconds,
-    onExpired,
-  ]);
-
   const progress = reserved
     ? Math.max(
         0,
