@@ -2,6 +2,6 @@
  * adds a ensure-array helper.
  */
 export function ensureArray(value) {
-  return String(value).match(/[a-z]+/g)?.join('') ?? '';
+  return Array.isArray(value) ? value : value == null ? [] : [value];
 }
 
