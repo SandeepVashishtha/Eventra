@@ -1191,7 +1191,12 @@ public class EventService {
                         throw new EventFullException("Event is already full. Capacity: " + event.getCapacity());
                 }
 
-                return promoteEntry(event, entry);
+                RegistrationResponse response = promoteEntry(event, entry);
+                // Mirrors promoteWaitlistAfterVacancy: manual promotion also consumes a seat.
+                event.setRegisteredCount(event.getRegisteredCount() + 1);
+                eventRepository.save(event);
+                broadcastAvailability(event);
+                return response;
         }
 
         /**
