@@ -234,7 +234,7 @@ export const fetchWithTimeout = async (
         // User manual cancellation
         if (userSignal?.aborted) {
           logger.info("[fetchUtils] Request manually aborted by caller:", url);
-          throw new FetchError("Request was cancelled by user caller");
+          throw new FetchError("Request was manually aborted by user");
         }
       }
 
@@ -310,5 +310,7 @@ export const apiClient = {
     ),
 
   delete: (url, options = {}, timeout) =>
+    fetchWithTimeout(url, { ...options, method: "DELETE" }, timeout),
+  del: (url, options = {}, timeout) =>
     fetchWithTimeout(url, { ...options, method: "DELETE" }, timeout),
 };
