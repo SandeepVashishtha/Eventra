@@ -81,10 +81,14 @@ public class LiveAudienceController {
     })
     public ResponseEntity<LiveAudienceQuestionResponse> createQuestion(
             @PathVariable Long eventId,
-            @Valid @RequestBody CreateQuestionRequest request,
+            @Valid @RequestBody(required = false) CreateQuestionRequest request,
             Authentication authentication) {
+        if (request == null || request.getText() == null || request.getText().isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+        String trimmedText = request.getText().trim();
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(liveAudienceService.createQuestion(eventId, request.getText(), authentication.getName()));
+                .body(liveAudienceService.createQuestion(eventId, trimmedText, authentication.getName()));
     }
 
     @PostMapping("/questions/{questionId}/upvote")
