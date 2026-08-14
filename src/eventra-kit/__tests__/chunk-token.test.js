@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import * as ChunkToken from '../chunk-token.js';
+import { chunkToken } from '../chunk-token.js';
 
 describe('chunk-token', () => {
-  it('exports a module', () => {
-    expect(ChunkToken).toBeDefined();
+  it('splits text into tokens of the given size', () => {
+    expect(chunkToken('abcdef', 2)).toEqual(['ab', 'cd', 'ef']);
+    expect(chunkToken('abcdef', 3)).toEqual(['abc', 'def']);
+    expect(chunkToken('abcde', 2)).toEqual(['ab', 'cd', 'e']);
   });
 });
-
