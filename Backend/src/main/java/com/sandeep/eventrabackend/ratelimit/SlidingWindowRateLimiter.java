@@ -33,6 +33,13 @@ public class SlidingWindowRateLimiter {
             // Remove timestamps older than current window
             timestamps.removeIf(t -> t < windowStartMs);
 
+            if (timestamps.isEmpty()) {
+                // Forget idle clients so the map stays bounded; a fresh entry
+                // is recreated lazily on the next request.
+                requestLogs.remove(clientKey, timestamps);
+                return true;
+            }
+
             if (timestamps.size() < maxRequests) {
                 timestamps.add(currentTimeMs);
                 return true;
