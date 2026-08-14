@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import {
   formatDraftUpdatedAt,
-} from "../../utils/eventDraftUtils";
+} from "../../utils/eventDraftUtils-jp";
 
 const DraftEventCard = ({
   draft,
