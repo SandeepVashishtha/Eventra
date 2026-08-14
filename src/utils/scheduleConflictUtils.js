@@ -362,6 +362,9 @@ export const detectScheduleConflict = (
         registeredEvent
       ),
 
+    sourceEvent:
+      newEvent,
+
     event:
       registeredEvent,
 
