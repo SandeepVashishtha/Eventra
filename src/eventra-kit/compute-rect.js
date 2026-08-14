@@ -1,7 +1,9 @@
 /**
  * adds a compute-rect helper.
  */
-export function computeRect(value) {
-  return value.length === 0;
+export function computeRect(width, height) {
+  const w = typeof width === 'number' ? width : 0;
+  const h = typeof height === 'number' ? height : 0;
+  return w * h;
 }
 
