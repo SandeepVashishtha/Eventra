@@ -16,12 +16,16 @@ public class FallbackLimiter {
         if (clientKey == null) return true;
 
         try {
-            int current = requestCounts.getOrDefault(clientKey, 0);
-            if (current < maxLimit) {
-                requestCounts.put(clientKey, current + 1);
-                return true;
-            }
-            return false;
+            final boolean[] allowed = {false};
+            requestCounts.compute(clientKey, (key, current) -> {
+                int count = current == null ? 0 : current;
+                if (count < maxLimit) {
+                    allowed[0] = true;
+                    return count + 1;
+                }
+                return count;
+            });
+            return allowed[0];
         } catch (Exception e) {
             // Log local check failure and fail open to prevent blocking clients
             return true;
