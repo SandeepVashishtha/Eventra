@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import * as CountNumber from '../count-number.js';
+import { countNumber } from '../count-number.js';
 
 describe('count-number', () => {
-  it('exports a module', () => {
-    expect(CountNumber).toBeDefined();
+  it('counts numeric values in an array', () => {
+    expect(countNumber([1, 2, 'x'])).toBe(2);
+    expect(countNumber(['a', 'b'])).toBe(0);
   });
 });
-
