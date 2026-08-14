@@ -1,9 +1,13 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 export const TagSelector = ({ tags = [], onTagsChange }) => {
   const [selectedTags, setSelectedTags] = useState(tags);
   const [inputValue, setInputValue] = useState('');
   const inputRef = useRef(null);
+
+  useEffect(() => {
+    setSelectedTags(tags);
+  }, [tags]);
 
   const handleKeyDown = (e) => {
     if (e.key === 'Backspace' && inputValue === '' && selectedTags.length > 0) {
