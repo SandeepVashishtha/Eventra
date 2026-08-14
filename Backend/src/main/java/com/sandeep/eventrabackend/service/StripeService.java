@@ -185,8 +185,11 @@ public class StripeService {
         
         for (int i = 2; i <= paymentPlan.getTotalInstallments(); i++) {
             // Calculate due date: spread payments evenly between now and event date
-            long daysBetween = ChronoUnit.DAYS.between(now.toLocalDate(), eventDate.toLocalDate());
-            long daysUntilInstallment = (daysBetween / (paymentPlan.getTotalInstallments() - 1)) * (i - 1);
+            long daysBetween = eventDate != null
+                    ? ChronoUnit.DAYS.between(now.toLocalDate(), eventDate.toLocalDate())
+                    : 0;
+            long interval = Math.max(1, paymentPlan.getTotalInstallments() - 1);
+            long daysUntilInstallment = (daysBetween / interval) * (i - 1);
             LocalDateTime dueDate = now.plusDays(daysUntilInstallment);
             
             PaymentIntent intent = createPaymentIntentWithoutConfirmation(
