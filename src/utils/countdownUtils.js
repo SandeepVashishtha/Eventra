@@ -81,19 +81,25 @@ export const formatCountdown = (time) => {
     return "Registration Closed";
   }
 
+  const days = typeof time.days === "number" && !isNaN(time.days) ? time.days : 0;
+  const hours = typeof time.hours === "number" && !isNaN(time.hours) ? time.hours : 0;
+  const minutes = typeof time.minutes === "number" && !isNaN(time.minutes) ? time.minutes : 0;
+
   const parts = [];
 
-  if (time.days > 0) {
-    parts.push(`${time.days}d`);
+  if (days > 0) {
+    parts.push(`${days}d`);
   }
 
-  if (time.hours > 0 || time.days > 0) {
-    parts.push(`${time.hours}h`);
+  if (hours > 0 || days > 0) {
+    parts.push(`${hours}h`);
   }
 
-  parts.push(`${time.minutes}m`);
+  if (minutes > 0) {
+    parts.push(`${minutes}m`);
+  }
 
-  return parts.join(" ");
+  return parts.length > 0 ? parts.join(" ") : "0m";
 };
 
 /**
