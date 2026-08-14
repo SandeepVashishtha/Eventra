@@ -4,7 +4,9 @@
  */
 export const formatICSDate = (dateString) => {
   if (!dateString) return "";
-  return new Date(dateString).toISOString().replace(/-|:|\.\d\d\d/g, "");
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toISOString().replace(/-|:|\.\d\d\d/g, "");
 };
 
 /**
