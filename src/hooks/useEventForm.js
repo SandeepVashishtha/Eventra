@@ -467,6 +467,8 @@ export const useEventForm = () => {
       const capacity = Number(data.capacity);
       if (!capacity || capacity <= 0) {
         newErrors.capacity = "Please enter a valid number";
+      } else if (!Number.isInteger(capacity)) {
+        newErrors.capacity = "Capacity must be a whole number";
       } else if (capacity > MAX_CAPACITY) {
         newErrors.capacity = `Maximum capacity is ${MAX_CAPACITY.toLocaleString()} attendees`;
       }
@@ -479,7 +481,7 @@ export const useEventForm = () => {
 
         if (tier.capacity) {
           const cap = Number(tier.capacity);
-          if (cap <= 0) newErrors[`ticketTier_${index}_capacity`] = "Capacity must be greater than 0";
+          if (cap <= 0 || !Number.isInteger(cap)) newErrors[`ticketTier_${index}_capacity`] = "Capacity must be a valid whole number greater than 0";
         }
       }
     });
@@ -556,6 +558,20 @@ export const useEventForm = () => {
         if (data.isVirtual) {
           if (!link) fieldError = "Virtual link is required for online events";
           else if (!/^https:\/\//i.test(link)) fieldError = "Virtual link must use HTTPS protocol";
+        }
+        break;
+      }
+      case "capacity": {
+        const capVal = value ?? data.capacity;
+        if (capVal) {
+          const capacity = Number(capVal);
+          if (!capacity || capacity <= 0) {
+            fieldError = "Please enter a valid number";
+          } else if (!Number.isInteger(capacity)) {
+            fieldError = "Capacity must be a whole number";
+          } else if (capacity > MAX_CAPACITY) {
+            fieldError = `Maximum capacity is ${MAX_CAPACITY.toLocaleString()} attendees`;
+          }
         }
         break;
       }
