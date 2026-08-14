@@ -142,20 +142,20 @@ const SpeakerGreenRoom = ({
   };
 
   // Get display name for a peer
-  const getPeerDisplayName = (peerId) => {
-    if (peerId === peerId) {
+  const getPeerDisplayName = (targetPeerId) => {
+    if (targetPeerId === peerId) {
       return authUser?.firstName || authUser?.username || "You";
     }
-    const speaker = speakersInRoom.find(s => s.peerId === peerId);
-    return speaker?.user?.firstName || speaker?.user?.username || peerId;
+    const speaker = speakersInRoom.find(s => s.peerId === targetPeerId);
+    return speaker?.user?.firstName || speaker?.user?.username || targetPeerId;
   };
 
   // Get role indicator for a peer
-  const getPeerRoleIndicator = (peerId) => {
-    if (peerId === peerId) {
+  const getPeerRoleIndicator = (targetPeerId) => {
+    if (targetPeerId === peerId) {
       return isOrganizer ? "Organizer" : "Speaker";
     }
-    const speaker = speakersInRoom.find(s => s.peerId === peerId);
+    const speaker = speakersInRoom.find(s => s.peerId === targetPeerId);
     return speaker?.isOrganizer ? "Organizer" : "Speaker";
   };
 
