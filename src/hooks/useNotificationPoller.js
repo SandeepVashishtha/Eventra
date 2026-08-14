@@ -94,8 +94,17 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
         const normalized = normalize(n);
         if (!seen.has(normalized.id)) merged.push(normalized);
       });
+      merged.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
       window.localStorage.setItem(userKey, JSON.stringify(merged));
       window.localStorage.removeItem(GUEST_INBOX_KEY);
+      if (isMounted.current) {
+        setNotifications(merged);
+        notificationsRef.current = merged;
+        setUnreadCount(merged.filter((n) => !n.isRead).length);
+        merged.forEach((n) => {
+          if (n.id) addSeenId(n.id);
+        });
+      }
     } catch (e) { console.warn("[useNotificationPoller] Failed to persist notifications", e); }
   }, [user?.id]);
 
@@ -129,7 +138,12 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
       });
       deduped.forEach((n) => addSeenId(n.id));
       const prev = notificationsRef.current || [];
-      const merged = deduped.concat(prev.filter((p) => !byId.has(p.id)));
+      const persisted = loadPersisted(storageKeyRef.current) || [];
+      const existingMap = new Map();
+      persisted.forEach((p) => { if (p?.id) existingMap.set(p.id, p); });
+      prev.forEach((p) => { if (p?.id) existingMap.set(p.id, p); });
+      const existingList = Array.from(existingMap.values());
+      const merged = deduped.concat(existingList.filter((p) => !byId.has(p.id)));
       const sorted = merged.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
       notificationsRef.current = sorted;
       setNotifications(sorted);
@@ -343,7 +357,8 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
         if (raw) {
           const legacy = safeJsonParse(raw, []);
           if (Array.isArray(legacy) && legacy.length > 0) {
-            const currentPersisted = loadPersisted(storageKeyRef.current) || [];
+            const targetKey = getStorageKey(user?.id);
+            const currentPersisted = loadPersisted(targetKey) || [];
             const merged = [...currentPersisted];
 
             legacy.forEach((ln) => {
@@ -375,13 +390,15 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
 
             // Sort newest first
             merged.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-            persist(merged, storageKeyRef.current);
-            setNotifications(merged);
-            notificationsRef.current = merged;
-            setUnreadCount(merged.filter((n) => !n.isRead).length);
-            merged.forEach((n) => {
-              if (n.id) seenIds.current.add(n.id);
-            });
+            persist(merged, targetKey);
+            if (isMounted.current) {
+              setNotifications(merged);
+              notificationsRef.current = merged;
+              setUnreadCount(merged.filter((n) => !n.isRead).length);
+              merged.forEach((n) => {
+                if (n.id) addSeenId(n.id);
+              });
+            }
           }
           await idbDel("eventra_notifications");
         }
@@ -391,7 +408,7 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
     };
 
     migrateLegacy();
-  }, []);
+  }, [user?.id]);
 
   return {
     notifications, unreadCount, loading,
