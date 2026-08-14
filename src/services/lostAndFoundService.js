@@ -155,14 +155,14 @@ export const lostAndFoundService = {
     }
   },
 
-  // Upload an image and get URL (this would be handled by your existing file upload service)
+  // Upload an image and get a persisted URL via the attachments upload endpoint
   uploadImage: async (file) => {
-    // This is a placeholder - you would integrate with your existing file upload service
-    // For now, we'll return a mock URL or handle the upload differently
-    return Promise.resolve({
-      imageUrl: URL.createObjectURL(file),
-      thumbnailUrl: URL.createObjectURL(file)
-    });
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await apiUtils.post("/api/attachments/upload", formData);
+    const text = await response.text();
+    const link = text.replace("File uploaded to: ", "").trim();
+    return { imageUrl: link, thumbnailUrl: link };
   }
 };
 
