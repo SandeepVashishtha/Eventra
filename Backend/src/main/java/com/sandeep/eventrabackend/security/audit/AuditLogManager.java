@@ -137,10 +137,14 @@ public class AuditLogManager {
         String rootHash = hasher.computeRootHash(logStrings);
         String previousHash = hashChain.isEmpty() ? "" : hashChain.get(hashChain.size() - 1);
 
+        // Link this block to the previous one so the chain is tamper-evident:
+        // each stored entry is sha256(previousChainedHash + rootHash), not the raw root hash.
+        String chainedHash = hasher.sha256(previousHash + rootHash);
+
         // Create the block
         Block block = new Block(blockId, rootHash, previousHash, new ArrayList<>(currentBlockLogs));
         blocks.put(blockId, block);
-        hashChain.add(rootHash);
+        hashChain.add(chainedHash);
 
         logger.info("Created new audit block: {} with {} logs, rootHash: {}", 
                 blockId, currentBlockLogs.size(), rootHash);
