@@ -277,6 +277,12 @@ public class EventService {
                 return Sort.by(direction, mapped);
         }
 
+        private void validateTitle(String title) {
+                if (title == null || title.trim().length() < 3 || title.trim().length() > 100) {
+                        throw new IllegalArgumentException("Title must be between 3 and 100 characters.");
+                }
+        }
+
         /**
          * Returns a bounded window of public events near {@code around} for conflict
          * alternative suggestions (avoids loading the entire catalog).
@@ -492,12 +498,16 @@ public class EventService {
                 Event event = new Event();
                 validateEventCategory(request.getCategory());
                 validateEventCategories(request.getCategories());
+                validateTitle(request.getTitle());
                 event.setTitle(request.getTitle());
+                validateDescription(request.getDescription());
                 event.setDescription(request.getDescription());
+                validateLocation(request.getLocation());
                 event.setLocation(request.getLocation());
                 event.setEventDate(request.getEventDate());
                 event.setCapacity(request.getCapacity());
                 event.setImageUrl(request.getImageUrl());
+                validateEventTags(request.getTags());
                 event.setCategory(request.getCategory());
                 if (request.getCategories() != null) {
                     event.setCategories(new HashSet<>(request.getCategories()));
@@ -551,10 +561,17 @@ public class EventService {
                 validateEventCategory(request.getCategory());
                 validateEventCategories(request.getCategories());
 
+                validateTitle(request.getTitle());
                 event.setTitle(request.getTitle());
-                event.setDescription(request.getDescription());
+                if (request.getLocation() != null) {
+                        validateLocation(request.getLocation());
+                }
                 event.setLocation(request.getLocation());
                 event.setEventDate(request.getEventDate());
+                if (request.getDescription() != null) {
+                        validateDescription(request.getDescription());
+                        event.setDescription(request.getDescription());
+                }
                 if (request.getCapacity() != null) {
                         event.setCapacity(request.getCapacity());
                 }
@@ -564,6 +581,7 @@ public class EventService {
                 if (request.getImageUrl() != null) {
                         event.setImageUrl(request.getImageUrl());
                 }
+                validateEventTags(request.getTags());
                 if (request.getCategory() != null) {
                         event.setCategory(request.getCategory());
                 }
@@ -1403,6 +1421,12 @@ public class EventService {
                 broadcastAvailability(event);
         }
 
+        private void validateLocation(String location) {
+                if (location == null || location.trim().length() < 3 || location.trim().length() > 150) {
+                        throw new IllegalArgumentException("Location must be between 3 and 150 characters.");
+                }
+        }
+
         private RegistrationResponse promoteEntry(Event event, EventWaitlist entry) {
                 User user = entry.getUser();
 
@@ -1542,6 +1566,15 @@ public class EventService {
                                 .build();
         }
 
+        private void validateEventTags(java.util.Set<String> tags) {
+                if (tags == null) return;
+                for (String tag : tags) {
+                        if (tag == null || tag.length() < 2 || tag.length() > 30 || !tag.matches("^[a-zA-Z0-9-]+$")) {
+                                throw new IllegalArgumentException("Invalid tag format: " + tag);
+                        }
+                }
+        }
+
         /**
          * Public catalog responses must not expose organizer user IDs or internal
          * cancellation notes (Issue #13603).
@@ -1551,6 +1584,12 @@ public class EventService {
                 response.setOwnerId(null);
                 response.setCancellationReason(null);
                 return response;
+        }
+
+        private void validateDescription(String desc) {
+                if (desc == null || desc.trim().length() < 10 || desc.trim().length() > 2000) {
+                        throw new IllegalArgumentException("Description must be between 10 and 2000 characters.");
+                }
         }
 
         private WaitlistResponse toWaitlistResponse(EventWaitlist entry) {

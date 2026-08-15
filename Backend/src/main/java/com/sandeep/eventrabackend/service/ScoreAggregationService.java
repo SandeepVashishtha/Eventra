@@ -41,7 +41,8 @@ public class ScoreAggregationService {
         double totalWeight = 0.0;
 
         for (CategoryScore cat : categories) {
-            totalScore += (cat.getRawScore() * (cat.getWeightPercentage() / 100.0));
+            double raw = Math.max(0.0, Math.min(100.0, cat.getRawScore()));
+            totalScore += (raw * (cat.getWeightPercentage() / 100.0));
             totalWeight += cat.getWeightPercentage();
         }
 

@@ -12,7 +12,9 @@ const source = fs.readFileSync(
 
 describe("EventCreation hook order", () => {
   it("declares formData state before useFormDirty(formData)", () => {
-    const stateIndex = source.indexOf("const [formData, setFormData] = useState(initialFormData)");
+    const stateIndex = source.search(
+      /const \[formData, setFormData\] = useState\(initialFormData(?:\(\))?\)/,
+    );
     const dirtyIndex = source.indexOf("useFormDirty(formData)");
     assert.ok(stateIndex >= 0, "formData useState must exist");
     assert.ok(dirtyIndex >= 0, "useFormDirty(formData) must exist");

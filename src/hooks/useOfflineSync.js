@@ -62,7 +62,7 @@ export default function useOfflineSync() {
         if (authToken) {
           headers.Authorization = `Bearer ${authToken}`;
         }
-        return fetch(url, { ...options, headers });
+        return fetch(url, { ...options, headers, credentials: "include" });
       };
 
       const result = await processQueue(currentUser.id, fetchFn, {

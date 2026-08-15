@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 
 @Repository
@@ -14,6 +15,8 @@ public interface RegistrationAnalyticsRepository
         extends JpaRepository<EventRegistration, Long> {
 
     // ── Trends — note: field is registeredAt, NOT createdAt ──────────────────
+    // All queries accept a nullable collection of event IDs: null = global,
+    // non-null = restrict to those events (e.g. a caller's accessible events).
 
     @Query("""
         SELECT FUNCTION('FORMATDATETIME', r.registeredAt, 'yyyy-MM') AS period,
@@ -21,10 +24,11 @@ public interface RegistrationAnalyticsRepository
         FROM EventRegistration r
         WHERE r.registeredAt >= :from
           AND r.status = 'CONFIRMED'
+          AND (:eventIds IS NULL OR r.event.id IN :eventIds)
         GROUP BY period
         ORDER BY period ASC
         """)
-    List<Object[]> findMonthlyTrend(@Param("from") LocalDateTime from);
+    List<Object[]> findMonthlyTrend(@Param("from") LocalDateTime from, @Param("eventIds") Collection<Long> eventIds);
 
     @Query("""
         SELECT CAST(FUNCTION('YEAR', r.registeredAt) AS int) * 100
@@ -33,10 +37,11 @@ public interface RegistrationAnalyticsRepository
         FROM EventRegistration r
         WHERE r.registeredAt >= :from
           AND r.status = 'CONFIRMED'
+          AND (:eventIds IS NULL OR r.event.id IN :eventIds)
         GROUP BY period
         ORDER BY period ASC
         """)
-    List<Object[]> findWeeklyTrend(@Param("from") LocalDateTime from);
+    List<Object[]> findWeeklyTrend(@Param("from") LocalDateTime from, @Param("eventIds") Collection<Long> eventIds);
 
     @Query("""
         SELECT CAST(r.registeredAt AS date) AS period,
@@ -44,10 +49,11 @@ public interface RegistrationAnalyticsRepository
         FROM EventRegistration r
         WHERE r.registeredAt >= :from
           AND r.status = 'CONFIRMED'
+          AND (:eventIds IS NULL OR r.event.id IN :eventIds)
         GROUP BY period
         ORDER BY period ASC
         """)
-    List<Object[]> findDailyTrend(@Param("from") LocalDateTime from);
+    List<Object[]> findDailyTrend(@Param("from") LocalDateTime from, @Param("eventIds") Collection<Long> eventIds);
 
     // ── Peak registration periods ─────────────────────────────────────────────
     @Query("""
@@ -56,16 +62,17 @@ public interface RegistrationAnalyticsRepository
                COUNT(r)                              AS cnt
         FROM EventRegistration r
         WHERE r.status = 'CONFIRMED'
+          AND (:eventIds IS NULL OR r.event.id IN :eventIds)
         GROUP BY dow, hr
         ORDER BY cnt DESC
         """)
-    List<Object[]> findPeakPeriods();
+    List<Object[]> findPeakPeriods(@Param("eventIds") Collection<Long> eventIds);
 
     // Total confirmed registrations
-    @Query("SELECT COUNT(r) FROM EventRegistration r WHERE r.status = 'CONFIRMED'")
-    long countConfirmedRegistrations();
+    @Query("SELECT COUNT(r) FROM EventRegistration r WHERE r.status = 'CONFIRMED' AND (:eventIds IS NULL OR r.event.id IN :eventIds)")
+    long countConfirmedRegistrations(@Param("eventIds") Collection<Long> eventIds);
 
     // Earliest confirmed registration — used to derive "hours active"
-    @Query("SELECT MIN(r.registeredAt) FROM EventRegistration r WHERE r.status = 'CONFIRMED'")
-    LocalDateTime findEarliestRegistration();
+    @Query("SELECT MIN(r.registeredAt) FROM EventRegistration r WHERE r.status = 'CONFIRMED' AND (:eventIds IS NULL OR r.event.id IN :eventIds)")
+    LocalDateTime findEarliestRegistration(@Param("eventIds") Collection<Long> eventIds);
 }

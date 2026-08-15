@@ -25,6 +25,16 @@ export class CSRFError extends ApiError {
     this.name = "CSRFError";
   }
 }
+
+export const getApiErrorStatus = (error) =>
+  error?.status ?? error?.response?.status ?? null;
+
+export const getApiErrorMessage = (error) =>
+  error?.data?.message ||
+  error?.response?.data?.message ||
+  error?.message ||
+  null;
+
 export const normalizeApiError = (error) => {
   const config = error.config || {};
   const status = error?.response?.status;
