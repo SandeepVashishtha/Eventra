@@ -77,7 +77,10 @@ public class PlagiarismDetectionService {
             return "";
         }
         String cleaned = value.replace("\"", "\"\"");
-        if (!cleaned.isEmpty() && "=+-@".indexOf(cleaned.charAt(0)) >= 0) {
+        // Spreadsheet apps strip leading whitespace/tabs/CR before interpreting a
+        // formula, so inspect the first significant character rather than charAt(0).
+        String significant = cleaned.replaceFirst("^[\\s\\t\\r\\n]+", "");
+        if (!significant.isEmpty() && "=+-@\t\r".indexOf(significant.charAt(0)) >= 0) {
             cleaned = "'" + cleaned;
         }
         return cleaned;
