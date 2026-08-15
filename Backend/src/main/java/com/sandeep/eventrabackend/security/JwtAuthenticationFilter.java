@@ -55,12 +55,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // Token confusion protection: when a token is supplied via BOTH the
             // Authorization header and the auth cookie, they must resolve to the
             // same principal. A mismatch means the request is ambiguous/forged.
-            if (StringUtils.hasText(headerToken) && StringUtils.hasText(cookieToken)
-                    && !tokensResolveToSameUser(headerToken, cookieToken)) {
-                logger.warn("Rejected request with mismatched header/cookie JWT identities");
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.getWriter().write("Conflicting token identities");
-                return;
+            // An invalid/stale cookie is treated as absent and ignored so it never
+            // blocks a request that carries a valid Bearer header.
+            if (StringUtils.hasText(headerToken) && StringUtils.hasText(cookieToken)) {
+                boolean headerValid = jwtTokenProvider.validateToken(headerToken);
+                boolean cookieValid = jwtTokenProvider.validateToken(cookieToken);
+                if (headerValid && cookieValid && !tokensResolveToSameUser(headerToken, cookieToken)) {
+                    logger.warn("Rejected request with mismatched header/cookie JWT identities");
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.getWriter().write("Conflicting token identities");
+                    return;
+                }
             }
 
             String token = StringUtils.hasText(headerToken) ? headerToken : cookieToken;
