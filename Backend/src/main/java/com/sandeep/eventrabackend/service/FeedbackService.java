@@ -7,6 +7,7 @@ import com.sandeep.eventrabackend.exception.EventNotFoundException;
 import com.sandeep.eventrabackend.exception.FeedbackAlreadyExistsException;
 import com.sandeep.eventrabackend.exception.UserNotRegisteredException;
 import com.sandeep.eventrabackend.model.Event;
+import com.sandeep.eventrabackend.model.EventRegistration;
 import com.sandeep.eventrabackend.model.Feedback;
 import com.sandeep.eventrabackend.model.Role;
 import com.sandeep.eventrabackend.model.User;
@@ -46,9 +47,11 @@ public class FeedbackService {
             throw new IllegalArgumentException("Feedback can only be submitted after the event has ended.");
         }
 
-        // Validate user is registered for the event
-        if (!registrationRepository.existsByEvent_IdAndUser_Email(event.getId(), userEmail)) {
-            throw new UserNotRegisteredException("You must be registered for the event to provide feedback.");
+        // Validate user has an active (confirmed) registration for the event
+        EventRegistration registration = registrationRepository.findByEvent_IdAndUser_Email(event.getId(), userEmail)
+                .orElseThrow(() -> new UserNotRegisteredException("You must be registered for the event to provide feedback."));
+        if (!"CONFIRMED".equalsIgnoreCase(registration.getStatus())) {
+            throw new UserNotRegisteredException("Only attendees with an active registration can provide feedback.");
         }
 
         // Prevent duplicate feedback
