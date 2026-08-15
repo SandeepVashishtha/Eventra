@@ -109,7 +109,7 @@ public class HackathonLeaderboardSseController implements MessageListener, Healt
     public ResponseEntity<SseEmitter> streamLeaderboardUpdates(
             @PathVariable("id") Long hackathonId,
             @RequestParam(value = "teamId", required = false) Long teamIdFilter,
-            @RequestParam(value = "minRank", required = false, defaultValue = "100") Integer maxRankFilter,
+            @RequestParam(value = "maxRank", required = false, defaultValue = "100") Integer maxRankFilter,
             @RequestHeader(value = "Last-Event-ID", required = false) String lastEventId,
             HttpServletRequest request) {
 
