@@ -6,6 +6,7 @@ import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.PushSubscriptionRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,15 +42,35 @@ public class PushSubscriptionService {
         // port is accepted (#16257).
         validateEndpoint(request.getEndpoint());
 
-        PushSubscription subscription = pushSubscriptionRepository
-                .findByUser_IdAndEndpoint(user.getId(), request.getEndpoint())
-                .orElseGet(PushSubscription::new);
-
-        subscription.setUser(user);
-        subscription.setEndpoint(request.getEndpoint());
-        subscription.setP256dh(p256dh);
-        subscription.setAuth(auth);
-        pushSubscriptionRepository.save(subscription);
+        try {
+            PushSubscription subscription = pushSubscriptionRepository
+                    .findByUser_IdAndEndpoint(user.getId(), request.getEndpoint())
+                    .orElseGet(() -> {
+                        PushSubscription created = new PushSubscription();
+                        created.setUser(user);
+                        created.setEndpoint(request.getEndpoint());
+                        created.setP256dh(p256dh);
+                        created.setAuth(auth);
+                        return pushSubscriptionRepository.save(created);
+                    });
+            // Row was either found or just created; keep its keys current.
+            if (!p256dh.equals(subscription.getP256dh())
+                    || !auth.equals(subscription.getAuth())) {
+                subscription.setP256dh(p256dh);
+                subscription.setAuth(auth);
+                pushSubscriptionRepository.save(subscription);
+            }
+        } catch (DataIntegrityViolationException ex) {
+            // A concurrent request inserted the (user_id, endpoint) row between
+            // our lookup and our save. Load the surviving row and update it so
+            // the double-subscribe is idempotent instead of failing with a 500.
+            PushSubscription existing = pushSubscriptionRepository
+                    .findByUser_IdAndEndpoint(user.getId(), request.getEndpoint())
+                    .orElseThrow(() -> ex);
+            existing.setP256dh(p256dh);
+            existing.setAuth(auth);
+            pushSubscriptionRepository.save(existing);
+        }
     }
 
     @Transactional
