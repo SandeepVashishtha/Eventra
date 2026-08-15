@@ -23,6 +23,12 @@ public class EmailService {
     private TemplateEngine templateEngine;
 
     public void sendTransactionalEmail(String to, String subject, String title, String recipientName, String messageBody, String actionUrl, String actionText) throws MessagingException {
+        if (to == null || !to.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+            throw new IllegalArgumentException("Invalid recipient email address format.");
+        }
+        if (subject == null || subject.isBlank()) {
+            throw new IllegalArgumentException("Subject must not be null or blank.");
+        }
         Context context = new Context();
         context.setVariable("subject", subject);
         context.setVariable("title", title);
