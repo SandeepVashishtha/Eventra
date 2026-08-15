@@ -104,8 +104,8 @@ class AuthGoogleLoginTests {
     }
 
     @Test
-    @DisplayName("Verified Google identity claims an unverified LOCAL account for the same email")
-    void googleLogin_UnverifiedLocal_LinksToGoogle() throws Exception {
+    @DisplayName("Verified Google identity must NOT claim an unverified LOCAL account for the same email")
+    void googleLogin_UnverifiedLocal_IsRejected() throws Exception {
         String originalPasswordHash = passwordEncoder.encode("attacker-password");
         userRepository.save(User.builder()
                 .firstName("Squatter")
@@ -124,14 +124,15 @@ class AuthGoogleLoginTests {
         mockMvc.perform(post("/api/auth/google")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("token", "google-id-token"))))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.email").value("claim@example.com"))
-                .andExpect(jsonPath("$.username").value("squatter"));
+                .andExpect(status().isConflict());
 
-        User linked = userRepository.findByEmail("claim@example.com").orElseThrow();
-        assertEquals("GOOGLE", linked.getAuthProvider());
-        assertTrue(linked.isEmailVerified());
-        assertFalse(passwordEncoder.matches("attacker-password", linked.getPassword()));
+        // The account must be left fully intact: no provider swap, no verification,
+        // no password/profile overwrite, no login issued.
+        User untouched = userRepository.findByEmail("claim@example.com").orElseThrow();
+        assertEquals("LOCAL", untouched.getAuthProvider());
+        assertFalse(untouched.isEmailVerified());
+        assertTrue(passwordEncoder.matches("attacker-password", untouched.getPassword()));
+        assertEquals("Squatter", untouched.getFirstName());
         assertEquals(1, userRepository.count());
     }
 

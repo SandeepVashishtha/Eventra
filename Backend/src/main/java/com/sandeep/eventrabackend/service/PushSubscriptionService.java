@@ -10,11 +10,16 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Locale;
 import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 public class PushSubscriptionService {
+
+    private static final int MAX_ENDPOINT_LENGTH = 2048;
 
     private final PushSubscriptionRepository pushSubscriptionRepository;
     private final UserRepository userRepository;
@@ -30,6 +35,11 @@ public class PushSubscriptionService {
         if (p256dh == null || p256dh.isBlank() || auth == null || auth.isBlank()) {
             throw new IllegalArgumentException("Push subscription keys.p256dh and keys.auth are required");
         }
+
+        // Reject endpoints that could be used as an SSRF vector when the server
+        // later dispatches pushes: only https to a public hostname on the default
+        // port is accepted (#16257).
+        validateEndpoint(request.getEndpoint());
 
         PushSubscription subscription = pushSubscriptionRepository
                 .findByUser_IdAndEndpoint(user.getId(), request.getEndpoint())
@@ -52,4 +62,104 @@ public class PushSubscriptionService {
         }
         pushSubscriptionRepository.deleteByUser_Id(user.getId());
     }
-}
+
+    private void validateEndpoint(String endpoint) {
+        if (endpoint == null || endpoint.isBlank()) {
+            throw new IllegalArgumentException("Push subscription endpoint is required");
+        }
+        if (endpoint.length() > MAX_ENDPOINT_LENGTH) {
+            throw new IllegalArgumentException(
+                    "Push subscription endpoint exceeds " + MAX_ENDPOINT_LENGTH + " characters");
+        }
+
+        URI uri;
+        try {
+            uri = new URI(endpoint);
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException("Push subscription endpoint is not a valid URL");
+        }
+        if (!"https".equalsIgnoreCase(uri.getScheme())) {
+            throw new IllegalArgumentException("Push subscription endpoint must use the https scheme");
+        }
+        if (uri.getUserInfo() != null) {
+            throw new IllegalArgumentException("Push subscription endpoint must not contain user information");
+        }
+        int port = uri.getPort();
+        if (port != -1 && port != 443) {
+            throw new IllegalArgumentException("Push subscription endpoint must use the default https port (443)");
+        }
+
+        String host = uri.getHost();
+        if (host == null || host.isBlank()) {
+            throw new IllegalArgumentException("Push subscription endpoint must include a host");
+        }
+        rejectNonPublicHost(host);
+    }
+
+    /**
+     * Rejects loopback/link-local/private/multicast IP literals and bare or
+     * reserved hostnames, so a stored endpoint can never point at internal
+     * infrastructure (metadata endpoints, admin ports, etc.).
+     */
+    private void rejectNonPublicHost(String host) {
+        String h = host.toLowerCase(Locale.ROOT);
+        if ("localhost".equals(h) || h.endsWith(".localhost")) {
+            throw new IllegalArgumentException("Push subscription endpoint must not point at localhost");
+        }
+        if (h.endsWith(".local") || h.endsWith(".internal")
+                || h.endsWith(".home") || h.endsWith(".lan") || h.endsWith(".localdomain")) {
+            throw new IllegalArgumentException("Push subscription endpoint must use a public hostname");
+        }
+        // IPv6 literals and bare hostnames never contain a dot and are never
+        // valid WebPush endpoints.
+        if (!h.contains(".")) {
+            throw new IllegalArgumentException("Push subscription endpoint must use a public hostname");
+        }
+        if (isIpv4Literal(h) && isNonPublicIpv4(h)) {
+            throw new IllegalArgumentException("Push subscription endpoint must not point at a private IP address");
+        }
+    }
+
+    private boolean isIpv4Literal(String host) {
+        if (host.startsWith(".") || host.endsWith(".")) {
+            return false;
+        }
+        String[] parts = host.split("\\.");
+        if (parts.length != 4) {
+            return false;
+        }
+        for (String part : parts) {
+            if (part.isEmpty() || part.length() > 3) {
+                return false;
+            }
+            for (int i = 0; i < part.length(); i++) {
+                if (!Character.isDigit(part.charAt(i))) {
+                    return false;
+                }
+            }
+            int value = Integer.parseInt(part);
+            if (value > 255) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isNonPublicIpv4(String host) {
+        int[] octets = new int[4];
+        String[] parts = host.split("\\.");
+        for (int i = 0; i < 4; i++) {
+            octets[i] = Integer.parseInt(parts[i]);
+        }
+        int a = octets[0], b = octets[1], c = octets[2], d = octets[3];
+        if (a == 0 || a == 10) return true;                       // 0.0.0.0/8, 10.0.0.0/8
+        if (a == 127) return true;                                 // 127.0.0.0/8 loopback
+        if (a == 169 && b == 254) return true;                     // 169.254.0.0/16 incl. metadata
+        if (a == 172 && b >= 16 && b <= 31) return true;           // 172.16.0.0/12
+        if (a == 192 && b == 168) return true;                     // 192.168.0.0/16
+        if (a == 192 && b == 0 && c == 0) return true;             // 192.0.0.0/24 incl. 192.0.0.9/10
+        if (a == 198 && (b == 18 || b == 19)) return true;         // 198.18.0.0/15 benchmark
+        if (a >= 224) return true;                                 // multicast + reserved
+        if (a == 255) return true;                                 // broadcast
+        return d == 0 && c == 0 && b == 0;                         // x.x.x.0 reserved only if a was public
+    }

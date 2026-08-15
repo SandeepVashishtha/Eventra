@@ -5,17 +5,20 @@
 export function numberToWords(value) {
   const ones = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
   const tens = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
-  if (value < 20) return ones[value] || String(value);
-  if (value < 100) {
-    const t = Math.floor(value / 10);
-    const o = value % 10;
-    return `${tens[t]}${o ? `-${ones[o]}` : ''}`;
+  if (!Number.isFinite(value)) return String(value);
+  const sign = value < 0 ? 'negative ' : '';
+  const n = Math.trunc(Math.abs(value));
+  if (n < 20) return sign + (ones[n] || String(n));
+  if (n < 100) {
+    const t = Math.floor(n / 10);
+    const o = n % 10;
+    return `${sign}${tens[t]}${o ? `-${ones[o]}` : ''}`;
   }
-  if (value < 1000) {
-    const h = Math.floor(value / 100);
-    const rest = value % 100;
-    return `${ones[h]} hundred${rest ? ` ${numberToWords(rest)}` : ''}`;
+  if (n < 1000) {
+    const h = Math.floor(n / 100);
+    const rest = n % 100;
+    return `${sign}${ones[h]} hundred${rest ? ` ${numberToWords(rest)}` : ''}`;
   }
-  return String(value);
+  return sign + String(n);
 }
 

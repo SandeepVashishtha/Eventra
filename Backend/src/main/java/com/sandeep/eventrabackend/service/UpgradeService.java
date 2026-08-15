@@ -21,6 +21,9 @@ public class UpgradeService {
 
     @Transactional
     public boolean upgradeTicket(String ticketId, String targetTier) {
+        if (ticketId == null || !ticketId.matches("^[a-zA-Z0-9_-]{5,50}$")) {
+            return false;
+        }
         if (!ticketTiers.containsKey(ticketId)) {
             return false;
         }
@@ -32,12 +35,16 @@ public class UpgradeService {
 
     @Transactional
     public boolean allocateAddon(String addonId) {
-        int count = addonInventory.getOrDefault(addonId, 0);
-        if (count > 0) {
-            addonInventory.put(addonId, count - 1);
-            return true;
-        }
-        return false;
+        final boolean[] allocated = { false };
+        addonInventory.compute(addonId, (key, current) -> {
+            int count = current == null ? 0 : current;
+            if (count > 0) {
+                allocated[0] = true;
+                return count - 1;
+            }
+            return current;
+        });
+        return allocated[0];
     }
 
     public String getTicketTier(String ticketId) {

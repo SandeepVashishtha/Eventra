@@ -20,6 +20,9 @@ public class ContactService {
 
     @Transactional
     public ContactResponse submitContactMessage(ContactRequest request) {
+        if (request.getName() == null || request.getName().trim().length() < 2 || request.getName().trim().length() > 100) {
+            throw new IllegalArgumentException("Name must be between 2 and 100 characters.");
+        }
         ContactMessage contactMessage = new ContactMessage();
         contactMessage.setName(request.getName().trim());
         contactMessage.setEmail(request.getEmail().trim());

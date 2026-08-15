@@ -179,7 +179,7 @@ public class AdminService {
         projectUpvoteRepository.deleteByUser_Id(id);
         notificationRepository.deleteByUser_Id(id);
         feedbackRepository.deleteByUser_Id(id);
-        eventRepository.deleteAttendeeRowsByUserId(id);
+        // eventRepository.deleteAttendeeRowsByUserId(id); // Removed dropped table call
         eventTeamMemberRepository.clearAssignedByUserId(id);
         eventTeamMemberRepository.deleteByUser_Id(id);
 

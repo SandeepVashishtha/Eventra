@@ -40,6 +40,19 @@ export const isAlreadyRegistered = (userId, eventId) => {
   return Boolean(registry[key]);
 };
 
+const DANGEROUS_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+
+const sanitizeMetadata = (metadata) => {
+  if (!metadata || typeof metadata !== "object") return {};
+  const clean = {};
+  for (const key of Object.keys(metadata)) {
+    if (!DANGEROUS_KEYS.has(key)) {
+      clean[key] = metadata[key];
+    }
+  }
+  return clean;
+};
+
 export const recordRegistration = (userId, eventId, metadata = {}) => {
   if (!userId || !eventId) return false;
   const registry = getRegistry();
@@ -49,7 +62,7 @@ export const recordRegistration = (userId, eventId, metadata = {}) => {
     userId,
     eventId,
     registeredAt: new Date().toISOString(),
-    ...metadata,
+    ...sanitizeMetadata(metadata),
   };
   const persisted = saveRegistry(registry);
   if (!persisted) {
