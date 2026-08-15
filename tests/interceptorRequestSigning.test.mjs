@@ -17,8 +17,13 @@ import { signRequest } from "../src/utils/requestSigner.js";
 import { validateSignature } from "../src/utils/signatureValidator.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(__dirname, "..");
 const interceptorCode = fs.readFileSync(
-  path.resolve(__dirname, "../src/config/api/interceptors.js"),
+  path.resolve(repoRoot, "src/config/api/interceptors.js"),
+  "utf8",
+);
+const signerCode = fs.readFileSync(
+  path.resolve(repoRoot, "src/utils/requestSigner.js"),
   "utf8",
 );
 
@@ -28,7 +33,7 @@ describe("request signing wiring", () => {
   it("the live interceptor imports signRequest", () => {
     assert.match(
       interceptorCode,
-      /import\s*\{\s*signRequest\s*\}\s*from\s*["']utils\/requestSigner\.js["']/,
+      /import\s*\{\s*signRequest\s*\}\s*from\s*["'][^"']*requestSigner\.js["']/,
       "setupRequestInterceptor must import signRequest",
     );
   });
@@ -69,6 +74,46 @@ describe("request signing wiring", () => {
       interceptorCode,
       /["']REQUEST_SIGNING_SECRET["']/,
       "interceptor may only read a non-VITE REQUEST_SIGNING_SECRET",
+    );
+  });
+
+  it("no file under src/ references the VITE_ signing secret anywhere", () => {
+    const walk = (dir) =>
+      fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+        const full = path.join(dir, entry.name);
+        return entry.isDirectory() ? walk(full) : full;
+      });
+    const offenders = [];
+    for (const file of walk(path.join(repoRoot, "src"))) {
+      if (!/\.(js|jsx|ts|tsx|mjs)$/.test(file)) {
+        continue;
+      }
+      if (fs.readFileSync(file, "utf8").includes("VITE_REQUEST_SIGNING_SECRET")) {
+        offenders.push(path.relative(repoRoot, file));
+      }
+    }
+    assert.deepEqual(
+      offenders,
+      [],
+      `VITE_REQUEST_SIGNING_SECRET must never appear under src/ (it is inlined into the client bundle): ${offenders.join(", ")}`,
+    );
+  });
+
+  it("requestSigner never reads a signing secret from the environment", () => {
+    assert.doesNotMatch(
+      signerCode,
+      /VITE_REQUEST_SIGNING_SECRET/,
+      "requestSigner must not read VITE_REQUEST_SIGNING_SECRET",
+    );
+    assert.doesNotMatch(
+      signerCode,
+      /import\.meta\.env/,
+      "requestSigner must not read import.meta.env (bundle-inlined)",
+    );
+    assert.doesNotMatch(
+      signerCode,
+      /process\.env/,
+      "requestSigner must not read process.env for a signing secret",
     );
   });
 

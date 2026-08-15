@@ -4,7 +4,9 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -17,9 +19,12 @@ import java.time.Duration;
 public class RateLimitingFilter extends OncePerRequestFilter {
 
     private final RateLimitService rateLimitService;
+    private final int trustedProxyHops;
 
-    public RateLimitingFilter(RateLimitService rateLimitService) {
+    public RateLimitingFilter(RateLimitService rateLimitService,
+            @Value("${app.rate-limit.trusted-proxy-hops:1}") int trustedProxyHops) {
         this.rateLimitService = rateLimitService;
+        this.trustedProxyHops = Math.max(0, trustedProxyHops);
     }
 
     @Override
@@ -56,11 +61,31 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
+    /**
+     * Resolve the originating client IP using {@code X-Forwarded-For} with a
+     * known trusted hop count, falling back to {@code X-Real-IP} then
+     * {@code getRemoteAddr()} (#16254). Proxies append the connecting peer on
+     * the right; the client is the leftmost of the trusted suffix, so a
+     * client-supplied left-hand spoof is ignored instead of being used as the
+     * rate-limit bucket key.
+     */
     private String getClientIp(HttpServletRequest request) {
-        String xf = request.getHeader("X-Forwarded-For");
-        if (xf != null && !xf.isEmpty()) {
-            return xf.split(",")[0].trim();
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (StringUtils.hasText(forwarded)) {
+            String[] parts = forwarded.split(",");
+            int clientIndex = Math.min(parts.length - 1,
+                    Math.max(0, parts.length - trustedProxyHops));
+            String candidate = parts[clientIndex].trim();
+            if (StringUtils.hasText(candidate) && !"unknown".equalsIgnoreCase(candidate)) {
+                return candidate;
+            }
         }
+
+        String realIp = request.getHeader("X-Real-IP");
+        if (StringUtils.hasText(realIp)) {
+            return realIp.trim();
+        }
+
         return request.getRemoteAddr();
     }
 }

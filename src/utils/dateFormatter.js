@@ -266,7 +266,7 @@ export function getTimeRemaining(targetDate) {
  * @returns {string} Formatted duration string
  */
 export function formatDuration(durationMs) {
-  if (typeof durationMs !== "number" || isNaN(durationMs) || durationMs < 0) {
+  if (typeof durationMs !== "number" || !Number.isFinite(durationMs) || durationMs < 0) {
     return "0m";
   }
 

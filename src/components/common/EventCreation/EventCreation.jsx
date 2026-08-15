@@ -3,12 +3,13 @@ import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
-import { Download, Calendar, Globe, Link2, Plus } from "lucide-react";
+import { Download, Calendar, Globe, Link2, Plus, Table } from "lucide-react";
 import { logger } from "../../../utils/logger";
 import useReducedMotion from "../../../hooks/useReducedMotion";
 import TicketsStep from "./components/TicketsStep";
 import GeneralInfoStep from "./components/GeneralInfoStep";
 import { exportAttendeesToCSV } from "../../../utils/exportCsv";
+import { exportAttendeesToGoogleSheets } from "../../../utils/exportGoogleSheets";
 import PreviewStep from "./components/PreviewStep";
 import RestoreDraftModal from "./components/RestoreDraftModal";
 import GuidelinesSection from "./components/GuidelinesSection";
@@ -447,7 +448,7 @@ const EventCreation = () => {
 
       {currentStep === CREATION_STEPS.FORM ? (
         <>
-          <div className="w-full max-w-4xl flex justify-end mb-6">
+          <div className="w-full max-w-4xl flex justify-end mb-6 gap-4">
             <button
               onClick={() => {
                 exportAttendeesToCSV(mockAttendees, "event-attendees.csv");
@@ -457,6 +458,22 @@ const EventCreation = () => {
             >
               <Download size={18} />
               Download CSV
+            </button>
+            <button
+              onClick={async () => {
+                const result = await exportAttendeesToGoogleSheets(mockAttendees, "Eventra Attendees");
+                if (result.success) {
+                  toast.success("Exported to Google Sheets successfully!");
+                } else if (result.reason === 'empty') {
+                  toast.warning("No attendees to export");
+                } else {
+                  toast.error(result.error || "Failed to export to Google Sheets");
+                }
+              }}
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-blue-500 hover:bg-blue-600 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-300"
+            >
+              <Table size={18} />
+              Export to Sheets
             </button>
           </div>
 

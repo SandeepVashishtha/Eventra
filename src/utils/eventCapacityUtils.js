@@ -22,7 +22,7 @@ export const getRegistrationPercentage = (
   registered = 0
 ) => {
   const totalCapacity = Number(capacity) || 0;
-  const registeredCount = Number(registered) || 0;
+  const registeredCount = Math.max(Number(registered) || 0, 0);
 
   if (totalCapacity <= 0) {
     return 0;
