@@ -6,16 +6,17 @@ function getAuthHeader() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-async function fetchAPI(endpoint, options = {}) {
+export async function fetchAPI(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
   try {
+    const { headers: optHeaders, ...rest } = options;
     const res = await fetch(url, {
+      ...rest,
       headers: {
         "Content-Type": "application/json",
         ...getAuthHeader(),
-        ...options.headers,
+        ...(optHeaders || {}),
       },
-      ...options,
     });
 
     if (!res.ok) {
