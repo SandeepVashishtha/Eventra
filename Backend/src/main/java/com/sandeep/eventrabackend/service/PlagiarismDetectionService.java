@@ -61,8 +61,25 @@ public class PlagiarismDetectionService {
         csv.append("Team A,Team B,Similarity Score (%),Risk Level\n");
         for (SubmissionComparison c : comparisons) {
             csv.append(String.format("\"%s\",\"%s\",%.2f,%s\n",
-                    c.getTeamNameA(), c.getTeamNameB(), c.getSimilarityPercentage(), c.getRiskLevel()));
+                    sanitizeCsvCell(c.getTeamNameA()), sanitizeCsvCell(c.getTeamNameB()),
+                    c.getSimilarityPercentage(), c.getRiskLevel()));
         }
         return csv.toString();
+    }
+
+    /**
+     * Neutralize CSV formula injection by prefixing cells that start with a
+     * spreadsheet formula metacharacter (=, +, -, @) with a single quote, and
+     * escape any embedded double quotes so the CSV cell stays well-formed.
+     */
+    private String sanitizeCsvCell(String value) {
+        if (value == null) {
+            return "";
+        }
+        String cleaned = value.replace("\"", "\"\"");
+        if (!cleaned.isEmpty() && "=+-@".indexOf(cleaned.charAt(0)) >= 0) {
+            cleaned = "'" + cleaned;
+        }
+        return cleaned;
     }
 }

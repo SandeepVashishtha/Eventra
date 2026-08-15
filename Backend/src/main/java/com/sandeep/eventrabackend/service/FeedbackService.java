@@ -61,6 +61,9 @@ public class FeedbackService {
             throw new IllegalArgumentException("Rating must be an integer between 1 and 5.");
         }
 
+        if (request.getComment() != null && request.getComment().trim().length() > 1000) {
+            throw new IllegalArgumentException("Comment cannot exceed 1000 characters.");
+        }
         Feedback feedback = new Feedback();
         feedback.setUser(user);
         feedback.setEvent(event);

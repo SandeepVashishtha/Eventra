@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class StripeService {
@@ -77,7 +78,7 @@ public class StripeService {
     public SetupIntent createSetupIntent(String customerId, String paymentMethodType) throws StripeException {
         SetupIntentCreateParams params = SetupIntentCreateParams.builder()
                 .setCustomer(customerId)
-                .setPaymentMethodTypes(Arrays.asList(paymentMethodType))
+                .addAllPaymentMethodType(Arrays.asList(paymentMethodType))
                 .setUsage(SetupIntentCreateParams.Usage.OFF_SESSION)
                 .putMetadata("payment_type", "installment")
                 .build();
@@ -102,7 +103,7 @@ public class StripeService {
                 .setConfirm(true)
                 .setCaptureMethod(PaymentIntentCreateParams.CaptureMethod.AUTOMATIC)
                 .setDescription(description)
-                .setMetadata(metadata)
+                .putAllMetadata(metadata)
                 .build();
         
         return PaymentIntent.create(params);
@@ -122,7 +123,7 @@ public class StripeService {
                 .setCurrency(currency)
                 .setCaptureMethod(PaymentIntentCreateParams.CaptureMethod.AUTOMATIC)
                 .setDescription(description)
-                .setMetadata(metadata)
+                .putAllMetadata(metadata)
                 .build();
         
         return PaymentIntent.create(params);
@@ -155,7 +156,7 @@ public class StripeService {
                 .setDefaultPaymentMethod(paymentMethodId)
                 .setTrialEnd(trialEnd)
                 .setPaymentBehavior(SubscriptionCreateParams.PaymentBehavior.DEFAULT_INCOMPLETE)
-                .setExpand(new ArrayList<>(Arrays.asList("latest_invoice.payment_intent")))
+                .addAllExpand(Arrays.asList("latest_invoice.payment_intent"))
                 .setMetadata(metadata)
                 .build();
         
@@ -184,8 +185,11 @@ public class StripeService {
         
         for (int i = 2; i <= paymentPlan.getTotalInstallments(); i++) {
             // Calculate due date: spread payments evenly between now and event date
-            long daysBetween = ChronoUnit.DAYS.between(now.toLocalDate(), eventDate.toLocalDate());
-            long daysUntilInstallment = (daysBetween / (paymentPlan.getTotalInstallments() - 1)) * (i - 1);
+            long daysBetween = eventDate != null
+                    ? ChronoUnit.DAYS.between(now.toLocalDate(), eventDate.toLocalDate())
+                    : 0;
+            long interval = Math.max(1, paymentPlan.getTotalInstallments() - 1);
+            long daysUntilInstallment = (daysBetween / interval) * (i - 1);
             LocalDateTime dueDate = now.plusDays(daysUntilInstallment);
             
             PaymentIntent intent = createPaymentIntentWithoutConfirmation(
@@ -282,8 +286,8 @@ public class StripeService {
                 // Create new payment record
                 payment = new Payment();
                 payment.setStripePaymentIntentId(paymentIntentId);
-                payment.setTransactionId(paymentIntent.getCharges().getData().isEmpty() ? 
-                        null : paymentIntent.getCharges().getData().get(0).getId());
+                payment.setTransactionId(paymentIntent.getLatestChargeObject() != null ?
+                        paymentIntent.getLatestChargeObject().getId() : null);
                 payment.setAmount(new BigDecimal(paymentIntent.getAmount()).divide(new BigDecimal(100)));
                 payment.setCurrency(paymentIntent.getCurrency().toUpperCase());
                 payment.setPaymentMethod(paymentIntent.getPaymentMethod());
@@ -377,7 +381,7 @@ public class StripeService {
         List<LocalDateTime> schedule = new ArrayList<>();
         
         long totalDays = ChronoUnit.DAYS.between(startDate.toLocalDate(), eventDate.toLocalDate());
-        long intervalDays = totalDays / (totalInstallments - 1);
+        long intervalDays = totalDays / Math.max(1, totalInstallments - 1);
         
         for (int i = 0; i < totalInstallments; i++) {
             LocalDateTime dueDate = startDate.plusDays(i * intervalDays);
@@ -424,8 +428,8 @@ public class StripeService {
                 .setUnitAmount(unitAmount)
                 .setCurrency(currency)
                 .setRecurring(PriceCreateParams.Recurring.builder()
-                        .setInterval(interval)
-                        .setIntervalCount(intervalCount)
+                        .setInterval(PriceCreateParams.Recurring.Interval.valueOf(interval.toUpperCase()))
+                        .setIntervalCount((long) intervalCount)
                         .build())
                 .build();
         
@@ -506,14 +510,17 @@ public class StripeService {
         }
 
         PaymentIntent intent = PaymentIntent.retrieve(stripePaymentIntentId);
-        if (intent.getCharges() == null || intent.getCharges().getData().isEmpty()) {
+        Charge charge = intent.getLatestChargeObject();
+        if (charge == null) {
             return null;
         }
-        Charge charge = intent.getCharges().getData().get(0);
 
         long chargeAmount = charge.getAmount();
         long refundAmount;
-        if ("PARTIAL".equalsIgnoreCase(refundPolicy) && refundPercent != null) {
+        if ("PARTIAL".equalsIgnoreCase(refundPolicy)) {
+            if (refundPercent == null) {
+                return null;
+            }
             refundAmount = (long) (chargeAmount * refundPercent / 100.0);
         } else {
             refundAmount = chargeAmount;

@@ -26,17 +26,20 @@ public class PaymentPlanService {
     private final EventRegistrationRepository eventRegistrationRepository;
     private final StripeService stripeService;
     private final UserRepository userRepository;
+    private final EventRoleService eventRoleService;
 
     public PaymentPlanService(PaymentPlanRepository paymentPlanRepository,
                               PaymentRepository paymentRepository,
                               EventRegistrationRepository eventRegistrationRepository,
                               StripeService stripeService,
-                              UserRepository userRepository) {
+                              UserRepository userRepository,
+                              EventRoleService eventRoleService) {
         this.paymentPlanRepository = paymentPlanRepository;
         this.paymentRepository = paymentRepository;
         this.eventRegistrationRepository = eventRegistrationRepository;
         this.stripeService = stripeService;
         this.userRepository = userRepository;
+        this.eventRoleService = eventRoleService;
     }
 
     // Create a new payment plan for installment payments
@@ -63,6 +66,14 @@ public class PaymentPlanService {
         // Validate input
         if (ticketPrice == null || ticketPrice.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Ticket price must be greater than zero");
+        }
+
+        // The registration's ticket price is the source of truth once set:
+        // reject requests that try to change it (e.g. lower it) after creation.
+        if (registration.getTicketPrice() != null
+                && registration.getTicketPrice().compareTo(ticketPrice) != 0) {
+            throw new IllegalArgumentException(
+                    "Ticket price does not match the price set for this registration");
         }
         
         if (upfrontPercentage == null || upfrontPercentage < 0 || upfrontPercentage > 100) {
@@ -139,7 +150,9 @@ public class PaymentPlanService {
         paymentRepository.save(upfrontPayment);
         
         // Remaining installments
-        long totalDays = java.time.temporal.ChronoUnit.DAYS.between(now.toLocalDate(), eventDate.toLocalDate());
+        long totalDays = eventDate != null
+                ? java.time.temporal.ChronoUnit.DAYS.between(now.toLocalDate(), eventDate.toLocalDate())
+                : 0;
         int numInstallments = paymentPlan.getTotalInstallments() - 1;
 
         // Ensure installments + upfront sum exactly to ticketPrice: the last
@@ -163,7 +176,7 @@ public class PaymentPlanService {
             // the full period without dropping remainder days (proportional spacing).
             long dueDayOffset = (totalDays * (i - 1)) / numInstallments;
             LocalDateTime dueDate = now.plusDays(dueDayOffset);
-            if (dueDate.isAfter(eventDate)) {
+            if (eventDate != null && dueDate.isAfter(eventDate)) {
                 dueDate = eventDate;
             }
             payment.setDueDate(dueDate);
@@ -292,11 +305,7 @@ public class PaymentPlanService {
             payment.setStripeCustomerId(paymentPlan.getStripeCustomerId());
             paymentRepository.save(payment);
         }
-        
-        // Update payment plan with first payment intent
-        paymentPlan.setStripeSubscriptionId(paymentIntent.getId());
-        paymentPlanRepository.save(paymentPlan);
-        
+
         Map<String, String> response = new HashMap<>();
         response.put("paymentIntentId", paymentIntent.getId());
         response.put("clientSecret", paymentIntent.getClientSecret());
@@ -336,8 +345,8 @@ public class PaymentPlanService {
         if ("succeeded".equals(paymentIntent.getStatus())) {
             payment.setStatus("COMPLETED");
             payment.setPaidAt(LocalDateTime.now());
-            payment.setTransactionId(paymentIntent.getCharges().getData().isEmpty() ? 
-                    null : paymentIntent.getCharges().getData().get(0).getId());
+            payment.setTransactionId(paymentIntent.getLatestChargeObject() != null ?
+                    paymentIntent.getLatestChargeObject().getId() : null);
             paymentRepository.save(payment);
             
             // Schedule remaining installments
@@ -593,14 +602,28 @@ public class PaymentPlanService {
         metadata.put("total_installments", String.valueOf(payment.getTotalInstallments()));
         metadata.put("retry_attempt", "true");
         
-        PaymentIntent paymentIntent = stripeService.createPaymentIntentWithoutConfirmation(
-                paymentPlan.getStripeCustomerId(),
-                amountCents,
-                payment.getCurrency().toLowerCase(),
-                "Retry payment for installment " + payment.getInstallmentNumber() + 
-                        " of " + payment.getTotalInstallments(),
-                metadata
-        );
+        PaymentIntent paymentIntent;
+        try {
+            paymentIntent = stripeService.createPaymentIntentWithoutConfirmation(
+                    paymentPlan.getStripeCustomerId(),
+                    amountCents,
+                    payment.getCurrency().toLowerCase(),
+                    "Retry payment for installment " + payment.getInstallmentNumber() + 
+                            " of " + payment.getTotalInstallments(),
+                    metadata
+            );
+        } catch (StripeException e) {
+            payment.setStatus("FAILED");
+            payment.setFailedAt(LocalDateTime.now());
+            payment.setFailureReason("Retry failed: " + e.getMessage());
+            paymentRepository.save(payment);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", "Payment retry failed: " + e.getMessage());
+            response.put("paymentId", payment.getId());
+            return response;
+        }
         
         // Update payment record
         payment.setStripePaymentIntentId(paymentIntent.getId());
@@ -664,5 +687,50 @@ public class PaymentPlanService {
         }
         
         return paymentPlanOptional.get().isCompleted();
+    }
+
+    /**
+     * Object-level authorization (#16252): resolves a registration and asserts the
+     * authenticated caller either owns it (registration.user) or is an ORGANIZER
+     * (incl. platform admin / legacy event owner) of its event.
+     */
+    @Transactional(readOnly = true)
+    public void requirePaymentAccessByRegistration(Long registrationId, String email) {
+        EventRegistration registration = eventRegistrationRepository.findById(registrationId)
+                .orElseThrow(() -> new IllegalArgumentException("Registration not found"));
+        requirePaymentAccess(registration, email);
+    }
+
+    /** Resolves the plan's registration and runs the shared ownership check. */
+    @Transactional(readOnly = true)
+    public void requirePaymentAccessByPlan(Long paymentPlanId, String email) {
+        PaymentPlan plan = paymentPlanRepository.findById(paymentPlanId)
+                .orElseThrow(() -> new IllegalArgumentException("Payment plan not found"));
+        requirePaymentAccess(plan.getRegistration(), email);
+    }
+
+    /** Resolves the payment's registration and runs the shared ownership check. */
+    @Transactional(readOnly = true)
+    public void requirePaymentAccessByPayment(Long paymentId, String email) {
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new IllegalArgumentException("Payment not found"));
+        requirePaymentAccess(payment.getRegistration(), email);
+    }
+
+    private void requirePaymentAccess(EventRegistration registration, String email) {
+        if (isOwnerOrOrganizer(registration, email)) {
+            return;
+        }
+        throw new AccessDeniedException("You are not authorized to access this payment data");
+    }
+
+    private boolean isOwnerOrOrganizer(EventRegistration registration, String email) {
+        if (registration.getUser() != null && registration.getUser().getEmail() != null
+                && registration.getUser().getEmail().equalsIgnoreCase(email)) {
+            return true;
+        }
+        Event event = registration.getEvent();
+        return event != null && event.getId() != null
+                && eventRoleService.hasRole(event.getId(), email, EventRole.ORGANIZER);
     }
 }

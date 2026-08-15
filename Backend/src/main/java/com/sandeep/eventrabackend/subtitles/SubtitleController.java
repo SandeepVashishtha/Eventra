@@ -1,5 +1,6 @@
 package com.sandeep.eventrabackend.subtitles;
 
+import com.sandeep.eventrabackend.exception.ResourceNotFoundException;
 import com.sandeep.eventrabackend.model.EventRole;
 import com.sandeep.eventrabackend.model.Role;
 import com.sandeep.eventrabackend.model.User;
@@ -43,9 +44,16 @@ public class SubtitleController {
     
     /**
      * Create a new subtitle
+     *
+     * FIX (#16191): The caller must organize the target event and the subtitle
+     * is attributed to the authenticated principal, never to a client-supplied
+     * userId.
      */
     @PostMapping
-    public ResponseEntity<SubtitleDTO> createSubtitle(@Valid @RequestBody SubtitleDTO subtitleDTO) {
+    public ResponseEntity<SubtitleDTO> createSubtitle(Authentication authentication,
+            @Valid @RequestBody SubtitleDTO subtitleDTO) {
+        assertCanModifyEvent(resolveEventId(subtitleDTO.getEventId(), subtitleDTO.getSessionId()), authentication);
+        subtitleDTO.setUserId(currentUser(authentication).getId());
         Subtitle subtitle = subtitleService.createSubtitle(subtitleDTO);
         SubtitleDTO result = SubtitleDTO.fromEntity(subtitle);
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
@@ -53,9 +61,16 @@ public class SubtitleController {
     
     /**
      * Create a real-time subtitle (for streaming)
+     *
+     * FIX (#16191): The caller must organize the target event and the subtitle
+     * is attributed to the authenticated principal, never to a client-supplied
+     * userId.
      */
     @PostMapping("/realtime")
-    public ResponseEntity<SubtitleDTO> createRealTimeSubtitle(@Valid @RequestBody RealTimeSubtitleRequest request) {
+    public ResponseEntity<SubtitleDTO> createRealTimeSubtitle(Authentication authentication,
+            @Valid @RequestBody RealTimeSubtitleRequest request) {
+        assertCanModifyEvent(resolveEventId(request.getEventId(), request.getSessionId()), authentication);
+        request.setUserId(currentUser(authentication).getId());
         Subtitle subtitle = subtitleService.createRealTimeSubtitle(request);
         SubtitleDTO result = SubtitleDTO.fromEntity(subtitle);
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
@@ -124,7 +139,7 @@ public class SubtitleController {
     /**
      * Get subtitles by session ID
      */
-    @GetMapping("/session/{sessionId}")
+    @GetMapping("/session/{sessionId}/subtitles")
     public ResponseEntity<List<SubtitleDTO>> getSubtitlesBySessionId(@PathVariable String sessionId) {
         List<Subtitle> subtitles = subtitleService.getSubtitlesBySessionId(sessionId);
         List<SubtitleDTO> dtos = subtitles.stream()
@@ -347,7 +362,7 @@ public class SubtitleController {
      */
     private void assertCanModifySubtitle(Long subtitleId, Authentication authentication) {
         Subtitle subtitle = subtitleService.getSubtitleById(subtitleId)
-                .orElseThrow(() -> new RuntimeException("Subtitle not found with id: " + subtitleId));
+                .orElseThrow(() -> new ResourceNotFoundException("Subtitle not found with id: " + subtitleId));
         User caller = currentUser(authentication);
         if (isAdmin(caller)) {
             return;
@@ -395,7 +410,7 @@ public class SubtitleController {
     }
 
     /**
-     * FIX (#15368): A user may only list their own subtitles; admins may list
+     * FIX (#16168): A user may only list their own subtitles; admins may list
      * any user's subtitles.
      */
     private void assertCanReadUser(Long userId, Authentication authentication) {
@@ -404,6 +419,23 @@ public class SubtitleController {
             return;
         }
         throw new AccessDeniedException("You can only view your own subtitles.");
+    }
+
+    /**
+     * Resolve the event a subtitle belongs to, either from the eventId directly
+     * or through the subtitle session.
+     */
+    private Long resolveEventId(Long eventId, String sessionId) {
+        if (eventId != null) {
+            return eventId;
+        }
+        if (sessionId != null && !sessionId.isBlank()) {
+            return subtitleService.getSession(sessionId)
+                    .map(SubtitleSession::getEventId)
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Subtitle session not found: " + sessionId));
+        }
+        throw new IllegalArgumentException("eventId or sessionId is required to create a subtitle.");
     }
 
     private User currentUser(Authentication authentication) {
@@ -435,8 +467,8 @@ public class SubtitleController {
     /**
      * Handle not found exceptions
      */
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleResourceNotFound(ResourceNotFoundException ex) {
         Map<String, String> error = new HashMap<>();
         error.put("error", "Not found");
         error.put("message", ex.getMessage());

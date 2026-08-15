@@ -115,6 +115,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         } catch (Exception ex) {
             logger.warn("Could not authenticate from JWT token: {}", ex.getMessage());
             SecurityContextHolder.clearContext();
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Authentication failed");
+            return;
         }
 
         filterChain.doFilter(request, response);

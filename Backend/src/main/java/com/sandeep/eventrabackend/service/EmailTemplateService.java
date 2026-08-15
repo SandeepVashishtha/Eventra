@@ -33,9 +33,20 @@ public class EmailTemplateService {
     }
 
     /**
-     * Send a test email to the organizer with the provided template
+     * Send a test email to the organizer with the provided template.
+     *
+     * <p>The recipient is always the authenticated organizer's own email; any
+     * caller-supplied recipient is ignored so the endpoint can never be used as
+     * an open relay to arbitrary addresses (#16253).</p>
      */
     public TestEmailResponse sendTestEmail(TestEmailRequest request, String organizerEmail) {
+        if (request == null || request.getTemplateType() == null) {
+            throw new IllegalArgumentException("Invalid template type");
+        }
+        String type = request.getTemplateType();
+        if (!type.equals("waitlist_promotion") && !type.equals("cancellation")) {
+            throw new IllegalArgumentException("Invalid template type");
+        }
         try {
             // Replace placeholders in the template with actual data
             String renderedContent = renderTemplate(request.getCustomTemplate(), 
@@ -45,9 +56,11 @@ public class EmailTemplateService {
             // Generate a test subject
             String subject = generateSubject(request.getTemplateType(), request.getEvent());
 
-            // Send the email using the email sender
+            // Send the email using the email sender. The recipient is pinned to
+            // the authenticated organizer — request.getRecipientEmail() is never
+            // trusted, preventing arbitrary-recipient phishing relays.
             String messageId = emailSender.sendEmail(
-                    request.getRecipientEmail(),
+                    organizerEmail,
                     subject,
                     renderedContent,
                     true // isHtml
@@ -56,7 +69,7 @@ public class EmailTemplateService {
             return new TestEmailResponse(
                     true,
                     messageId,
-                    request.getRecipientEmail(),
+                    organizerEmail,
                     request.getTemplateType(),
                     request.getEventId(),
                     "Test email sent successfully"
@@ -65,7 +78,7 @@ public class EmailTemplateService {
             return new TestEmailResponse(
                     false,
                     null,
-                    request.getRecipientEmail(),
+                    organizerEmail,
                     request.getTemplateType(),
                     request.getEventId(),
                     "Failed to send test email: " + e.getMessage()

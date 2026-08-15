@@ -169,13 +169,17 @@ public class AdminService {
 
         List<Long> affectedEventIds = eventRegistrationRepository.findEventIdsByUser_Id(id);
 
+        // Clear owner references before deletion to prevent foreign key constraint violations
+        eventRepository.clearOwnerByUserId(id);
+        hackathonRepository.clearOwnerByUserId(id);
+
         eventRegistrationRepository.deleteByUser_Id(id);
         eventWaitlistRepository.deleteByUser_Id(id);
         hackathonRegistrationRepository.deleteByUser_Id(id);
         projectUpvoteRepository.deleteByUser_Id(id);
         notificationRepository.deleteByUser_Id(id);
         feedbackRepository.deleteByUser_Id(id);
-        eventRepository.deleteAttendeeRowsByUserId(id);
+        // eventRepository.deleteAttendeeRowsByUserId(id); // Removed dropped table call
         eventTeamMemberRepository.clearAssignedByUserId(id);
         eventTeamMemberRepository.deleteByUser_Id(id);
 
@@ -330,19 +334,19 @@ public class AdminService {
                 .totalClients(userRepository.countByRole(Role.CLIENT))
                 // Events
                 .totalEvents(eventAnalyticsRepo.count())
-                .activeEvents(eventAnalyticsRepo.countActiveEvents(now))
-                .completedEvents(eventAnalyticsRepo.countCompletedEvents(now))
+                .activeEvents(eventAnalyticsRepo.countActiveEvents(now, null))
+                .completedEvents(eventAnalyticsRepo.countCompletedEvents(now, null))
                 // Registrations
-                .totalRegistrations(regRepo.countConfirmedRegistrations())
-                .uniqueParticipants(eventAnalyticsRepo.countUniqueParticipants())
+                .totalRegistrations(regRepo.countConfirmedRegistrations(null))
+                .uniqueParticipants(eventAnalyticsRepo.countUniqueParticipants(null))
                 .averageCapacityUtilization(
-                        Optional.ofNullable(eventAnalyticsRepo.findAverageCapacityUtilization()).orElse(0.0))
+                        Optional.ofNullable(eventAnalyticsRepo.findAverageCapacityUtilization(null)).orElse(0.0))
                 // Hackathons
                 .totalHackathons(hackathonRepository.countByIsDeletedFalse())
                 // Feedback
-                .totalFeedbackSubmissions(feedbackRepository.countTotalFeedback())
+                .totalFeedbackSubmissions(feedbackRepository.countTotalFeedback(null))
                 .overallAverageRating(
-                        Optional.ofNullable(feedbackRepository.findOverallAverageRating()).orElse(0.0))
+                        Optional.ofNullable(feedbackRepository.findOverallAverageRating(null)).orElse(0.0))
                 .build();
     }
 
@@ -356,10 +360,10 @@ public class AdminService {
         LocalDateTime now = LocalDateTime.now();
         return AdminStatsResponse.builder()
                 .totalUsers(userRepository.count())
-                .activeUsers(eventAnalyticsRepo.countUniqueParticipants())
+                .activeUsers(eventAnalyticsRepo.countUniqueParticipants(null))
                 .totalEvents(eventAnalyticsRepo.count())
-                .upcoming(eventAnalyticsRepo.countActiveEvents(now))
-                .totalParticipants(regRepo.countConfirmedRegistrations())
+                .upcoming(eventAnalyticsRepo.countActiveEvents(now, null))
+                .totalParticipants(regRepo.countConfirmedRegistrations(null))
                 .build();
     }
 
@@ -369,7 +373,8 @@ public class AdminService {
      * their {@code createdAt}, not event registrations (Issue #11232).
      */
     public List<RegistrationTrendDTO> getUserGrowthTrend(int months) {
-        LocalDateTime from = LocalDateTime.now().minusMonths(months);
+        int safeMonths = Math.max(1, Math.min(months, 24));
+        LocalDateTime from = LocalDateTime.now().minusMonths(safeMonths);
         List<Object[]> raw = userRepository.findMonthlySignupTrend(from);
 
         final long[] cumulative = { 0 };
@@ -388,7 +393,7 @@ public class AdminService {
      * Returns the top N most popular events ordered by registration count.
      */
     public List<Map<String, Object>> getPopularEvents(int limit) {
-        return eventAnalyticsRepo.findMostPopularEvents(PageRequest.of(0, limit))
+        return eventAnalyticsRepo.findMostPopularEvents(null, PageRequest.of(0, limit))
                 .stream()
                 .map(row -> {
                     Map<String, Object> m = new LinkedHashMap<>();

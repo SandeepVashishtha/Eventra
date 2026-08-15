@@ -6,6 +6,7 @@ import com.sandeep.eventrabackend.dto.response.AuthResponse;
 import com.sandeep.eventrabackend.exception.PasswordMismatchException;
 import com.sandeep.eventrabackend.exception.UserAlreadyExistsException;
 import com.sandeep.eventrabackend.exception.InvalidGoogleTokenException;
+import com.sandeep.eventrabackend.exception.AccountNotVerifiedException;
 import com.sandeep.eventrabackend.model.PasswordResetToken;
 import com.sandeep.eventrabackend.model.Role;
 import com.sandeep.eventrabackend.model.User;
@@ -176,23 +177,12 @@ public class AuthService {
                 user = createOrGetGoogleUser(email, firstName, lastName, baseUsername);
             } else if (!user.isEmailVerified()
                     && (user.getAuthProvider() == null || "LOCAL".equalsIgnoreCase(user.getAuthProvider()))) {
-                // Unverified LOCAL accounts can be claimed by a verified Google identity
-                // for the same email. Verified LOCAL accounts are left untouched below.
-                SecureRandom secureRandom = new SecureRandom();
-                byte[] randomBytes = new byte[32];
-                secureRandom.nextBytes(randomBytes);
-                String securePassword = Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
-
-                user.setAuthProvider("GOOGLE");
-                user.setEmailVerified(true);
-                user.setPassword(passwordEncoder.encode(securePassword));
-                if (firstName != null && !firstName.isBlank()) {
-                    user.setFirstName(firstName);
-                }
-                if (lastName != null && !lastName.isBlank()) {
-                    user.setLastName(lastName);
-                }
-                user = userRepository.save(user);
+                // Never auto-claim an unverified LOCAL account. The Google identity may
+                // only be linked after the LOCAL account has proven email ownership; the
+                // caller must route to a verify-email / explicit link flow instead.
+                throw new AccountNotVerifiedException(
+                        "An account already exists for this email but has not been verified. "
+                        + "Please verify your email before linking your Google account.");
             } else if (!user.isEmailVerified()) {
                 user.setEmailVerified(true);
                 if (user.getAuthProvider() == null || user.getAuthProvider().isBlank()) {
@@ -206,6 +196,8 @@ public class AuthService {
             return buildAuthResponse(user, token);
 
         } catch (InvalidGoogleTokenException e) {
+            throw e;
+        } catch (AccountNotVerifiedException e) {
             throw e;
         } catch (DataIntegrityViolationException e) {
             // A unique-constraint race could not be resolved within the bounded
@@ -255,17 +247,18 @@ public class AuthService {
     /**
      * Initiates a password reset for the given email.
      *
-     * <p>A cryptographically random, short-lived token is generated and its
-     * SHA-256 hash is persisted so the raw token can be exchanged for a new
-     * password exactly once. The raw token is returned in the response because
-     * the backend has no email transport configured; deployments with a mailer
-     * should send it as a reset link instead and drop it from the response.</p>
+     * <p>A cryptographically random, short-lived token is generated and only
+     * its SHA-256 hash is persisted. The raw token is <em>never</em> returned
+     * in the API response (doing so would let an attacker take over any
+     * account, since this endpoint is unauthenticated). Deployments must
+     * deliver the raw token to the account owner out-of-band (e.g. email a
+     * reset link); the reset step exchanges the token via a server-side
+     * lookup of its hash.</p>
      *
      * <p>For privacy, unknown emails still return HTTP 200 with the same generic
      * message (no account enumeration).</p>
      *
-     * @return a map with {@code message} and, when the account exists,
-     *         {@code resetToken} (raw token for the next step)
+     * @return a map with the generic {@code message} (no token is disclosed)
      */
     @Transactional
     public Map<String, String> requestPasswordReset(String rawEmail) {
@@ -289,9 +282,45 @@ public class AuthService {
                 .used(false)
                 .build());
 
+        // The raw token is deliberately not included in the response; it must be
+        // delivered out-of-band (email) so only the account owner can reset.
         return Map.of(
-                "message", "If an account exists for that email, a password reset link has been sent.",
-                "resetToken", rawToken);
+                "message", "If an account exists for that email, a password reset link has been sent.");
+    }
+
+    /**
+     * Confirms a password reset using the raw single-use token and sets the new password.
+     *
+     * @param rawToken raw unhashed reset token provided by the user
+     * @param newPassword the new password to set
+     * @return a map with generic success message
+     */
+    @Transactional
+    public Map<String, String> confirmPasswordReset(String rawToken, String newPassword) {
+        if (rawToken == null || rawToken.isBlank()) {
+            throw new IllegalArgumentException("Reset token is required");
+        }
+        if (newPassword == null || newPassword.length() < 8) {
+            throw new IllegalArgumentException("Password must be at least 8 characters");
+        }
+
+        String tokenHash = hashToken(rawToken);
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByTokenHashAndUsedFalse(tokenHash)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid or expired password reset token"));
+
+        if (resetToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Password reset token has expired");
+        }
+
+        User user = resetToken.getUser();
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setPasswordChangedAt(LocalDateTime.now());
+        userRepository.save(user);
+
+        resetToken.setUsed(true);
+        passwordResetTokenRepository.save(resetToken);
+
+        return Map.of("message", "Password has been successfully reset.");
     }
 
     private String generateResetToken() {

@@ -2,8 +2,10 @@ package com.sandeep.eventrabackend.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sandeep.eventrabackend.model.Event;
+import com.sandeep.eventrabackend.model.EventRegistration;
 import com.sandeep.eventrabackend.model.Role;
 import com.sandeep.eventrabackend.model.User;
+import com.sandeep.eventrabackend.repository.EventRegistrationRepository;
 import com.sandeep.eventrabackend.repository.EventRepository;
 import com.sandeep.eventrabackend.repository.LiveAudiencePollRepository;
 import com.sandeep.eventrabackend.repository.LiveAudiencePollVoteRepository;
@@ -57,6 +59,9 @@ public class LiveAudienceControllerTests {
     private LiveAudienceQuestionUpvoteRepository questionUpvoteRepository;
 
     @Autowired
+    private EventRegistrationRepository eventRegistrationRepository;
+
+    @Autowired
     private LiveAudiencePollRepository pollRepository;
 
     @Autowired
@@ -75,6 +80,7 @@ public class LiveAudienceControllerTests {
         pollRepository.deleteAll();
         questionUpvoteRepository.deleteAll();
         questionRepository.deleteAll();
+        eventRegistrationRepository.deleteAll();
         eventRepository.deleteAll();
         userRepository.deleteAll();
 
@@ -389,5 +395,163 @@ public class LiveAudienceControllerTests {
                 .andExpect(jsonPath("$.questions", hasSize(1)))
                 .andExpect(jsonPath("$.questions[0].text").value("Question one"))
                 .andExpect(jsonPath("$.activePoll.question").value("Poll question"));
+    }
+
+    @Test
+    @DisplayName("Private event — unregistered users are denied on all read/write paths (#16198)")
+    void testPrivateEventDeniesUnregisteredUser() throws Exception {
+        Event privateEvent = new Event();
+        privateEvent.setTitle("Private Live Audience Event");
+        privateEvent.setCapacity(20);
+        privateEvent.setEventDate(LocalDateTime.now().plusDays(1));
+        privateEvent.setOwnerId(userRepository.findByEmail(organizerEmail).orElseThrow().getId());
+        privateEvent.setPublic(false);
+        privateEvent = eventRepository.save(privateEvent);
+        Long privateEventId = privateEvent.getId();
+
+        String intruderEmail = "intruder@example.com";
+        userRepository.save(User.builder()
+                .firstName("Intruder")
+                .lastName("User")
+                .email(intruderEmail)
+                .username("intruder")
+                .password(passwordEncoder.encode("password"))
+                .role(Role.CLIENT)
+                .build());
+
+        mockMvc.perform(get("/api/events/{id}/live-audience", privateEventId)
+                        .with(user(intruderEmail)))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/api/events/{id}/live-audience/questions", privateEventId)
+                        .with(user(intruderEmail)))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/api/events/{id}/live-audience/questions", privateEventId)
+                        .with(user(intruderEmail))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                java.util.Map.of("text", "Sneaky question"))))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/api/events/{id}/live-audience/polls", privateEventId)
+                        .with(user(organizerEmail))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                java.util.Map.of("question", "Vote?", "options", List.of("A", "B")))))
+                .andExpect(status().isCreated());
+
+        long pollId = objectMapper.readTree(
+                        mockMvc.perform(post("/api/events/{id}/live-audience/polls", privateEventId)
+                                        .with(user(organizerEmail))
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(objectMapper.writeValueAsString(
+                                                java.util.Map.of("question", "Vote?", "options", List.of("A", "B")))))
+                                .andExpect(status().isCreated())
+                                .andReturn().getResponse().getContentAsString())
+                .get("id").asLong();
+
+        mockMvc.perform(post("/api/events/{id}/live-audience/polls/{pid}/vote", privateEventId, pollId)
+                        .with(user(intruderEmail))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(java.util.Map.of("option", "A"))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("Private event — organizer and registered participant are allowed (#16198)")
+    void testPrivateEventAllowsOrganizerAndParticipant() throws Exception {
+        Event privateEvent = new Event();
+        privateEvent.setTitle("Private Live Audience Event");
+        privateEvent.setCapacity(20);
+        privateEvent.setEventDate(LocalDateTime.now().plusDays(1));
+        privateEvent.setOwnerId(userRepository.findByEmail(organizerEmail).orElseThrow().getId());
+        privateEvent.setPublic(false);
+        privateEvent = eventRepository.save(privateEvent);
+        Long privateEventId = privateEvent.getId();
+
+        User attendee = userRepository.findByEmail(attendeeEmail).orElseThrow();
+        EventRegistration registration = new EventRegistration();
+        registration.setEvent(privateEvent);
+        registration.setUser(attendee);
+        registration.setStatus("CONFIRMED");
+        eventRegistrationRepository.save(registration);
+
+        // Registered participant can read and post.
+        mockMvc.perform(get("/api/events/{id}/live-audience", privateEventId)
+                        .with(user(attendeeEmail)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/events/{id}/live-audience/questions", privateEventId)
+                        .with(user(attendeeEmail))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                java.util.Map.of("text", "Registered question"))))
+                .andExpect(status().isCreated());
+
+        // Organizer (owner) can read too.
+        mockMvc.perform(get("/api/events/{id}/live-audience/questions", privateEventId)
+                        .with(user(organizerEmail)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET initial data — returns null activePoll when current poll is closed (#17869)")
+    void testGetInitialDataReturnsNullWhenPollClosed() throws Exception {
+        MvcResult created = mockMvc.perform(post("/api/events/{id}/live-audience/polls", eventId)
+                        .with(user(organizerEmail))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                java.util.Map.of("question", "Closed poll", "options", List.of("Yes", "No")))))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        long pollId = objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asLong();
+
+        // Close the poll
+        mockMvc.perform(post("/api/events/{id}/live-audience/polls/{pid}/status", eventId, pollId)
+                        .with(user(organizerEmail))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(java.util.Map.of("status", "closed"))))
+                .andExpect(status().isOk());
+
+        // GET initial data should return activePoll = null
+        mockMvc.perform(get("/api/events/{id}/live-audience", eventId)
+                        .with(user(attendeeEmail)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.activePoll").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("POST /polls — creating a new poll retires prior active poll (#17869)")
+    void testCreatePollClosesPreviousActivePoll() throws Exception {
+        MvcResult poll1 = mockMvc.perform(post("/api/events/{id}/live-audience/polls", eventId)
+                        .with(user(organizerEmail))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                java.util.Map.of("question", "First poll", "options", List.of("A", "B")))))
+                .andExpect(status().isCreated())
+                .andReturn();
+        long poll1Id = objectMapper.readTree(poll1.getResponse().getContentAsString()).get("id").asLong();
+
+        MvcResult poll2 = mockMvc.perform(post("/api/events/{id}/live-audience/polls", eventId)
+                        .with(user(organizerEmail))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                java.util.Map.of("question", "Second poll", "options", List.of("X", "Y")))))
+                .andExpect(status().isCreated())
+                .andReturn();
+        long poll2Id = objectMapper.readTree(poll2.getResponse().getContentAsString()).get("id").asLong();
+
+        // Check DB status of poll 1 is closed
+        org.junit.jupiter.api.Assertions.assertEquals("closed", pollRepository.findById(poll1Id).orElseThrow().getStatus());
+        org.junit.jupiter.api.Assertions.assertEquals("active", pollRepository.findById(poll2Id).orElseThrow().getStatus());
+
+        // GET initial data returns poll2 as active
+        mockMvc.perform(get("/api/events/{id}/live-audience", eventId)
+                        .with(user(attendeeEmail)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.activePoll.id").value(poll2Id))
+                .andExpect(jsonPath("$.activePoll.question").value("Second poll"));
     }
 }

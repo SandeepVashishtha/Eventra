@@ -48,6 +48,8 @@ public class CouponService implements ApplicationRunner {
 
     @Transactional
     public boolean redeemCoupon(String code) {
+        if (code == null) return false;
+        code = code.trim().toUpperCase();
         ReentrantLock lock = locks.computeIfAbsent(code, k -> new ReentrantLock());
         boolean acquired;
         try {
@@ -57,6 +59,8 @@ public class CouponService implements ApplicationRunner {
             throw new CouponRedemptionException("Interrupted while acquiring coupon lock for code: " + code, e);
         }
         if (!acquired) {
+            // Not acquired: no other holder will release this entry for us.
+            locks.remove(code, lock);
             throw new CouponRedemptionException(
                     "Timed out after " + LOCK_WAIT_SECONDS + "s acquiring coupon lock for code: " + code);
         }
@@ -64,8 +68,9 @@ public class CouponService implements ApplicationRunner {
         try {
             // Release the lock when the transaction finishes, whether it
             // commits or rolls back (#14507) — afterCommit alone leaks the
-            // lock permanently on rollback.
-            syncAdapter.registerReleaseOnCompletion(lock);
+            // lock permanently on rollback — then evict the per-code entry so
+            // the lock map stays bounded.
+            syncAdapter.registerReleaseOnCompletion(lock, () -> locks.remove(code, lock));
 
             // Atomic, DB-backed decrement guarded by remaining > 0, executed in
             // the current transaction; rollback restores the slot.
@@ -80,6 +85,8 @@ public class CouponService implements ApplicationRunner {
 
     @Transactional(readOnly = true)
     public int getRemainingUses(String code) {
+        if (code == null) return 0;
+        code = code.trim().toUpperCase();
         return couponInventoryRepository.findById(code)
                 .map(CouponInventory::getRemaining)
                 .orElse(0);

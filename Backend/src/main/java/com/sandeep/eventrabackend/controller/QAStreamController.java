@@ -43,7 +43,7 @@ public class QAStreamController {
         String id = "q-" + UUID.randomUUID().toString().substring(0, 8);
         SessionQuestion q = new SessionQuestion(id, payload.getSessionId(), payload.getAuthorName(), payload.getQuestionText());
         questionsDatabase.put(id, q);
-        return ResponseEntity.ok(q);
+        return ResponseEntity.status(HttpStatus.CREATED).body(q);
     }
 
     @PostMapping("/{id}/upvote")

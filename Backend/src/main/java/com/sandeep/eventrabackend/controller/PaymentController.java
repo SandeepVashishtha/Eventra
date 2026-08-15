@@ -1,15 +1,18 @@
 package com.sandeep.eventrabackend.controller;
 
 import com.sandeep.eventrabackend.model.EventRegistration;
+import com.sandeep.eventrabackend.model.EventRole;
 import com.sandeep.eventrabackend.model.Payment;
 import com.sandeep.eventrabackend.model.PaymentPlan;
 import com.sandeep.eventrabackend.repository.EventRegistrationRepository;
+import com.sandeep.eventrabackend.service.EventRoleService;
 import com.sandeep.eventrabackend.service.PaymentPlanService;
 import com.sandeep.eventrabackend.service.StripeService;
 import com.stripe.exception.StripeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -35,18 +38,24 @@ public class PaymentController {
     @Autowired
     private EventRegistrationRepository eventRegistrationRepository;
 
+    @Autowired
+    private EventRoleService eventRoleService;
+
     /**
      * Create a new payment plan for installment payments
      */
     @PostMapping("/plans")
-    @PreAuthorize("hasAnyRole('USER', 'ORGANIZER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ATTENDEE', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> createPaymentPlan(
+            Authentication authentication,
             @RequestParam Long registrationId,
             @RequestParam(required = false, defaultValue = "1000.00") BigDecimal ticketPrice,
             @RequestParam(required = false, defaultValue = "USD") String currency,
             @RequestParam(required = false, defaultValue = "25") Integer upfrontPercentage,
             @RequestParam(required = false, defaultValue = "4") Integer totalInstallments) {
-        
+
+        paymentPlanService.requirePaymentAccessByRegistration(registrationId, authentication.getName());
+
         try {
             PaymentPlan paymentPlan = paymentPlanService.createPaymentPlan(
                     registrationId, ticketPrice, currency, upfrontPercentage, totalInstallments);
@@ -66,9 +75,10 @@ public class PaymentController {
                     "error", e.getMessage()
             ));
         } catch (Exception e) {
+            log.error("Failed to create payment plan", e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", "Failed to create payment plan: " + e.getMessage()
+                    "error", "Failed to create payment plan"
             ));
         }
     }
@@ -77,13 +87,15 @@ public class PaymentController {
      * Initialize Stripe customer and setup intent for a registration
      */
     @PostMapping("/initialize/{registrationId}")
-    @PreAuthorize("hasAnyRole('USER', 'ORGANIZER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ATTENDEE', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> initializeStripePayment(
             Authentication authentication,
             @PathVariable Long registrationId,
             @RequestParam(required = false) String email,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String phone) {
+
+        paymentPlanService.requirePaymentAccessByRegistration(registrationId, authentication.getName());
 
         try {
             Map<String, String> result = paymentPlanService.initializeStripePayment(
@@ -92,14 +104,16 @@ public class PaymentController {
             return ResponseEntity.ok(result);
             
         } catch (StripeException e) {
+            log.error("Stripe error during payment initialization", e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", "Stripe error: " + e.getMessage()
+                    "error", "Payment processing error"
             ));
         } catch (Exception e) {
+            log.error("Failed to initialize Stripe payment", e);
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
-                    "error", e.getMessage()
+                    "error", "Failed to initialize payment"
             ));
         }
     }
@@ -108,11 +122,14 @@ public class PaymentController {
      * Setup payment method and create upfront payment intent
      */
     @PostMapping("/setup-method/{paymentPlanId}")
-    @PreAuthorize("hasAnyRole('USER', 'ORGANIZER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ATTENDEE', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> setupPaymentMethodAndCreateUpfrontPayment(
+            Authentication authentication,
             @PathVariable Long paymentPlanId,
             @RequestBody Map<String, String> request) {
-        
+
+        paymentPlanService.requirePaymentAccessByPlan(paymentPlanId, authentication.getName());
+
         String paymentMethodId = request.get("paymentMethodId");
         
         if (paymentMethodId == null || paymentMethodId.isEmpty()) {
@@ -129,14 +146,16 @@ public class PaymentController {
             return ResponseEntity.ok(result);
             
         } catch (StripeException e) {
+            log.error("Stripe error during payment method setup", e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", "Stripe error: " + e.getMessage()
+                    "error", "Payment processing error"
             ));
         } catch (Exception e) {
+            log.error("Failed to setup payment method", e);
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
-                    "error", e.getMessage()
+                    "error", "Failed to setup payment method"
             ));
         }
     }
@@ -145,11 +164,14 @@ public class PaymentController {
      * Confirm upfront payment and schedule remaining installments
      */
     @PostMapping("/confirm-upfront/{paymentPlanId}")
-    @PreAuthorize("hasAnyRole('USER', 'ORGANIZER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ATTENDEE', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> confirmUpfrontPaymentAndScheduleInstallments(
+            Authentication authentication,
             @PathVariable Long paymentPlanId,
             @RequestBody Map<String, String> request) {
-        
+
+        paymentPlanService.requirePaymentAccessByPlan(paymentPlanId, authentication.getName());
+
         String paymentMethodId = request.get("paymentMethodId");
         
         if (paymentMethodId == null || paymentMethodId.isEmpty()) {
@@ -166,14 +188,16 @@ public class PaymentController {
             return ResponseEntity.ok(result);
             
         } catch (StripeException e) {
+            log.error("Stripe error during upfront payment confirmation", e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", "Stripe error: " + e.getMessage()
+                    "error", "Payment processing error"
             ));
         } catch (Exception e) {
+            log.error("Failed to confirm upfront payment", e);
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
-                    "error", e.getMessage()
+                    "error", "Failed to confirm payment"
             ));
         }
     }
@@ -182,10 +206,13 @@ public class PaymentController {
      * Get payment plan by registration ID
      */
     @GetMapping("/plans/{registrationId}")
-    @PreAuthorize("hasAnyRole('USER', 'ORGANIZER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ATTENDEE', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> getPaymentPlanByRegistrationId(
+            Authentication authentication,
             @PathVariable Long registrationId) {
-        
+
+        paymentPlanService.requirePaymentAccessByRegistration(registrationId, authentication.getName());
+
         try {
             Map<String, Object> status = paymentPlanService.getPaymentPlanStatus(registrationId);
             
@@ -210,9 +237,10 @@ public class PaymentController {
             return ResponseEntity.ok(status);
             
         } catch (Exception e) {
+            log.error("Failed to retrieve payment plan status", e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", e.getMessage()
+                    "error", "Failed to retrieve payment plan status"
             ));
         }
     }
@@ -221,10 +249,13 @@ public class PaymentController {
      * Get all payments for a registration
      */
     @GetMapping("/registrations/{registrationId}")
-    @PreAuthorize("hasAnyRole('USER', 'ORGANIZER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ATTENDEE', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> getPaymentsByRegistrationId(
+            Authentication authentication,
             @PathVariable Long registrationId) {
-        
+
+        paymentPlanService.requirePaymentAccessByRegistration(registrationId, authentication.getName());
+
         try {
             List<Payment> payments = paymentPlanService.getPaymentsByRegistrationId(registrationId);
             
@@ -235,9 +266,10 @@ public class PaymentController {
             ));
             
         } catch (Exception e) {
+            log.error("Failed to retrieve payments for registration {}", registrationId, e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", e.getMessage()
+                    "error", "Failed to retrieve payments"
             ));
         }
     }
@@ -246,10 +278,13 @@ public class PaymentController {
      * Get installment schedule for a registration
      */
     @GetMapping("/schedule/{registrationId}")
-    @PreAuthorize("hasAnyRole('USER', 'ORGANIZER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ATTENDEE', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> getInstallmentSchedule(
+            Authentication authentication,
             @PathVariable Long registrationId) {
-        
+
+        paymentPlanService.requirePaymentAccessByRegistration(registrationId, authentication.getName());
+
         try {
             List<Map<String, Object>> schedule = paymentPlanService.getInstallmentSchedule(registrationId);
             
@@ -260,9 +295,10 @@ public class PaymentController {
             ));
             
         } catch (Exception e) {
+            log.error("Failed to retrieve installment schedule for registration {}", registrationId, e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", e.getMessage()
+                    "error", "Failed to retrieve installment schedule"
             ));
         }
     }
@@ -271,25 +307,30 @@ public class PaymentController {
      * Retry a failed payment
      */
     @PostMapping("/retry/{paymentId}")
-    @PreAuthorize("hasAnyRole('USER', 'ORGANIZER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ATTENDEE', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> retryFailedPayment(
+            Authentication authentication,
             @PathVariable Long paymentId,
             @RequestParam(required = false) String paymentMethodId) {
-        
+
+        paymentPlanService.requirePaymentAccessByPayment(paymentId, authentication.getName());
+
         try {
             Map<String, Object> result = paymentPlanService.retryFailedPayment(paymentId, paymentMethodId);
             
             return ResponseEntity.ok(result);
             
         } catch (StripeException e) {
+            log.error("Stripe error during payment retry", e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", "Stripe error: " + e.getMessage()
+                    "error", "Payment processing error"
             ));
         } catch (Exception e) {
+            log.error("Failed to retry payment {}", paymentId, e);
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
-                    "error", e.getMessage()
+                    "error", "Failed to retry payment"
             ));
         }
     }
@@ -298,10 +339,13 @@ public class PaymentController {
      * Get customer payment methods
      */
     @GetMapping("/methods/{registrationId}")
-    @PreAuthorize("hasAnyRole('USER', 'ORGANIZER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ATTENDEE', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> getCustomerPaymentMethods(
+            Authentication authentication,
             @PathVariable Long registrationId) {
-        
+
+        paymentPlanService.requirePaymentAccessByRegistration(registrationId, authentication.getName());
+
         try {
             List<Map<String, Object>> methods = paymentPlanService.getCustomerPaymentMethods(registrationId);
             
@@ -312,14 +356,16 @@ public class PaymentController {
             ));
             
         } catch (StripeException e) {
+            log.error("Stripe error retrieving payment methods", e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", "Stripe error: " + e.getMessage()
+                    "error", "Payment processing error"
             ));
         } catch (Exception e) {
+            log.error("Failed to retrieve payment methods for registration {}", registrationId, e);
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
-                    "error", e.getMessage()
+                    "error", "Failed to retrieve payment methods"
             ));
         }
     }
@@ -328,10 +374,13 @@ public class PaymentController {
      * Check if QR code is activated for a registration
      */
     @GetMapping("/qr-status/{registrationId}")
-    @PreAuthorize("hasAnyRole('USER', 'ORGANIZER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ATTENDEE', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> isQRCodeActivated(
+            Authentication authentication,
             @PathVariable Long registrationId) {
-        
+
+        paymentPlanService.requirePaymentAccessByRegistration(registrationId, authentication.getName());
+
         try {
             boolean activated = paymentPlanService.isQRCodeActivated(registrationId);
             boolean completed = paymentPlanService.isPaymentCompleted(registrationId);
@@ -343,9 +392,10 @@ public class PaymentController {
             ));
             
         } catch (Exception e) {
+            log.error("Failed to check QR code status for registration {}", registrationId, e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", e.getMessage()
+                    "error", "Failed to check QR code status"
             ));
         }
     }
@@ -354,11 +404,14 @@ public class PaymentController {
      * Cancel a payment plan
      */
     @DeleteMapping("/plans/{paymentPlanId}")
-    @PreAuthorize("hasAnyRole('USER', 'ORGANIZER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ATTENDEE', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> cancelPaymentPlan(
+            Authentication authentication,
             @PathVariable Long paymentPlanId,
             @RequestParam(required = false, defaultValue = "User request") String reason) {
-        
+
+        paymentPlanService.requirePaymentAccessByPlan(paymentPlanId, authentication.getName());
+
         try {
             paymentPlanService.cancelPaymentPlan(paymentPlanId, reason);
             
@@ -368,9 +421,10 @@ public class PaymentController {
             ));
             
         } catch (Exception e) {
+            log.error("Failed to cancel payment plan {}", paymentPlanId, e);
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
-                    "error", e.getMessage()
+                    "error", "Failed to cancel payment plan"
             ));
         }
     }
@@ -379,10 +433,13 @@ public class PaymentController {
      * Check if registration has an active payment plan
      */
     @GetMapping("/active/{registrationId}")
-    @PreAuthorize("hasAnyRole('USER', 'ORGANIZER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ATTENDEE', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> hasActivePaymentPlan(
+            Authentication authentication,
             @PathVariable Long registrationId) {
-        
+
+        paymentPlanService.requirePaymentAccessByRegistration(registrationId, authentication.getName());
+
         try {
             boolean hasActive = paymentPlanService.hasActivePaymentPlan(registrationId);
             
@@ -392,9 +449,10 @@ public class PaymentController {
             ));
             
         } catch (Exception e) {
+            log.error("Failed to check active payment plan for registration {}", registrationId, e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", e.getMessage()
+                    "error", "Failed to check payment plan status"
             ));
         }
     }
@@ -473,14 +531,16 @@ public class PaymentController {
             ));
 
         } catch (StripeException e) {
+            log.error("Stripe webhook signature verification failed", e);
             return ResponseEntity.status(400).body(Map.of(
                     "success", false,
-                    "error", "Stripe webhook error: " + e.getMessage()
+                    "error", "Invalid webhook signature"
             ));
         } catch (Exception e) {
+            log.error("Failed to process Stripe webhook", e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", "Webhook processing error: " + e.getMessage()
+                    "error", "Webhook processing failed"
             ));
         }
     }
@@ -489,8 +549,23 @@ public class PaymentController {
      * Get payment statistics for an event (for organizers)
      */
     @GetMapping("/stats/event/{eventId}")
-    @PreAuthorize("hasAnyRole('ORGANIZER', 'ADMIN')")
-    public ResponseEntity<?> getPaymentStatsForEvent(@PathVariable Long eventId) {
+    @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<?> getPaymentStatsForEvent(
+            @PathVariable Long eventId,
+            Authentication authentication) {
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        boolean hasAccess = eventRoleService.hasRole(eventId, authentication.getName(), EventRole.ORGANIZER);
+        if (!hasAccess) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
+                    "success", false,
+                    "error", "Access denied: You are not authorized to view payment statistics for this event."
+            ));
+        }
+
         try {
             // Implementation would query payment repository for event statistics
             // This is a placeholder that would be implemented based on specific requirements
@@ -500,9 +575,10 @@ public class PaymentController {
                     "message", "Payment statistics endpoint (implementation pending)"
             ));
         } catch (Exception e) {
+            log.error("Failed to retrieve payment statistics for event {}", eventId, e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", e.getMessage()
+                    "error", "Failed to retrieve payment statistics"
             ));
         }
     }
@@ -511,7 +587,7 @@ public class PaymentController {
      * Get user's payment history
      */
     @GetMapping("/user/history")
-    @PreAuthorize("hasAnyRole('USER', 'ORGANIZER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ATTENDEE', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> getUserPaymentHistory() {
         try {
             // Implementation would return payment history for the authenticated user
@@ -520,9 +596,10 @@ public class PaymentController {
                     "message", "User payment history endpoint (implementation pending)"
             ));
         } catch (Exception e) {
+            log.error("Failed to retrieve user payment history", e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", e.getMessage()
+                    "error", "Failed to retrieve payment history"
             ));
         }
     }

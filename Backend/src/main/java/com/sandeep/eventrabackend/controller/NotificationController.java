@@ -6,6 +6,8 @@ import com.sandeep.eventrabackend.dto.request.TestEmailRequest;
 import com.sandeep.eventrabackend.dto.request.SaveTemplateRequest;
 import com.sandeep.eventrabackend.dto.response.TestEmailResponse;
 import com.sandeep.eventrabackend.dto.response.TemplateResponse;
+import com.sandeep.eventrabackend.model.EventRole;
+import com.sandeep.eventrabackend.service.EventRoleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -39,13 +41,16 @@ public class NotificationController {
     private final NotificationService notificationService;
     private final PushSubscriptionService pushSubscriptionService;
     private final EmailTemplateService emailTemplateService;
+    private final EventRoleService eventRoleService;
 
     public NotificationController(NotificationService notificationService,
                                   PushSubscriptionService pushSubscriptionService,
-                                  EmailTemplateService emailTemplateService) {
+                                  EmailTemplateService emailTemplateService,
+                                  EventRoleService eventRoleService) {
         this.notificationService = notificationService;
         this.pushSubscriptionService = pushSubscriptionService;
         this.emailTemplateService = emailTemplateService;
+        this.eventRoleService = eventRoleService;
     }
 
     @GetMapping
@@ -201,10 +206,26 @@ public class NotificationController {
                     description = "Forbidden - User does not have organizer or admin privileges"
             )
     })
-    public ResponseEntity<TestEmailResponse> sendTestEmail(
+    public ResponseEntity<?> sendTestEmail(
             @Valid @RequestBody TestEmailRequest request,
             Authentication authentication) {
         String organizerEmail = authentication.getName();
+
+        long eventId;
+        try {
+            eventId = Long.parseLong(request.getEventId());
+        } catch (NumberFormatException ex) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "error", "Invalid event id"
+            ));
+        }
+
+        // The caller must be an organizer of the specific event (or a platform
+        // admin / legacy owner). Platform ORGANIZER/ADMIN authority alone must
+        // not grant the ability to mail for arbitrary events (#16253).
+        eventRoleService.requireRole(eventId, organizerEmail, EventRole.ORGANIZER);
+
         return ResponseEntity.ok(emailTemplateService.sendTestEmail(request, organizerEmail));
     }
 
@@ -264,10 +285,10 @@ public class NotificationController {
             )
     })
     public ResponseEntity<TemplateResponse> getTemplate(
-            @PathVariable Long eventId,
+            @PathVariable String eventId,
             @PathVariable String templateType,
             Authentication authentication) {
         String organizerEmail = authentication.getName();
-        return ResponseEntity.ok(emailTemplateService.getTemplate(eventId, templateType, organizerEmail));
+        return ResponseEntity.ok(emailTemplateService.getTemplate(String.valueOf(eventId), templateType, organizerEmail));
     }
 }

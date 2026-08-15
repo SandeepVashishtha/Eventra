@@ -6,6 +6,7 @@ import com.sandeep.eventrabackend.dto.request.GoogleAuthRequest;
 import com.sandeep.eventrabackend.dto.request.LogoutRequest;
 import com.sandeep.eventrabackend.dto.request.ReauthRequest;
 import com.sandeep.eventrabackend.dto.request.ResetPasswordRequest;
+import com.sandeep.eventrabackend.dto.request.ConfirmResetPasswordRequest;
 import com.sandeep.eventrabackend.dto.response.AuthResponse;
 import com.sandeep.eventrabackend.dto.response.ErrorResponse;
 import com.sandeep.eventrabackend.security.AuthCookieHelper;
@@ -140,9 +141,9 @@ public class AuthController {
                     Accepts an email address and issues a short-lived, single-use password
                     reset token for the matching account (if one exists).
                     
-                    The raw `resetToken` is returned in the response so the client can
-                    complete the flow; deployments with an email transport should instead
-                    email a reset link and remove the token from the response.
+                    The raw token is never returned in the response; it must be delivered
+                    out-of-band (e.g. emailed as a reset link) so only the account owner
+                    can complete the reset.
                     """
     )
     @ApiResponses({
@@ -154,6 +155,26 @@ public class AuthController {
     public ResponseEntity<Map<String, String>> resetPassword(
             @Valid @RequestBody ResetPasswordRequest request) {
         return ResponseEntity.ok(authService.requestPasswordReset(request.getEmail()));
+    }
+
+    @PostMapping("/reset-password/confirm")
+    @SecurityRequirements   // no auth needed for this endpoint
+    @Operation(
+            summary = "Confirm password reset and set new password",
+            description = """
+                    Accepts a raw, single-use password reset token and a new password.
+                    If the token is valid, unexpired, and unused, updates the user's password
+                    and marks the token as used.
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Password reset successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid, expired, or used reset token",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<Map<String, String>> confirmResetPassword(
+            @Valid @RequestBody ConfirmResetPasswordRequest request) {
+        return ResponseEntity.ok(authService.confirmPasswordReset(request.getToken(), request.getNewPassword()));
     }
 
     @PostMapping("/google")
