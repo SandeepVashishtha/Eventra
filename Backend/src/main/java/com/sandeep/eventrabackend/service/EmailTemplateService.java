@@ -178,31 +178,43 @@ public class EmailTemplateService {
             return "";
         }
 
-        String content = template;
-        
-        // Replace event placeholders
+        // Build a fixed snapshot of placeholder -> value. Values are computed once
+        // and never re-scanned, so attacker/attendee-controlled fields cannot inject
+        // template tokens that would be re-expanded (template injection).
+        java.util.Map<String, String> values = new java.util.HashMap<>();
         if (event != null) {
-            content = content.replace("{eventTitle}", escapeHtml(String.valueOf(event.getOrDefault("title", "Event"))));
-            content = content.replace("{eventDate}", escapeHtml(String.valueOf(event.getOrDefault("eventDate", "N/A"))));
-            content = content.replace("{eventTime}", escapeHtml(String.valueOf(event.getOrDefault("eventTime", "N/A"))));
-            content = content.replace("{location}", escapeHtml(String.valueOf(event.getOrDefault("location", "TBD"))));
-            content = content.replace("{refundDeadline}", escapeHtml(String.valueOf(event.getOrDefault("refundDeadline", "N/A"))));
-            content = content.replace("{organizerEmail}", sanitizeUrl(String.valueOf(event.getOrDefault("organizerEmail", "support@eventra.com"))));
+            values.put("eventTitle", escapeHtml(String.valueOf(event.getOrDefault("title", "Event"))));
+            values.put("eventDate", escapeHtml(String.valueOf(event.getOrDefault("eventDate", "N/A"))));
+            values.put("eventTime", escapeHtml(String.valueOf(event.getOrDefault("eventTime", "N/A"))));
+            values.put("location", escapeHtml(String.valueOf(event.getOrDefault("location", "TBD"))));
+            values.put("refundDeadline", escapeHtml(String.valueOf(event.getOrDefault("refundDeadline", "N/A"))));
+            values.put("organizerEmail", sanitizeUrl(String.valueOf(event.getOrDefault("organizerEmail", "support@eventra.com"))));
         }
-
-        // Replace attendee placeholders
         if (attendee != null) {
             String firstName = escapeHtml(String.valueOf(attendee.getOrDefault("firstName", "Attendee")));
             String lastName = escapeHtml(String.valueOf(attendee.getOrDefault("lastName", "")));
             String fullName = (firstName + " " + lastName).trim();
-            
-            content = content.replace("{attendeeName}", fullName.isEmpty() ? "Attendee" : fullName);
-            content = content.replace("{firstName}", firstName);
-            content = content.replace("{lastName}", lastName);
-            content = content.replace("{attendeeEmail}", sanitizeUrl(String.valueOf(attendee.getOrDefault("email", ""))));
-        }
 
-        return content;
+            values.put("attendeeName", fullName.isEmpty() ? "Attendee" : fullName);
+            values.put("firstName", firstName);
+            values.put("lastName", lastName);
+            values.put("attendeeEmail", sanitizeUrl(String.valueOf(attendee.getOrDefault("email", ""))));
+        }
+        values = java.util.Collections.unmodifiableMap(values);
+
+        // Replace all tokens in a single pass over the ORIGINAL template so that
+        // substituted values are never re-interpreted as containing tokens.
+        java.util.regex.Pattern tokenPattern = java.util.regex.Pattern.compile("\\{([a-zA-Z0-9_]+)\\}");
+        java.util.regex.Matcher matcher = tokenPattern.matcher(template);
+        StringBuffer sb = new StringBuffer();
+        while (matcher.find()) {
+            String token = matcher.group(1);
+            String replacement = values.get(token);
+            matcher.appendReplacement(sb, java.util.regex.Matcher.quoteReplacement(
+                    replacement != null ? replacement : matcher.group(0)));
+        }
+        matcher.appendTail(sb);
+        return sb.toString();
     }
 
     /**
