@@ -30,9 +30,11 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
+import java.util.Objects;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -186,7 +188,9 @@ public class EventController {
                         @Parameter(description = "Page number (0-based)") @RequestParam(defaultValue = "0") int page,
                         @Parameter(description = "Page size") @RequestParam(defaultValue = "20") int size) {
 
-                Pageable pageable = PageRequest.of(page, size);
+                int clampedSize = Math.min(Math.max(size, 1), 100);
+                int safePage = Math.max(page, 0);
+                Pageable pageable = PageRequest.of(safePage, clampedSize);
                 Page<EventResponse> events = eventService.searchEvents(search, category, startDate, endDate, free,
                                 pageable);
                 return ResponseEntity.ok(events);
@@ -337,6 +341,10 @@ public class EventController {
                         @Parameter(description = "ID of the event") @PathVariable Long id,
                         @Valid @RequestBody CsvWaitlistImportRequest request,
                         Authentication authentication) {
+
+                if (!Objects.equals(id, request.getEventId())) {
+                        throw new IllegalArgumentException("Event id in path must match the event id in the request body");
+                }
 
                 return ResponseEntity.ok(eventService.importLegacyWaitlist(request, authentication.getName()));
         }

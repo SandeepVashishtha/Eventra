@@ -1,10 +1,15 @@
 package com.sandeep.eventrabackend.service;
 
+import com.sandeep.eventrabackend.model.Role;
+import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.HackathonRegistrationRepository;
+import com.sandeep.eventrabackend.repository.HackathonRepository;
+import com.sandeep.eventrabackend.repository.UserRepository;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -23,6 +28,9 @@ public class TeamWorkspaceSyncService {
 
     private static final Pattern HACKATHON_ROOM_KEY =
             Pattern.compile("^hackathon:(\\d+)(?::team:.*)?$");
+
+    private static final String HACKATHON_ROOM_PREFIX = "hackathon:";
+    private static final String USER_ROOM_PREFIX = "user:";
 
     private static final class WorkspaceState {
         private final Object lock = new Object();
@@ -59,6 +67,7 @@ public class TeamWorkspaceSyncService {
     }
 
     public Map<String, Object> applyUpdate(String roomKey, Map<String, Object> body) {
+        requireWriteAccess(roomKey);
         WorkspaceState room = roomFor(roomKey);
         synchronized (room.lock) {
             if (body != null) {
@@ -107,14 +116,14 @@ public class TeamWorkspaceSyncService {
             return roomKey.trim();
         }
         if (StringUtils.hasText(hackathonId) && StringUtils.hasText(teamId)) {
-            return "hackathon:" + hackathonId.trim() + ":team:" + teamId.trim();
+            return HACKATHON_ROOM_PREFIX + hackathonId.trim() + ":team:" + teamId.trim();
         }
         if (StringUtils.hasText(hackathonId)) {
-            return "hackathon:" + hackathonId.trim();
+            return HACKATHON_ROOM_PREFIX + hackathonId.trim();
         }
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && StringUtils.hasText(auth.getName())) {
-            return "user:" + auth.getName().trim().toLowerCase();
+            return USER_ROOM_PREFIX + auth.getName().trim().toLowerCase();
         }
         return "default";
     }

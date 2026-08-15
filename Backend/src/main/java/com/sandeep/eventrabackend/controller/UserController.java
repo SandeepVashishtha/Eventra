@@ -23,7 +23,6 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import com.sandeep.eventrabackend.dto.request.UpdateUserProfileRequest;
 import com.sandeep.eventrabackend.dto.response.UserProfileResponse;
 import com.sandeep.eventrabackend.service.UserService;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -136,7 +135,7 @@ public class UserController {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
 
         // Check if username is being changed and if new username already exists
-        if (!user.getUsername().equals(request.getUsername()) && 
+        if (!java.util.Objects.equals(user.getUsername(), request.getUsername()) && 
                 userRepository.existsByUsername(request.getUsername())) {
             throw new UserAlreadyExistsException("Username already exists: " + request.getUsername());
         }
@@ -158,77 +157,6 @@ public class UserController {
         }
         return value.trim();
     }
-
-    /*
-    @PutMapping("/profile")
-    @Operation(
-            summary = "Update authenticated user profile",
-            description = """
-            Updates editable profile information for the currently authenticated user.
-            
-            Requires a valid JWT token.
-            
-            Editable fields:
-            - firstName
-            - lastName
-            """,
-            security = @SecurityRequirement(name = "bearerAuth")
-    )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Profile updated successfully",
-                    content = @Content(
-                            schema = @Schema(
-                                    implementation = UserProfileResponse.class
-                            )
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Validation error",
-                    content = @Content(
-                            schema = @Schema(
-                                    implementation = ErrorResponse.class
-                            )
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "Unauthorized - JWT token missing or invalid",
-                    content = @Content(
-                            schema = @Schema(
-                                    implementation = ErrorResponse.class
-                            )
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Authenticated user not found",
-                    content = @Content(
-                            schema = @Schema(
-                                    implementation = ErrorResponse.class
-                            )
-                    )
-            )
-    })
-    public ResponseEntity<UserProfileResponse> updateProfile(
-            @Valid @RequestBody UpdateUserProfileRequest request,
-            Authentication authentication
-    ) {
-
-        // Extract authenticated user's email from JWT security context
-        String authenticatedEmail = authentication.getName();
-
-        // Delegate profile update logic to service layer
-        return ResponseEntity.ok(
-                userService.updateProfile(
-                        authenticatedEmail,
-                        request
-                )
-        );
-    }
-*/
 
     @GetMapping("/my-events")
     @Operation(

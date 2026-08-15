@@ -6,6 +6,7 @@ import com.sandeep.eventrabackend.dto.request.GoogleAuthRequest;
 import com.sandeep.eventrabackend.dto.request.LogoutRequest;
 import com.sandeep.eventrabackend.dto.request.ReauthRequest;
 import com.sandeep.eventrabackend.dto.request.ResetPasswordRequest;
+import com.sandeep.eventrabackend.dto.request.ConfirmResetPasswordRequest;
 import com.sandeep.eventrabackend.dto.response.AuthResponse;
 import com.sandeep.eventrabackend.dto.response.ErrorResponse;
 import com.sandeep.eventrabackend.security.AuthCookieHelper;
@@ -70,23 +71,6 @@ public class AuthController {
             @ApiResponse(responseCode = "429", description = "Signup rate limit exceeded",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    public static class PasswordResetRequest {
-        private String email;
-        public String getEmail() { return email; }
-        public void setEmail(String email) { this.email = email; }
-    }
-
-    @PostMapping("/reset-password")
-    @SecurityRequirements
-    @Operation(summary = "Request password reset link")
-    public ResponseEntity<?> resetPassword(@RequestBody PasswordResetRequest request) {
-        String email = request.getEmail();
-        if (email == null || !org.springframework.util.StringUtils.hasText(email)) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Email is required"));
-        }
-        return ResponseEntity.ok(Map.of("message", "Password reset link sent! Check your email."));
-    }
-
     public ResponseEntity<AuthResponse> signup(@Valid @RequestBody SignupRequest request) {
         AuthResponse response = authService.signup(request);
         return withAuthCookies(ResponseEntity.status(HttpStatus.CREATED), response);
@@ -187,6 +171,26 @@ public class AuthController {
     public ResponseEntity<Map<String, String>> resetPassword(
             @Valid @RequestBody ResetPasswordRequest request) {
         return ResponseEntity.ok(authService.requestPasswordReset(request.getEmail()));
+    }
+
+    @PostMapping("/reset-password/confirm")
+    @SecurityRequirements   // no auth needed for this endpoint
+    @Operation(
+            summary = "Confirm password reset and set new password",
+            description = """
+                    Accepts a raw, single-use password reset token and a new password.
+                    If the token is valid, unexpired, and unused, updates the user's password
+                    and marks the token as used.
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Password reset successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid, expired, or used reset token",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<Map<String, String>> confirmResetPassword(
+            @Valid @RequestBody ConfirmResetPasswordRequest request) {
+        return ResponseEntity.ok(authService.confirmPasswordReset(request.getToken(), request.getNewPassword()));
     }
 
     @PostMapping("/google")

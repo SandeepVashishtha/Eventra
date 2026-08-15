@@ -7,6 +7,8 @@ import com.sandeep.eventrabackend.repository.EventRepository;
 import com.sandeep.eventrabackend.repository.EventWaitlistRepository;
 import com.sandeep.eventrabackend.repository.NotificationRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
+import com.sandeep.eventrabackend.dto.request.CsvWaitlistImportRequest;
+import com.sandeep.eventrabackend.service.EventService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -42,6 +44,9 @@ class EventWaitlistConcurrencyTests {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private EventService eventService;
 
     @Autowired
     private EventRepository eventRepository;
@@ -133,5 +138,89 @@ class EventWaitlistConcurrencyTests {
 
         assertEquals(JOINERS, eventWaitlistRepository.count(),
                 "all joins should be persisted");
+    }
+
+    @Test
+    @DisplayName("Concurrent legacy import and waitlist joins produce gap-free distinct positions without dropping members")
+    void concurrentImportAndJoinWaitlist_NoMembersDropped() throws Exception {
+        int legacyCount = 5;
+        int liveJoinersCount = 5;
+
+        // Create users for legacy import
+        List<CsvWaitlistImportRequest.CsvWaitlistEntry> csvEntries = new ArrayList<>();
+        for (int i = 1; i <= legacyCount; i++) {
+            String email = "legacy" + i + "@example.com";
+            userRepository.save(User.builder()
+                    .firstName("Legacy")
+                    .lastName(String.valueOf(i))
+                    .email(email)
+                    .username("legacy" + i)
+                    .password(passwordEncoder.encode("password"))
+                    .role(Role.CLIENT)
+                    .build());
+            csvEntries.add(new CsvWaitlistImportRequest.CsvWaitlistEntry(
+                    "Legacy User " + i, email, "2024-01-0" + i + "T10:00:00Z"));
+        }
+
+        // Create users for live joiners
+        for (int i = 1; i <= liveJoinersCount; i++) {
+            String email = "livejoiner" + i + "@example.com";
+            userRepository.save(User.builder()
+                    .firstName("Live")
+                    .lastName(String.valueOf(i))
+                    .email(email)
+                    .username("livejoiner" + i)
+                    .password(passwordEncoder.encode("password"))
+                    .role(Role.CLIENT)
+                    .build());
+        }
+
+        ExecutorService pool = Executors.newFixedThreadPool(liveJoinersCount + 1);
+        List<Future<Void>> futures = new ArrayList<>();
+
+        // Submit legacy import task
+        futures.add(pool.submit(() -> {
+            CsvWaitlistImportRequest request = new CsvWaitlistImportRequest(eventId, csvEntries);
+            var response = eventService.importLegacyWaitlist(request, "admin@example.com");
+            assertEquals(legacyCount, response.getSuccessfulImports(), "All legacy entries must be imported successfully");
+            assertEquals(0, response.getFailedImports(), "No legacy entries should fail");
+            return null;
+        }));
+
+        // Submit live waitlist join tasks concurrently
+        for (int i = 1; i <= liveJoinersCount; i++) {
+            final String email = "livejoiner" + i + "@example.com";
+            futures.add(pool.submit(() -> {
+                MvcResult result = mockMvc.perform(post("/api/events/" + eventId + "/waitlist")
+                                .with(user(email)))
+                        .andReturn();
+                assertEquals(201, result.getResponse().getStatus(), "Waitlist join failed for " + email);
+                return null;
+            }));
+        }
+
+        pool.shutdown();
+        assertTrue(pool.awaitTermination(30, TimeUnit.SECONDS), "Concurrent tasks did not finish in time");
+
+        for (Future<Void> future : futures) {
+            future.get(5, TimeUnit.SECONDS);
+        }
+
+        int totalExpected = legacyCount + liveJoinersCount;
+        assertEquals(totalExpected, eventWaitlistRepository.count(), "All legacy and live members should be persisted");
+
+        var allEntries = eventWaitlistRepository.findByEvent_IdAndStatusOrderByPositionAscJoinedAtAsc(eventId, "WAITING");
+        assertEquals(totalExpected, allEntries.size());
+
+        Set<Integer> positions = new HashSet<>();
+        for (int p = 0; p < allEntries.size(); p++) {
+            int position = allEntries.get(p).getPosition();
+            positions.add(position);
+        }
+
+        assertEquals(totalExpected, positions.size(), "Positions must all be distinct");
+        for (int p = 1; p <= totalExpected; p++) {
+            assertTrue(positions.contains(p), "Expected position " + p + " to exist");
+        }
     }
 }

@@ -285,10 +285,10 @@ public class NotificationController {
             )
     })
     public ResponseEntity<TemplateResponse> getTemplate(
-            @PathVariable Long eventId,
+            @PathVariable String eventId,
             @PathVariable String templateType,
             Authentication authentication) {
         String organizerEmail = authentication.getName();
-        return ResponseEntity.ok(emailTemplateService.getTemplate(eventId, templateType, organizerEmail));
+        return ResponseEntity.ok(emailTemplateService.getTemplate(String.valueOf(eventId), templateType, organizerEmail));
     }
 }
