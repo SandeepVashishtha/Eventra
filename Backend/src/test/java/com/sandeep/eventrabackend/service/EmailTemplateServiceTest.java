@@ -152,6 +152,32 @@ class EmailTemplateServiceTest {
     }
 
     @Test
+    @DisplayName("Test email recipient is pinned to the authenticated organizer (#16253)")
+    void sendTestEmail_IgnoresCallerSuppliedRecipient() {
+        when(emailSender.sendEmail(any(), any(), any(), anyBoolean()))
+                .thenAnswer(invocation -> {
+                    String to = invocation.getArgument(0);
+                    assertEquals(organizerEmail, to, "recipient must be the organizer's own email");
+                    return "msg-16253";
+                });
+
+        // Caller supplies a victim address; it must be ignored.
+        TestEmailRequest request = new TestEmailRequest(
+                "123",
+                "cancellation",
+                testEmailRequest.getEvent(),
+                testEmailRequest.getAttendee(),
+                "Dear {attendeeName}",
+                "victim@evil.example"
+        );
+
+        TestEmailResponse response = emailTemplateService.sendTestEmail(request, organizerEmail);
+
+        assertTrue(response.isSuccess());
+        assertEquals(organizerEmail, response.getRecipient());
+    }
+
+    @Test
     @DisplayName("Save new template successfully")
     void saveTemplate_NewTemplate() {
         // Mock repository to return null (no existing template)

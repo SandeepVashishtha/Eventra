@@ -5,12 +5,12 @@
 export function toCsvString(rows, columns) {
   if (!rows.length) return '';
   const cols = columns || Object.keys(rows[0]);
-  const header = cols.join(',');
-  const body = rows.map(row => cols.map(c => {
-    const value = row[c];
-    const str = value == null ? '' : String(value);
+  const escapeCell = (v) => {
+    const str = v == null ? '' : String(v);
     return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
-  }).join(','));
+  };
+  const header = cols.map(escapeCell).join(',');
+  const body = rows.map(row => cols.map(c => escapeCell(row[c])).join(','));
   return [header, ...body].join('\n');
 }
 

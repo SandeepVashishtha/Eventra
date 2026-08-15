@@ -1,6 +1,7 @@
 
 import { safeJsonParse } from "./safeJsonParse.js";
 import { apiUtils, API_ENDPOINTS } from "../config/api.js";
+import { getApiErrorStatus } from "../config/api/errors.js";
 import { logger } from "./logger.js";
 import { getOrMigrateKey } from "./storageKeyManager.js";
 import { syncSecureStorage } from "./secureStorage.js";
@@ -45,14 +46,21 @@ export const parseCsvWaitlistData = (csvText) => {
 
       const values = line.split(',').map(value => value.trim());
       
-      // Handle CSV values that might contain commas (simple quoted string support)
+      // Handle CSV values that might contain commas (quote-aware parsing with escaped double-quote support)
       const parsedValues = [];
       let currentValue = '';
       let inQuotes = false;
       
-      for (const char of line) {
+      for (let ci = 0; ci < line.length; ci++) {
+        const char = line[ci];
         if (char === '"') {
-          inQuotes = !inQuotes;
+          if (inQuotes && ci + 1 < line.length && line[ci + 1] === '"') {
+            // Escaped double-quote ("") inside a quoted field
+            currentValue += '"';
+            ci++; // skip the next quote
+          } else {
+            inQuotes = !inQuotes;
+          }
         } else if (char === ',' && !inQuotes) {
           parsedValues.push(currentValue.trim());
           currentValue = '';
@@ -232,7 +240,7 @@ export const importCsvWaitlist = async (eventId, csvText, userId) => {
   } catch (error) {
     logger.error('[WaitlistUtils] Failed to import CSV waitlist:', error);
     
-    if (error?.response?.status === 401 || error?.response?.status === 403) {
+    if (getApiErrorStatus(error) === 401 || getApiErrorStatus(error) === 403) {
       throw error; // Re-throw auth errors
     }
 
@@ -556,7 +564,7 @@ export const getQueuePosition = async (eventId, userId) => {
       return mine.position;
     }
   } catch (error) {
-    if (error?.response?.status === 401 || error?.response?.status === 403) {
+    if (getApiErrorStatus(error) === 401 || getApiErrorStatus(error) === 403) {
       throw error;
     }
     // Fall back to local cache for offline / not-on-waitlist
@@ -654,7 +662,7 @@ export const joinWaitlist = async (eventId, user, registrationForm = {}) => {
     }
     throw new Error(response.data?.message || "Server rejected waitlist join");
   } catch (error) {
-    const status = error?.status || error?.response?.status;
+    const status = getApiErrorStatus(error);
     if (status === 409) {
       const serverMessage =
         error?.response?.data?.message ||
@@ -758,7 +766,7 @@ export const leaveWaitlist = async (eventId, userId) => {
       return true;
     }
   } catch (error) {
-    if (error?.response?.status === 401 || error?.response?.status === 403) {
+    if (getApiErrorStatus(error) === 401 || getApiErrorStatus(error) === 403) {
       throw error;
     }
     if (!checkIfOffline(error)) {
@@ -854,7 +862,7 @@ export const promoteRecord = async (record, event, options = {}, cacheOwnerId) =
     // Explicit server rejection
     return false;
   } catch (error) {
-    if (error?.response?.status === 401 || error?.response?.status === 403) {
+    if (getApiErrorStatus(error) === 401 || getApiErrorStatus(error) === 403) {
       throw error;
     }
     if (!checkIfOffline(error)) {
@@ -966,7 +974,7 @@ export const organizerRemoveUser = async (eventId, userId, cacheOwnerId) => {
       return true;
     }
   } catch (error) {
-    if (error?.response?.status === 401 || error?.response?.status === 403) {
+    if (getApiErrorStatus(error) === 401 || getApiErrorStatus(error) === 403) {
       throw error;
     }
     if (!checkIfOffline(error)) {

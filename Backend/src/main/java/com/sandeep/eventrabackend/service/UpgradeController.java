@@ -2,6 +2,7 @@ package com.sandeep.eventrabackend.service;
 
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * Controller mapping ticket upgrade REST endpoints (#16283).
@@ -17,6 +18,7 @@ public class UpgradeController {
     }
 
     @PostMapping("/ticket/{ticketId}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<String> upgrade(@PathVariable String ticketId, @RequestParam String targetTier) {
         boolean success = upgradeService.upgradeTicket(ticketId, targetTier);
         if (success) {
