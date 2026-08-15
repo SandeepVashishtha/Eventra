@@ -27,6 +27,7 @@ import com.sandeep.eventrabackend.model.EventRegistration;
 import com.sandeep.eventrabackend.model.EventRole;
 import com.sandeep.eventrabackend.model.EventWaitlist;
 import com.sandeep.eventrabackend.model.Notification;
+import com.sandeep.eventrabackend.model.Payment;
 import com.sandeep.eventrabackend.model.Role;
 import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.EventRegistrationRepository;
@@ -37,6 +38,7 @@ import com.sandeep.eventrabackend.repository.EventTeamMemberRepository;
 import com.sandeep.eventrabackend.repository.EventWaitlistRepository;
 import com.sandeep.eventrabackend.repository.FeedbackAnalyticsRepository;
 import com.sandeep.eventrabackend.repository.NotificationRepository;
+import com.sandeep.eventrabackend.repository.PaymentRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -131,6 +133,7 @@ public class EventService {
         private final EventRoleService eventRoleService;
         private final EventStreamService eventStreamService;
         private final StripeService stripeService;
+        private final PaymentRepository paymentRepository;
 
         public EventService(
                         EventRepository eventRepository,
@@ -143,7 +146,8 @@ public class EventService {
                         UserRepository userRepository,
                         EventRoleService eventRoleService,
                         EventStreamService eventStreamService,
-                        StripeService stripeService) {
+                        StripeService stripeService,
+                        PaymentRepository paymentRepository) {
                 this.eventRepository = eventRepository;
                 this.eventRegistrationRepository = eventRegistrationRepository;
                 this.eventWaitlistRepository = eventWaitlistRepository;
@@ -155,6 +159,7 @@ public class EventService {
                 this.eventRoleService = eventRoleService;
                 this.eventStreamService = eventStreamService;
                 this.stripeService = stripeService;
+                this.paymentRepository = paymentRepository;
         }
 
         /**
@@ -783,23 +788,25 @@ public class EventService {
                                                         .message(message)
                                                         .build());
 
-                                        if (refundDue
-                                                        && registration.isPaymentCompleted()
-                                                        && registration.getStripePaymentIntentId() != null) {
-                                                try {
-                                                        stripeService.refundPayment(
+                                        if (refundDue && registration.isPaymentCompleted()) {
+                                                // Refund every captured installment, not just the upfront
+                                                // PaymentIntent stored on the registration (#18839).
+                                                List<Payment> completedPayments = paymentRepository
+                                                                .findCompletedPaymentsByRegistrationId(registration.getId());
+                                                if (!completedPayments.isEmpty()) {
+                                                        completedPayments.forEach(payment -> refundCompletedPayment(
+                                                                        payment, refundPolicy, refundPercent, event, registration));
+                                                } else if (registration.getStripePaymentIntentId() != null) {
+                                                        // Fallback for legacy single payments without a Payment row.
+                                                        refundPaymentIntent(
                                                                         registration.getStripePaymentIntentId(),
                                                                         refundPolicy,
-                                                                        refundPercent);
-                                                } catch (Exception e) {
-                                                        log.error(
-                                                                        "Failed to refund payment for registration {} on cancelled event {}: {}",
-                                                                        registration.getId(),
-                                                                        event.getId(),
-                                                                        e.getMessage());
+                                                                        refundPercent,
+                                                                        event,
+                                                                        registration.getId());
                                                 }
                                         }
-                                });
+                        });
 
                 eventWaitlistRepository
                                 .findByEvent_IdAndStatusOrderByPositionAscJoinedAtAsc(event.getId(),
@@ -813,6 +820,43 @@ public class EventService {
                                         entry.setStatus(EventWaitlist.STATUS_EVENT_CANCELLED);
                                         eventWaitlistRepository.save(entry);
                                 });
+        }
+
+        /**
+         * Refunds a single completed installment payment according to the event
+         * refund policy and marks it REFUNDED once a refund is actually issued.
+         */
+        private void refundCompletedPayment(Payment payment, String refundPolicy, Integer refundPercent,
+                        Event event, EventRegistration registration) {
+                if (payment.getStripePaymentIntentId() == null) {
+                        return;
+                }
+                if (refundPaymentIntent(payment.getStripePaymentIntentId(), refundPolicy, refundPercent, event,
+                                registration.getId())) {
+                        payment.setStatus("REFUNDED");
+                        paymentRepository.save(payment);
+                }
+        }
+
+        /**
+         * Refunds a single Stripe PaymentIntent according to the event refund
+         * policy. Returns {@code true} when a refund was actually issued.
+         */
+        private boolean refundPaymentIntent(String stripePaymentIntentId, String refundPolicy, Integer refundPercent,
+                        Event event, Long registrationId) {
+                try {
+                        if (stripeService.refundPayment(stripePaymentIntentId, refundPolicy, refundPercent) != null) {
+                                return true;
+                        }
+                } catch (Exception e) {
+                        log.error(
+                                        "Failed to refund payment {} for registration {} on cancelled event {}: {}",
+                                        stripePaymentIntentId,
+                                        registrationId,
+                                        event.getId(),
+                                        e.getMessage());
+                }
+                return false;
         }
 
         /**
