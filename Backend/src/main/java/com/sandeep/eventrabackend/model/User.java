@@ -82,6 +82,14 @@ public class User {
     @Column(name = "auth_provider", length = 30)
     private String authProvider;
 
+    @Builder.Default
+    @Column(name = "deletion_requested", nullable = false)
+    private boolean deletionRequested = false;
+
+    @Builder.Default
+    @Column(name = "anonymized", nullable = false)
+    private boolean anonymized = false;
+
     @Convert(converter = JsonMapAttributeConverter.class)
     @Column(name = "preferences", columnDefinition = "TEXT")
     private Map<String, Object> preferences = new HashMap<>();
