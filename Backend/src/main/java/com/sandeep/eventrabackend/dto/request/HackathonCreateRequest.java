@@ -58,4 +58,7 @@ public class HackathonCreateRequest {
 
     @Schema(description = "URL to the hackathon's promotional image", example = "https://example.com/hackathon.png")
     private String imageUrl;
+
+    @Schema(description = "Maximum number of participants allowed (null = unlimited)")
+    private Integer maxParticipants;
 }
