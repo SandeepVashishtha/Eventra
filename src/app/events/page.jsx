@@ -11,7 +11,8 @@ import {
   RefreshCw, 
   Sparkles, 
   ArrowRight, 
-  PlusCircle
+  PlusCircle,
+  X
 } from "lucide-react";
 import { getEvents } from "@/lib/api";
 import EventCard from "@/components/ui/EventCard";
@@ -151,8 +152,18 @@ export default function EventsPage() {
                 placeholder="Search events by keyword, topic, or location..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 text-sm bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00b887] text-zinc-900 placeholder-zinc-400 transition-all"
+                className="w-full pl-10 pr-10 py-2.5 text-sm bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00b887] text-zinc-900 placeholder-zinc-400 transition-all"
               />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3.5 top-3.5 text-zinc-400 hover:text-zinc-600 transition-colors cursor-pointer"
+                  aria-label="Clear search input"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
 
             <select
@@ -194,7 +205,7 @@ export default function EventsPage() {
                   setSelectedFormat("all");
                   setSelectedLocation("all");
                 }}
-                className="text-[#00b887] hover:underline font-semibold"
+                className="text-xs font-semibold px-3 py-1.5 rounded-xl border border-zinc-200 bg-white text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 hover:border-zinc-300 transition duration-300 shadow-sm cursor-pointer"
               >
                 Reset Filters
               </button>
