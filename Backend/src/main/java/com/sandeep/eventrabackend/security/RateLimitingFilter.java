@@ -162,11 +162,11 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         if (StringUtils.hasText(forwarded)) {
             String[] parts = forwarded.split(",");
             // Proxies append the connecting peer on the right. Trust the rightmost
-            // N entries as infrastructure; the client is the leftmost of that
-            // trusted suffix (ignoring any client-supplied left-hand spoof).
-            // hops=1 on "spoof, real" → index length-1 = real.
-            int clientIndex = Math.min(parts.length - 1,
-                    Math.max(0, parts.length - trustedProxyHops));
+            // N entries as infrastructure; the client is the entry that is N
+            // positions to the left of the rightmost (ignoring any client-supplied
+            // left-hand spoof).
+            // hops=1 on "client, proxy" (length 2) → index 0 = client.
+            int clientIndex = Math.max(0, parts.length - 1 - trustedProxyHops);
             String candidate = parts[clientIndex].trim();
             if (StringUtils.hasText(candidate) && !"unknown".equalsIgnoreCase(candidate)) {
                 return candidate;
