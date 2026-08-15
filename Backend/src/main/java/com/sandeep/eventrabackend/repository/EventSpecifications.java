@@ -136,10 +136,17 @@ public final class EventSpecifications {
                         cb.greaterThan(root.get("eventDate"), now));
                 case "LIVE" -> parts.add((root, query, cb) -> cb.and(
                         cb.lessThanOrEqualTo(root.get("eventDate"), now),
-                        cb.greaterThanOrEqualTo(root.get("eventDate"), now.toLocalDate().atStartOfDay())
+                        cb.or(
+                                cb.greaterThanOrEqualTo(root.get("endDate"), now),
+                                cb.and(cb.isNull(root.get("endDate")),
+                                        cb.greaterThanOrEqualTo(root.get("eventDate"), now))
+                        )
                 ));
-                case "PAST", "ENDED" -> parts.add((root, query, cb) ->
-                        cb.lessThan(root.get("eventDate"), now.toLocalDate().atStartOfDay()));
+                case "PAST", "ENDED" -> parts.add((root, query, cb) -> cb.or(
+                        cb.lessThan(root.get("endDate"), now),
+                        cb.and(cb.isNull(root.get("endDate")),
+                                cb.lessThan(root.get("eventDate"), now))
+                ));
                 case "CANCELLED", "CANCELED", "SCHEDULED" -> parts.add((root, query, cb) ->
                         cb.equal(cb.upper(root.get("status")),
                                 status.startsWith("CANCEL") ? "CANCELLED" : status));
