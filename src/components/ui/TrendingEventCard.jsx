@@ -14,7 +14,9 @@ export default function TrendingEventCard({ event, onClick }) {
         day: "numeric",
         year: "numeric"
       })
-    : "Aug 28, 2026";
+    : "Date TBD";
+
+  const registeredCount = event?.registeredCount;
 
   const imageUrl =
     event?.imageUrl ||
@@ -80,7 +82,7 @@ export default function TrendingEventCard({ event, onClick }) {
           </span>
           <span className="flex items-center gap-1">
             <Users className="w-3.5 h-3.5 text-emerald-600" />
-            <span>{event?.registeredCount ?? 120} going</span>
+            <span>{registeredCount != null ? `${registeredCount} going` : "Be the first"}</span>
           </span>
         </div>
 
