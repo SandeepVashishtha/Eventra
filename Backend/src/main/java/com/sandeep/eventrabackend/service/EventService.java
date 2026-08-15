@@ -561,9 +561,11 @@ public class EventService {
                 event.setTitle(request.getTitle());
                 if (request.getLocation() != null) {
                         validateLocation(request.getLocation());
+                        event.setLocation(request.getLocation());
                 }
-                event.setLocation(request.getLocation());
-                event.setEventDate(request.getEventDate());
+                if (request.getEventDate() != null) {
+                        event.setEventDate(request.getEventDate());
+                }
                 if (request.getDescription() != null) {
                         validateDescription(request.getDescription());
                         event.setDescription(request.getDescription());

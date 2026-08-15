@@ -281,6 +281,30 @@ public class EventUpdateTests {
     }
 
     @Test
+    @DisplayName("Partial update without location or eventDate preserves existing values (#18835)")
+    void testUpdateWithoutLocationOrEventDatePreservesExistingValues() throws Exception {
+        LocalDateTime originalDate = LocalDateTime.now().plusDays(5).withNano(0);
+        existingEvent.setEventDate(originalDate);
+        eventRepository.save(existingEvent);
+
+        EventUpdateRequest request = EventUpdateRequest.builder()
+                .title("Partial Update Title")
+                .description("Description")
+                .capacity(120)
+                .isPublic(true)
+                .build();
+
+        mockMvc.perform(put("/api/events/" + existingEvent.getId())
+                        .with(user("admin@example.com").authorities(() -> "ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Partial Update Title"))
+                .andExpect(jsonPath("$.location").value("Original Location"))
+                .andExpect(jsonPath("$.eventDate").value(originalDate.toString()));
+    }
+
+    @Test
     @DisplayName("Capacity lower than registeredCount returns 409 (Conflict)")
     void testUpdateCapacityLowerThanRegisteredCount() throws Exception {
         // Manually set registeredCount for the event
