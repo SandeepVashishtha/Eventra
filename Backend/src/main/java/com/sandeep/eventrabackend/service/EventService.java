@@ -129,6 +129,7 @@ public class EventService {
         private final EventRoleAuditLogRepository eventRoleAuditLogRepository;
         private final UserRepository userRepository;
         private final EventRoleService eventRoleService;
+        private final EventRegistrationAttemptService registrationAttemptService;
         private final EventStreamService eventStreamService;
         private final StripeService stripeService;
 
@@ -142,6 +143,7 @@ public class EventService {
                         EventRoleAuditLogRepository eventRoleAuditLogRepository,
                         UserRepository userRepository,
                         EventRoleService eventRoleService,
+                        EventRegistrationAttemptService registrationAttemptService,
                         EventStreamService eventStreamService,
                         StripeService stripeService) {
                 this.eventRepository = eventRepository;
@@ -153,6 +155,7 @@ public class EventService {
                 this.eventRoleAuditLogRepository = eventRoleAuditLogRepository;
                 this.userRepository = userRepository;
                 this.eventRoleService = eventRoleService;
+                this.registrationAttemptService = registrationAttemptService;
                 this.eventStreamService = eventStreamService;
                 this.stripeService = stripeService;
         }
@@ -1234,17 +1237,18 @@ public class EventService {
          * @param userEmail email extracted from JWT principal
          * @return registration confirmation response
          */
-        @Transactional
         public RegistrationResponse registerUserForEvent(Long eventId, String userEmail) {
                 return registerUserForEvent(eventId, userEmail, null);
         }
 
-        @Transactional
         public RegistrationResponse registerUserForEvent(Long eventId, String userEmail, String seatId) {
                 return registerUserForEvent(eventId, userEmail, seatId, false);
         }
 
-        @Transactional
+        /**
+         * Retries optimistic-lock conflicts outside any outer transaction so each
+         * attempt runs in a fresh REQUIRES_NEW persistence context.
+         */
         public RegistrationResponse registerUserForEvent(
                         Long eventId,
                         String userEmail,
@@ -1253,7 +1257,12 @@ public class EventService {
 
                 for (int attempt = 1; attempt <= MAX_REGISTRATION_RETRIES; attempt++) {
                         try {
-                                return executeRegistration(eventId, userEmail, seatId, showProfileInAttendeeDirectory);
+                                RegistrationResponse response = registrationAttemptService.execute(
+                                                eventId, userEmail, seatId, showProfileInAttendeeDirectory);
+                                // Broadcast after the REQUIRES_NEW attempt commits so SSE
+                                // clients see the persisted seat counts.
+                                eventRepository.findById(eventId).ifPresent(this::broadcastAvailability);
+                                return response;
 
                         } catch (ObjectOptimisticLockingFailureException ex) {
                                 log.warn(
@@ -1278,102 +1287,6 @@ public class EventService {
 
                 throw new RegistrationConflictException(
                                 "Registration could not be completed due to high demand. Please try again.");
-        }
-
-        private RegistrationResponse executeRegistration(
-                        Long eventId,
-                        String userEmail,
-                        String seatId,
-                        boolean showProfileInAttendeeDirectory) {
-
-                Event event = eventRepository.findByIdWithLock(eventId)
-                                .orElseThrow(() -> new EventNotFoundException(
-                                                "Event not found with id: " + eventId));
-
-                if (!event.isPublic()) {
-                        throw new EventNotFoundException("Event not found with id: " + eventId);
-                }
-
-                // A cancelled event must never accept new registrations (#12080).
-                if ("CANCELLED".equals(event.getStatus())) {
-                        throw new RegistrationConflictException("This event has been cancelled.");
-                }
-
-                // Registration is only valid for events that have not already ended.
-                // Without this guard the API accepted registrations for past events,
-                // inflating registeredCount and creating stale registration rows (#11781).
-                if (event.isEventPast()) {
-                        throw new RegistrationClosedException("Registration is closed for this event.");
-                }
-
-                User user = userRepository.findByEmail(userEmail)
-                                .orElseThrow(() -> new UsernameNotFoundException(
-                                                "User not found with email: " + userEmail));
-
-                if (eventRegistrationRepository.existsByEvent_IdAndUser_Email(eventId, userEmail)) {
-
-                        throw new RegistrationConflictException(
-                                        "You are already registered for this event.");
-                }
-
-                if (seatId != null && !seatId.isBlank()) {
-                        if (!seatId.matches("^[^:\\s]+:\\d+$")) {
-                                throw new IllegalArgumentException(
-                                                "Invalid seatId format. Expected elementId:seatIndex");
-                        }
-                        if (eventRegistrationRepository.existsByEvent_IdAndSeatId(eventId, seatId)) {
-                                throw new RegistrationConflictException("Seat " + seatId + " is already taken.");
-                        }
-                }
-
-                // Capacity guard. The event row is held under a pessimistic write
-                // lock (findByIdWithLock) for the whole transaction, so this
-                // in-memory check is safe against concurrent registrations and
-                // keeps the increment atomic with the registration save below.
-                if (event.getCapacity() != null
-                                && event.getRegisteredCount() >= event.getCapacity()) {
-
-                        throw new EventFullException(
-                                        "Event is already full. Capacity: " + event.getCapacity());
-                }
-
-                EventRegistration registration = new EventRegistration();
-                registration.setEvent(event);
-                registration.setUser(user);
-                registration.setRegisteredAt(LocalDateTime.now());
-                registration.setStatus("CONFIRMED");
-                registration.setSeatId(seatId);
-                registration.setShowProfileInAttendeeDirectory(showProfileInAttendeeDirectory);
-
-                try {
-                        registration = eventRegistrationRepository.saveAndFlush(registration);
-                } catch (DataIntegrityViolationException ex) {
-                        throw mapRegistrationIntegrityViolation(ex, seatId);
-                }
-
-                // Increment in memory and persist within the same transaction as
-                // the registration so the two either both commit or both roll
-                // back (no orphaned capacity increment, #16175).
-                event.setRegisteredCount(event.getRegisteredCount() + 1);
-                Event saved = eventRepository.save(event);
-
-                broadcastAvailability(saved);
-
-                Integer spotsRemaining = (saved.getCapacity() == null)
-                                ? null
-                                : Math.max(
-                                                0,
-                                                saved.getCapacity() - saved.getRegisteredCount());
-
-                return RegistrationResponse.builder()
-                                .eventId(saved.getId())
-                                .eventTitle(saved.getTitle())
-                                .userEmail(userEmail)
-                                .registeredAt(registration.getRegisteredAt())
-                                .spotsRemaining(spotsRemaining)
-                                .registrationStatus(registration.getStatus())
-                                .seatId(registration.getSeatId())
-                                .build();
         }
 
         @Transactional(readOnly = true)
@@ -1657,28 +1570,6 @@ public class EventService {
                                 .githubUrl(user.getGithubUrl())
                                 .registeredAt(registration.getRegisteredAt())
                                 .build();
-        }
-
-        private RegistrationConflictException mapRegistrationIntegrityViolation(
-                        DataIntegrityViolationException ex, String seatId) {
-                String details = String.valueOf(ex.getMostSpecificCause() != null
-                                ? ex.getMostSpecificCause().getMessage()
-                                : ex.getMessage()).toLowerCase();
-
-                if (details.contains("uk_event_registration_event_user")
-                                || (details.contains("event_id") && details.contains("user_id"))) {
-                        return new RegistrationConflictException(
-                                        "You are already registered for this event.");
-                }
-
-                if (details.contains("uk_event_registration_event_seat")
-                                || (seatId != null && !seatId.isBlank() && details.contains("seat"))) {
-                        return new RegistrationConflictException(
-                                        "Seat " + seatId + " is already taken.");
-                }
-
-                return new RegistrationConflictException(
-                                "Registration could not be completed due to a conflict. Please try again.");
         }
 
         public String buildIcsFeed(Long eventId) {
