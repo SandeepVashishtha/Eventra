@@ -16,6 +16,12 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Value;
+import javax.crypto.Mac;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
@@ -41,9 +47,25 @@ public class TicketSignerService {
     
     private final PasskeyCredentialRepository credentialRepository;
     private final ConcurrentHashMap<String, SignatureChallenge> pendingChallenges = new ConcurrentHashMap<>();
+    private final SecretKey signingKey;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public TicketSignerService(PasskeyCredentialRepository credentialRepository) {
+    public TicketSignerService(PasskeyCredentialRepository credentialRepository,
+                               @Value("${eventra.ticket.signing-secret:}") String configuredSecret) {
         this.credentialRepository = credentialRepository;
+        this.signingKey = buildSigningKey(configuredSecret);
+    }
+
+    private SecretKey buildSigningKey(String configuredSecret) {
+        if (configuredSecret != null && !configuredSecret.isBlank()) {
+            return new SecretKeySpec(configuredSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+        }
+        // No secret configured: generate an ephemeral per-JVM secret so tokens remain
+        // cryptographically signed and unforgeable within this process. Set
+        // eventra.ticket.signing-secret in production for cross-restart stability.
+        byte[] key = new byte[32];
+        new SecureRandom().nextBytes(key);
+        return new SecretKeySpec(key, "HmacSHA256");
     }
 
     /**
@@ -383,24 +405,135 @@ public class TicketSignerService {
     }
 
     /**
-     * Generate a signed ticket token for offline verification
-     * 
-     * @param ticketId The ticket ID
+     * Generate a cryptographically signed ticket token for offline verification.
+     *
+     * <p>The token is an HMAC-SHA256 signed {@code header.payload.signature} structure
+     * carrying {@code exp} and {@code jti}, so it cannot be forged without the
+     * server-held signing secret.
+     *
+     * @param ticketId    The ticket ID
      * @param credentialId The credential ID
-     * @param userEmail The user's email
-     * @return A signed token that can be verified offline
+     * @param userEmail   The user's email
+     * @return A signed token that can be verified offline via {@link #verifySignedTicketToken}
      */
     public String generateSignedTicketToken(String ticketId, String credentialId, String userEmail) {
-        // This is a placeholder for a real JWT or signed token
-        // In production, use proper JWT signing with a secret key
-        String tokenData = String.format("%s|%s|%s|%d", 
-            ticketId, credentialId, userEmail, System.currentTimeMillis());
-        
-        // For now, return a simple signed token
-        // In production, replace with proper JWT signing
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(
-            tokenData.getBytes(StandardCharsets.UTF_8)
-        );
+        long now = System.currentTimeMillis();
+        long exp = now + 86_400_000L; // 24 hours
+        String jti = UUID.randomUUID().toString();
+
+        String header = b64UrlEncode(toJson(Map.of("alg", "HS256", "typ", "JWT")));
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("ticketId", ticketId);
+        claims.put("credentialId", credentialId);
+        claims.put("userEmail", userEmail);
+        claims.put("iat", now);
+        claims.put("exp", exp);
+        claims.put("jti", jti);
+        String payload = b64UrlEncode(toJson(claims));
+
+        String signingInput = header + "." + payload;
+        String signature = b64UrlEncode(hmacSha256(signingInput));
+        return signingInput + "." + signature;
+    }
+
+    /**
+     * Verify a token produced by {@link #generateSignedTicketToken}.
+     *
+     * @param token the signed token
+     * @return result describing validity and, when valid, the embedded claims
+     */
+    public SignedTicketTokenResult verifySignedTicketToken(String token) {
+        try {
+            if (token == null || token.isBlank()) {
+                return new SignedTicketTokenResult(false, null, null, null, "Token is required");
+            }
+            String[] parts = token.split("\\.");
+            if (parts.length != 3) {
+                return new SignedTicketTokenResult(false, null, null, null, "Malformed token");
+            }
+            String signingInput = parts[0] + "." + parts[1];
+            byte[] expectedSig = hmacSha256(signingInput);
+            byte[] providedSig = b64UrlDecode(parts[2]);
+            if (expectedSig.length != providedSig.length) {
+                return new SignedTicketTokenResult(false, null, null, null, "Invalid signature");
+            }
+            int diff = 0;
+            for (int i = 0; i < expectedSig.length; i++) {
+                diff |= expectedSig[i] ^ providedSig[i];
+            }
+            if (diff != 0) {
+                return new SignedTicketTokenResult(false, null, null, null, "Invalid signature");
+            }
+            @SuppressWarnings("unchecked")
+            Map<String, Object> claims = objectMapper.readValue(b64UrlDecodeToString(parts[1]), Map.class);
+            Object expObj = claims.get("exp");
+            if (expObj instanceof Number && ((Number) expObj).longValue() < System.currentTimeMillis()) {
+                return new SignedTicketTokenResult(false, null, null, null, "Token expired");
+            }
+            return new SignedTicketTokenResult(true,
+                    (String) claims.get("ticketId"),
+                    (String) claims.get("credentialId"),
+                    (String) claims.get("userEmail"),
+                    "ok");
+        } catch (Exception e) {
+            return new SignedTicketTokenResult(false, null, null, null, "Failed to parse token");
+        }
+    }
+
+    private byte[] hmacSha256(String data) {
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(signingKey);
+            return mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            throw new IllegalStateException("Unable to compute HMAC signature", e);
+        }
+    }
+
+    private String b64UrlEncode(byte[] data) {
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(data);
+    }
+
+    private byte[] b64UrlDecode(String data) {
+        return Base64.getUrlDecoder().decode(data);
+    }
+
+    private String b64UrlDecodeToString(String data) {
+        return new String(b64UrlDecode(data), StandardCharsets.UTF_8);
+    }
+
+    private String toJson(Object value) {
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (Exception e) {
+            throw new IllegalStateException("Unable to serialize token claims", e);
+        }
+    }
+
+    /**
+     * Result of verifying a signed ticket token.
+     */
+    public static class SignedTicketTokenResult {
+        private final boolean valid;
+        private final String ticketId;
+        private final String credentialId;
+        private final String userEmail;
+        private final String message;
+
+        public SignedTicketTokenResult(boolean valid, String ticketId, String credentialId,
+                                       String userEmail, String message) {
+            this.valid = valid;
+            this.ticketId = ticketId;
+            this.credentialId = credentialId;
+            this.userEmail = userEmail;
+            this.message = message;
+        }
+
+        public boolean isValid() { return valid; }
+        public String getTicketId() { return ticketId; }
+        public String getCredentialId() { return credentialId; }
+        public String getUserEmail() { return userEmail; }
+        public String getMessage() { return message; }
     }
 
     /**
