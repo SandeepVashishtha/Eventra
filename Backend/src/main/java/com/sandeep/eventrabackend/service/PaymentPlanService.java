@@ -55,12 +55,11 @@ public class PaymentPlanService {
         EventRegistration registration = eventRegistrationRepository.findById(registrationId)
                 .orElseThrow(() -> new IllegalArgumentException("Registration not found"));
 
-        // Idempotency: return the existing active plan for this registration if present
-        // to prevent duplicate Payment records and potential double-charging.
-        Optional<PaymentPlan> existingActivePlan =
-                paymentPlanRepository.findActivePaymentPlanByRegistrationId(registrationId);
-        if (existingActivePlan.isPresent()) {
-            return existingActivePlan.get();
+        Optional<PaymentPlan> existingPlan =
+                paymentPlanRepository.findByRegistration_Id(registrationId);
+        if (existingPlan.isPresent() && !"CANCELLED".equals(existingPlan.get().getStatus())) {
+            throw new IllegalStateException(
+                    "An active or completed payment plan already exists for this registration");
         }
 
         // Validate input
