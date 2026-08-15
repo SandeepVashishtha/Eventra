@@ -20,6 +20,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -81,11 +82,20 @@ public class ProjectController {
                     )
             )
     })
-    public ResponseEntity<ProjectResponse> createProject(
-            @Valid @RequestBody ProjectCreateRequest request,
+    public ResponseEntity<?> createProject(
+            @Valid @RequestBody(required = false) ProjectCreateRequest request,
             Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        if (request == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    ErrorResponse.builder()
+                            .status(HttpStatus.BAD_REQUEST.value())
+                            .error("Bad Request")
+                            .message("Request body is required")
+                            .timestamp(LocalDateTime.now())
+                            .build());
         }
         String userEmail = authentication.getName();
         return ResponseEntity.status(HttpStatus.CREATED).body(projectService.createProject(request, userEmail));
