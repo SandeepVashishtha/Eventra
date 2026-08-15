@@ -22,7 +22,9 @@ public class ContactService {
     public ContactResponse submitContactMessage(ContactRequest request) {
         if (request.getName() == null || request.getName().trim().length() < 2 || request.getName().trim().length() > 100) {
             throw new IllegalArgumentException("Name must be between 2 and 100 characters.");
-        if (request.getEmail() == null || !request.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) { throw new IllegalArgumentException("Invalid email format."); }
+        }
+        if (request.getEmail() == null || !request.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+            throw new IllegalArgumentException("Invalid email format.");
         }
         ContactMessage contactMessage = new ContactMessage();
         contactMessage.setName(request.getName().trim());
