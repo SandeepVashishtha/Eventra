@@ -21,6 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -173,6 +174,7 @@ public class HackathonLeaderboardSseController implements MessageListener, Healt
     /**
      * Broadcasts leaderboard updates. High-frequency updates get queued into the batch engine.
      */
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPER_ADMIN', 'ORGANIZER')")
     @PostMapping("/{id}/leaderboard/broadcast")
     public ResponseEntity<Void> broadcastLeaderboardUpdate(
             @PathVariable("id") Long hackathonId,
