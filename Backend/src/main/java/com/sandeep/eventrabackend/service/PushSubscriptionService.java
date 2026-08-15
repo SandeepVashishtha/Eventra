@@ -6,6 +6,7 @@ import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.PushSubscriptionRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,7 +50,22 @@ public class PushSubscriptionService {
         subscription.setEndpoint(request.getEndpoint());
         subscription.setP256dh(p256dh);
         subscription.setAuth(auth);
-        pushSubscriptionRepository.save(subscription);
+
+        try {
+            pushSubscriptionRepository.save(subscription);
+        } catch (DataIntegrityViolationException e) {
+            // Two near-simultaneous subscribe calls for the same (user, endpoint)
+            // can both miss the row in findByUser_IdAndEndpoint and then race on
+            // the unique constraint, surfacing an unhandled 500. Treat a
+            // concurrent duplicate insert as an idempotent re-subscribe by
+            // refreshing the existing row and updating its keys (#19059).
+            PushSubscription existing = pushSubscriptionRepository
+                    .findByUser_IdAndEndpoint(user.getId(), request.getEndpoint())
+                    .orElseThrow(() -> e);
+            existing.setP256dh(p256dh);
+            existing.setAuth(auth);
+            pushSubscriptionRepository.save(existing);
+        }
     }
 
     @Transactional
