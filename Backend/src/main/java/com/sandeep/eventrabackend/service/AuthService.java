@@ -15,6 +15,8 @@ import com.sandeep.eventrabackend.repository.UserRepository;
 import com.sandeep.eventrabackend.security.JwtTokenProvider;
 import com.sandeep.eventrabackend.security.TokenBlacklistService;
 import com.sandeep.eventrabackend.security.TokenRefreshQueueHandler;
+import com.sandeep.eventrabackend.util.EmailSender;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -52,6 +54,10 @@ public class AuthService {
     private final TokenBlacklistService tokenBlacklistService;
     private final TokenRefreshQueueHandler tokenRefreshQueueHandler;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final EmailSender emailSender;
+
+    @Value("${app.frontend.base-url:https://eventra.app}")
+    private String frontendBaseUrl;
 
     public AuthService(UserRepository userRepository,
             PasswordEncoder passwordEncoder,
@@ -60,7 +66,8 @@ public class AuthService {
             GoogleAuthService googleAuthService,
             TokenBlacklistService tokenBlacklistService,
             TokenRefreshQueueHandler tokenRefreshQueueHandler,
-            PasswordResetTokenRepository passwordResetTokenRepository) {
+            PasswordResetTokenRepository passwordResetTokenRepository,
+            EmailSender emailSender) {
 
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -70,6 +77,7 @@ public class AuthService {
         this.tokenBlacklistService = tokenBlacklistService;
         this.tokenRefreshQueueHandler = tokenRefreshQueueHandler;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
+        this.emailSender = emailSender;
     }
 
     @Transactional
@@ -284,6 +292,10 @@ public class AuthService {
 
         // The raw token is deliberately not included in the response; it must be
         // delivered out-of-band (email) so only the account owner can reset.
+        String resetLink = frontendBaseUrl + "/reset-password?token=" + rawToken;
+        emailSender.sendEmail(user.getEmail(), "Reset your Eventra password",
+                "Click the link below to reset your password:\n" + resetLink, false);
+
         return Map.of(
                 "message", "If an account exists for that email, a password reset link has been sent.");
     }
