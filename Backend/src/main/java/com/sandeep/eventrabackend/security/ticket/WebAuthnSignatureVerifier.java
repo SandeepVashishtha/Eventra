@@ -55,6 +55,12 @@ public class WebAuthnSignatureVerifier {
      */
     private final ConcurrentHashMap<String, ChallengeEntry> pendingChallenges = new ConcurrentHashMap<>();
 
+    /**
+     * Tracks the last observed authenticator signature counter per credential id
+     * in order to detect cloned authenticators or replayed assertions.
+     */
+    private final ConcurrentHashMap<String, Long> lastSignatureCounter = new ConcurrentHashMap<>();
+
     public WebAuthnSignatureVerifier(
             PasskeyCredentialRepository credentialRepository,
             TicketSignerService ticketSignerService) {
@@ -271,7 +277,23 @@ public class WebAuthnSignatureVerifier {
             byte[] signature = decodeBase64Url(signatureBase64);
             byte[] authenticatorData = decodeBase64Url(authenticatorDataBase64);
             byte[] clientDataJson = decodeBase64Url(clientDataJsonBase64);
-            
+
+            // Verify the relying-party ID (rpId) embedded in authenticatorData.
+            // The first 32 bytes are the SHA-256 of the rpId; a credential
+            // registered (or replayed) for a different rpId must be rejected.
+            if (authenticatorData.length < 37) {
+                return ResponseEntity.ok().body(
+                    new VerificationResponse(false, "Malformed authenticator data", ticketId, credentialId)
+                );
+            }
+            byte[] expectedRpIdHash = sha256("eventra-platform".getBytes(StandardCharsets.UTF_8));
+            byte[] actualRpIdHash = Arrays.copyOfRange(authenticatorData, 0, 32);
+            if (!MessageDigest.isEqual(expectedRpIdHash, actualRpIdHash)) {
+                return ResponseEntity.ok().body(
+                    new VerificationResponse(false, "Relying party ID does not match this service", ticketId, credentialId)
+                );
+            }
+
             // Create the data to verify: authenticatorData + SHA-256(clientDataJSON)
             byte[] clientDataHash = sha256(clientDataJson);
             byte[] dataToVerify = ByteBuffer.allocate(authenticatorData.length + clientDataHash.length)
@@ -279,9 +301,11 @@ public class WebAuthnSignatureVerifier {
                     .put(clientDataHash)
                     .array();
             
-            // Determine the signature algorithm
-            String algorithm = determineAlgorithm(credential.getPublicKeyPem()) ? "SHA256withECDSA" : "SHA256withRSA";
-            
+            // Determine the signature algorithm from the parsed public key type,
+            // not from attacker-influenced substrings in the client-supplied PEM.
+            String algorithm = (publicKey instanceof java.security.interfaces.ECPublicKey)
+                    ? "SHA256withECDSA" : "SHA256withRSA";
+
             // Verify the signature
             Signature sig = Signature.getInstance(algorithm);
             sig.initVerify(publicKey);
@@ -293,6 +317,17 @@ public class WebAuthnSignatureVerifier {
                     new VerificationResponse(false, "Invalid signature", ticketId, credentialId)
                 );
             }
+
+            // Enforce the authenticator signature counter (bytes 33-37 of
+            // authenticatorData) to detect cloned authenticators / replays.
+            int signCount = ByteBuffer.wrap(authenticatorData, 33, 4).getInt();
+            Long lastCount = lastSignatureCounter.get(credentialId);
+            if (lastCount != null && signCount != 0 && signCount <= lastCount) {
+                return ResponseEntity.ok().body(
+                    new VerificationResponse(false, "Authenticator signature counter indicates a cloned or replayed credential", ticketId, credentialId)
+                );
+            }
+            lastSignatureCounter.put(credentialId, lastCount == null ? signCount : Math.max(lastCount, signCount));
             
             // Extract and verify the challenge from clientDataJSON
             String clientChallenge = extractChallengeFromClientData(clientDataJson);
