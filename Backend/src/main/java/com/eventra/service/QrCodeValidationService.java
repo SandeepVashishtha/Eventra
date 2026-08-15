@@ -59,6 +59,9 @@ public class QrCodeValidationService {
     }
 
     public QrValidationResult validateQrCodeWithRegistrationId(Long registrationId, String registrationStatus, String eventStatus, Instant qrExpirationTime) {
+        if (registrationId == null || registrationId <= 0) {
+            return new QrValidationResult(false, QrValidationStatus.CANCELLED_REGISTRATION, "❌ Invalid registration ID.");
+        }
         if (qrExpirationTime != null && Instant.now().isAfter(qrExpirationTime)) {
             return new QrValidationResult(false, QrValidationStatus.EXPIRED, "❌ Registration QR code has expired.");
         }
