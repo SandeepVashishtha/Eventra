@@ -348,6 +348,17 @@ public class CacheConfig extends CachingConfigurerSupport {
             Long result = redisTemplate.execute(script, Collections.singletonList("lock:" + lockKey), lockValue);
             return Long.valueOf(1L).equals(result);
         }
+
+        private static final String RENEW_SCRIPT =
+                "if redis.call('get', KEYS[1]) == ARGV[1] then " +
+                "return redis.call('expire', KEYS[1], ARGV[2]) else return 0 end";
+
+        public boolean renewLock(String lockKey, String lockValue, long expireSeconds) {
+            RedisScript<Long> script = new DefaultRedisScript<>(RENEW_SCRIPT, Long.class);
+            Long result = redisTemplate.execute(script, Collections.singletonList("lock:" + lockKey),
+                    lockValue, String.valueOf(expireSeconds));
+            return Long.valueOf(1L).equals(result);
+        }
     }
 
     @Aspect
@@ -363,6 +374,9 @@ public class CacheConfig extends CachingConfigurerSupport {
             this.lockManager = lockManager;
         }
 
+        private static final long STAMPEDE_WAIT_MILLIS = 2000;
+        private static final long STAMPEDE_POLL_MILLIS = 50;
+
         @Around("@annotation(cacheableWithLock)")
         public Object protectAgainstStampede(ProceedingJoinPoint pjp, CacheableWithLock cacheableWithLock) throws Throwable {
             Cache cache = cacheManager.getCache(cacheableWithLock.cacheName());
@@ -376,30 +390,53 @@ public class CacheConfig extends CachingConfigurerSupport {
             }
 
             String lockKey = cacheableWithLock.cacheName() + ":" + evaluatedKey;
+            long lockTimeoutSeconds = cacheableWithLock.lockTimeoutSeconds();
             String lockValue = java.util.UUID.randomUUID().toString();
-            boolean acquired = lockManager.acquireLock(lockKey, lockValue, cacheableWithLock.lockTimeoutSeconds());
 
-            if (acquired) {
-                try {
-                    log.debug("Lock acquired for key: {}. Computing database value...", lockKey);
-                    Object result = pjp.proceed();
-                    if (cache != null && result != null) {
-                        cache.put(evaluatedKey, result);
-                    }
-                    return result;
-                } finally {
-                    lockManager.releaseLock(lockKey, lockValue);
-                }
-            } else {
-                log.warn("Lock contended for key: {}. Retrying cache retrieval...", lockKey);
-                TimeUnit.MILLISECONDS.sleep(150);
+            if (lockManager.acquireLock(lockKey, lockValue, lockTimeoutSeconds)) {
+                return computeAndCache(pjp, cache, lockKey, evaluatedKey, lockValue, lockTimeoutSeconds);
+            }
+
+            // Contended: another thread already holds the lock. Wait for it to populate
+            // the cache, then serve the value from cache. If the cache stays cold (e.g.
+            // the holder failed), acquire the lock ourselves and compute so the result is
+            // cached and the stampede is actually prevented.
+            long deadline = System.currentTimeMillis() + STAMPEDE_WAIT_MILLIS;
+            while (System.currentTimeMillis() < deadline) {
+                Thread.sleep(STAMPEDE_POLL_MILLIS);
                 if (cache != null) {
                     Cache.ValueWrapper valueWrapper = cache.get(evaluatedKey);
                     if (valueWrapper != null) {
                         return valueWrapper.get();
                     }
                 }
-                return pjp.proceed();
+            }
+
+            String retryLockValue = java.util.UUID.randomUUID().toString();
+            if (lockManager.acquireLock(lockKey, retryLockValue, lockTimeoutSeconds)) {
+                return computeAndCache(pjp, cache, lockKey, evaluatedKey, retryLockValue, lockTimeoutSeconds);
+            }
+
+            // Could not acquire the lock (holder still computing past the wait window).
+            // Compute without caching to avoid an indefinite stall.
+            log.warn("Stampede lock could not be acquired for key: {}. Computing without caching.", lockKey);
+            return pjp.proceed();
+        }
+
+        private Object computeAndCache(ProceedingJoinPoint pjp, Cache cache, String lockKey,
+                                       String evaluatedKey, String lockValue, long lockTimeoutSeconds) throws Throwable {
+            LockWatchdog watchdog = new LockWatchdog(lockManager, lockKey, lockValue, lockTimeoutSeconds);
+            try {
+                watchdog.start();
+                log.debug("Lock acquired for key: {}. Computing database value...", lockKey);
+                Object result = pjp.proceed();
+                if (cache != null && result != null) {
+                    cache.put(evaluatedKey, result);
+                }
+                return result;
+            } finally {
+                watchdog.stop();
+                lockManager.releaseLock(lockKey, lockValue);
             }
         }
 
@@ -416,6 +453,54 @@ public class CacheConfig extends CachingConfigurerSupport {
                 }
             }
             return keyExpression;
+        }
+
+        /**
+         * Renews the distributed lock lease on a fixed cadence (a fraction of the TTL)
+         * while the holder is still computing, so a slow computation cannot lose the
+         * lock to a second thread before it finishes and populates the cache.
+         */
+        private static class LockWatchdog {
+            private final RedisDistributedLockManager lockManager;
+            private final String lockKey;
+            private final String lockValue;
+            private final long expireSeconds;
+            private final Thread thread;
+            private volatile boolean running = true;
+
+            LockWatchdog(RedisDistributedLockManager lockManager, String lockKey, String lockValue, long expireSeconds) {
+                this.lockManager = lockManager;
+                this.lockKey = lockKey;
+                this.lockValue = lockValue;
+                this.expireSeconds = expireSeconds;
+                this.thread = new Thread(this::run, "cache-lock-watchdog");
+                this.thread.setDaemon(true);
+            }
+
+            void start() {
+                thread.start();
+            }
+
+            void stop() {
+                running = false;
+                thread.interrupt();
+            }
+
+            private void run() {
+                long intervalMillis = Math.max(200, TimeUnit.SECONDS.toMillis(expireSeconds) / 3);
+                while (running) {
+                    try {
+                        Thread.sleep(intervalMillis);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        return;
+                    }
+                    if (!running) {
+                        return;
+                    }
+                    lockManager.renewLock(lockKey, lockValue, expireSeconds);
+                }
+            }
         }
     }
 
