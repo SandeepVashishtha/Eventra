@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 @RestController
 @RequestMapping("/api/users")
@@ -43,6 +44,9 @@ public class UserController {
     private static final Set<String> ALLOWED_PREFERENCE_KEYS = Set.of("theme", "notifications");
     private static final int MAX_PREFERENCES_BYTES = 4096;
     private static final ObjectMapper PREFERENCES_MAPPER = new ObjectMapper();
+
+    /** Canonical username format enforced by ValidationController (#18842). */
+    private static final Pattern USERNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_-]{3,50}$");
 
     private final EventService eventService;
     private final UserService userService;
@@ -134,15 +138,27 @@ public class UserController {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
 
-        // Check if username is being changed and if new username already exists
-        if (!java.util.Objects.equals(user.getUsername(), request.getUsername()) && 
-                userRepository.existsByUsername(request.getUsername())) {
-            throw new UserAlreadyExistsException("Username already exists: " + request.getUsername());
+        // Normalize the username exactly like signup (trim + lowercase) so
+        // uniqueness, lookups and login normalization stay consistent (#18842).
+        String normalizedUsername = request.getUsername().trim().toLowerCase();
+
+        // Case-insensitive uniqueness on change, plus the same format validation
+        // ValidationController applies, so near-duplicate and malformed usernames
+        // can never be stored. Skipped when the username is unchanged so existing
+        // signup-derived usernames can still be kept while editing other fields.
+        if (!normalizedUsername.equals(user.getUsername())) {
+            if (!USERNAME_PATTERN.matcher(normalizedUsername).matches()) {
+                throw new IllegalArgumentException(
+                        "Username must be 3-50 characters and contain only letters, numbers, underscores, or hyphens");
+            }
+            if (userRepository.existsByUsernameIgnoreCase(normalizedUsername)) {
+                throw new UserAlreadyExistsException("Username already exists: " + normalizedUsername);
+            }
         }
 
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
-        user.setUsername(request.getUsername());
+        user.setUsername(normalizedUsername);
         user.setProfileHeadline(request.getProfileHeadline());
         user.setLinkedinUrl(normalizeBlankToNull(request.getLinkedinUrl()));
         user.setGithubUrl(normalizeBlankToNull(request.getGithubUrl()));
