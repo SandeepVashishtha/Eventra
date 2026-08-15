@@ -11,6 +11,12 @@ public class ParticipantCommunicationGroupService {
     private static final Logger logger = Logger.getLogger(ParticipantCommunicationGroupService.class.getName());
 
     public List<String> filterTargetRecipients(String eventId, Map<String, String> criteria) {
+        if (eventId == null || eventId.isBlank()) {
+            throw new IllegalArgumentException("Event ID must not be null or empty.");
+        }
+        if (criteria == null) {
+            throw new IllegalArgumentException("Criteria map must not be null.");
+        }
         String team = criteria.get("team");
         String registrationStatus = criteria.get("registrationStatus");
         String attendanceStatus = criteria.get("attendanceStatus");
