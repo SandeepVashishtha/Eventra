@@ -16,21 +16,29 @@ import java.util.concurrent.locks.ReentrantLock;
 public class TransactionLockSyncAdapter {
 
     public void registerReleaseOnCompletion(ReentrantLock lock) {
+        registerReleaseOnCompletion(lock, null);
+    }
+
+    public void registerReleaseOnCompletion(ReentrantLock lock, Runnable afterRelease) {
+        Runnable cleanup = () -> {
+            // Releases on STATUS_COMMITTED, STATUS_ROLLED_BACK and STATUS_UNKNOWN.
+            if (lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
+            if (afterRelease != null) {
+                afterRelease.run();
+            }
+        };
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCompletion(int status) {
-                    // Releases on STATUS_COMMITTED, STATUS_ROLLED_BACK and STATUS_UNKNOWN.
-                    if (lock.isHeldByCurrentThread()) {
-                        lock.unlock();
-                    }
+                    cleanup.run();
                 }
             });
         } else {
             // No active transaction; release immediately
-            if (lock.isHeldByCurrentThread()) {
-                lock.unlock();
-            }
+            cleanup.run();
         }
     }
 }

@@ -19,16 +19,20 @@ public class GoogleAuthService {
 
     private volatile GoogleIdTokenVerifier verifier;
 
-    public GoogleIdToken.Payload verifyToken(String token)
-            throws Exception {
+    public GoogleIdToken.Payload verifyToken(String token) {
+        try {
+            GoogleIdToken idToken = getVerifier().verify(token);
 
-        GoogleIdToken idToken = getVerifier().verify(token);
+            if (idToken != null) {
+                return idToken.getPayload();
+            }
 
-        if (idToken != null) {
-            return idToken.getPayload();
+            throw new InvalidGoogleTokenException("Invalid Google token");
+        } catch (InvalidGoogleTokenException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new InvalidGoogleTokenException("Invalid Google token", ex);
         }
-
-        throw new InvalidGoogleTokenException("Invalid Google token");
     }
 
     GoogleIdTokenVerifier getVerifier() {

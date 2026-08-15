@@ -1,8 +1,0 @@
-/* Hardware-accelerated graphics layer promotions (#16598) */
-
-.gpu-isolated-glass-card {
-  isolation: isolate;
-  transform: translate3d(0, 0, 0);
-  backface-visibility: hidden;
-  will-change: transform;
-}

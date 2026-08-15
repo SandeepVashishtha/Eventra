@@ -15,11 +15,14 @@ public interface RegistrationAnalyticsRepository
         extends JpaRepository<EventRegistration, Long> {
 
     // ── Trends — note: field is registeredAt, NOT createdAt ──────────────────
-    // All queries accept a nullable collection of event IDs: null = global,
-    // non-null = restrict to those events (e.g. a caller's accessible events).
+    // Only Hibernate HQL built-ins (YEAR/MONTH/HOUR and CAST to date) are used
+    // below so the same queries run on the default H2 database and on
+    // MySQL/Postgres (#12612). All queries accept a nullable collection of event
+    // IDs: null = global, non-null = restrict to those events (e.g. a caller's
+    // accessible events).
 
     @Query("""
-        SELECT FUNCTION('FORMATDATETIME', r.registeredAt, 'yyyy-MM') AS period,
+        SELECT YEAR(r.registeredAt) * 100 + MONTH(r.registeredAt) AS period,
                COUNT(r) AS regCount
         FROM EventRegistration r
         WHERE r.registeredAt >= :from
@@ -29,19 +32,6 @@ public interface RegistrationAnalyticsRepository
         ORDER BY period ASC
         """)
     List<Object[]> findMonthlyTrend(@Param("from") LocalDateTime from, @Param("eventIds") Collection<Long> eventIds);
-
-    @Query("""
-        SELECT CAST(FUNCTION('YEAR', r.registeredAt) AS int) * 100
-             + CAST(FUNCTION('WEEK', r.registeredAt) AS int) AS period,
-               COUNT(r) AS regCount
-        FROM EventRegistration r
-        WHERE r.registeredAt >= :from
-          AND r.status = 'CONFIRMED'
-          AND (:eventIds IS NULL OR r.event.id IN :eventIds)
-        GROUP BY period
-        ORDER BY period ASC
-        """)
-    List<Object[]> findWeeklyTrend(@Param("from") LocalDateTime from, @Param("eventIds") Collection<Long> eventIds);
 
     @Query("""
         SELECT CAST(r.registeredAt AS date) AS period,
@@ -55,15 +45,16 @@ public interface RegistrationAnalyticsRepository
         """)
     List<Object[]> findDailyTrend(@Param("from") LocalDateTime from, @Param("eventIds") Collection<Long> eventIds);
 
-    // ── Peak registration periods ─────────────────────────────────────────────
+    // ── Peak registration periods — day and hour extracted portably; the
+    //    service derives the weekday (no portable SQL WEEKDAY exists) ─────────
     @Query("""
-        SELECT FUNCTION('DAY_OF_WEEK', r.registeredAt) AS dow,
-               FUNCTION('HOUR', r.registeredAt)      AS hr,
-               COUNT(r)                              AS cnt
+        SELECT CAST(r.registeredAt AS date) AS day,
+               HOUR(r.registeredAt) AS hr,
+               COUNT(r) AS cnt
         FROM EventRegistration r
         WHERE r.status = 'CONFIRMED'
           AND (:eventIds IS NULL OR r.event.id IN :eventIds)
-        GROUP BY dow, hr
+        GROUP BY day, hr
         ORDER BY cnt DESC
         """)
     List<Object[]> findPeakPeriods(@Param("eventIds") Collection<Long> eventIds);

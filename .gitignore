@@ -1,50 +1,41 @@
-.idea
-.vscode
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-node_modules
-build/
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
 .DS_Store
-.agents
-skills-lock.json
+*.pem
 
-# Secret Files - DO NOT COMMIT
-*.SECRETS.*
-*secrets*
-*.secret
-*.key
-.env
-.env.local
-.env.production
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
 
-/.metadata/
-backend/azure-environment-variables.json
+# env files (can opt-in for committing if needed)
+.env*
 
+# vercel
+.vercel
 
-GITHUB_ISSUE_ASYNC_VALIDATION.md
-PHASE_1_COMPLETION_SUMMARY.md
-PHASE_1_IMPLEMENTATION_GUIDE.md
-PHASE_1_QUICK_REFERENCE.md
-PULL_REQUEST_TEMPLATE_PHASE1.md
-PHASE_2_VALIDATION_UTILITIES.md
-# Dev artifacts & junk files
-*.log
-*.stackdump
-*.txt.bak
-diff.txt
-diff-utf8.txt
-devserver.out.log
-devserver.err.log
-
-*storybook.log
-storybook-static
-.storybook/cache/
-
-# Generated lint reports
-eslint-report.json
-lint_output.txt
-
-# Playwright
-playwright-report/
-test-results/
-playwright/.cache/
-.opencode
+# typescript
+*.tsbuildinfo
+next-env.d.ts
