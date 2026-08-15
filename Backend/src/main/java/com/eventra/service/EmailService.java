@@ -10,11 +10,15 @@ import org.thymeleaf.context.Context;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 @Service
 public class EmailService {
 
     private static final Logger logger = Logger.getLogger(EmailService.class.getName());
+
+    private static final Pattern EMAIL_PATTERN =
+            Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
 
     @Autowired
     private JavaMailSender mailSender;
@@ -23,6 +27,9 @@ public class EmailService {
     private TemplateEngine templateEngine;
 
     public void sendTransactionalEmail(String to, String subject, String title, String recipientName, String messageBody, String actionUrl, String actionText) throws MessagingException {
+        if (to == null || to.isBlank() || !EMAIL_PATTERN.matcher(to).matches()) {
+            throw new IllegalArgumentException("Invalid recipient email address: " + to);
+        }
         Context context = new Context();
         context.setVariable("subject", subject);
         context.setVariable("title", title);
