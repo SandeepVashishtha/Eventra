@@ -50,7 +50,9 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
@@ -437,9 +439,10 @@ public class EventService {
                                 .and(EventSpecifications.eventDateBefore(endDate));
 
                 // Events do not currently model price, so a free filter cannot be applied.
-                // Do not use capacity as a proxy for price.
+                // Reject the unsupported parameter instead of silently returning all events.
                 if (free != null && free) {
-                        // Intentionally no-op until pricing data is available.
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                                "The 'free' filter is not supported: events do not currently model price.");
                 }
 
                 Page<Event> page = eventRepository.findAll(spec, pageable);
