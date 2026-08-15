@@ -22,6 +22,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByEmailOrUsername(String email, String username);
 
+    // GDPR: users who have requested deletion but have not yet been anonymized.
+    List<User> findByDeletionRequestedTrueAndAnonymizedFalse();
+
     boolean existsByEmail(String email);
 
     boolean existsByEmailIgnoreCase(String email);
