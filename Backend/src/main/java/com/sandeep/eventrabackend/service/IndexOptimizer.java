@@ -22,12 +22,20 @@ public class IndexOptimizer {
     }
 
     private String parseTableName(String query) {
-        // Mock parsing table name
-        return "event_registrations";
+        // Extract the table referenced after FROM / UPDATE / JOIN.
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
+                "\\b(?:from|update|join)\\s+([a-z_][a-z0-9_]*)",
+                java.util.regex.Pattern.CASE_INSENSITIVE);
+        java.util.regex.Matcher matcher = pattern.matcher(query);
+        return matcher.find() ? matcher.group(1) : "unknown";
     }
 
     private String parseColumnName(String query) {
-        // Mock parsing column name
-        return "user_id";
+        // Extract the column compared in the WHERE clause (e.g. WHERE col = ?).
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
+                "\\bwhere\\s+([a-z_][a-z0-9_]*)\\s*=",
+                java.util.regex.Pattern.CASE_INSENSITIVE);
+        java.util.regex.Matcher matcher = pattern.matcher(query);
+        return matcher.find() ? matcher.group(1) : "unknown";
     }
 }
