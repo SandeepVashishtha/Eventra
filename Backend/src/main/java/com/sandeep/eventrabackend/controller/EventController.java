@@ -184,14 +184,13 @@ public class EventController {
                         @Parameter(description = "Event category for filtering") @RequestParam(required = false) String category,
                         @Parameter(description = "Start date for filtering (ISO format)") @RequestParam(required = false) String startDate,
                         @Parameter(description = "End date for filtering (ISO format)") @RequestParam(required = false) String endDate,
-                        @Parameter(description = "Filter for free events only") @RequestParam(required = false) Boolean free,
                         @Parameter(description = "Page number (0-based)") @RequestParam(defaultValue = "0") int page,
                         @Parameter(description = "Page size") @RequestParam(defaultValue = "20") int size) {
 
                 int clampedSize = Math.min(Math.max(size, 1), 100);
                 int safePage = Math.max(page, 0);
                 Pageable pageable = PageRequest.of(safePage, clampedSize);
-                Page<EventResponse> events = eventService.searchEvents(search, category, startDate, endDate, free,
+                Page<EventResponse> events = eventService.searchEvents(search, category, startDate, endDate,
                                 pageable);
                 return ResponseEntity.ok(events);
         }

@@ -421,12 +421,11 @@ public class EventService {
          * @param category  Event category for filtering
          * @param startDate Start date for filtering (ISO format)
          * @param endDate   End date for filtering (ISO format)
-         * @param free      Filter for free events only
          * @return List of events matching the search criteria
          */
         @Transactional(readOnly = true)
         public Page<EventResponse> searchEvents(String search, String category, String startDate, String endDate,
-                        Boolean free, Pageable pageable) {
+                        Pageable pageable) {
                 // Push all filtering down to the database via a dynamic Specification.
                 Specification<Event> spec = Specification
                                 .where(EventSpecifications.isPublic())
@@ -436,11 +435,8 @@ public class EventService {
                                 .and(EventSpecifications.eventDateAfter(startDate))
                                 .and(EventSpecifications.eventDateBefore(endDate));
 
-                // Events do not currently model price, so a free filter cannot be applied.
-                // Do not use capacity as a proxy for price.
-                if (free != null && free) {
-                        // Intentionally no-op until pricing data is available.
-                }
+                // Events do not currently model price, so a "free" filter cannot be applied.
+                // The parameter was removed to avoid silently returning unfiltered results.
 
                 Page<Event> page = eventRepository.findAll(spec, pageable);
                 return page.map(this::toPublicEventResponse);
