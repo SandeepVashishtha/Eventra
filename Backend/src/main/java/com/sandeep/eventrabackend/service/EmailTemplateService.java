@@ -59,8 +59,10 @@ public class EmailTemplateService {
             // Send the email using the email sender. The recipient is pinned to
             // the authenticated organizer — request.getRecipientEmail() is never
             // trusted, preventing arbitrary-recipient phishing relays.
+            // Both header-derived values (recipient + subject) are sanitized to
+            // strip CR/LF and prevent email header injection (#18804).
             String messageId = emailSender.sendEmail(
-                    organizerEmail,
+                    sanitizeHeaderValue(organizerEmail),
                     subject,
                     renderedContent,
                     true // isHtml
@@ -264,11 +266,21 @@ public class EmailTemplateService {
     }
 
     /**
+     * Sanitize a value destined for an email header (e.g. Subject, recipient name)
+     * so that CR/LF sequences cannot be interpreted as header separators and used
+     * for header injection. The body is HTML-escaped separately.
+     */
+    private static String sanitizeHeaderValue(String v) {
+        return v == null ? "" : v.replaceAll("[\r\n]+", " ").trim();
+    }
+
+    /**
      * Generate subject based on template type
      */
     private String generateSubject(String templateType, Map<String, Object> event) {
-        String eventTitle = event != null ? String.valueOf(event.getOrDefault("title", "Event")) : "Event";
-        
+        String eventTitle = sanitizeHeaderValue(
+                event != null ? String.valueOf(event.getOrDefault("title", "Event")) : "Event");
+
         switch (templateType) {
             case "waitlist_promotion":
                 return "Good News! You've been promoted from the waitlist for " + eventTitle;
