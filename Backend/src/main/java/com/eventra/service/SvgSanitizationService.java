@@ -81,7 +81,9 @@ public class SvgSanitizationService {
 
             sanitizeNode(doc, root);
 
-            Transformer transformer = TransformerFactory.newInstance().newTransformer();
+            TransformerFactory tf = TransformerFactory.newInstance();
+            tf.setFeature(javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            Transformer transformer = tf.newTransformer();
             transformer.setOutputProperty(OutputKeys.ENCODING, StandardCharsets.UTF_8.name());
             transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
             StringWriter writer = new StringWriter();
