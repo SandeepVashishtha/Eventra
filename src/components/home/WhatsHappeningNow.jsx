@@ -27,6 +27,7 @@ export default function WhatsHappeningNow() {
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isAutoplay, setIsAutoplay] = useState(true);
+  const [isHovering, setIsHovering] = useState(false);
 
   const [events, setEvents] = useState([]);
   const [hackathons, setHackathons] = useState([]);
@@ -107,7 +108,7 @@ export default function WhatsHappeningNow() {
   };
 
   useEffect(() => {
-    if (!isAutoplay || loading || carouselItems.length === 0 || drawerState.isOpen) return;
+    if (!isAutoplay || isHovering || loading || carouselItems.length === 0 || drawerState.isOpen) return;
 
     const interval = setInterval(() => {
       if (!carouselRef.current) return;
@@ -123,7 +124,7 @@ export default function WhatsHappeningNow() {
     }, 3200);
 
     return () => clearInterval(interval);
-  }, [isAutoplay, loading, carouselItems.length, drawerState.isOpen]);
+  }, [isAutoplay, isHovering, loading, carouselItems.length, drawerState.isOpen]);
 
   const openItemDrawer = (itemType, itemData) => {
     setDrawerState({
@@ -288,8 +289,8 @@ export default function WhatsHappeningNow() {
               ref={carouselRef}
               className="flex items-stretch gap-6 overflow-x-auto scrollbar-none scroll-smooth pb-4 pt-1 snap-x snap-mandatory"
               style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-              onMouseEnter={() => setIsAutoplay(false)}
-              onMouseLeave={() => setIsAutoplay(true)}
+              onMouseEnter={() => setIsHovering(true)}
+              onMouseLeave={() => setIsHovering(false)}
             >
               {carouselItems.map((item) => (
                 <div
