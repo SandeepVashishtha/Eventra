@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
+
 @RestController
 @RequestMapping("/api/contact")
 @RequiredArgsConstructor
@@ -40,7 +42,16 @@ public class ContactController {
             @ApiResponse(responseCode = "429", description = "Too many requests",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    public ResponseEntity<ContactResponse> submitContactMessage(@Valid @RequestBody ContactRequest request) {
+    public ResponseEntity<?> submitContactMessage(@Valid @RequestBody(required = false) ContactRequest request) {
+        if (request == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    ErrorResponse.builder()
+                            .status(HttpStatus.BAD_REQUEST.value())
+                            .error("Bad Request")
+                            .message("Request body is required")
+                            .timestamp(LocalDateTime.now())
+                            .build());
+        }
         ContactResponse response = contactService.submitContactMessage(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
