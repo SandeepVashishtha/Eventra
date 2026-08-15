@@ -89,10 +89,18 @@ public class AttachmentUploadController {
      * Checks both the original filename and the content type for consistency.
      */
     private boolean hasAllowedExtension(String filename) {
-        if (filename == null) {
+        if (filename == null || filename.isBlank()) {
             return false;
         }
         String lowerFilename = filename.toLowerCase();
+        // Reject path traversal: do not allow directory separators or parent-directory
+        // sequences, which could otherwise bypass the extension check and create
+        // inconsistencies between validation and later filesystem handling.
+        if (lowerFilename.indexOf('/') != -1
+                || lowerFilename.indexOf('\\') != -1
+                || lowerFilename.contains("..")) {
+            return false;
+        }
         return ALLOWED_EXTENSIONS.stream().anyMatch(lowerFilename::endsWith);
     }
 }
