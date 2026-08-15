@@ -257,6 +257,19 @@ public class NotificationController {
             @Valid @RequestBody SaveTemplateRequest request,
             Authentication authentication) {
         String organizerEmail = authentication.getName();
+
+        long eventId;
+        try {
+            eventId = Long.parseLong(request.getEventId());
+        } catch (NumberFormatException ex) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        // The caller must be an organizer of the specific event (or a platform
+        // admin / legacy owner). Platform authentication alone must not grant
+        // the ability to save templates for arbitrary events (#17849).
+        eventRoleService.requireRole(eventId, organizerEmail, EventRole.ORGANIZER);
+
         return ResponseEntity.ok(emailTemplateService.saveTemplate(request, organizerEmail));
     }
 
@@ -289,6 +302,19 @@ public class NotificationController {
             @PathVariable String templateType,
             Authentication authentication) {
         String organizerEmail = authentication.getName();
+
+        long parsedEventId;
+        try {
+            parsedEventId = Long.parseLong(eventId);
+        } catch (NumberFormatException ex) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        // The caller must be an organizer of the specific event (or a platform
+        // admin / legacy owner). Platform authentication alone must not grant
+        // the ability to read templates for arbitrary events (#17849).
+        eventRoleService.requireRole(parsedEventId, organizerEmail, EventRole.ORGANIZER);
+
         return ResponseEntity.ok(emailTemplateService.getTemplate(String.valueOf(eventId), templateType, organizerEmail));
     }
 }
