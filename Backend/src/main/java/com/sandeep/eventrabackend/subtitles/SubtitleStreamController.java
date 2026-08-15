@@ -275,62 +275,156 @@ public class SubtitleStreamController {
     }
     
     /**
-     * Send a subtitle via SSE
+     * Send a subtitle via SSE.
+     *
+     * @return {@code true} if the subtitle was sent successfully, {@code false}
+     *         if the underlying connection failed (the caller is then
+     *         responsible for evicting the dead emitter).
      */
-    public void sendSubtitle(SseEmitter emitter, Subtitle subtitle, String eventName) {
+    public boolean sendSubtitle(SseEmitter emitter, Subtitle subtitle, String eventName) {
         try {
             SubtitleDTO dto = SubtitleDTO.fromEntity(subtitle);
             emitter.send(SseEmitter.event()
                     .name(eventName)
                     .data(dto));
+            return true;
         } catch (IOException e) {
             log.error("Error sending subtitle via SSE: {}", e.getMessage());
+            return false;
         }
     }
-    
+
+    /**
+     * Evict a dead event emitter: complete it with an error and remove it from
+     * the registry so subsequent broadcasts stop writing to a broken socket.
+     */
+    private void evictEventEmitter(Long eventId, SseEmitter emitter) {
+        try {
+            emitter.completeWithError(new IOException("Subtitle SSE emitter is dead"));
+        } catch (Exception ignored) {
+            // best effort
+        }
+        unregisterEventEmitter(eventId, emitter);
+    }
+
+    /**
+     * Evict a dead session emitter.
+     */
+    private void evictSessionEmitter(String sessionId, SseEmitter emitter) {
+        try {
+            emitter.completeWithError(new IOException("Subtitle SSE emitter is dead"));
+        } catch (Exception ignored) {
+            // best effort
+        }
+        unregisterSessionEmitter(sessionId, emitter);
+    }
+
     /**
      * Broadcast a subtitle to all clients subscribed to an event
      */
     public void broadcastToEvent(Long eventId, Subtitle subtitle) {
         Map<SseEmitter, String> emitters = eventEmitters.get(eventId);
         if (emitters != null) {
+            Set<SseEmitter> failed = new HashSet<>();
             emitters.forEach((emitter, language) -> {
                 if (language == null || language.equalsIgnoreCase(subtitle.getTargetLanguage())) {
-                    sendSubtitle(emitter, subtitle, "subtitle");
+                    if (!sendSubtitle(emitter, subtitle, "subtitle")) {
+                        failed.add(emitter);
+                    }
                 }
             });
+            failed.forEach(emitter -> evictEventEmitter(eventId, emitter));
         }
     }
-    
+
     /**
      * Broadcast a subtitle to all clients subscribed to a session
      */
     public void broadcastToSession(String sessionId, Subtitle subtitle) {
         List<SseEmitter> emitters = sessionEmitters.get(sessionId);
         if (emitters != null) {
-            emitters.forEach(emitter -> sendSubtitle(emitter, subtitle, "subtitle"));
+            Set<SseEmitter> failed = new HashSet<>();
+            emitters.forEach(emitter -> {
+                if (!sendSubtitle(emitter, subtitle, "subtitle")) {
+                    failed.add(emitter);
+                }
+            });
+            failed.forEach(emitter -> evictSessionEmitter(sessionId, emitter));
         }
     }
-    
+
     /**
      * Broadcast an event to all clients subscribed to an event
      */
     public void broadcastEvent(Long eventId, String eventName, Object data) {
         Map<SseEmitter, String> emitters = eventEmitters.get(eventId);
         if (emitters != null) {
+            Set<SseEmitter> failed = new HashSet<>();
             emitters.keySet().forEach(emitter -> {
                 try {
                     emitter.send(SseEmitter.event()
                             .name(eventName)
                             .data(data));
                 } catch (IOException e) {
-                    log.error("Error broadcasting event {} to event {}: {}", 
+                    log.error("Error broadcasting event {} to event {}: {}",
                             eventName, eventId, e.getMessage());
+                    failed.add(emitter);
                 }
             });
+            failed.forEach(emitter -> evictEventEmitter(eventId, emitter));
         }
     }
     
+    /**
+     * Periodic heartbeat that pings every active emitter and evicts any that
+     * can no longer be written to, so half-open connections behind proxies are
+     * detected well before the 1-hour SSE timeout (issue #19038).
+     */
+    @Scheduled(fixedDelay = 30000)
+    public void heartbeat() {
+        for (Long eventId : new ArrayList<>(eventEmitters.keySet())) {
+            Map<SseEmitter, String> emitters = eventEmitters.get(eventId);
+            if (emitters == null) {
+                continue;
+            }
+            Set<SseEmitter> failed = new HashSet<>();
+            emitters.forEach((emitter, language) -> {
+                if (!ping(emitter)) {
+                    failed.add(emitter);
+                }
+            });
+            failed.forEach(emitter -> evictEventEmitter(eventId, emitter));
+        }
+        for (String sessionId : new ArrayList<>(sessionEmitters.keySet())) {
+            List<SseEmitter> emitters = sessionEmitters.get(sessionId);
+            if (emitters == null) {
+                continue;
+            }
+            Set<SseEmitter> failed = new HashSet<>();
+            emitters.forEach(emitter -> {
+                if (!ping(emitter)) {
+                    failed.add(emitter);
+                }
+            });
+            failed.forEach(emitter -> evictSessionEmitter(sessionId, emitter));
+        }
+    }
+
+    /**
+     * Send a lightweight ping to keep an SSE connection alive and to detect a
+     * dead client.
+     *
+     * @return {@code true} if the ping was delivered, {@code false} on failure.
+     */
+    private boolean ping(SseEmitter emitter) {
+        try {
+            emitter.send(SseEmitter.event().name("ping").data(""));
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
     /**
      * Get statistics about active connections
      */
