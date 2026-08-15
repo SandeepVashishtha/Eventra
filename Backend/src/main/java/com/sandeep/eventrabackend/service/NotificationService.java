@@ -32,6 +32,9 @@ public class NotificationService {
 
     @Transactional
     public NotificationResponse markAsRead(Long id, String email) {
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("Notification ID must be positive");
+        }
         Notification notification = notificationRepository.findByIdAndUserEmail(id, email)
                 .orElseThrow(() -> new NotificationNotFoundException("Notification not found with id: " + id));
 
@@ -48,6 +51,9 @@ public class NotificationService {
 
     @Transactional
     public void deleteNotification(Long id, String email) {
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("Notification ID must be positive");
+        }
         Notification notification = notificationRepository.findByIdAndUserEmail(id, email)
                 .orElseThrow(() -> new NotificationNotFoundException("Notification not found with id: " + id));
         notificationRepository.delete(notification);

@@ -4,6 +4,7 @@ import com.sandeep.eventrabackend.service.TeamWorkspaceSyncService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,6 +35,11 @@ public class TeamWorkspaceSyncController {
             @RequestParam(required = false) String hackathonId,
             @RequestParam(required = false) String teamId,
             Authentication authentication) {
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new AccessDeniedException("Authentication required for workspace SSE stream.");
+        }
+
         String resolved = teamWorkspaceSyncService.resolveRoomKeyForMember(
                 roomKey, hackathonId, teamId, authentication.getName());
         return teamWorkspaceSyncService.subscribe(resolved);
@@ -46,37 +52,16 @@ public class TeamWorkspaceSyncController {
             @RequestParam(required = false) String teamId,
             @RequestBody(required = false) Map<String, Object> body,
             Authentication authentication) {
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new AccessDeniedException("Authentication required for workspace sync polling.");
+        }
+
         String resolved = teamWorkspaceSyncService.resolveRoomKeyForMember(
                 roomKey, hackathonId, teamId, authentication.getName());
         if (body == null || body.isEmpty()) {
             return ResponseEntity.ok(teamWorkspaceSyncService.snapshot(resolved));
         }
-        return ResponseEntity.ok(teamWorkspaceSyncService.applyUpdate(resolved, body));
-    }
-}
-
-    @GetMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter stream(
-            @RequestParam(required = false) String roomKey,
-            @RequestParam(required = false) String hackathonId,
-            @RequestParam(required = false) String teamId) {
-        String resolved = teamWorkspaceSyncService.resolveRoomKey(roomKey, hackathonId, teamId);
-        teamWorkspaceSyncService.requireReadAccess(resolved);
-        return teamWorkspaceSyncService.subscribe(resolved);
-    }
-
-    @PostMapping
-    public ResponseEntity<Map<String, Object>> pollOrUpdate(
-            @RequestParam(required = false) String roomKey,
-            @RequestParam(required = false) String hackathonId,
-            @RequestParam(required = false) String teamId,
-            @RequestBody(required = false) Map<String, Object> body) {
-        String resolved = teamWorkspaceSyncService.resolveRoomKey(roomKey, hackathonId, teamId);
-        if (body == null || body.isEmpty()) {
-            teamWorkspaceSyncService.requireReadAccess(resolved);
-            return ResponseEntity.ok(teamWorkspaceSyncService.snapshot(resolved));
-        }
-        teamWorkspaceSyncService.requireWriteAccess(resolved);
         return ResponseEntity.ok(teamWorkspaceSyncService.applyUpdate(resolved, body));
     }
 }

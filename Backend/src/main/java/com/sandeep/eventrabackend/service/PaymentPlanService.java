@@ -67,6 +67,14 @@ public class PaymentPlanService {
         if (ticketPrice == null || ticketPrice.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Ticket price must be greater than zero");
         }
+
+        // The registration's ticket price is the source of truth once set:
+        // reject requests that try to change it (e.g. lower it) after creation.
+        if (registration.getTicketPrice() != null
+                && registration.getTicketPrice().compareTo(ticketPrice) != 0) {
+            throw new IllegalArgumentException(
+                    "Ticket price does not match the price set for this registration");
+        }
         
         if (upfrontPercentage == null || upfrontPercentage < 0 || upfrontPercentage > 100) {
             upfrontPercentage = 25; // Default to 25%
@@ -142,7 +150,9 @@ public class PaymentPlanService {
         paymentRepository.save(upfrontPayment);
         
         // Remaining installments
-        long totalDays = java.time.temporal.ChronoUnit.DAYS.between(now.toLocalDate(), eventDate.toLocalDate());
+        long totalDays = eventDate != null
+                ? java.time.temporal.ChronoUnit.DAYS.between(now.toLocalDate(), eventDate.toLocalDate())
+                : 0;
         int numInstallments = paymentPlan.getTotalInstallments() - 1;
 
         // Ensure installments + upfront sum exactly to ticketPrice: the last
@@ -166,7 +176,7 @@ public class PaymentPlanService {
             // the full period without dropping remainder days (proportional spacing).
             long dueDayOffset = (totalDays * (i - 1)) / numInstallments;
             LocalDateTime dueDate = now.plusDays(dueDayOffset);
-            if (dueDate.isAfter(eventDate)) {
+            if (eventDate != null && dueDate.isAfter(eventDate)) {
                 dueDate = eventDate;
             }
             payment.setDueDate(dueDate);
@@ -295,11 +305,7 @@ public class PaymentPlanService {
             payment.setStripeCustomerId(paymentPlan.getStripeCustomerId());
             paymentRepository.save(payment);
         }
-        
-        // Update payment plan with first payment intent
-        paymentPlan.setStripeSubscriptionId(paymentIntent.getId());
-        paymentPlanRepository.save(paymentPlan);
-        
+
         Map<String, String> response = new HashMap<>();
         response.put("paymentIntentId", paymentIntent.getId());
         response.put("clientSecret", paymentIntent.getClientSecret());
@@ -339,8 +345,8 @@ public class PaymentPlanService {
         if ("succeeded".equals(paymentIntent.getStatus())) {
             payment.setStatus("COMPLETED");
             payment.setPaidAt(LocalDateTime.now());
-            payment.setTransactionId(paymentIntent.getCharges().getData().isEmpty() ? 
-                    null : paymentIntent.getCharges().getData().get(0).getId());
+            payment.setTransactionId(paymentIntent.getLatestChargeObject() != null ?
+                    paymentIntent.getLatestChargeObject().getId() : null);
             paymentRepository.save(payment);
             
             // Schedule remaining installments

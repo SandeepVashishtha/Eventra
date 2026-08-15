@@ -1,6 +1,3 @@
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 package com.sandeep.eventrabackend.controller;
 
 import com.sandeep.eventrabackend.dto.request.HackathonCreateRequest;

@@ -204,6 +204,18 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleResourceNotFound(
+            ResourceNotFoundException ex,
+            HttpServletRequest request) {
+        return buildError(
+                HttpStatus.NOT_FOUND,
+                "Not Found",
+                ex.getMessage(),
+                request
+        );
+    }
+
     @ExceptionHandler(ProjectNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleProjectNotFound(
             ProjectNotFoundException ex,
@@ -252,7 +264,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(status).body(response);
     }
 
-    @ExceptionHandler({OptimisticLockException.class, ObjectOptimisticLockingFailureException.class})
+    @ExceptionHandler(OptimisticLockException.class)
     public ResponseEntity<Map<String, Object>> handleOptimisticLockException(Exception ex) {
         Map<String, Object> body = new HashMap<>();
         body.put("timestamp", LocalDateTime.now());

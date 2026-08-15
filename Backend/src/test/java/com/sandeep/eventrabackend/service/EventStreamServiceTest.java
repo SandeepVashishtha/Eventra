@@ -176,7 +176,7 @@ class EventStreamServiceTest {
     }
 
     private static EventAvailabilityResponse availability() {
-        return new EventAvailabilityResponse(100, 10, 90, false, false, null, false);
+        return new EventAvailabilityResponse(100, 10, 90, false, false);
     }
 
     private static void registerEmitter(EventStreamService service, SseEmitter emitter, Long eventId)

@@ -1,5 +1,6 @@
 package com.sandeep.eventrabackend.util;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /**
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Component;
  * Feature: #12139 - "Send Test Email" button for custom notifications
  */
 @Component
+@Slf4j
 public class EmailSender {
 
     /**
@@ -51,14 +53,11 @@ public class EmailSender {
             // - etc.
             
             // Log the email details (for development/debugging)
-            System.out.println("[
-Email Sent] To: " + to + ", Subject: " + subject + 
-                            ", Message ID: " + messageId + 
-                            ", Is HTML: " + isHtml);
+            log.info("Email sent to: {}, subject: {}, messageId: {}, isHtml: {}", to, subject, messageId, isHtml);
             
             return messageId;
         } catch (Exception e) {
-            System.err.println("[Email Error] Failed to send email to " + to + ": " + e.getMessage());
+            log.error("Failed to send email to {}", to, e);
             return null;
         }
     }
