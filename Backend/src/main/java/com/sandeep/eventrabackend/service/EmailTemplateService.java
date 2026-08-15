@@ -268,14 +268,18 @@ public class EmailTemplateService {
      */
     private String generateSubject(String templateType, Map<String, Object> event) {
         String eventTitle = event != null ? String.valueOf(event.getOrDefault("title", "Event")) : "Event";
-        
+        String subject;
         switch (templateType) {
             case "waitlist_promotion":
-                return "Good News! You've been promoted from the waitlist for " + eventTitle;
+                subject = "Good News! You've been promoted from the waitlist for " + eventTitle;
+                break;
             case "cancellation":
             default:
-                return "Event Cancelled: " + eventTitle;
+                subject = "Event Cancelled: " + eventTitle;
+                break;
         }
+        // Strip CR/LF to prevent email header injection from untrusted event titles
+        return subject.replaceAll("[\r\n]", "");
     }
 
     /**

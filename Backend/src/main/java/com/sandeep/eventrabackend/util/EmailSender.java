@@ -1,5 +1,6 @@
 package com.sandeep.eventrabackend.util;
 
+import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -14,6 +15,9 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 public class EmailSender {
+
+    private static final Pattern EMAIL_PATTERN =
+            Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
 
     /**
      * Send an email with the specified parameters
@@ -33,11 +37,18 @@ public class EmailSender {
             if (to == null || to.isBlank()) {
                 throw new IllegalArgumentException("Recipient email cannot be empty");
             }
-            
+
+            if (!EMAIL_PATTERN.matcher(to).matches() || to.chars().anyMatch(c -> c < 0x20)) {
+                throw new IllegalArgumentException("Recipient email is not a valid address");
+            }
+
             if (subject == null || subject.isBlank()) {
                 throw new IllegalArgumentException("Subject cannot be empty");
             }
-            
+
+            // Strip CR/LF to prevent email header injection (e.g. injecting Bcc:)
+            subject = subject.replaceAll("[\r\n]", "");
+
             if (body == null || body.isBlank()) {
                 throw new IllegalArgumentException("Body cannot be empty");
             }
