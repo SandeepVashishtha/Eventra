@@ -1,5 +1,6 @@
 package com.sandeep.eventrabackend.subtitles;
 
+import com.sandeep.eventrabackend.exception.ResourceNotFoundException;
 import com.sandeep.eventrabackend.model.EventRole;
 import com.sandeep.eventrabackend.model.Role;
 import com.sandeep.eventrabackend.model.User;
@@ -361,7 +362,7 @@ public class SubtitleController {
      */
     private void assertCanModifySubtitle(Long subtitleId, Authentication authentication) {
         Subtitle subtitle = subtitleService.getSubtitleById(subtitleId)
-                .orElseThrow(() -> new RuntimeException("Subtitle not found with id: " + subtitleId));
+                .orElseThrow(() -> new ResourceNotFoundException("Subtitle not found with id: " + subtitleId));
         User caller = currentUser(authentication);
         if (isAdmin(caller)) {
             return;
@@ -466,8 +467,8 @@ public class SubtitleController {
     /**
      * Handle not found exceptions
      */
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleResourceNotFound(ResourceNotFoundException ex) {
         Map<String, String> error = new HashMap<>();
         error.put("error", "Not found");
         error.put("message", ex.getMessage());

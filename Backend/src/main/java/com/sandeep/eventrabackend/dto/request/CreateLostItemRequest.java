@@ -1,12 +1,13 @@
 package com.sandeep.eventrabackend.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 
 public class CreateLostItemRequest {
 
-    @NotBlank(message = "Event ID is required")
+    @NotNull(message = "Event ID is required")
     private Long eventId;
 
     @NotBlank(message = "Title is required")
