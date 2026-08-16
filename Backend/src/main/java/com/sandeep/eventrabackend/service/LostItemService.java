@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -99,7 +100,7 @@ public class LostItemService {
                 .orElseThrow(() -> new ResourceNotFoundException("Lost item not found with id: " + id));
         
         // Only allow update by the user who found the item or admin
-        if (lostItem.getFoundBy() != null && lostItem.getFoundBy().getId() != userId) {
+        if (lostItem.getFoundBy() != null && !Objects.equals(lostItem.getFoundBy().getId(), userId)) {
             throw new RuntimeException("You are not authorized to update this lost item");
         }
         
@@ -170,7 +171,7 @@ public class LostItemService {
                 .orElseThrow(() -> new ResourceNotFoundException("Lost item not found with id: " + id));
         
         // Only allow deletion by the user who found the item or admin
-        if (lostItem.getFoundBy() != null && lostItem.getFoundBy().getId() != userId) {
+        if (lostItem.getFoundBy() != null && !Objects.equals(lostItem.getFoundBy().getId(), userId)) {
             throw new RuntimeException("You are not authorized to delete this lost item");
         }
         
@@ -210,10 +211,10 @@ public class LostItemService {
         
         if (lostItem.getFoundBy() != null) {
             response.setFoundById(lostItem.getFoundBy().getId());
-            response.setFoundByName(lostItem.getFoundBy().getName());
+            response.setFoundByName((lostItem.getFoundBy().getFirstName() + " " + lostItem.getFoundBy().getLastName()).trim());
             response.setFoundByEmail(lostItem.getFoundBy().getEmail());
         }
-        
+
         response.setTitle(lostItem.getTitle());
         response.setDescription(lostItem.getDescription());
         response.setImageUrl(lostItem.getImageUrl());
@@ -224,19 +225,19 @@ public class LostItemService {
         response.setLocationFound(lostItem.getLocationFound());
         response.setContactEmail(lostItem.getContactEmail());
         response.setContactPhone(lostItem.getContactPhone());
-        
+
         if (lostItem.getStatus() != null) {
             response.setStatus(lostItem.getStatus().name());
         }
-        
+
         response.setClaimed(lostItem.isClaimed());
         response.setClaimedById(lostItem.getClaimedById());
-        
+
         if (lostItem.getClaimedById() != null) {
             try {
                 User claimedBy = userRepository.findById(lostItem.getClaimedById()).orElse(null);
                 if (claimedBy != null) {
-                    response.setClaimedByName(claimedBy.getName());
+                    response.setClaimedByName((claimedBy.getFirstName() + " " + claimedBy.getLastName()).trim());
                 }
             } catch (Exception e) {
                 // Ignore if user not found
