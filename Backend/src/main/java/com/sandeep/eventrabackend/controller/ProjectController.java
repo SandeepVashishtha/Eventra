@@ -84,6 +84,9 @@ public class ProjectController {
     public ResponseEntity<ProjectResponse> createProject(
             @Valid @RequestBody ProjectCreateRequest request,
             Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         String userEmail = authentication.getName();
         return ResponseEntity.status(HttpStatus.CREATED).body(projectService.createProject(request, userEmail));
     }
@@ -185,6 +188,9 @@ public class ProjectController {
             @Parameter(description = "ID of the project to upvote")
             @PathVariable Long id,
             Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         return ResponseEntity.ok(projectService.upvoteProject(id, authentication.getName()));
     }
 
@@ -199,6 +205,9 @@ public class ProjectController {
             @Parameter(description = "ID of the project to fork")
             @PathVariable Long id,
             Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(projectService.forkProject(id, authentication.getName()));
     }

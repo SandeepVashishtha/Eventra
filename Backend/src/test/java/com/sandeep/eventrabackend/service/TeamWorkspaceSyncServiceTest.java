@@ -20,6 +20,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
@@ -160,5 +161,71 @@ class TeamWorkspaceSyncServiceTest {
                 () -> service.requireReadAccess("some-arbitrary-room"));
         assertThrows(AccessDeniedException.class,
                 () -> service.requireWriteAccess("some-arbitrary-room"));
+    }
+
+    @Test
+    @DisplayName("resolveRoomKey uses provided roomKey when available")
+    void resolveRoomKeyUsesProvidedKey() {
+        assertEquals("hackathon:10:team:5", service.resolveRoomKey("hackathon:10:team:5", "10", "5"));
+    }
+
+    @Test
+    @DisplayName("resolveRoomKey builds hackathon room prefix with hackathonId and teamId")
+    void resolveRoomKeyWithHackathonAndTeam() {
+        assertEquals("hackathon:10:team:7", service.resolveRoomKey(null, "10", "7"));
+    }
+
+    @Test
+    @DisplayName("resolveRoomKey builds hackathon room prefix with hackathonId only")
+    void resolveRoomKeyWithHackathonOnly() {
+        assertEquals("hackathon:10", service.resolveRoomKey("", "10", null));
+    }
+
+    @Test
+    @DisplayName("resolveRoomKey defaults to user room prefix when caller authenticated")
+    void resolveRoomKeyWithUserPrefix() {
+        authenticateAs("alice@example.com");
+        assertEquals("user:alice@example.com", service.resolveRoomKey(null, null, null));
+    }
+
+    @Test
+    @DisplayName("resolveRoomKey defaults to 'default' when no auth or params")
+    void resolveRoomKeyDefaultFallback() {
+        assertEquals("default", service.resolveRoomKey(null, null, null));
+    }
+
+    @Test
+    @DisplayName("resolveRoomKeyForMember succeeds for registered member (#15367)")
+    void resolveRoomKeyForMemberAllowed() {
+        when(hackathonRegistrationRepository.existsByHackathon_IdAndUser_Email(10L, "alice@example.com"))
+                .thenReturn(true);
+
+        String resolved = service.resolveRoomKeyForMember(null, "10", "7", "alice@example.com");
+        assertEquals("hackathon:10:team:7", resolved);
+    }
+
+    @Test
+    @DisplayName("resolveRoomKeyForMember throws AccessDeniedException for non-member (#15367)")
+    void resolveRoomKeyForMemberDenied() {
+        when(hackathonRegistrationRepository.existsByHackathon_IdAndUser_Email(10L, "bob@example.com"))
+                .thenReturn(false);
+
+        assertThrows(AccessDeniedException.class,
+                () -> service.resolveRoomKeyForMember(null, "10", "7", "bob@example.com"));
+    }
+
+    @Test
+    @DisplayName("resolveRoomKeyForMember throws AccessDeniedException when room key cannot derive hackathon id")
+    void resolveRoomKeyForMemberInvalidRoomKey() {
+        assertThrows(AccessDeniedException.class,
+                () -> service.resolveRoomKeyForMember("invalid-room-key", null, null, "alice@example.com"));
+    }
+
+    @Test
+    @DisplayName("parseHackathonId throws AccessDeniedException for invalid hackathon room key format")
+    void parseHackathonIdInvalidFormat() {
+        authenticateAs("alice@example.com");
+        assertThrows(AccessDeniedException.class,
+                () -> service.requireReadAccess("hackathon:notanumber"));
     }
 }
