@@ -40,6 +40,13 @@ public class EmailTemplateService {
      * an open relay to arbitrary addresses (#16253).</p>
      */
     public TestEmailResponse sendTestEmail(TestEmailRequest request, String organizerEmail) {
+        if (request == null || request.getTemplateType() == null) {
+            throw new IllegalArgumentException("Invalid template type");
+        }
+        String type = request.getTemplateType();
+        if (!type.equals("waitlist_promotion") && !type.equals("cancellation")) {
+            throw new IllegalArgumentException("Invalid template type");
+        }
         try {
             // Replace placeholders in the template with actual data
             String renderedContent = renderTemplate(request.getCustomTemplate(), 

@@ -67,6 +67,7 @@ public class TeamWorkspaceSyncService {
     }
 
     public Map<String, Object> applyUpdate(String roomKey, Map<String, Object> body) {
+        requireWriteAccess(roomKey);
         WorkspaceState room = roomFor(roomKey);
         synchronized (room.lock) {
             if (body != null) {
