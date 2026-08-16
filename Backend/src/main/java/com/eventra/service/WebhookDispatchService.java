@@ -1,5 +1,7 @@
 package com.eventra.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -8,12 +10,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 
 import java.util.Map;
-import java.util.logging.Logger;
 
 @Service
 public class WebhookDispatchService {
 
-    private static final Logger logger = Logger.getLogger(WebhookDispatchService.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(WebhookDispatchService.class);
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Async
@@ -25,9 +26,9 @@ public class WebhookDispatchService {
 
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
             restTemplate.postForEntity(webhookUrl, request, String.class);
-            logger.info("Successfully dispatched webhook notification to: " + webhookUrl);
+            logger.info("Successfully dispatched webhook notification to: {}", webhookUrl);
         } catch (Exception e) {
-            logger.severe("Failed to dispatch webhook to " + webhookUrl + ": " + e.getMessage());
+            logger.error("Failed to dispatch webhook to {}: {}", webhookUrl, e.getMessage(), e);
         }
     }
 }

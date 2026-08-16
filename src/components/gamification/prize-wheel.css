@@ -1,7 +1,0 @@
-.prize-wheel-container {
-  font-family: inherit;
-}
-
-.wheel-canvas {
-  transition: transform 4s cubic-bezier(0.1, 0.8, 0.1, 1);
-}
