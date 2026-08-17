@@ -1,34 +1,5 @@
 package com.sandeep.eventrabackend.config;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tag;
-import io.micrometer.core.instrument.binder.cache.CacheMeterBinder;
-
-import org.aspectj.lang.ProceedingJoinPoint;
-import org.aspectj.lang.annotation.Around;
-import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.reflect.MethodSignature;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.actuate.health.Health;
-import org.springframework.boot.actuate.health.HealthIndicator;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.CachingConfigurerSupport;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.interceptor.CacheErrorHandler;
 import org.springframework.cache.interceptor.KeyGenerator;
@@ -43,45 +14,8 @@ import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.cache.RedisCacheWriter;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.script.DefaultRedisScript;
-import org.springframework.data.redis.core.script.RedisScript;
-import org.springframework.data.redis.listener.ChannelTopic;
-import org.springframework.data.redis.listener.RedisMessageListenerContainer;
-import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
-import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
-import org.springframework.data.redis.serializer.RedisSerializationContext;
-import org.springframework.data.redis.serializer.StringRedisSerializer;
-import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
-import org.springframework.util.DigestUtils;
-import org.springframework.util.StringUtils;
-
-import java.io.Serializable;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-import java.lang.reflect.Method;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
-/**
- * Enterprise-Grade Redis Caching, Observability, Distributed Locking, and Resilience Platform.
- *
- * <p>Provides multi-region cache configuration, graceful fault tolerance, thundering herd protection,
- * distributed rate limiting, pub/sub multi-node cache invalidation, and Micrometer metrics.
- */
 @Configuration
 @EnableCaching
 @EnableAspectJAutoProxy
@@ -109,99 +43,15 @@ public class CacheConfig extends CachingConfigurerSupport {
     // ============================================================================================
 
     @Bean
-    public ObjectMapper redisObjectMapper() {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
-        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        mapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
-        mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
-        mapper.activateDefaultTyping(
-                LaissezFaireSubTypeValidator.instance,
-                ObjectMapper.DefaultTyping.NON_FINAL,
-                JsonTypeInfo.As.PROPERTY
-        );
-        return mapper;
-    }
+    public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
+            .entryTtl(Duration.ofMinutes(10))
+            .disableCachingNullValues();
 
-    @Bean
-    public GenericJackson2JsonRedisSerializer jsonRedisSerializer(ObjectMapper redisObjectMapper) {
-        return new GenericJackson2JsonRedisSerializer(redisObjectMapper);
-    }
-
-    // ============================================================================================
-    // 2. REDIS TEMPLATE BEANS
-    // ============================================================================================
-
-    @Bean
-    public RedisTemplate<String, Object> redisTemplate(
-            RedisConnectionFactory connectionFactory,
-            GenericJackson2JsonRedisSerializer jsonRedisSerializer) {
-        
-        RedisTemplate<String, Object> template = new RedisTemplate<>();
-        template.setConnectionFactory(connectionFactory);
-        
-        StringRedisSerializer stringSerializer = new StringRedisSerializer();
-        template.setKeySerializer(stringSerializer);
-        template.setHashKeySerializer(stringSerializer);
-        template.setValueSerializer(jsonRedisSerializer);
-        template.setHashValueSerializer(jsonRedisSerializer);
-        template.setEnableTransactionSupport(true);
-        template.afterPropertiesSet();
-        return template;
-    }
-
-    @Bean
-    public RedisTemplate<String, CacheInvalidationMessage> invalidationRedisTemplate(
-            RedisConnectionFactory connectionFactory,
-            GenericJackson2JsonRedisSerializer jsonRedisSerializer) {
-        
-        RedisTemplate<String, CacheInvalidationMessage> template = new RedisTemplate<>();
-        template.setConnectionFactory(connectionFactory);
-        template.setKeySerializer(new StringRedisSerializer());
-        template.setValueSerializer(jsonRedisSerializer);
-        template.afterPropertiesSet();
-        return template;
-    }
-
-    // ============================================================================================
-    // 3. PRIMARY REDIS CACHE MANAGER
-    // ============================================================================================
-
-    @Bean
-    @Primary
-    @ConditionalOnProperty(prefix = "spring.cache", name = "type", havingValue = "redis", matchIfMissing = true)
-    public CacheManager cacheManager(
-            RedisConnectionFactory connectionFactory,
-            GenericJackson2JsonRedisSerializer jsonRedisSerializer) {
-
-        RedisCacheConfiguration defaultCacheConfig = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofMinutes(cacheCustomProperties.getDefaultTtlMinutes()))
-                .computePrefixWith(cacheName -> cacheCustomProperties.getKeyPrefix() + ":" + cacheName + ":")
-                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(jsonRedisSerializer));
-
-        if (!cacheCustomProperties.isCacheNullValues()) {
-            defaultCacheConfig = defaultCacheConfig.disableCachingNullValues();
-        }
-
-        Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
-        
-        // Dynamic region allocation with unique TTLs
-        cacheConfigurations.put(CACHE_EVENTS, defaultCacheConfig.entryTtl(Duration.ofMinutes(15)));
-        cacheConfigurations.put(CACHE_HACKATHONS, defaultCacheConfig.entryTtl(Duration.ofMinutes(15)));
-        cacheConfigurations.put(CACHE_LEADERBOARD, defaultCacheConfig.entryTtl(Duration.ofMinutes(5)));
-        cacheConfigurations.put(CACHE_USER_PROFILES, defaultCacheConfig.entryTtl(Duration.ofHours(1)));
-        cacheConfigurations.put(CACHE_ANALYTICS, defaultCacheConfig.entryTtl(Duration.ofHours(6)));
-        cacheConfigurations.put(CACHE_SYSTEM_METRICS, defaultCacheConfig.entryTtl(Duration.ofMinutes(1)));
-
-        RedisCacheWriter cacheWriter = RedisCacheWriter.nonLockingRedisCacheWriter(connectionFactory);
-
-        return RedisCacheManager.builder(cacheWriter)
-                .cacheDefaults(defaultCacheConfig)
-                .withInitialCacheConfigurations(cacheConfigurations)
-                .transactionAware()
-                .build();
+        return RedisCacheManager.builder(connectionFactory)
+            .cacheDefaults(config)
+            .transactionAware()
+            .build();
     }
 
     // ============================================================================================
