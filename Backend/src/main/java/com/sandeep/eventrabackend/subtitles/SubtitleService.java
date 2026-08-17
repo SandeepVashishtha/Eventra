@@ -1,6 +1,7 @@
 package com.sandeep.eventrabackend.subtitles;
 
 import com.sandeep.eventrabackend.websocket.RedisPubSubRelay;
+import com.sandeep.eventrabackend.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -153,7 +154,7 @@ public class SubtitleService {
     @Transactional
     public Subtitle updateSubtitle(Long id, SubtitleDTO subtitleDTO) {
         Subtitle existingSubtitle = subtitleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Subtitle not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Subtitle not found with id: " + id));
         
         // Update fields from DTO
         if (subtitleDTO.getOriginalText() != null) {
@@ -207,7 +208,7 @@ public class SubtitleService {
     @Transactional
     public Subtitle finalizeSubtitle(Long id) {
         Subtitle subtitle = subtitleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Subtitle not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Subtitle not found with id: " + id));
         
         subtitle.setIsFinal(true);
         subtitle = subtitleRepository.save(subtitle);
@@ -303,7 +304,7 @@ public class SubtitleService {
     @Transactional
     public void deleteSubtitle(Long id) {
         Subtitle subtitle = subtitleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Subtitle not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Subtitle not found with id: " + id));
         
         // Remove from cache
         removeFromCache(subtitle);
