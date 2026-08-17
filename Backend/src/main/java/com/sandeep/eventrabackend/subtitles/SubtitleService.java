@@ -1,8 +1,10 @@
 package com.sandeep.eventrabackend.subtitles;
 
+import com.sandeep.eventrabackend.websocket.RedisPubSubRelay;
 import com.sandeep.eventrabackend.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,6 +30,9 @@ import java.util.stream.Collectors;
 public class SubtitleService {
     
     private final SubtitleRepository subtitleRepository;
+    private final ApplicationEventPublisher eventPublisher;
+    private final RedisPubSubRelay redisPubSubRelay;
+
     
     // Configuration values
     @Value("${subtitle.default-duration-ms:5000}")
@@ -85,6 +90,14 @@ public class SubtitleService {
         // Add to cache
         addToCache(subtitle);
         
+        // Publish event for live SSE streaming and pub/sub cluster relay
+        if (eventPublisher != null) {
+            eventPublisher.publishEvent(new SubtitleCreatedEvent(this, subtitle));
+        }
+        if (redisPubSubRelay != null && subtitle.getEventId() != null) {
+            redisPubSubRelay.publishMessage("subtitles:event:" + subtitle.getEventId(), "subtitle_id:" + subtitle.getId());
+        }
+        
         log.info("Created subtitle {} for event {}", subtitle.getId(), subtitle.getEventId());
         
         return subtitle;
@@ -121,6 +134,14 @@ public class SubtitleService {
         // Add to cache and notify session
         addToCache(subtitle);
         notifySessionUpdate(subtitle.getSessionId(), subtitle);
+        
+        // Publish event for live SSE streaming and pub/sub cluster relay
+        if (eventPublisher != null) {
+            eventPublisher.publishEvent(new SubtitleCreatedEvent(this, subtitle));
+        }
+        if (redisPubSubRelay != null && subtitle.getEventId() != null) {
+            redisPubSubRelay.publishMessage("subtitles:event:" + subtitle.getEventId(), "subtitle_id:" + subtitle.getId());
+        }
         
         log.debug("Created real-time subtitle {} for session {}", subtitle.getId(), subtitle.getSessionId());
         
