@@ -245,12 +245,15 @@ public class LiveAudienceService {
             throw new IllegalArgumentException("Voting is paused for this poll");
         }
         User user = getUser(email);
-        if (pollVoteRepository.existsByPollIdAndUserId(pollId, user.getId())) {
-            throw new IllegalArgumentException("You have already voted in this poll");
-        }
         String trimmed = option == null ? "" : option.trim();
         if (!poll.getOptions().contains(trimmed)) {
             throw new IllegalArgumentException("Selected option is not part of this poll");
+        }
+        boolean alreadyVoted = "multiple".equalsIgnoreCase(poll.getType())
+                ? pollVoteRepository.existsByPollIdAndUserIdAndOptionText(pollId, user.getId(), trimmed)
+                : pollVoteRepository.existsByPollIdAndUserId(pollId, user.getId());
+        if (alreadyVoted) {
+            throw new IllegalArgumentException("You have already voted in this poll");
         }
         try {
             // saveAndFlush surfaces a concurrent unique-constraint violation

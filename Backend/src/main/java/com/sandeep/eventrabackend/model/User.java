@@ -35,13 +35,6 @@ public class User {
     @Column(name = "last_name", nullable = false, length = 50)
     private String lastName;
 
-    public String getName() {
-        if (firstName == null && lastName == null) return null;
-        if (firstName == null) return lastName;
-        if (lastName == null) return firstName;
-        return firstName + " " + lastName;
-    }
-
     @Column(nullable = false, unique = true, length = 100)
     private String email;
 
@@ -84,9 +77,16 @@ public class User {
 
     @Convert(converter = JsonMapAttributeConverter.class)
     @Column(name = "preferences", columnDefinition = "TEXT")
+    @Builder.Default
     private Map<String, Object> preferences = new HashMap<>();
 
     public String getName() {
-        return ((firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "")).trim();
+        if (firstName == null && lastName == null) {
+            return username != null ? username : email;
+        }
+        String first = firstName != null ? firstName : "";
+        String last = lastName != null ? lastName : "";
+        String full = (first + " " + last).trim();
+        return full.isEmpty() ? (username != null ? username : email) : full;
     }
 }

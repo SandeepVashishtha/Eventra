@@ -321,6 +321,48 @@ public class LiveAudienceControllerTests {
     }
 
     @Test
+    @DisplayName("POST /polls/{id}/vote — multiple-choice poll permits voting once per option")
+    void testSubmitMultipleChoiceVote() throws Exception {
+        MvcResult created = mockMvc.perform(post("/api/events/{id}/live-audience/polls", eventId)
+                        .with(user(organizerEmail))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                java.util.Map.of(
+                                        "question", "Which topics interest you?",
+                                        "type", "multiple",
+                                        "options", List.of("Java", "Spring", "React")))))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        long pollId = objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asLong();
+
+        // First vote for Java succeeds
+        mockMvc.perform(post("/api/events/{id}/live-audience/polls/{pid}/vote", eventId, pollId)
+                        .with(user(attendeeEmail))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(java.util.Map.of("option", "Java"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.results.Java").value(1))
+                .andExpect(jsonPath("$.results.Spring").value(0));
+
+        // Second vote for Spring by same user succeeds
+        mockMvc.perform(post("/api/events/{id}/live-audience/polls/{pid}/vote", eventId, pollId)
+                        .with(user(attendeeEmail))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(java.util.Map.of("option", "Spring"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.results.Java").value(1))
+                .andExpect(jsonPath("$.results.Spring").value(1));
+
+        // Duplicate vote for Java by same user is rejected
+        mockMvc.perform(post("/api/events/{id}/live-audience/polls/{pid}/vote", eventId, pollId)
+                        .with(user(attendeeEmail))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(java.util.Map.of("option", "Java"))))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     @DisplayName("POST /polls/{id}/status — owner closes poll, votes then rejected")
     void testClosePollBlocksVotes() throws Exception {
         MvcResult created = mockMvc.perform(post("/api/events/{id}/live-audience/polls", eventId)
