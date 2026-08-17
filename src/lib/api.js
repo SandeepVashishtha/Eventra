@@ -18,6 +18,13 @@ async function fetchAPI(endpoint, options = {}) {
       ...options,
     });
 
+    if (res.status === 401 && typeof window !== "undefined") {
+      localStorage.removeItem("eventra_token");
+      localStorage.removeItem("eventra_user");
+      window.location.href = "/login";
+      throw new Error("Session expired. Please log in again.");
+    }
+
     if (!res.ok) {
       let errText = res.statusText;
       try {
