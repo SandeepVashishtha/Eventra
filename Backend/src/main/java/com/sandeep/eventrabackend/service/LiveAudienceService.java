@@ -59,7 +59,7 @@ public class LiveAudienceService {
         requireEventAccess(eventId, email);
         List<LiveAudienceQuestionResponse> questions = getQuestions(eventId, email);
         LiveAudiencePollResponse activePoll = pollRepository
-                .findByEventIdOrderByCreatedAtDesc(eventId)
+                .findByEventIdAndStatusOrderByCreatedAtDesc(eventId, "active")
                 .stream()
                 .findFirst()
                 .map(this::toPollResponse)
@@ -187,6 +187,13 @@ public class LiveAudienceService {
         Map<String, Object> results = new HashMap<>();
         options.forEach(opt -> results.put(opt, 0));
 
+        List<LiveAudiencePoll> priorActivePolls = pollRepository.findByEventIdAndStatusOrderByCreatedAtDesc(eventId, "active");
+        for (LiveAudiencePoll prior : priorActivePolls) {
+            prior.setStatus("closed");
+            prior.setUpdatedAt(LocalDateTime.now());
+            pollRepository.save(prior);
+        }
+
         LiveAudiencePoll poll = LiveAudiencePoll.builder()
                 .eventId(eventId)
                 .question(request.getQuestion().trim())
@@ -209,6 +216,16 @@ public class LiveAudienceService {
             throw new IllegalArgumentException("Poll status must be 'active', 'paused' or 'closed'");
         }
         LiveAudiencePoll poll = requirePoll(eventId, pollId);
+        if ("active".equals(status)) {
+            List<LiveAudiencePoll> priorActivePolls = pollRepository.findByEventIdAndStatusOrderByCreatedAtDesc(eventId, "active");
+            for (LiveAudiencePoll prior : priorActivePolls) {
+                if (!prior.getId().equals(pollId)) {
+                    prior.setStatus("closed");
+                    prior.setUpdatedAt(LocalDateTime.now());
+                    pollRepository.save(prior);
+                }
+            }
+        }
         poll.setStatus(status);
         poll.setUpdatedAt(LocalDateTime.now());
         poll = pollRepository.save(poll);
@@ -317,8 +334,10 @@ public class LiveAudienceService {
     }
 
     private String displayName(User user) {
-        String full = (user.getFirstName() + " " + user.getLastName()).trim();
-        return full.isBlank() ? user.getUsername() : full;
+        String first = user.getFirstName() != null ? user.getFirstName().trim() : "";
+        String last = user.getLastName() != null ? user.getLastName().trim() : "";
+        String full = (first + " " + last).trim();
+        return full.isEmpty() ? user.getUsername() : full;
     }
 
     private LiveAudienceQuestionResponse toQuestionResponse(LiveAudienceQuestion question) {

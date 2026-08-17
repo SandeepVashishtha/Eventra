@@ -536,4 +536,64 @@ public class LiveAudienceControllerTests {
                         .with(user(organizerEmail)))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    @DisplayName("GET initial data — returns null activePoll when current poll is closed (#17869)")
+    void testGetInitialDataReturnsNullWhenPollClosed() throws Exception {
+        MvcResult created = mockMvc.perform(post("/api/events/{id}/live-audience/polls", eventId)
+                        .with(user(organizerEmail))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                java.util.Map.of("question", "Closed poll", "options", List.of("Yes", "No")))))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        long pollId = objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asLong();
+
+        // Close the poll
+        mockMvc.perform(post("/api/events/{id}/live-audience/polls/{pid}/status", eventId, pollId)
+                        .with(user(organizerEmail))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(java.util.Map.of("status", "closed"))))
+                .andExpect(status().isOk());
+
+        // GET initial data should return activePoll = null
+        mockMvc.perform(get("/api/events/{id}/live-audience", eventId)
+                        .with(user(attendeeEmail)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.activePoll").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("POST /polls — creating a new poll retires prior active poll (#17869)")
+    void testCreatePollClosesPreviousActivePoll() throws Exception {
+        MvcResult poll1 = mockMvc.perform(post("/api/events/{id}/live-audience/polls", eventId)
+                        .with(user(organizerEmail))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                java.util.Map.of("question", "First poll", "options", List.of("A", "B")))))
+                .andExpect(status().isCreated())
+                .andReturn();
+        long poll1Id = objectMapper.readTree(poll1.getResponse().getContentAsString()).get("id").asLong();
+
+        MvcResult poll2 = mockMvc.perform(post("/api/events/{id}/live-audience/polls", eventId)
+                        .with(user(organizerEmail))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                java.util.Map.of("question", "Second poll", "options", List.of("X", "Y")))))
+                .andExpect(status().isCreated())
+                .andReturn();
+        long poll2Id = objectMapper.readTree(poll2.getResponse().getContentAsString()).get("id").asLong();
+
+        // Check DB status of poll 1 is closed
+        org.junit.jupiter.api.Assertions.assertEquals("closed", pollRepository.findById(poll1Id).orElseThrow().getStatus());
+        org.junit.jupiter.api.Assertions.assertEquals("active", pollRepository.findById(poll2Id).orElseThrow().getStatus());
+
+        // GET initial data returns poll2 as active
+        mockMvc.perform(get("/api/events/{id}/live-audience", eventId)
+                        .with(user(attendeeEmail)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.activePoll.id").value(poll2Id))
+                .andExpect(jsonPath("$.activePoll.question").value("Second poll"));
+    }
 }
