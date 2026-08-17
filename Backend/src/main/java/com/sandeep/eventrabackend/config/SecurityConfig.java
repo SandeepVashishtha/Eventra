@@ -11,7 +11,7 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -122,9 +122,15 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // Disable CSRF — JWT auth (Bearer or SameSite=None HttpOnly cookie).
-                // Cookie is not readable by JS; SPA uses withCredentials for cookie sessions.
-                .csrf(AbstractHttpConfigurer::disable)
+                // Enable CSRF protection via a cookie-borne token repository.
+                // The auth cookie is intentionally SameSite=None (required for the
+                // cross-site SPA) and HttpOnly, so cross-site requests are still
+                // authenticated by the cookie. Requiring a CSRF token on state-changing
+                // requests prevents forged cross-site mutations. The SPA reads the
+                // XSRF-TOKEN cookie (httpOnly=false) and echoes it as the X-CSRF-Token
+                // header, which is already allowed by the CORS configuration.
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
                 // Disable CORS — open for testing; re-enable before production
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 // Stateless sessions — JWT handles auth
