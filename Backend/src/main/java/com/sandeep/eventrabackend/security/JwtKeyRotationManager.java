@@ -3,13 +3,13 @@ package com.sandeep.eventrabackend.security;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 /**
  * JWT Grace-Period Key Rotation Manager (#14083).
@@ -28,8 +28,8 @@ public class JwtKeyRotationManager {
     private static final int MAX_RETAINED_KEYS = 2;
 
     private final Map<String, SecretKey> keyRing = new ConcurrentHashMap<>();
-    private final Deque<String> keyOrder = new ArrayDeque<>();
-    private String currentKeyId;
+    private final Deque<String> keyOrder = new ConcurrentLinkedDeque<>();
+    private volatile String currentKeyId;
 
     /**
      * Registers {@code secretKey} as the current signing key. The previously
@@ -50,7 +50,9 @@ public class JwtKeyRotationManager {
 
         while (keyOrder.size() > MAX_RETAINED_KEYS) {
             String oldest = keyOrder.removeLast();
-            keyRing.remove(oldest);
+            if (oldest != null) {
+                keyRing.remove(oldest);
+            }
         }
     }
 
@@ -58,7 +60,8 @@ public class JwtKeyRotationManager {
      * @return the current signing key, or {@code null} if none has been registered
      */
     public SecretKey getCurrentKey() {
-        return keyRing.get(currentKeyId);
+        String keyId = currentKeyId;
+        return keyId == null ? null : keyRing.get(keyId);
     }
 
     public String getCurrentKeyId() {
@@ -76,10 +79,11 @@ public class JwtKeyRotationManager {
      * @return the retained grace keys (all keys other than the current one),
      *         ordered from most recently current to oldest
      */
-    public List<SecretKey> getGraceKeys() {
+    public synchronized List<SecretKey> getGraceKeys() {
         List<SecretKey> graceKeys = new ArrayList<>();
+        String currentId = currentKeyId;
         for (String keyId : keyOrder) {
-            if (!keyId.equals(currentKeyId)) {
+            if (currentId == null || !keyId.equals(currentId)) {
                 SecretKey key = keyRing.get(keyId);
                 if (key != null) {
                     graceKeys.add(key);
