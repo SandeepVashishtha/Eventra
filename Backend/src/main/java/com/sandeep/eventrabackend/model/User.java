@@ -35,13 +35,6 @@ public class User {
     @Column(name = "last_name", nullable = false, length = 50)
     private String lastName;
 
-    public String getName() {
-        if (firstName == null && lastName == null) return null;
-        if (firstName == null) return lastName;
-        if (lastName == null) return firstName;
-        return firstName + " " + lastName;
-    }
-
     @Column(nullable = false, unique = true, length = 100)
     private String email;
 
@@ -87,6 +80,9 @@ public class User {
     private Map<String, Object> preferences = new HashMap<>();
 
     public String getName() {
-        return ((firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "")).trim();
+        String first = firstName != null ? firstName.trim() : "";
+        String last = lastName != null ? lastName.trim() : "";
+        String full = (first + " " + last).trim();
+        return full.isEmpty() ? (username != null ? username : email) : full;
     }
 }

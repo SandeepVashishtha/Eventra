@@ -8,7 +8,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/zkp")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "${app.cors.allowed-origins:http://localhost:3000,http://localhost:5173,https://eventra-psi.vercel.app,https://eventra.sandeepvashishtha.in}")
 public class ZkVerificationController {
 
     private final ZkRangeVerifierService verifierService;
@@ -21,6 +21,8 @@ public class ZkVerificationController {
         private String commitment;
         private String proofValue; // Representing verified status range value
         private String salt;
+        private Integer minInclusive;
+        private Integer maxInclusive;
 
         public String getCommitment() { return commitment; }
         public void setCommitment(String commitment) { this.commitment = commitment; }
@@ -30,14 +32,30 @@ public class ZkVerificationController {
 
         public String getSalt() { return salt; }
         public void setSalt(String salt) { this.salt = salt; }
+
+        public Integer getMinInclusive() { return minInclusive; }
+        public void setMinInclusive(Integer minInclusive) { this.minInclusive = minInclusive; }
+
+        public Integer getMaxInclusive() { return maxInclusive; }
+        public void setMaxInclusive(Integer maxInclusive) { this.maxInclusive = maxInclusive; }
     }
 
     @PostMapping("/verify-range")
     public ResponseEntity<Map<String, Object>> verifyRangeProof(@RequestBody ZkProofRequest request) {
+        if (request == null) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("verified", false);
+            errorResponse.put("piiExposed", false);
+            errorResponse.put("attestationStatus", "VERIFICATION_FAILED");
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+
         boolean isValid = verifierService.verifyRangeProof(
                 request.getCommitment(),
                 request.getProofValue(),
-                request.getSalt()
+                request.getSalt(),
+                request.getMinInclusive(),
+                request.getMaxInclusive()
         );
 
         Map<String, Object> response = new HashMap<>();
