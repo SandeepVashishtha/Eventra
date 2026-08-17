@@ -230,6 +230,7 @@ public class NotificationController {
     }
 
     @PostMapping("/save-template")
+    @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN', 'SUPER_ADMIN')")
     @Operation(
             summary = "Save a custom email template",
             description = "Saves a custom email template for an event and template type.",
@@ -257,10 +258,22 @@ public class NotificationController {
             @Valid @RequestBody SaveTemplateRequest request,
             Authentication authentication) {
         String organizerEmail = authentication.getName();
+
+        long eventId;
+        try {
+            eventId = Long.parseLong(request.getEventId());
+        } catch (NumberFormatException ex) {
+            return ResponseEntity.badRequest().body(null);
+        }
+
+        // Only the event organizer (or an admin) may save templates for the event.
+        eventRoleService.requireRole(eventId, organizerEmail, EventRole.ORGANIZER);
+
         return ResponseEntity.ok(emailTemplateService.saveTemplate(request, organizerEmail));
     }
 
     @GetMapping("/templates/{eventId}/{templateType}")
+    @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN', 'SUPER_ADMIN')")
     @Operation(
             summary = "Get a custom email template",
             description = "Retrieves a custom email template for an event and template type.",
@@ -270,6 +283,10 @@ public class NotificationController {
             @ApiResponse(
                     responseCode = "200",
                     description = "Template retrieved successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid event id"
             ),
             @ApiResponse(
                     responseCode = "404",
@@ -289,6 +306,17 @@ public class NotificationController {
             @PathVariable String templateType,
             Authentication authentication) {
         String organizerEmail = authentication.getName();
-        return ResponseEntity.ok(emailTemplateService.getTemplate(String.valueOf(eventId), templateType, organizerEmail));
+
+        long parsedEventId;
+        try {
+            parsedEventId = Long.parseLong(eventId);
+        } catch (NumberFormatException ex) {
+            return ResponseEntity.badRequest().body(null);
+        }
+
+        // Only the event organizer (or an admin) may read templates for the event.
+        eventRoleService.requireRole(parsedEventId, organizerEmail, EventRole.ORGANIZER);
+
+        return ResponseEntity.ok(emailTemplateService.getTemplate(String.valueOf(parsedEventId), templateType, organizerEmail));
     }
 }
