@@ -1,704 +1,233 @@
-# Eventra
+# Eventra - Next.js 16 Frontend Application
 
-Modern event and hackathon platform for communities, organizers, and contributors.
+[![Next.js](https://img.shields.io/badge/Frontend-Next.js%2016-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![Spring Boot](https://img.shields.io/badge/Backend-Spring%20Boot%203-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![Theme](https://img.shields.io/badge/Theme-Forest%20Mint%20(%23f4fbf7)-00b887?style=for-the-badge)](#design-system--theme)
+[![API Status](https://img.shields.io/badge/API-Azure%20Cloud%20Live-0089D6?style=for-the-badge&logo=microsoftazure&logoColor=white)](https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/swagger-ui/index.html)
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![React](https://img.shields.io/badge/React-18.2-blue.svg)](https://react.dev/)
-[![Vite](https://img.shields.io/badge/Vite-8.x-646CFF.svg)](https://vitejs.dev/)
-[![Stars](https://img.shields.io/github/stars/SandeepVashishtha/Eventra?style=flat&color=yellow)](https://github.com/SandeepVashishtha/Eventra/stargazers)
-[![Forks](https://img.shields.io/github/forks/SandeepVashishtha/Eventra?style=flat&color=orange)](https://github.com/SandeepVashishtha/Eventra/forks)
-[![Contributors](https://img.shields.io/github/contributors/SandeepVashishtha/Eventra?style=flat&color=green)](https://github.com/SandeepVashishtha/Eventra/graphs/contributors)
-[![Open Issues](https://img.shields.io/github/issues/SandeepVashishtha/Eventra?style=flat&color=red)](https://github.com/SandeepVashishtha/Eventra/issues)
-[![Open PRs](https://img.shields.io/github/issues-pr/SandeepVashishtha/Eventra?style=flat&color=blue)](https://github.com/SandeepVashishtha/Eventra/pulls)
-[![CI Validation](https://github.com/SandeepVashishtha/Eventra/actions/workflows/ci.yml/badge.svg)](https://github.com/SandeepVashishtha/Eventra/actions/workflows/ci.yml)
-[![Docker Build](https://github.com/SandeepVashishtha/Eventra/actions/workflows/docker-ci.yml/badge.svg)](https://github.com/SandeepVashishtha/Eventra/actions/workflows/docker-ci.yml)
-[![Docker Publish](https://github.com/SandeepVashishtha/Eventra/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/SandeepVashishtha/Eventra/actions/workflows/docker-publish.yml)
-[![Security Validation](https://github.com/SandeepVashishtha/Eventra/actions/workflows/security-ci.yml/badge.svg)](https://github.com/SandeepVashishtha/Eventra/actions/workflows/security-ci.yml)
-[![CodeQL Analysis](https://github.com/SandeepVashishtha/Eventra/actions/workflows/codeql.yml/badge.svg)](https://github.com/SandeepVashishtha/Eventra/actions/workflows/codeql.yml)
-[![Dependency Review](https://github.com/SandeepVashishtha/Eventra/actions/workflows/dependency-review.yml/badge.svg)](https://github.com/SandeepVashishtha/Eventra/actions/workflows/dependency-review.yml)
-[![Markdown Lint](https://github.com/SandeepVashishtha/Eventra/actions/workflows/markdown-lint.yml/badge.svg)](https://github.com/SandeepVashishtha/Eventra/actions/workflows/markdown-lint.yml)
-[![Gitleaks](https://github.com/SandeepVashishtha/Eventra/actions/workflows/gitleaks.yml/badge.svg)](https://github.com/SandeepVashishtha/Eventra/actions/workflows/gitleaks.yml)
+**Eventra** is the Next.js 16 web application interface for the Eventra Platform, seamlessly connected with a Spring Boot 3 REST API backend deployed on Azure Cloud. Built for developers, technical communities, and university chapters to discover tech workshops, join global hackathons, and showcase open-source projects.
 
 ---
-
-## Project Status Notice
-
-🚧 Eventra is actively maintained and welcomes contributions from the open-source community. Please check existing issues before creating new ones and follow the contribution guidelines when submitting pull requests.
-
-## Quick Start
-
-Get Eventra running locally in under a minute:
-
-```bash
-git clone https://github.com/SandeepVashishtha/Eventra.git
-cd Eventra
-npm install
-npm run dev
-```
-
-App runs at `http://localhost:3000`.
-
-> See [Local Development](#local-development) for detailed setup instructions and [Troubleshooting](#-troubleshooting) for common fixes.
-
-## Table of Contents
-
-- [Project Status Notice](#project-status-notice)
-- [Quick Start](#quick-start)
-- [Overview](#overview)
-- [Live Demo](#live-demo)
-- [API Reference](#api-reference)
-- [Architecture & Documentation](#architecture--documentation)
-- [Project Insights](#project-insights)
-- [Features](#features)
-- [Feature Showcase](#feature-showcase)
-- [Key Features](#key-features)
-- [Tech Stack](#tech-stack)
-- [Project Architecture](#project-architecture)
-  - [Frontend–Backend Communication](#frontendbackend-communication)
-  - [Authentication Flow](#authentication-flow)
-  - [Route Protection](#route-protection)
-- [Project Structure](#project-structure)
-- [Prerequisites](#prerequisites)
-- [Local Development](#local-development)
-- [Docker Development](#docker-development)
-- [Troubleshooting](#-troubleshooting)
-- [Environment Variables](#environment-variables)
-- [Available Scripts](#available-scripts)
-- [Testing and Quality](#testing-and-quality)
-- [Deployment](#deployment)
-- [Roadmap](#roadmap)
-- [Documentation](#documentation)
-- [Contributing](#contributing)
-  - [Branch Naming](#branch-naming)
-  - [Commit Conventions](#commit-conventions)
-  - [PR Checklist](#pr-checklist)
-- [License](#license)
-- [Contributors](#contributors)
-- [Maintainers](#maintainers)
-- [Mentor](#mentor)
-- [Star History](#star-history)
-
----
-
-## Overview
-
-Eventra is an open-source frontend application built with React and Vite. It supports event discovery, registration, dashboards, hackathons, collaboration features, feedback flows, and role-based access experiences.
-
-This repository contains the frontend application only. The Spring Boot backend is maintained in a separate repository, and all API traffic is proxied to that backend in production via Vercel rewrites and in local development via the Vite proxy.
-
-- Frontend repo: <https://github.com/SandeepVashishtha/Eventra>
-- Backend repo: <https://github.com/SandeepVashishtha/Eventra-Backend>
-- Backend API base: <https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net>
-- Swagger: <https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/swagger-ui/index.html>
-
-## Feature Showcase
-
-Eventra brings together event discovery, hackathon management, and community collaboration in a single platform:
-
-- **Event Management** — Browse, filter, and register for events with detailed views and scheduling.
-- **Hackathon Platform** — Dedicated hackathon section with team formation, submissions, and judging workflows.
-- **User Dashboard** — Track your contributions, achievements, points, and program progress with GSSoC integration.
-- **Organizer Dashboard** — Create and manage events, view registrations, and engage with attendees.
-- **Authentication** — Auth-aware routing with protected pages, role-based access, and session management.
-- **Notifications** — Real-time and offline-friendly notification system with SSE support.
-- **Feedback System** — Rate and review events with rich feedback forms and moderation.
-
-## 🚀 Quick Links
-
-| Resource               | Link                                                             |
-| ---------------------- | ---------------------------------------------------------------- |
-| 🤝 Contributing Guide  | [CONTRIBUTING.md](CONTRIBUTING.md)                               |
-| 📜 Code of Conduct     | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)                         |
-| ⚙️ Environment Setup   | [docs/ENV_SETUP_GUIDE.md](docs/ENV_SETUP_GUIDE.md)               |
-| 🏗️ Architecture        | [docs/ARCHITECTURE_AND_ROLES.md](docs/ARCHITECTURE_AND_ROLES.md) |
-| 💻 Frontend Onboarding | [docs/frontend-onboarding.md](docs/frontend-onboarding.md)       |
-| 🔒 Security Migration  | [docs/SECURITY_MIGRATION.md](docs/SECURITY_MIGRATION.md)         |
-| 📘 API Documentation   | [docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md)           |
-
----
-
-💡 **New contributor?**
-
-Start here:
-
-1. Read the Contributing Guide.
-2. Complete the Environment Setup.
-3. Follow the Frontend Onboarding guide.
-4. Run the project locally using `npm run dev`.
 
 ## Key Features
 
-- Event and hackathon discovery, filtering, and registration flows
-- Auth-aware routes with protected pages and role-aware behavior
-- Dashboard and profile surfaces for users and organizers
-- Real-time and offline-friendly UX utilities
-- Feedback, recommendation, and community engagement modules
-- **Direct Google Sheets export** with OAuth 2.0 authentication for attendee and event data
-- Extensive utility and behavior test coverage
+- **Forest Mint Design System (`#f4fbf7` / `#00b887`)**: Custom aesthetic with dark headers, glassmorphism overlays, subtle micro-animations, and dynamic layout cards.
+- **Global Slide-Over Detail Drawer**: Interactive right-side drawer component powered by React Context (`DrawerContext.jsx`), rendering quick action buttons, detailed agendas, and judging criteria.
+- **Standalone & Drawer Duality**: Seamless transition between slide-over modal previews and full dedicated pages (`/events/[id]`, `/hackathons/[id]`, `/projects/[id]`).
+- **Live Single-Card Step Carousel**: Auto-rotating hero carousel featuring active hackathons and featured community events.
+- **JWT Session Persistence**: Client-side state synchronization with secure localStorage JWT storage (`eventra_token`) and automated user authentication headers.
+- **Personalized User Dashboard (`/dashboard`)**: Full user profile summary, registered events management, upvoted projects tracker, and dynamic profile editing.
 
-## Tech Stack
+---
 
-- React 18.2
-- React Router 7
-- Vite 8
-- Tailwind CSS 4
-- Framer Motion
-- Lucide React
-- Playwright (E2E)
-- ESLint and Prettier
+## Architecture & Visual Diagrams
 
-## Project Architecture
-
-Below is the high-level architecture of Eventra:
+### 1. Frontend System Architecture
 
 ```mermaid
 graph TD
-    Client[Client: React/Vite] --> Assets[Assets: public/]
-    Client --> State[State: Context/Hooks]
-    Client --> Backend[Separate Spring Boot API]
-    Backend --> Azure[Azure Spring Boot]
-    Client -.-> VercelRewrite[Vercel /api/* Rewrite]
-    VercelRewrite --> Backend
-    Client --> Auth[Auth: JWT Middleware]
-    Auth --> Protected[Protected Routes]
-    Protected --> RoleCheck[Role-Based Access]
-    RoleCheck --> OrgDash[Organizer Dashboard]
-    RoleCheck --> UserDash[User Dashboard]
+    classDef client fill:#f4fbf7,stroke:#00b887,stroke-width:2px,color:#09382b;
+    classDef page fill:#ffffff,stroke:#00b887,stroke-width:2px,color:#09382b;
+    classDef context fill:#e6f7f0,stroke:#00b887,stroke-width:2px,color:#09382b;
+    classDef backend fill:#0089D6,stroke:#005a9e,stroke-width:2px,color:#ffffff;
+
+    subgraph ClientBrowser ["Browser UI"]
+        User["User / Developer"]:::client
+    end
+
+    subgraph NextJSApp ["Next.js 16 App Router (src/app)"]
+        RootLayout["Root Layout (layout.jsx)"]:::page
+        LandingPage["Home Landing Page (page.jsx)"]:::page
+        Dashboard["User Dashboard (/dashboard)"]:::page
+        EventsModule["Events Module (/events, /events/[id])"]:::page
+        HackathonsModule["Hackathons Module (/hackathons, /hackathons/[id])"]:::page
+        ProjectsModule["Projects Module (/projects, /projects/[id])"]:::page
+        AuthModule["Auth Pages (/login, /signup)"]:::page
+    end
+
+    subgraph StateManagement ["Application State"]
+        DrawerProvider["Drawer Context Provider (DrawerContext.jsx)"]:::context
+        SlideOverDrawer["Global Detail Drawer (DetailDrawer.jsx)"]:::context
+    end
+
+    subgraph DataLayer ["API Integration Layer"]
+        APIClient["API Client Handler (src/lib/api.js)"]:::context
+        LocalStorage["Browser LocalStorage (JWT Token & Session)"]:::client
+    end
+
+    subgraph RemoteBackend ["Azure Cloud Backend API"]
+        AzureSpring["Azure Spring Boot REST API"]:::backend
+    end
+
+    User --> RootLayout
+    RootLayout --> LandingPage
+    RootLayout --> Dashboard
+    RootLayout --> EventsModule
+    RootLayout --> HackathonsModule
+    RootLayout --> ProjectsModule
+    RootLayout --> AuthModule
+
+    LandingPage --> DrawerProvider
+    EventsModule --> DrawerProvider
+    HackathonsModule --> DrawerProvider
+    ProjectsModule --> DrawerProvider
+    
+    DrawerProvider --> SlideOverDrawer
+    RootLayout --> APIClient
+    APIClient <--> LocalStorage
+    APIClient -->|Bearer JWT HTTP Requests| AzureSpring
 ```
 
-### Frontend–Backend Communication
+---
 
-- The React app communicates with the separate Spring Boot backend via REST API calls.
-- In production, `/api/*` requests are rewritten to the Azure-hosted backend via Vercel rewrites.
-- In development, Vite proxies API calls to `http://localhost:8080` (see `vite.config.js`).
-- Backend URL resolution priority: `BACKEND_URL` → `VITE_API_URL` → `REACT_APP_API_URL` (configured in `src/config/backendConfig.js`).
+### 2. Slide-Over Detail Drawer & Navigation Workflow
 
-### Authentication Flow
+```mermaid
+flowchart TD
+    classDef action fill:#ffffff,stroke:#00b887,stroke-width:2px,color:#09382b;
+    classDef drawer fill:#f4fbf7,stroke:#00b887,stroke-width:2px,color:#09382b;
+    classDef api fill:#0089D6,stroke:#005a9e,color:#ffffff;
 
-- JWT-based authentication handled via Edge Middleware and context providers.
-- Protected routes check for valid tokens before rendering; unauthenticated users are redirected to login.
-- Role-aware behavior distinguishes organizers, contributors, and viewers.
-- The server-side `JWT_SECRET` environment variable is used for token signing and validation.
+    Start(["User Browses Cards (Events / Hackathons / Projects)"]) --> ClickCard["Click Item Card"]:::action
+    ClickCard --> OpenDrawer["openDrawer(type, item) in DrawerContext"]:::drawer
+    OpenDrawer --> SlideIn["Right-Side Detail Drawer Slides Over Screen"]:::drawer
 
-### Route Protection
+    SlideIn --> UserAction{Select Action}
+    
+    UserAction -->|Click 'RSVP / Register'| PerformAPI["Call POST /api/{type}/{id}/register"]:::api
+    PerformAPI --> UpdateUI["Show Green Toast / Success Banner"]:::drawer
+    
+    UserAction -->|Click 'Open Full Page'| FullPage["Navigate to Standalone Page (/events/[id])"]:::action
+    
+    UserAction -->|Click Backdrop / Close 'X'| CloseDrawer["closeDrawer() in DrawerContext"]:::drawer
+    CloseDrawer --> End(["Drawer Retracts Smoothly"])
+```
 
-- Route-level guards in `src/components/` enforce authentication and role requirements.
-- Public routes (home, events, hackathons) are accessible without authentication.
-- Protected routes (dashboards, organizer panels) require a valid JWT and optionally specific roles.
-- Production deployment uses Vercel rewrites and headers for routing and security; there is no local middleware implementation in this repository.
+---
 
-## Project Structure
+### 3. Authentication & Protected API Requests Sequence
 
-text
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Developer / User
+    participant App as Next.js App Router
+    participant Store as Local Storage
+    participant API as API Client (lib/api.js)
+    participant Azure as Azure Spring Boot API
+
+    User->>App: Submits Login Form (/login)
+    App->>API: loginUser(credentials)
+    API->>Azure: POST /api/auth/login
+    
+    alt Login Successful
+        Azure-->>API: 200 OK { token, tokenType: "Bearer", user }
+        API->>Store: Save 'eventra_token' & 'eventra_user'
+        App->>User: Redirect to /dashboard
+        
+        App->>API: fetchUserProfile()
+        API->>Store: Get Bearer Token
+        API->>Azure: GET /api/users/profile (Headers: Authorization: Bearer <token>)
+        Azure-->>API: 200 OK User Profile Data
+        API-->>App: Render Dashboard Details
+    else Login Failed
+        Azure-->>API: 401 Unauthorized / 400 Bad Request
+        API-->>App: Return Error Response
+        App-->>User: Display Toast Error Alert
+    end
+```
+
+---
+
+## Technology Stack
+
+| Category | Technology | Description |
+| :--- | :--- | :--- |
+| **Framework** | Next.js 16 | React framework utilizing App Router & Turbopack |
+| **UI Core** | React 19 & React DOM 19 | Standardized functional components & hooks |
+| **Styling** | Tailwind CSS 4 & PostCSS | Modern utility-first CSS styling engine |
+| **Icons** | Lucide React | Clean, responsive vector icon library |
+| **State Management**| React Context | Global drawer state and overlay management |
+| **API Client** | Native Fetch API (`src/lib/api.js`) | Centralized HTTP wrapper with automatic JWT injection |
+| **Backend Endpoint**| Azure Spring Boot 3 | Hosted cloud REST API service |
+
+---
+
+## Directory Structure
+
+```
 Eventra/
-|-- docs/ # Architecture, env setup, onboarding, security docs
-|-- public/ # Static assets (images, icons, manifests)
-|-- scripts/ # Validation and automation scripts
-|-- src/
-| |-- Pages/ # Route-level pages (Home, Events, Hackathons, Leaderboard, etc.)
-| |-- components/ # Shared and feature components (Navbar, Footer, Cards)
-| |-- context/ # React context providers (Auth, Theme, Toast)
-| |-- hooks/ # Custom React hooks (useCountdown, useOnlineStatus, etc.)
-| |-- utils/ # Utility modules (formatting, validation, helpers)
-| |-- config/ # Runtime/env config helpers (backend URL resolution)
-| |-- App.jsx # Root component with route definitions
-| `-- index.jsx        # Application entry point
-|-- tests/               # Node-based unit/integration tests (Vitest)
-|-- e2e/                 # Playwright end-to-end tests
-|-- vite.config.js       # Vite configuration (aliases, proxy, plugins)
-|-- vercel.json          # Vercel deployment config (rewrites, headers)
-`-- README.md
-
-````
-
-## Prerequisites
-
-- Node.js `>=22.x`
-- npm `>=9.6.4`
-
-## Local Development
-
-1. Clone and install:
-
-```bash
-git clone https://github.com/SandeepVashishtha/Eventra.git
-cd Eventra
-npm install
-````
-
-1. Create your env file:
-
-```bash
-cp .env.example .env
-```
-
-> **Tip:** If your operating system does not support `cp`, copy the file manually or use `copy .env.example .env` on Windows.
-
-1. Start dev server:
-
-npm run dev
-
-App runs at `http://localhost:3000` (configured in `vite.config.js`).
-
-## Common Setup Issues
-
-### Dependency Installation Warnings
-
-Some users may see peer dependency or engine warnings during `npm install`. In most cases, the installation still completes successfully.
-
-If installation fails, try:
-
-```bash
-npm install --legacy-peer-deps
-```
-
-### Port Already in Use
-
-If port `3000` is already occupied, stop the existing process or run:
-
-```bash
-npx kill-port 3000
-```
-
-### Vite Cache Issues
-
-If the frontend shows unexpected build or parsing errors, clear the Vite cache and restart the server:
-
-```bash
-rm -rf node_modules/.vite
-npm run dev
-```
-
-For Windows PowerShell:
-
-```powershell
-Remove-Item -Recurse -Force node_modules/.vite
-npm run dev
-```
-
-### Environment Variable Issues
-
-Make sure `.env` is created correctly from `.env.example` before starting the development server.
-
-## Docker Development
-
-You can run Eventra fully containerized using Docker Compose to ensure a consistent environment:
-
-1. Clone the repository and setup your environment variables:
-
-```bash
-git clone https://github.com/SandeepVashishtha/Eventra.git
-cd Eventra
-cp .env.example .env
-```
-
-1. Start the local development container:
-
-```bash
-docker compose up eventra-dev
-```
-
-The app will be available at `http://localhost:3000` with hot-reloading enabled.
-
-1. Build and test the production container locally:
-
-```bash
-docker compose up --build eventra-prod
-```
-
-The production-optimized build will be served via Nginx at `http://localhost:8080`.
-
-## 🔧 Troubleshooting
-
-If you encounter issues while setting up or running Eventra locally, try the following solutions.
-
-### Missing Environment Variables
-
-If you see an error like:
-
-```text
-%VITE_GOOGLE_CLIENT_ID% is not defined
-```
-
-Ensure your `.env` file contains the required variables and restart the development server after making changes.
-
----
-
-### Dependency Installation Issues
-
-If dependencies fail to install correctly:
-
-```bash
-rm -rf node_modules package-lock.json
-npm install
-```
-
-If peer dependency errors appear on a fresh machine, make sure you are using the Node.js version declared in `package.json` before reinstalling.
-
----
-
-### Vite Development Server Issues
-
-If the development server fails to start:
-
-```bash
-npm run dev
-```
-
-If problems persist, reinstall dependencies and clear the Vite cache:
-
-```bash
-rm -rf node_modules/.vite
-npm run dev
+├── src/
+│   ├── app/
+│   │   ├── dashboard/         # User profile, registered events & activity dashboard
+│   │   ├── events/            # Technical workshops & event listings (+ [id] details)
+│   │   ├── hackathons/        # Global hackathons listing (+ [id] details)
+│   │   ├── projects/          # Open-source projects showcase (+ [id] details)
+│   │   ├── login/             # Login authentication page
+│   │   ├── signup/            # Account registration page
+│   │   ├── globals.css        # Global CSS styles, Tailwind imports & animations
+│   │   ├── layout.jsx         # App shell with Nav, Footer, and DrawerProvider
+│   │   └── page.jsx           # Platform landing page with hero carousel
+│   ├── components/
+│   │   ├── home/              # Carousel, Featured Events, Hero & Workflow
+│   │   └── ui/                # DetailDrawer, EventCard, HackathonCard, ProjectCard
+│   ├── context/
+│   │   └── DrawerContext.jsx  # Context management for slide-over drawer drawer state
+│   └── lib/
+│       └── api.js             # Live API service connector (Azure Spring Boot API)
+├── public/                    # Static images, icons, and assets
+├── jsconfig.json              # Module alias mapping (@/* -> ./src/*)
+├── next.config.ts             # Next.js configuration settings
+├── package.json               # NPM scripts and project dependencies
+└── README.md                  # Frontend documentation
 ```
 
 ---
 
-### JSX Parse Errors
+## Local Development Setup
 
-Errors such as:
+### Prerequisites
 
-- Unexpected token
-- Identifier has already been declared
-- Unterminated JSX
+- **Node.js**: `v18.0.0` or higher
+- **npm**: `v9.0.0` or higher
 
-are commonly caused by:
+### Step-by-Step Setup
 
-- Duplicate imports
-- Duplicate variable declarations
-- Missing closing JSX tags
-- Unclosed braces or parentheses
+1. **Navigate to the frontend directory**:
+   ```bash
+   cd Eventra
+   ```
 
-Review recent changes carefully before running the project again.
+2. **Install dependencies**:
+   ```bash
+   npm install
+   ```
 
----
+3. **Run the development server**:
+   ```bash
+   npm run dev
+   ```
 
-### Port Already in Use
+4. **Access the application**:
+   Open [http://localhost:3000](http://localhost:3000) in your web browser.
 
-If port `3000` is occupied, start the development server on another port:
-
-```bash
-npm run dev -- --port 3001
-```
-
-If Docker is also running, check that `3000` or `8080` is not already bound by another Eventra container before restarting the app.
-
----
-
-### Node.js Version Mismatch
-
-Eventra expects Node.js `22.x`. If you see unexpected install failures, missing globals, or Vite startup errors, verify your runtime first:
-
-```bash
-node -v
-```
-
-If the version does not start with `v22`, switch to Node 22 and reinstall dependencies.
+5. **Build & Test Production Release**:
+   ```bash
+   npm run build
+   npm run start
+   ```
 
 ---
 
-### Windows Setup Notes
+## Live API Integration
 
-On Windows PowerShell, replace Unix-style cleanup commands with:
-
-```powershell
-Remove-Item -Recurse -Force node_modules, package-lock.json
-npm install
-```
-
-If file watching feels unreliable in Docker or on mounted drives, try running `npm run dev` directly outside the container once to confirm the problem is environment-specific.
+- **Backend Base URL**: `https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net`
+- **Interactive OpenAPI Specification**: [Swagger UI Documentation](https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/swagger-ui/index.html)
 
 ---
-
-### API Configuration Mismatch
-
-If the frontend loads but API requests fail, confirm that one of `BACKEND_URL`, `VITE_API_URL`, or `REACT_APP_API_URL` points at a reachable backend. For local development, the default backend origin is `http://localhost:8080`.
-
----
-
-### Still Having Issues?
-
-- Pull the latest changes from the repository.
-- Reinstall dependencies.
-- Review terminal logs for detailed error messages.
-- Open a GitHub issue with reproduction steps if the problem persists.
-
-## Environment Variables
-
-Use `.env.example` as the source of truth. See [docs/ENV_SETUP_GUIDE.md](docs/ENV_SETUP_GUIDE.md) for detailed configuration information.
-
-| Variable                     | Required                      | Purpose                                                       |
-| ---------------------------- | ----------------------------- | ------------------------------------------------------------- |
-| `BACKEND_URL`                | No                            | Backend origin (highest priority, overrides others)           |
-| `VITE_API_URL`               | No                            | Backend API base URL (Vite - preferred)                       |
-| `REACT_APP_API_URL`          | No                            | Backend API base URL (CRA compatibility)                      |
-| `REACT_APP_GITHUB_REPO`      | No                            | Public repo identifier used in metadata                       |
-| `REACT_APP_PUBLIC_URL`       | No                            | Canonical public app URL                                      |
-| `REACT_APP_VAPID_PUBLIC_KEY` | No                            | Public web-push key                                           |
-| `REACT_APP_CSP_REPORT_URI`   | No                            | CSP report endpoint                                           |
-| `REACT_APP_SENTRY_DSN`       | No                            | Sentry browser error reporting DSN, used only in production   |
-| `JWT_SECRET`                 | Yes (server-side)             | JWT signing secret for Edge Middleware auth verification      |
-| `DATABASE_URL`               | Yes (server-side, production) | Database connection URL for persistent authentication storage |
-| `KV_REST_API_URL`            | Yes (server-side, production) | Vercel KV/Redis REST API URL for distributed rate limiting    |
-| `KV_REST_API_TOKEN`          | Yes (server-side, production) | Vercel KV/Redis REST API token for distributed rate limiting  |
-| `BLOCKED_COUNTRIES`          | No (server-side)              | Comma-separated ISO 3166-1 alpha-2 country codes to block     |
-
-Examples:
-
-```env
-VITE_API_URL=https://api.example.com
-```
-
-or:
-
-```env
-BACKEND_URL=https://api.example.com
-```
-
-**Backend Configuration**: All backend endpoint configuration is centralized in `src/config/backendConfig.js`. The system resolves backend URLs in priority order: `BACKEND_URL` → `VITE_API_URL` → `REACT_APP_API_URL`. In development, defaults to `http://localhost:8080`. In production, no automatic fallback - configuration must be explicitly set to avoid configuration drift.
-
-Security note: never place private secrets in `REACT_APP_*` or `VITE_*` variables because they are exposed to the client bundle.
-
-### Geographic Access Restrictions
-
-The Edge Middleware supports configurable country-based access restrictions via the `BLOCKED_COUNTRIES` environment variable. This is a server-side configuration that affects all incoming requests.
-
-**Configuration:**
-
-- Set `BLOCKED_COUNTRIES` to a comma-separated list of two-letter ISO 3166-1 alpha-2 country codes
-- Leave empty to allow access from all countries (default behavior)
-- Country codes are case-insensitive and whitespace is trimmed automatically
-
-**Examples:**
-
-```env
-# Block specific countries
-BLOCKED_COUNTRIES=CU,IR,KP,SY,RU
-
-# Allow all countries (default)
-BLOCKED_COUNTRIES=
-```
-
-**Behavior:**
-
-- Requests from blocked countries receive HTTP 451 (Unavailable For Legal Reasons)
-- Blocked requests are logged with the country code for monitoring
-- Self-hosted deployments can configure this based on their requirements
-- No restrictions are applied when the variable is empty or unset
-
-## Available Scripts
-
-| Command                   | Description                               |
-| ------------------------- | ----------------------------------------- |
-| `npm run dev`             | Start local dev server                    |
-| `npm run start`           | Alias to Vite dev server                  |
-| `npm run build`           | Production build                          |
-| `npm run preview`         | Preview production build locally          |
-| `npm run lint`            | Run ESLint on `src/`                      |
-| `npm run lint:fix`        | Auto-fix lint issues                      |
-| `npm run format`          | Run Prettier on source files              |
-| `npm run test`            | Run unit test suite                       |
-| `npm run test:e2e`        | Run Playwright E2E tests                  |
-| `npm run check`           | Run lint + tests together (CI validation) |
-| `npm run storybook`       | Start Storybook                           |
-| `npm run build-storybook` | Build Storybook static output             |
-
-## Testing and Quality
-
-```bash
-npm run lint
-npm run test
-npm run test:e2e
-```
-
-## Deployment
-
-Vercel configuration is checked in via [`vercel.json`](vercel.json):
-
-- Build command: `npm run lint && GENERATE_SOURCEMAP=false npm run build`
-- Output directory: `build`
-- `/api/*` is rewritten to the hosted Spring Boot backend
-- The repository does not contain a local serverless API or middleware implementation
-
-## Roadmap
-
-### Current Goals
-
-- Expand GSSoC contributor dashboard with real-time leaderboard updates
-- Improve event discovery with advanced filtering and search
-- Enhance organizer tools for event analytics
-
-### Planned Features
-
-- Mobile responsive redesign for core pages
-- Dark mode refinements across all surfaces
-- In-app notification system with email digests
-- Team collaboration features for hackathons
-- Performance optimizations (code splitting, lazy loading)
-
-### Future Improvements
-
-- Progressive Web App (PWA) support
-- Multi-language internationalization (i18n)
-- Integration with calendar apps (Google Calendar, Outlook)
-- Community forums and discussion boards
-
-## Documentation
-
-- [Architecture and Roles](docs/ARCHITECTURE_AND_ROLES.md)
-- [CI/CD Workflow Architecture](docs/ci-cd-architecture.md)
-- [Environment Setup Guide](docs/ENV_SETUP_GUIDE.md)
-- [Frontend Onboarding](docs/frontend-onboarding.md)
-- [Security Migration Notes](docs/SECURITY_MIGRATION.md)
-- [API Documentation Notes](docs/API_DOCUMENTATION.md)
-- Client-side authentication audit logging utilities for development and debugging.
-
-## Contributing
-
-We welcome contributions from the community! Please follow our guidelines to keep the project maintainable.
-
-- Follow [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
-- Issues may be auto-unassigned after inactivity by workflow: [auto-unassign-stale-issues.yml](.github/workflows/auto-unassign-stale-issues.yml)
-
-### Branch Naming
-
-Use descriptive branch names with a type prefix:
-
-| Prefix      | Purpose                   |
-| ----------- | ------------------------- |
-| `fix/`      | Bug fixes                 |
-| `feat/`     | New features              |
-| `docs/`     | Documentation changes     |
-| `refactor/` | Code refactoring          |
-| `chore/`    | Maintenance, dependencies |
-| `test/`     | Test additions or fixes   |
-
-Example: `feat/add-event-filters`, `fix/navbar-overlap`, `docs/update-readme`
-
-### Commit Conventions
-
-Use conventional commit messages:
-
-```
-<type>: <short description>
-
-<optional longer description>
-```
-
-Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`
-
-Examples:
-
-- `feat: add event search with date filters`
-- `fix: resolve navbar overlap on mobile`
-- `docs: update environment setup guide`
-- `refactor: extract common card component`
-
-### PR Checklist
-
-Before opening a pull request:
-
-- [ ] Changes are scoped to a single purpose (one fix or feature per PR)
-- [ ] Code follows existing conventions (linted, formatted)
-- [ ] All tests pass: `npm run check`
-- [ ] New functionality includes tests where applicable
-- [ ] UI changes have been tested in light and dark mode
-- [ ] Commit messages follow conventional format
-- [ ] PR description clearly explains what and why
-
-### CI/CD & Branch Protection
-
-Eventra uses **GitHub Actions** for automated continuous integration on every pull request and push to the `main` branch. The CI pipeline ([`ci.yml`](.github/workflows/ci.yml)) validates that changes are safe to merge by running the following checks:
-
-| Check      | Command                |
-| ---------- | ---------------------- |
-| Linting    | `npm run lint`         |
-| Formatting | `npm run format:check` |
-| Build      | `npm run build:fast`   |
-| Unit tests | `npm test`             |
-
-**Recommended branch protection rules** (configure in _Settings → Branches → Add rule_ for `main`):
-
-- [x] **Require a pull request before merging** — at least 1 review approval.
-- [x] **Require status checks to pass before merging** — select the `Build, Lint & Test` job (the workflow's `build-and-test` job).
-- [x] **Require branches to be up to date** before merging.
-- [x] **Do not allow bypassing the above settings** (admins must also pass CI).
-
-> **For contributors:** Make sure all CI checks pass locally before requesting a review. The [`pull_request_template.md`](.github/pull_request_template.md) includes a checklist to confirm this. New contributors fork the repo and open PRs from their own branches — CI runs automatically on every PR.
 
 ## License
 
-Licensed under Apache 2.0. See [LICENSE](LICENSE).
-
-## Environment Security
-
-See the following guide for securely managing environment variables:
-
-- docs/ENVIRONMENT_SECURITY.md
-
-## Contributors
-
-<p align="left">
-  <a href="https://github.com/SandeepVashishtha/Eventra/graphs/contributors">
-    <img src="https://contrib.rocks/image?repo=SandeepVashishtha/Eventra&max=1000" alt="Contributors" />
-  </a>
-</p>
-
-## Release Management
-
-Eventra uses [Release Drafter](https://github.com/release-drafter/release-drafter) to automate the generation of release notes. When a pull request is merged into the `master` branch, a draft release is automatically created or updated. The draft categorizes merged pull requests based on their labels (e.g., Features, Bug Fixes, Documentation) and acknowledges contributors automatically. Maintainers can review the draft and publish the release with minimal manual effort.
-
-## Deployment Security
-
-Before deploying Eventra, review the deployment checklist:
-
-- docs/SECURE_DEPLOYMENT_CHECKLIST.md
-
-### Software Bill of Materials (SBOM)
-
-Eventra automatically generates a Software Bill of Materials (SBOM) during the CI process for every push to `master` and release. The SBOM is provided in SPDX format and can be found as an attached artifact named `sbom` in the GitHub Actions run summary. This improves our software supply chain transparency and helps identify affected components when new vulnerabilities are disclosed.
-
-### Maintainers
-
-<table>
-<tr>
-<td align="center">
-<a href="https://github.com/sandeepvashishtha">
-  <img src="https://avatars.githubusercontent.com/u/64915843?v=4" height="140px" width="140px" alt="Sandeep">
-</a><br>
-<sub><b>Sandeep Vashishtha</b><br>
-<a href="https://www.linkedin.com/in/sandeepvashishtha/" target="_blank">
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/linkedin/linkedin-original.svg" width="20" height="20" alt="LinkedIn"/>
-</a>
-</sub>
-</td>
-<td align="center">
-<a href="https://github.com/RhythmPahwa14">
-  <img src="https://avatars.githubusercontent.com/u/170720661?v=4" height="140px" width="140px" alt="Rhythm">
-</a><br>
-<sub><b>Rhythm</b><br>
-<a href="https://www.linkedin.com/in/rhythmpahwa14/" target="_blank">
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/linkedin/linkedin-original.svg" width="20" height="20" alt="LinkedIn"/>
-</a>
-</sub>
-</td>
-</tr>
-</table>
-
-## Mentor
-
-Guidance and mentorship for the Eventra project are provided by the project leadership team. Contributors are encouraged to use GitHub Issues and Discussions for questions, suggestions, and collaboration.
-
-## Star History
-
-<a href="https://www.star-history.com/?repos=sandeepvashishtha%2Feventra&type=date&legend=top-left">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=sandeepvashishtha/eventra&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=sandeepvashishtha/eventra&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=sandeepvashishtha/eventra&type=date&legend=top-left" />
- </picture>
-</a>
-
-Built by the Eventra community.
-
----
+This project is open-source under the [MIT License](LICENSE).
