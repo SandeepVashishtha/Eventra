@@ -3,6 +3,7 @@ package com.sandeep.eventrabackend.subtitles;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.Instant;
+import java.util.Objects;
 
 /**
  * Subtitle entity for storing real-time multilingual subtitles
@@ -200,6 +201,22 @@ public class Subtitle {
         this.durationMs = durationMs;
     }
     
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Subtitle subtitle = (Subtitle) o;
+        if (id != null && subtitle.id != null) {
+            return Objects.equals(id, subtitle.id);
+        }
+        return uuid != null && Objects.equals(uuid, subtitle.uuid);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id != null ? id : uuid);
+    }
+
     @Override
     public String toString() {
         return "Subtitle{" +
