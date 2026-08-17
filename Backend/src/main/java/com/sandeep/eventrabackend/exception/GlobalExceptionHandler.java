@@ -28,12 +28,15 @@ public class GlobalExceptionHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    @ExceptionHandler({
+            ObjectOptimisticLockingFailureException.class,
+            OptimisticLockException.class
+    })
     public ResponseEntity<ErrorResponse> handleOptimisticLockingFailure(
-            ObjectOptimisticLockingFailureException ex,
+            Exception ex,
             HttpServletRequest request) {
         return buildError(HttpStatus.CONFLICT, "Conflict", 
-                "The event was updated by another user. Please try again.", request);
+                "The resource was updated concurrently by another user. Please try again.", request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -262,15 +265,5 @@ public class GlobalExceptionHandler {
                 .timestamp(LocalDateTime.now())
                 .build();
         return ResponseEntity.status(status).body(response);
-    }
-
-    @ExceptionHandler(OptimisticLockException.class)
-    public ResponseEntity<Map<String, Object>> handleOptimisticLockException(Exception ex) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", HttpStatus.CONFLICT.value());
-        body.put("error", "Conflict");
-        body.put("message", "Concurrent ticket cancellation detected. Please retry your request.");
-        return new ResponseEntity<>(body, HttpStatus.CONFLICT);
     }
 }
