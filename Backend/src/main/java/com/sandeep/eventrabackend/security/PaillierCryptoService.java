@@ -18,7 +18,7 @@ public class PaillierCryptoService {
      */
     public String addEncrypted(String ciphertext1, String ciphertext2, String modulusN) {
         if (ciphertext1 == null || ciphertext2 == null || modulusN == null) {
-            return "0";
+            throw new IllegalArgumentException("ciphertexts and modulusN are required");
         }
 
         try {
@@ -27,11 +27,16 @@ public class PaillierCryptoService {
             BigInteger n = new BigInteger(modulusN);
             BigInteger nSquare = n.multiply(n);
 
+            if (c1.compareTo(BigInteger.ONE) <= 0 || c1.compareTo(nSquare) >= 0
+                    || c2.compareTo(BigInteger.ONE) <= 0 || c2.compareTo(nSquare) >= 0) {
+                throw new IllegalArgumentException("ciphertext out of range for modulus");
+            }
+
             // E(m1 + m2) = (c1 * c2) mod n^2
             BigInteger sumCiphertext = c1.multiply(c2).mod(nSquare);
             return sumCiphertext.toString();
-        } catch (Exception e) {
-            return "0";
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("ciphertexts and modulusN must be valid integers", e);
         }
     }
 
@@ -40,7 +45,7 @@ public class PaillierCryptoService {
      */
     public String aggregateEncryptedSum(List<String> ciphertexts, String modulusN) {
         if (ciphertexts == null || ciphertexts.isEmpty() || modulusN == null) {
-            return "0";
+            throw new IllegalArgumentException("ciphertexts and modulusN are required");
         }
 
         BigInteger n = new BigInteger(modulusN);
@@ -48,10 +53,16 @@ public class PaillierCryptoService {
         BigInteger result = BigInteger.ONE;
 
         for (String cStr : ciphertexts) {
+            BigInteger c;
             try {
-                BigInteger c = new BigInteger(cStr);
-                result = result.multiply(c).mod(nSquare);
-            } catch (Exception ignored) {}
+                c = new BigInteger(cStr);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("ciphertext must be a valid integer", e);
+            }
+            if (c.compareTo(BigInteger.ONE) <= 0 || c.compareTo(nSquare) >= 0) {
+                throw new IllegalArgumentException("ciphertext out of range for modulus");
+            }
+            result = result.multiply(c).mod(nSquare);
         }
 
         return result.toString();
