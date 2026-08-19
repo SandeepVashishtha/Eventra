@@ -28,8 +28,12 @@ import com.sandeep.eventrabackend.model.EventRole;
 import com.sandeep.eventrabackend.model.EventWaitlist;
 import com.sandeep.eventrabackend.model.Notification;
 import com.sandeep.eventrabackend.model.Role;
+import com.sandeep.eventrabackend.model.Payment;
+import com.sandeep.eventrabackend.model.PaymentPlan;
 import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.EventRegistrationRepository;
+import com.sandeep.eventrabackend.repository.PaymentPlanRepository;
+import com.sandeep.eventrabackend.repository.PaymentRepository;
 import com.sandeep.eventrabackend.repository.EventRepository;
 import com.sandeep.eventrabackend.repository.EventRoleAuditLogRepository;
 import com.sandeep.eventrabackend.repository.EventSpecifications;
@@ -131,6 +135,8 @@ public class EventService {
         private final EventRoleService eventRoleService;
         private final EventStreamService eventStreamService;
         private final StripeService stripeService;
+        private final PaymentPlanRepository paymentPlanRepository;
+        private final PaymentRepository paymentRepository;
 
         public EventService(
                         EventRepository eventRepository,
@@ -143,7 +149,9 @@ public class EventService {
                         UserRepository userRepository,
                         EventRoleService eventRoleService,
                         EventStreamService eventStreamService,
-                        StripeService stripeService) {
+                        StripeService stripeService,
+                        PaymentPlanRepository paymentPlanRepository,
+                        PaymentRepository paymentRepository) {
                 this.eventRepository = eventRepository;
                 this.eventRegistrationRepository = eventRegistrationRepository;
                 this.eventWaitlistRepository = eventWaitlistRepository;
@@ -155,6 +163,8 @@ public class EventService {
                 this.eventRoleService = eventRoleService;
                 this.eventStreamService = eventStreamService;
                 this.stripeService = stripeService;
+                this.paymentPlanRepository = paymentPlanRepository;
+                this.paymentRepository = paymentRepository;
         }
 
         /**
@@ -913,6 +923,48 @@ public class EventService {
                                 .findByEvent_IdAndUser_Email(eventId, userEmail)
                                 .orElseThrow(() -> new RegistrationConflictException(
                                                 "You are not registered for this event."));
+
+                // A paid registration has a PaymentPlan (and Payment rows) with a
+                // non-nullable, non-cascaded FK to the registration. Deleting the
+                // registration first would violate that FK (DataIntegrityViolation)
+                // or orphan the plan/payments with no refund (#19031). Resolve the
+                // plan first: reverse scheduled installments, refund completed
+                // payments where possible, then delete the dependent rows in the
+                // correct order, all within this transaction.
+                paymentPlanRepository.findByRegistration_Id(registration.getId())
+                                .ifPresent(plan -> {
+                                        if (registration.isPaymentCompleted()
+                                                        && registration.getStripePaymentIntentId() != null) {
+                                                try {
+                                                        stripeService.refundPayment(
+                                                                        registration.getStripePaymentIntentId(),
+                                                                        "FULL", null);
+                                                } catch (Exception e) {
+                                                        log.error(
+                                                                        "Failed to refund payment for cancelled registration {}: {}",
+                                                                        registration.getId(),
+                                                                        e.getMessage());
+                                                }
+                                        }
+
+                                        plan.setStatus("CANCELLED");
+                                        plan.setCancelledAt(LocalDateTime.now());
+                                        plan.setCancelledReason("Registration cancelled by user");
+                                        paymentPlanRepository.save(plan);
+
+                                        paymentRepository
+                                                        .findByRegistration_IdAndStatusOrderByInstallmentNumberAsc(
+                                                                        registration.getId(), "PENDING")
+                                                        .forEach(p -> {
+                                                                p.setStatus("CANCELLED");
+                                                                p.setFailedAt(LocalDateTime.now());
+                                                                p.setFailureReason("Registration cancelled by user");
+                                                                paymentRepository.save(p);
+                                                        });
+
+                                        paymentRepository.deleteByRegistration_Id(registration.getId());
+                                        paymentPlanRepository.delete(plan);
+                                });
 
                 eventRegistrationRepository.delete(registration);
                 event.setRegisteredCount((int) eventRegistrationRepository
