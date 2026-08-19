@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { getProjectById, upvoteProject } from "@/lib/api";
 import { CardSkeleton } from "@/components/ui/Skeleton";
+import { sanitizeProfileUrl } from "@/utils/sanitizeProfileUrl";
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -80,6 +81,7 @@ export default function ProjectDetailPage() {
   const thumbnailUrl =
     project.thumbnailUrl ||
     "https://images.unsplash.com/photo-1618401471353-b98afee0b2eb?q=80&w=800&auto=format&fit=crop";
+  const githubUrl = sanitizeProfileUrl(project.githubUrl, "github");
 
   return (
     <main className="min-h-screen bg-[#f4fbf7] text-zinc-900 font-sans py-12">
@@ -197,9 +199,9 @@ export default function ProjectDetailPage() {
                 </button>
 
                 {/* GitHub Repository Link */}
-                {project.githubUrl && (
+                {githubUrl && (
                   <a
-                    href={project.githubUrl}
+                    href={githubUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-full py-3.5 px-6 bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-sm rounded-2xl transition-all flex items-center justify-center gap-2"

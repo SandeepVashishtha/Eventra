@@ -4,6 +4,7 @@ import React from "react";
 import Image from "next/image";
 import { FolderKanban, ThumbsUp, Code2, ArrowUpRight } from "lucide-react";
 import { useDrawer } from "@/context/DrawerContext";
+import { sanitizeProfileUrl } from "@/utils/sanitizeProfileUrl";
 
 export default function ProjectCard({ project, onClick }) {
   const { openDrawer } = useDrawer();
@@ -11,6 +12,7 @@ export default function ProjectCard({ project, onClick }) {
   const thumbnailUrl =
     project?.thumbnailUrl ||
     "https://images.unsplash.com/photo-1618401471353-b98afee0b2eb?q=80&w=800&auto=format&fit=crop";
+  const githubUrl = sanitizeProfileUrl(project?.githubUrl, "github");
 
   const handleCardClick = (e) => {
     e.preventDefault();
@@ -65,9 +67,9 @@ export default function ProjectCard({ project, onClick }) {
       </div>
 
       <div className="px-5 py-3.5 bg-zinc-50/60 border-t border-zinc-100 flex items-center justify-between text-xs">
-        {project?.githubUrl ? (
+        {githubUrl ? (
           <a
-            href={project.githubUrl}
+            href={githubUrl}
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}

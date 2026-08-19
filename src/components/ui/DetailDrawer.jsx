@@ -23,6 +23,7 @@ import {
   ExternalLink
 } from "lucide-react";
 import { registerForEvent, registerForHackathon, upvoteProject } from "@/lib/api";
+import { sanitizeProfileUrl } from "@/utils/sanitizeProfileUrl";
 
 export default function DetailDrawer({ isOpen, onClose, type, data }) {
   const [actionDone, setActionDone] = useState(false);
@@ -43,6 +44,7 @@ export default function DetailDrawer({ isOpen, onClose, type, data }) {
       : type === "hackathon"
       ? `/hackathons/${data.id}`
       : `/projects/${data.id}`;
+  const githubUrl = sanitizeProfileUrl(data.githubUrl, "github");
 
   const formattedDate = data.eventDate
     ? new Date(data.eventDate).toLocaleDateString(undefined, {
@@ -269,10 +271,10 @@ export default function DetailDrawer({ isOpen, onClose, type, data }) {
                 </div>
               )}
 
-              {type === "project" && data.githubUrl && (
+              {type === "project" && githubUrl && (
                 <div className="pt-2">
                   <a
-                    href={data.githubUrl}
+                    href={githubUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-xs rounded-xl transition-all"
