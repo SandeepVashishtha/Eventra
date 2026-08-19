@@ -205,14 +205,32 @@ public class UserProfileUpdateTests {
     }
 
     @Test
-    @DisplayName("PUT /api/users/profile - accepts https social URLs")
-    void testUpdateUserProfile_AcceptsHttpsSocialUrls() throws Exception {
+    @DisplayName("PUT /api/users/profile - rejects case-insensitive username collision (#18842)")
+    void testUpdateUserProfile_CaseInsensitiveUsernameCollision() throws Exception {
         UserProfileUpdateRequest request = UserProfileUpdateRequest.builder()
                 .firstName("John")
                 .lastName("Doe")
-                .username("johndoe")
-                .linkedinUrl("https://www.linkedin.com/in/johndoe")
-                .githubUrl("https://github.com/johndoe")
+                .username("JaneSmith") // differs only in case from janesmith
+                .build();
+
+        mockMvc.perform(put("/api/users/profile")
+                        .with(user("john@example.com"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("Username already exists: janesmith"));
+
+        User user = userRepository.findByEmail("john@example.com").orElseThrow();
+        assertEquals("johndoe", user.getUsername());
+    }
+
+    @Test
+    @DisplayName("PUT /api/users/profile - trims and lowercases the username on update (#18842)")
+    void testUpdateUserProfile_UsernameNormalization() throws Exception {
+        UserProfileUpdateRequest request = UserProfileUpdateRequest.builder()
+                .firstName("John")
+                .lastName("Doe")
+                .username("  Johnny_Up  ")
                 .build();
 
         mockMvc.perform(put("/api/users/profile")
@@ -220,7 +238,28 @@ public class UserProfileUpdateTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.linkedinUrl").value("https://www.linkedin.com/in/johndoe"))
-                .andExpect(jsonPath("$.githubUrl").value("https://github.com/johndoe"));
+                .andExpect(jsonPath("$.username").value("johnny_up"));
+
+        User user = userRepository.findByEmail("john@example.com").orElseThrow();
+        assertEquals("johnny_up", user.getUsername());
+    }
+
+    @Test
+    @DisplayName("PUT /api/users/profile - rejects usernames that fail the username pattern (#18842)")
+    void testUpdateUserProfile_RejectsInvalidUsernameChars() throws Exception {
+        UserProfileUpdateRequest request = UserProfileUpdateRequest.builder()
+                .firstName("John")
+                .lastName("Doe")
+                .username("John Smith") // space is not allowed
+                .build();
+
+        mockMvc.perform(put("/api/users/profile")
+                        .with(user("john@example.com"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+
+        User user = userRepository.findByEmail("john@example.com").orElseThrow();
+        assertEquals("johndoe", user.getUsername());
     }
 }
