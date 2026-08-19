@@ -243,10 +243,18 @@ public class AdminService {
                             + event.getRegisteredCount() + ")");
         }
 
-        event.setTitle(request.getTitle());
-        event.setDescription(request.getDescription());
-        event.setLocation(request.getLocation());
-        event.setEventDate(request.getEventDate());
+        if (request.getTitle() != null) {
+            event.setTitle(request.getTitle());
+        }
+        if (request.getDescription() != null) {
+            event.setDescription(request.getDescription());
+        }
+        if (request.getLocation() != null) {
+            event.setLocation(request.getLocation());
+        }
+        if (request.getEventDate() != null) {
+            event.setEventDate(request.getEventDate());
+        }
         if (request.getCapacity() != null) {
             event.setCapacity(request.getCapacity());
         }
