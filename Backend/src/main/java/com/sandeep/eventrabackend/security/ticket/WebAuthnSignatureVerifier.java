@@ -136,8 +136,13 @@ public class WebAuthnSignatureVerifier {
             @PathVariable String ticketId,
             @RequestParam(required = false) String userEmail) {
         
-        // Use the authenticated user's email if not provided
-        String email = userEmail != null ? userEmail : getCurrentUserEmail();
+        // Always derive the identity from the authenticated session; never trust a caller-supplied email.
+        String email = getCurrentUserEmail();
+        if (email == null || email.isBlank() || "unknown".equals(email)) {
+            return ResponseEntity.status(401).body(
+                Map.of("error", "Authenticated user email is required to generate a challenge")
+            );
+        }
         
         // Clean up expired challenges
         cleanupExpiredChallenges();
@@ -222,6 +227,16 @@ public class WebAuthnSignatureVerifier {
                     new VerificationResponse(false, "Invalid or expired challenge", ticketId, credentialId)
                 );
             }
+
+            // Authorization: the challenge must belong to the authenticated principal.
+            String principalEmail = getCurrentUserEmail();
+            if (principalEmail == null || principalEmail.isBlank() || "unknown".equals(principalEmail)
+                    || !principalEmail.equalsIgnoreCase(challengeEntry.userEmail)) {
+                return ResponseEntity.status(403).body(
+                    new VerificationResponse(false, "Challenge does not belong to the authenticated user",
+                            ticketId, credentialId)
+                );
+            }
             
             // Verify the challenge hasn't expired
             if (challengeEntry.isExpired()) {
@@ -247,7 +262,15 @@ public class WebAuthnSignatureVerifier {
             }
             
             PasskeyCredential credential = credentialOpt.get();
-            
+
+            // Authorization: the credential must be owned by the authenticated principal.
+            if (!credential.getUserEmail().equalsIgnoreCase(principalEmail)) {
+                return ResponseEntity.status(403).body(
+                    new VerificationResponse(false, "Credential is not owned by the authenticated user",
+                            ticketId, credentialId)
+                );
+            }
+
             // Parse the public key
             PublicKey publicKey = parsePublicKey(credential.getPublicKeyPem());
             if (publicKey == null) {
@@ -352,8 +375,13 @@ public class WebAuthnSignatureVerifier {
         
         try {
             String credentialId = getString(request, "credentialId");
-            String userEmail = getString(request, "userEmail") != null ? 
-                getString(request, "userEmail") : getCurrentUserEmail();
+            // Always derive the identity from the authenticated session; never trust a caller-supplied email.
+            String userEmail = getCurrentUserEmail();
+            if (userEmail == null || userEmail.isBlank() || "unknown".equals(userEmail)) {
+                return ResponseEntity.status(401).body(
+                    Map.of("error", "Authenticated user email is required to bind a credential")
+                );
+            }
             
             if (credentialId == null || credentialId.isBlank()) {
                 return ResponseEntity.badRequest().body(
@@ -366,6 +394,14 @@ public class WebAuthnSignatureVerifier {
             if (credentialOpt.isEmpty()) {
                 return ResponseEntity.badRequest().body(
                     Map.of("error", "Credential not found: " + credentialId)
+                );
+            }
+
+            // Authorization: the credential must be owned by the authenticated principal.
+            PasskeyCredential credential = credentialOpt.get();
+            if (!credential.getUserEmail().equalsIgnoreCase(userEmail)) {
+                return ResponseEntity.status(403).body(
+                    Map.of("error", "Credential is not owned by the authenticated user")
                 );
             }
             
