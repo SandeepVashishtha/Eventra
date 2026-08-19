@@ -8,6 +8,11 @@ spring:
     username: ${DB_USERNAME:sa}
     password: ${DB_PASSWORD:}
 
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:oauth2-registered-client-schema.sql
+
   jpa:
     hibernate:
       ddl-auto: update
