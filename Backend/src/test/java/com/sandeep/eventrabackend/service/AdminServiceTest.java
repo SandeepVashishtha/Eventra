@@ -33,7 +33,7 @@ class AdminServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new AdminService(userRepository, null, null, null, null, null, null, null, null, null, null, null, null, null);
+        service = new AdminService(userRepository, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
     }
 
     @AfterEach

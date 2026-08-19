@@ -42,5 +42,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     void deleteByRegistration_Id(Long registrationId);
 
+    void deleteByRegistration_Event_Id(Long eventId);
+
     void deleteByRegistration_User_Id(Long userId);
 }
