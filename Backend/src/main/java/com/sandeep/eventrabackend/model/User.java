@@ -4,7 +4,9 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import com.sandeep.eventrabackend.config.JsonMapAttributeConverter;
@@ -49,6 +51,8 @@ public class User {
     private String username;
 
     @Column(nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private String password;
 
     @Column(name = "profile_headline", length = 160)
