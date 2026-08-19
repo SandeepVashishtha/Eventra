@@ -21,6 +21,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestPropertySource(properties = {
         "app.rate-limit.login.capacity=1",
         "app.rate-limit.login.window=1m",
+        "app.rate-limit.reauth.capacity=1",
+        "app.rate-limit.reauth.window=1m",
         "app.rate-limit.google.capacity=1",
         "app.rate-limit.google.window=1m",
         "app.rate-limit.forgot-password.capacity=1",
@@ -76,8 +78,28 @@ class RateLimitingFilterTests {
     }
 
     @Test
-    void returnsTooManyRequestsWhenGoogleLimitIsExceeded() throws Exception {
+    void returnsTooManyRequestsWhenReauthLimitIsExceeded() throws Exception {
         String clientIp = "203.0.113.20";
+
+        mockMvc.perform(post("/api/auth/reauth")
+                        .header("X-Forwarded-For", clientIp)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"password\":\"x\"}"))
+                .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(post("/api/auth/reauth")
+                        .header("X-Forwarded-For", clientIp)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"password\":\"x\"}"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(header().exists("Retry-After"))
+                .andExpect(jsonPath("$.status", is(429)))
+                .andExpect(jsonPath("$.path", is("/api/auth/reauth")));
+    }
+
+    @Test
+    void returnsTooManyRequestsWhenGoogleLimitIsExceeded() throws Exception {
+        String clientIp = "203.0.113.21";
 
         mockMvc.perform(post("/api/auth/google")
                         .header("X-Forwarded-For", clientIp)

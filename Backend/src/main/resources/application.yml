@@ -18,6 +18,9 @@ app:
     login:
       capacity: ${RATE_LIMIT_LOGIN_CAPACITY:5}
       window: ${RATE_LIMIT_LOGIN_WINDOW:1m}
+    reauth:
+      capacity: ${RATE_LIMIT_REAUTH_CAPACITY:5}
+      window: ${RATE_LIMIT_REAUTH_WINDOW:1m}
     signup:
       capacity: ${RATE_LIMIT_SIGNUP_CAPACITY:3}
       window: ${RATE_LIMIT_SIGNUP_WINDOW:10m}
