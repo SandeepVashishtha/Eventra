@@ -46,10 +46,7 @@ public class PaymentPlanService {
     @Transactional
     public PaymentPlan createPaymentPlan(
             Long registrationId,
-            BigDecimal ticketPrice,
-            String currency,
-            Integer upfrontPercentage,
-            Integer totalInstallments) {
+            BigDecimal ticketPrice) {
         
         // Get registration
         EventRegistration registration = eventRegistrationRepository.findById(registrationId)
@@ -76,13 +73,12 @@ public class PaymentPlanService {
                     "Ticket price does not match the price set for this registration");
         }
         
-        if (upfrontPercentage == null || upfrontPercentage < 0 || upfrontPercentage > 100) {
-            upfrontPercentage = 25; // Default to 25%
+        String currency = "USD";
+        int upfrontPercentage = 25;
+        if (upfrontPercentage < 20 || upfrontPercentage > 100) {
+            throw new IllegalArgumentException("Unsupported upfront percentage");
         }
-        
-        if (totalInstallments == null || totalInstallments < 2) {
-            totalInstallments = 4; // Default to 4 installments (25% + 3 monthly)
-        }
+        int totalInstallments = 4;
         
         // Calculate amounts
         BigDecimal upfrontAmount = ticketPrice.multiply(new BigDecimal(upfrontPercentage))
@@ -94,7 +90,7 @@ public class PaymentPlanService {
         PaymentPlan paymentPlan = new PaymentPlan();
         paymentPlan.setRegistration(registration);
         paymentPlan.setTotalAmount(ticketPrice);
-        paymentPlan.setCurrency(currency != null ? currency : "USD");
+        paymentPlan.setCurrency(currency);
         paymentPlan.setTotalInstallments(totalInstallments);
         paymentPlan.setInstallmentAmount(installmentAmount);
         paymentPlan.setUpfrontPercentage(upfrontPercentage);

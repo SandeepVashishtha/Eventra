@@ -2,6 +2,7 @@ package com.sandeep.eventrabackend.controller;
 
 import com.sandeep.eventrabackend.model.Event;
 import com.sandeep.eventrabackend.model.EventRegistration;
+import com.sandeep.eventrabackend.model.PaymentPlan;
 import com.sandeep.eventrabackend.model.Role;
 import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.EventRegistrationRepository;
@@ -23,6 +24,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -121,7 +123,7 @@ class PaymentAccessControlTests {
         registrationId = registration.getId();
 
         planId = paymentPlanService.createPaymentPlan(
-                registrationId, new BigDecimal("1000.00"), "USD", 25, 4).getId();
+                registrationId, new BigDecimal("1000.00")).getId();
         paymentId = paymentRepository.findByRegistration_IdOrderByInstallmentNumberAsc(registrationId)
                 .get(0)
                 .getId();
@@ -164,6 +166,31 @@ class PaymentAccessControlTests {
                 .andExpect(status().isForbidden());
         mockMvc.perform(get("/api/payments/active/{id}", registrationId).with(user(attackerEmail)))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("Client-supplied currency and installment terms are pinned server-side")
+    void clientCannotChooseCurrencyOrInstallmentTerms() throws Exception {
+        EventRegistration registration = new EventRegistration();
+        registration.setEvent(eventRepository.findAll().iterator().next());
+        registration.setUser(userRepository.findByEmail(attendeeEmail).orElseThrow());
+        registration.setStatus("CONFIRMED");
+        registration = eventRegistrationRepository.save(registration);
+
+        mockMvc.perform(post("/api/payments/plans")
+                        .with(user(attendeeEmail))
+                        .param("registrationId", String.valueOf(registration.getId()))
+                        .param("ticketPrice", "1000.00")
+                        .param("currency", "INR")
+                        .param("upfrontPercentage", "0")
+                        .param("totalInstallments", "10"))
+                .andExpect(status().isOk());
+
+        PaymentPlan plan = paymentPlanRepository.findByRegistration_Id(registration.getId()).orElseThrow();
+        assertEquals("USD", plan.getCurrency());
+        assertEquals(25, plan.getUpfrontPercentage().intValue());
+        assertEquals(4, plan.getTotalInstallments().intValue());
+        assertEquals(0, new BigDecimal("1000.00").compareTo(plan.getTotalAmount()));
     }
 
     @Test
