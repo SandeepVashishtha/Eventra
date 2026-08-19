@@ -3,6 +3,8 @@ package com.sandeep.eventrabackend.controller;
 import com.sandeep.eventrabackend.service.EventStreamService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +25,7 @@ import java.util.Set;
 @Tag(name = "Realtime Streams", description = "Server-Sent Event topics used by the SPA")
 public class StreamController {
 
+    private static final Logger log = LoggerFactory.getLogger(StreamController.class);
     private final EventStreamService eventStreamService;
 
     public StreamController(EventStreamService eventStreamService) {
@@ -47,6 +50,9 @@ public class StreamController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         } catch (IllegalStateException ex) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build();
+        } catch (Exception ex) {
+            log.error("Unexpected error creating SSE emitter for topic: {}", normalized, ex);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 }
