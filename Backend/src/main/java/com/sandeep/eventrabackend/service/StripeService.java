@@ -174,10 +174,20 @@ public class StripeService {
         // Calculate installment amounts
         BigDecimal installmentAmount = paymentPlan.getInstallmentAmount();
         BigDecimal remainingAmount = paymentPlan.getRemainingAmount();
-        
+
         // Convert to cents (Stripe uses smallest currency unit)
         long installmentAmountCents = installmentAmount.multiply(new BigDecimal(100)).longValue();
-        
+
+        // The DB applies a rounding correction to the final installment
+        // (lastInstallmentAmount) so the plan total reconciles exactly. Charge
+        // that corrected amount on the last installment instead of the rounded
+        // per-installment amount, otherwise Stripe totals would not match the
+        // persisted Payment records.
+        int numInstallments = paymentPlan.getTotalInstallments() - 1;
+        BigDecimal lastInstallmentAmount = remainingAmount.subtract(
+                installmentAmount.multiply(new BigDecimal(Math.max(0, numInstallments - 1))));
+        long lastInstallmentCents = lastInstallmentAmount.multiply(new BigDecimal(100)).longValue();
+
         // Create remaining installments (2..N); the upfront payment is created
         // and confirmed separately by PaymentPlanService.
         LocalDateTime eventDate = paymentPlan.getRegistration().getEvent().getEventDate();
@@ -192,9 +202,11 @@ public class StripeService {
             long daysUntilInstallment = (daysBetween / interval) * (i - 1);
             LocalDateTime dueDate = now.plusDays(daysUntilInstallment);
             
+            long amountCents = (i == paymentPlan.getTotalInstallments())
+                    ? lastInstallmentCents : installmentAmountCents;
             PaymentIntent intent = createPaymentIntentWithoutConfirmation(
                     customerId,
-                    installmentAmountCents,
+                    amountCents,
                     paymentPlan.getCurrency().toLowerCase(),
                     "Installment " + i + " of " + paymentPlan.getTotalInstallments() + 
                             " for " + paymentPlan.getRegistration().getEvent().getTitle(),
