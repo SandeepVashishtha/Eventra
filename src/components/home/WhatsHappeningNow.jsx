@@ -27,6 +27,7 @@ export default function WhatsHappeningNow() {
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isAutoplay, setIsAutoplay] = useState(true);
+  const userPausedRef = useRef(false);
 
   const [events, setEvents] = useState([]);
   const [hackathons, setHackathons] = useState([]);
@@ -183,7 +184,11 @@ export default function WhatsHappeningNow() {
             </button>
 
             <button
-              onClick={() => setIsAutoplay(!isAutoplay)}
+              onClick={() => {
+                const next = !isAutoplay;
+                userPausedRef.current = !next;
+                setIsAutoplay(next);
+              }}
               className="p-2 bg-white border border-zinc-200 hover:bg-zinc-50 rounded-xl text-zinc-600 transition-colors shadow-2xs cursor-pointer"
               title={isAutoplay ? "Pause Autoplay" : "Resume Autoplay"}
             >
@@ -289,7 +294,7 @@ export default function WhatsHappeningNow() {
               className="flex items-stretch gap-6 overflow-x-auto scrollbar-none scroll-smooth pb-4 pt-1 snap-x snap-mandatory"
               style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
               onMouseEnter={() => setIsAutoplay(false)}
-              onMouseLeave={() => setIsAutoplay(true)}
+              onMouseLeave={() => setIsAutoplay(!userPausedRef.current)}
             >
               {carouselItems.map((item) => (
                 <div
