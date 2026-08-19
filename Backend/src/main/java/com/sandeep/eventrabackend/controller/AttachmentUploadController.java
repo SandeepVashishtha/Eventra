@@ -86,13 +86,21 @@ public class AttachmentUploadController {
 
     /**
      * Validates that the file has an allowed extension.
-     * Checks both the original filename and the content type for consistency.
+     * Normalizes the filename by stripping directory separators and extracting
+     * only the final path component's extension to prevent path traversal.
      */
     private boolean hasAllowedExtension(String filename) {
-        if (filename == null) {
+        if (filename == null || filename.isBlank()) {
             return false;
         }
-        String lowerFilename = filename.toLowerCase();
-        return ALLOWED_EXTENSIONS.stream().anyMatch(lowerFilename::endsWith);
+        // Strip directory separators and extract the actual filename
+        String normalized = filename.replace('\\', '/');
+        int lastSlash = normalized.lastIndexOf('/');
+        String basename = lastSlash >= 0 ? normalized.substring(lastSlash + 1) : normalized;
+        if (basename.isBlank()) {
+            return false;
+        }
+        String lowerBasename = basename.toLowerCase();
+        return ALLOWED_EXTENSIONS.stream().anyMatch(lowerBasename::endsWith);
     }
 }
