@@ -1,13 +1,17 @@
 package com.sandeep.eventrabackend.controller;
 
 import com.sandeep.eventrabackend.model.Event;
+import com.sandeep.eventrabackend.model.EventWaitlist;
 import com.sandeep.eventrabackend.model.Role;
 import com.sandeep.eventrabackend.model.User;
+import com.sandeep.eventrabackend.repository.EventRegistrationRepository;
 import com.sandeep.eventrabackend.repository.EventRepository;
 import com.sandeep.eventrabackend.repository.EventWaitlistRepository;
 import com.sandeep.eventrabackend.repository.NotificationRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
 import com.sandeep.eventrabackend.dto.request.CsvWaitlistImportRequest;
+import com.sandeep.eventrabackend.dto.response.RegistrationResponse;
+import com.sandeep.eventrabackend.exception.EventFullException;
 import com.sandeep.eventrabackend.service.EventService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,6 +35,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -55,6 +60,9 @@ class EventWaitlistConcurrencyTests {
     private EventWaitlistRepository eventWaitlistRepository;
 
     @Autowired
+    private EventRegistrationRepository eventRegistrationRepository;
+
+    @Autowired
     private UserRepository userRepository;
 
     @Autowired
@@ -68,6 +76,7 @@ class EventWaitlistConcurrencyTests {
     @BeforeEach
     void setUp() {
         notificationRepository.deleteAll();
+        eventRegistrationRepository.deleteAll();
         eventWaitlistRepository.deleteAll();
         eventRepository.deleteAll();
         userRepository.deleteAll();
@@ -222,5 +231,62 @@ class EventWaitlistConcurrencyTests {
         for (int p = 1; p <= totalExpected; p++) {
             assertTrue(positions.contains(p), "Expected position " + p + " to exist");
         }
+    }
+
+    @Test
+    @DisplayName("Manual waitlist promotion consumes a seat; a second promotion past capacity throws EventFullException")
+    void manualPromotionConsumesSeat_SecondPromotionPastCapacityThrows() {
+        Event capacityEvent = new Event();
+        capacityEvent.setTitle("Manual promotion capacity");
+        capacityEvent.setDescription("Description");
+        capacityEvent.setLocation("Location");
+        capacityEvent.setEventDate(LocalDateTime.now().plusDays(5));
+        capacityEvent.setCapacity(1);
+        capacityEvent.setRegisteredCount(0);
+        capacityEvent.setPublic(true);
+        Long capacityEventId = eventRepository.save(capacityEvent).getId();
+
+        userRepository.save(User.builder()
+                .firstName("Waiting")
+                .lastName("One")
+                .email("waiting1@example.com")
+                .username("waiting1")
+                .password(passwordEncoder.encode("password"))
+                .role(Role.CLIENT)
+                .build());
+        userRepository.save(User.builder()
+                .firstName("Waiting")
+                .lastName("Two")
+                .email("waiting2@example.com")
+                .username("waiting2")
+                .password(passwordEncoder.encode("password"))
+                .role(Role.CLIENT)
+                .build());
+
+        Event persistedEvent = eventRepository.findById(capacityEventId).orElseThrow();
+
+        EventWaitlist first = new EventWaitlist();
+        first.setEvent(persistedEvent);
+        first.setUser(userRepository.findByEmail("waiting1@example.com").orElseThrow());
+        first.setPosition(1);
+        first.setStatus(EventWaitlist.STATUS_WAITING);
+        EventWaitlist savedFirst = eventWaitlistRepository.save(first);
+
+        EventWaitlist second = new EventWaitlist();
+        second.setEvent(persistedEvent);
+        second.setUser(userRepository.findByEmail("waiting2@example.com").orElseThrow());
+        second.setPosition(2);
+        second.setStatus(EventWaitlist.STATUS_WAITING);
+        EventWaitlist savedSecond = eventWaitlistRepository.save(second);
+
+        RegistrationResponse firstResponse = eventService.promoteWaitlistedUser(
+                capacityEventId, savedFirst.getId(), "admin@example.com");
+        assertEquals("CONFIRMED", firstResponse.getRegistrationStatus());
+
+        assertEquals(1, eventRepository.findById(capacityEventId).orElseThrow().getRegisteredCount(),
+                "first manual promotion must consume the only seat");
+
+        assertThrows(EventFullException.class, () -> eventService.promoteWaitlistedUser(
+                capacityEventId, savedSecond.getId(), "admin@example.com"));
     }
 }
