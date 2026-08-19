@@ -130,39 +130,39 @@ class PaymentAccessControlTests {
     @Test
     @DisplayName("Registration owner can read plan, schedule, QR and active-plan state")
     void ownerCanReadOwnPaymentData() throws Exception {
-        mockMvc.perform(get("/api/payments/plans/{id}", registrationId).with(user(attendeeEmail)))
+        mockMvc.perform(get("/api/payments/plans/{id}", registrationId).with(user(attendeeEmail).authorities(Role.ATTENDEE.name())))
                 .andExpect(status().isOk());
-        mockMvc.perform(get("/api/payments/registrations/{id}", registrationId).with(user(attendeeEmail)))
+        mockMvc.perform(get("/api/payments/registrations/{id}", registrationId).with(user(attendeeEmail).authorities(Role.ATTENDEE.name())))
                 .andExpect(status().isOk());
-        mockMvc.perform(get("/api/payments/schedule/{id}", registrationId).with(user(attendeeEmail)))
+        mockMvc.perform(get("/api/payments/schedule/{id}", registrationId).with(user(attendeeEmail).authorities(Role.ATTENDEE.name())))
                 .andExpect(status().isOk());
-        mockMvc.perform(get("/api/payments/qr-status/{id}", registrationId).with(user(attendeeEmail)))
+        mockMvc.perform(get("/api/payments/qr-status/{id}", registrationId).with(user(attendeeEmail).authorities(Role.ATTENDEE.name())))
                 .andExpect(status().isOk());
-        mockMvc.perform(get("/api/payments/active/{id}", registrationId).with(user(attendeeEmail)))
+        mockMvc.perform(get("/api/payments/active/{id}", registrationId).with(user(attendeeEmail).authorities(Role.ATTENDEE.name())))
                 .andExpect(status().isOk());
     }
 
     @Test
     @DisplayName("Event organizer can access a participant's payment data")
     void organizerCanReadParticipantPaymentData() throws Exception {
-        mockMvc.perform(get("/api/payments/plans/{id}", registrationId).with(user(organizerEmail)))
+        mockMvc.perform(get("/api/payments/plans/{id}", registrationId).with(user(organizerEmail).authorities(Role.ORGANIZER.name())))
                 .andExpect(status().isOk());
     }
 
     @Test
     @DisplayName("Unrelated user is denied on every payment endpoint (403)")
     void attackerIsDeniedEverywhere() throws Exception {
-        mockMvc.perform(get("/api/payments/plans/{id}", registrationId).with(user(attackerEmail)))
+        mockMvc.perform(get("/api/payments/plans/{id}", registrationId).with(user(attackerEmail).authorities(Role.ATTENDEE.name())))
                 .andExpect(status().isForbidden());
-        mockMvc.perform(get("/api/payments/registrations/{id}", registrationId).with(user(attackerEmail)))
+        mockMvc.perform(get("/api/payments/registrations/{id}", registrationId).with(user(attackerEmail).authorities(Role.ATTENDEE.name())))
                 .andExpect(status().isForbidden());
-        mockMvc.perform(get("/api/payments/schedule/{id}", registrationId).with(user(attackerEmail)))
+        mockMvc.perform(get("/api/payments/schedule/{id}", registrationId).with(user(attackerEmail).authorities(Role.ATTENDEE.name())))
                 .andExpect(status().isForbidden());
-        mockMvc.perform(get("/api/payments/methods/{id}", registrationId).with(user(attackerEmail)))
+        mockMvc.perform(get("/api/payments/methods/{id}", registrationId).with(user(attackerEmail).authorities(Role.ATTENDEE.name())))
                 .andExpect(status().isForbidden());
-        mockMvc.perform(get("/api/payments/qr-status/{id}", registrationId).with(user(attackerEmail)))
+        mockMvc.perform(get("/api/payments/qr-status/{id}", registrationId).with(user(attackerEmail).authorities(Role.ATTENDEE.name())))
                 .andExpect(status().isForbidden());
-        mockMvc.perform(get("/api/payments/active/{id}", registrationId).with(user(attackerEmail)))
+        mockMvc.perform(get("/api/payments/active/{id}", registrationId).with(user(attackerEmail).authorities(Role.ATTENDEE.name())))
                 .andExpect(status().isForbidden());
     }
 
@@ -170,26 +170,26 @@ class PaymentAccessControlTests {
     @DisplayName("Unrelated user cannot create or cancel another user's payment plan (403)")
     void attackerCannotCreateOrCancelPlans() throws Exception {
         mockMvc.perform(post("/api/payments/plans")
-                        .with(user(attackerEmail))
+                        .with(user(attackerEmail).authorities(Role.ATTENDEE.name()))
                         .param("registrationId", String.valueOf(registrationId)))
                 .andExpect(status().isForbidden());
 
-        mockMvc.perform(delete("/api/payments/plans/{id}", planId).with(user(attackerEmail)))
+        mockMvc.perform(delete("/api/payments/plans/{id}", planId).with(user(attackerEmail).authorities(Role.ATTENDEE.name())))
                 .andExpect(status().isForbidden());
 
         mockMvc.perform(post("/api/payments/setup-method/{planId}", planId)
-                        .with(user(attackerEmail))
+                        .with(user(attackerEmail).authorities(Role.ATTENDEE.name()))
                         .contentType("application/json")
                         .content("{\"paymentMethodId\":\"pm_123\"}"))
                 .andExpect(status().isForbidden());
 
         mockMvc.perform(post("/api/payments/confirm-upfront/{planId}", planId)
-                        .with(user(attackerEmail))
+                        .with(user(attackerEmail).authorities(Role.ATTENDEE.name()))
                         .contentType("application/json")
                         .content("{\"paymentMethodId\":\"pm_123\"}"))
                 .andExpect(status().isForbidden());
 
-        mockMvc.perform(post("/api/payments/retry/{paymentId}", paymentId).with(user(attackerEmail)))
+        mockMvc.perform(post("/api/payments/retry/{paymentId}", paymentId).with(user(attackerEmail).authorities(Role.ATTENDEE.name())))
                 .andExpect(status().isForbidden());
     }
 }
