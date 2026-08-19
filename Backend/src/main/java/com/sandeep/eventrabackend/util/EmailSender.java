@@ -15,6 +15,9 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class EmailSender {
 
+    private static final java.util.regex.Pattern EMAIL_PATTERN =
+            java.util.regex.Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+
     /**
      * Send an email with the specified parameters
      * 
@@ -33,32 +36,28 @@ public class EmailSender {
             if (to == null || to.isBlank()) {
                 throw new IllegalArgumentException("Recipient email cannot be empty");
             }
-            
+
+            if (!EMAIL_PATTERN.matcher(to).matches()) {
+                throw new IllegalArgumentException("Recipient email is not a valid address: " + to);
+            }
+
             if (subject == null || subject.isBlank()) {
                 throw new IllegalArgumentException("Subject cannot be empty");
             }
-            
+
             if (body == null || body.isBlank()) {
                 throw new IllegalArgumentException("Body cannot be empty");
             }
 
-            // Generate a mock message ID for testing purposes
-            String messageId = "test-msg-" + System.currentTimeMillis() + "-" + (int)(Math.random() * 10000);
-            
-            // In a real implementation, this would call the actual email service
-            // For example:
-            // - SendGrid API
-            // - AWS SES
-            // - SMTP server
-            // - etc.
-            
-            // Log the email details (for development/debugging)
-            log.info("Email sent to: {}, subject: {}, messageId: {}, isHtml: {}", to, subject, messageId, isHtml);
-            
-            return messageId;
+            // This is a mock sender with no real transport: do NOT fabricate a
+            // message id and do NOT report delivery as successful. Returning null
+            // honestly signals that no message was actually delivered, and the
+            // caller's "non-null == delivered" assumption is no longer misled.
+            log.info("Email dispatch requested to: {}, subject: {}, isHtml: {}", to, subject, isHtml);
+            return null;
         } catch (Exception e) {
             log.error("Failed to send email to {}", to, e);
-            return null;
+            throw new RuntimeException("Failed to send email to " + to, e);
         }
     }
 
