@@ -1,6 +1,9 @@
 package com.sandeep.eventrabackend.controller;
 
 import com.sandeep.eventrabackend.model.Event;
+import com.sandeep.eventrabackend.model.EventRegistration;
+import com.sandeep.eventrabackend.model.Payment;
+import com.sandeep.eventrabackend.model.PaymentPlan;
 import com.sandeep.eventrabackend.model.Role;
 import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.EventRegistrationRepository;
@@ -8,6 +11,8 @@ import com.sandeep.eventrabackend.repository.EventRepository;
 import com.sandeep.eventrabackend.repository.EventWaitlistRepository;
 import com.sandeep.eventrabackend.repository.HackathonRegistrationRepository;
 import com.sandeep.eventrabackend.repository.NotificationRepository;
+import com.sandeep.eventrabackend.repository.PaymentPlanRepository;
+import com.sandeep.eventrabackend.repository.PaymentRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,6 +24,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -67,12 +73,20 @@ public class EventRegistrationTests {
     private UserRepository userRepository;
 
     @Autowired
+    private PaymentRepository paymentRepository;
+
+    @Autowired
+    private PaymentPlanRepository paymentPlanRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     private Long eventId;
 
     @BeforeEach
     void setUp() {
+        paymentRepository.deleteAll();
+        paymentPlanRepository.deleteAll();
         notificationRepository.deleteAll();
         hackathonRegistrationRepository.deleteAll();
         eventWaitlistRepository.deleteAll();
@@ -499,6 +513,41 @@ public class EventRegistrationTests {
                         .with(user("user6@example.com")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.full").value(true));
+    }
+
+    @Test
+    @DisplayName("#18838 - cancelling a registration removes its payment and payment plan rows")
+    void testCancelRegistrationWithPayments() throws Exception {
+        mockMvc.perform(post("/api/events/" + eventId + "/register")
+                        .with(user("user1@example.com")))
+                .andExpect(status().isOk());
+
+        EventRegistration registration = eventRegistrationRepository
+                .findByEvent_IdAndUser_Email(eventId, "user1@example.com")
+                .orElseThrow();
+
+        Payment payment = new Payment();
+        payment.setRegistration(registration);
+        payment.setAmount(BigDecimal.valueOf(250.00));
+        payment.setPaymentMethod("CARD");
+        payment.setPaymentProvider("STRIPE");
+        payment.setStatus("COMPLETED");
+        paymentRepository.save(payment);
+
+        PaymentPlan plan = new PaymentPlan();
+        plan.setRegistration(registration);
+        plan.setTotalAmount(BigDecimal.valueOf(250.00));
+        plan.setInstallmentAmount(BigDecimal.valueOf(62.50));
+        plan.setStatus("ACTIVE");
+        paymentPlanRepository.save(plan);
+
+        mockMvc.perform(delete("/api/events/" + eventId + "/registration")
+                        .with(user("user1@example.com")))
+                .andExpect(status().isNoContent());
+
+        assertTrue(eventRegistrationRepository.findByEvent_IdAndUser_Email(eventId, "user1@example.com").isEmpty());
+        assertTrue(paymentRepository.findByRegistration_IdOrderByInstallmentNumberAsc(registration.getId()).isEmpty());
+        assertTrue(paymentPlanRepository.findByRegistration_Id(registration.getId()).isEmpty());
     }
 
     @Test

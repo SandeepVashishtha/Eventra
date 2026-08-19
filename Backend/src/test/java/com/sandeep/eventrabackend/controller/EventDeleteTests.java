@@ -6,6 +6,8 @@ import com.sandeep.eventrabackend.model.EventRole;
 import com.sandeep.eventrabackend.model.EventTeamMember;
 import com.sandeep.eventrabackend.model.EventWaitlist;
 import com.sandeep.eventrabackend.model.Feedback;
+import com.sandeep.eventrabackend.model.Payment;
+import com.sandeep.eventrabackend.model.PaymentPlan;
 import com.sandeep.eventrabackend.model.Role;
 import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.EventRegistrationRepository;
@@ -15,6 +17,8 @@ import com.sandeep.eventrabackend.repository.EventWaitlistRepository;
 import com.sandeep.eventrabackend.repository.FeedbackAnalyticsRepository;
 import com.sandeep.eventrabackend.repository.HackathonRegistrationRepository;
 import com.sandeep.eventrabackend.repository.NotificationRepository;
+import com.sandeep.eventrabackend.repository.PaymentPlanRepository;
+import com.sandeep.eventrabackend.repository.PaymentRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -26,6 +30,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -68,12 +73,20 @@ public class EventDeleteTests {
     private UserRepository userRepository;
 
     @Autowired
+    private PaymentRepository paymentRepository;
+
+    @Autowired
+    private PaymentPlanRepository paymentPlanRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     private Event existingEvent;
 
     @BeforeEach
     void setUp() {
+        paymentRepository.deleteAll();
+        paymentPlanRepository.deleteAll();
         notificationRepository.deleteAll();
         hackathonRegistrationRepository.deleteAll();
         feedbackRepository.deleteAll();
@@ -203,6 +216,40 @@ public class EventDeleteTests {
         assertTrue(eventWaitlistRepository.findByEvent_IdAndStatusOrderByPositionAscJoinedAtAsc(existingEvent.getId(), "WAITING").isEmpty());
         assertTrue(eventTeamMemberRepository.findByEvent_IdOrderByRoleDescAssignedAtDesc(existingEvent.getId()).isEmpty());
         assertFalse(feedbackRepository.existsByEvent_IdAndUser_Email(existingEvent.getId(), client.getEmail()));
+    }
+
+    @Test
+    @DisplayName("#18838 - deletion cleans up payment and payment plan rows")
+    void deleteEvent_CleansUpPayments() throws Exception {
+        User client = userRepository.findByEmail("client@example.com").orElseThrow();
+        EventRegistration registration = new EventRegistration();
+        registration.setEvent(existingEvent);
+        registration.setUser(client);
+        registration.setStatus("CONFIRMED");
+        registration = eventRegistrationRepository.save(registration);
+
+        Payment payment = new Payment();
+        payment.setRegistration(registration);
+        payment.setAmount(BigDecimal.valueOf(250.00));
+        payment.setPaymentMethod("CARD");
+        payment.setPaymentProvider("STRIPE");
+        payment.setStatus("COMPLETED");
+        paymentRepository.save(payment);
+
+        PaymentPlan plan = new PaymentPlan();
+        plan.setRegistration(registration);
+        plan.setTotalAmount(BigDecimal.valueOf(250.00));
+        plan.setInstallmentAmount(BigDecimal.valueOf(62.50));
+        plan.setStatus("ACTIVE");
+        paymentPlanRepository.save(plan);
+
+        mockMvc.perform(delete("/api/events/" + existingEvent.getId())
+                        .with(user("admin@example.com").authorities(new org.springframework.security.core.authority.SimpleGrantedAuthority("ADMIN"))))
+                .andExpect(status().isNoContent());
+
+        assertFalse(eventRepository.existsById(existingEvent.getId()));
+        assertTrue(paymentRepository.findByRegistration_IdOrderByInstallmentNumberAsc(registration.getId()).isEmpty());
+        assertTrue(paymentPlanRepository.findByRegistration_Id(registration.getId()).isEmpty());
     }
 
     @Test

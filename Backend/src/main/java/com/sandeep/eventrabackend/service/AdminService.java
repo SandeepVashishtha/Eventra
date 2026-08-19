@@ -52,6 +52,8 @@ public class AdminService {
     private final ProjectUpvoteRepository projectUpvoteRepository;
     private final NotificationRepository notificationRepository;
     private final EventService eventService;
+    private final PaymentRepository paymentRepository;
+    private final PaymentPlanRepository paymentPlanRepository;
 
     // ══════════════════════════════════════════════════════════════════════
     // 1. USER MANAGEMENT
@@ -173,6 +175,11 @@ public class AdminService {
         eventRepository.clearOwnerByUserId(id);
         hackathonRepository.clearOwnerByUserId(id);
 
+        // Remove payment rows before registrations so the deletes never hit a
+        // foreign-key violation (#18838).
+        paymentRepository.deleteByRegistration_User_Id(id);
+        paymentPlanRepository.deleteByRegistration_User_Id(id);
+
         eventRegistrationRepository.deleteByUser_Id(id);
         eventWaitlistRepository.deleteByUser_Id(id);
         hackathonRegistrationRepository.deleteByUser_Id(id);
@@ -278,6 +285,10 @@ public class AdminService {
         if (!eventRepository.existsById(id)) {
             throw new EntityNotFoundException("Event not found with id: " + id);
         }
+        // Remove payment rows before registrations so the deletes never hit a
+        // foreign-key violation (#18838).
+        paymentRepository.deleteByRegistration_Event_Id(id);
+        paymentPlanRepository.deleteByRegistration_Event_Id(id);
         eventRegistrationRepository.deleteByEventId(id);
         eventWaitlistRepository.deleteByEvent_Id(id);
         eventTeamMemberRepository.deleteByEvent_Id(id);

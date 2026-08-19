@@ -27,6 +27,7 @@ import com.sandeep.eventrabackend.model.EventRegistration;
 import com.sandeep.eventrabackend.model.EventRole;
 import com.sandeep.eventrabackend.model.EventWaitlist;
 import com.sandeep.eventrabackend.model.Notification;
+import com.sandeep.eventrabackend.model.Payment;
 import com.sandeep.eventrabackend.model.Role;
 import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.EventRegistrationRepository;
@@ -37,6 +38,8 @@ import com.sandeep.eventrabackend.repository.EventTeamMemberRepository;
 import com.sandeep.eventrabackend.repository.EventWaitlistRepository;
 import com.sandeep.eventrabackend.repository.FeedbackAnalyticsRepository;
 import com.sandeep.eventrabackend.repository.NotificationRepository;
+import com.sandeep.eventrabackend.repository.PaymentPlanRepository;
+import com.sandeep.eventrabackend.repository.PaymentRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -131,6 +134,8 @@ public class EventService {
         private final EventRoleService eventRoleService;
         private final EventStreamService eventStreamService;
         private final StripeService stripeService;
+        private final PaymentRepository paymentRepository;
+        private final PaymentPlanRepository paymentPlanRepository;
 
         public EventService(
                         EventRepository eventRepository,
@@ -143,7 +148,9 @@ public class EventService {
                         UserRepository userRepository,
                         EventRoleService eventRoleService,
                         EventStreamService eventStreamService,
-                        StripeService stripeService) {
+                        StripeService stripeService,
+                        PaymentRepository paymentRepository,
+                        PaymentPlanRepository paymentPlanRepository) {
                 this.eventRepository = eventRepository;
                 this.eventRegistrationRepository = eventRegistrationRepository;
                 this.eventWaitlistRepository = eventWaitlistRepository;
@@ -155,6 +162,8 @@ public class EventService {
                 this.eventRoleService = eventRoleService;
                 this.eventStreamService = eventStreamService;
                 this.stripeService = stripeService;
+                this.paymentRepository = paymentRepository;
+                this.paymentPlanRepository = paymentPlanRepository;
         }
 
         /**
@@ -826,6 +835,12 @@ public class EventService {
                 Event event = eventRepository.findById(id)
                                 .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + id));
 
+                // Refund captured payments and remove payment rows first so the
+                // registration deletes never hit a foreign-key violation (#18838).
+                refundCompletedPayments(event, paymentRepository.findCompletedPaymentsByEventId(id));
+                paymentRepository.deleteByRegistration_Event_Id(id);
+                paymentPlanRepository.deleteByRegistration_Event_Id(id);
+
                 eventRegistrationRepository.deleteByEventId(id);
                 eventWaitlistRepository.deleteByEvent_Id(id);
                         eventTeamMemberRepository.deleteByEvent_Id(id);
@@ -914,6 +929,13 @@ public class EventService {
                                 .orElseThrow(() -> new RegistrationConflictException(
                                                 "You are not registered for this event."));
 
+                // Refund captured payments and remove payment rows first so the
+                // registration delete never hits a foreign-key violation (#18838).
+                refundCompletedPayments(event,
+                                paymentRepository.findCompletedPaymentsByRegistrationId(registration.getId()));
+                paymentRepository.deleteByRegistration_Id(registration.getId());
+                paymentPlanRepository.deleteByRegistration_Id(registration.getId());
+
                 eventRegistrationRepository.delete(registration);
                 event.setRegisteredCount((int) eventRegistrationRepository
                                 .countByEvent_IdAndStatus(eventId, "CONFIRMED"));
@@ -921,6 +943,40 @@ public class EventService {
                 broadcastAvailability(event);
 
                 promoteWaitlistAfterVacancy(eventId);
+        }
+
+        /**
+         * Refunds every completed payment of the given registration according to the
+         * event's refund policy, marking each {@link Payment} {@code REFUNDED}.
+         * Failing Stripe calls are logged but never block the surrounding operation.
+         */
+        private void refundCompletedPayments(Event event, List<Payment> completedPayments) {
+                String refundPolicy = event.getRefundPolicy();
+                Integer refundPercent = event.getRefundPercent();
+                boolean refundDue = refundPolicy != null
+                                && !"NONE".equalsIgnoreCase(refundPolicy);
+                if (!refundDue) {
+                        return;
+                }
+
+                for (Payment payment : completedPayments) {
+                        if (payment.getStripePaymentIntentId() == null) {
+                                continue;
+                        }
+                        try {
+                                stripeService.refundPayment(payment.getStripePaymentIntentId(),
+                                                refundPolicy, refundPercent);
+                                payment.setStatus("REFUNDED");
+                                paymentRepository.save(payment);
+                        } catch (Exception e) {
+                                log.error(
+                                                "Failed to refund payment {} for registration {} on event {}: {}",
+                                                payment.getId(),
+                                                payment.getRegistration().getId(),
+                                                event.getId(),
+                                                e.getMessage());
+                        }
+                }
         }
 
         @Transactional(readOnly = true)
