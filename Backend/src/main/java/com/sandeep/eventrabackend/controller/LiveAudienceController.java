@@ -38,34 +38,46 @@ public class LiveAudienceController {
     private final LiveAudienceService liveAudienceService;
 
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get initial live audience data",
             description = "Returns the Q&A questions and the latest poll for an event. Requires authentication.",
             security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Live audience data fetched successfully",
                     content = @Content(schema = @Schema(implementation = LiveAudienceDataResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "404", description = "Event not found",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<LiveAudienceDataResponse> getInitialData(
             @PathVariable Long eventId,
             Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         return ResponseEntity.ok(liveAudienceService.getInitialData(eventId, authentication.getName()));
     }
 
     @GetMapping("/questions")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List live audience questions",
             description = "Returns the Q&A questions for an event, ordered by upvotes then recency. Requires authentication.",
             security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Questions fetched successfully",
                     content = @Content(schema = @Schema(implementation = LiveAudienceQuestionResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "404", description = "Event not found",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<java.util.List<LiveAudienceQuestionResponse>> getQuestions(
             @PathVariable Long eventId,
             Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         return ResponseEntity.ok(liveAudienceService.getQuestions(eventId, authentication.getName()));
     }
 
