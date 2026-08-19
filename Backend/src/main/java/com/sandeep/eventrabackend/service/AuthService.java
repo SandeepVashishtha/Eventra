@@ -90,7 +90,12 @@ public class AuthService {
         String baseUsername = normalizedEmail.split("@")[0].toLowerCase();
         String username = generateUniqueUsername(baseUsername);
 
-        // 4. Persist the user
+        // 4. Persist the user. The existsByEmail check above is non-atomic, so a
+        // concurrent signup with the same email can still hit the unique-email
+        // constraint here. Flush the INSERT inside the transaction so the
+        // constraint violation surfaces as DataIntegrityViolationException right
+        // here and maps to a clean 409, instead of failing at commit time as a
+        // 500 (#18843).
         User user = User.builder()
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
@@ -102,7 +107,12 @@ public class AuthService {
                 .authProvider("LOCAL")
                 .build();
 
-        user = userRepository.save(user);
+        try {
+            user = userRepository.saveAndFlush(user);
+        } catch (DataIntegrityViolationException e) {
+            throw new UserAlreadyExistsException(
+                    "An account with email '" + normalizedEmail + "' already exists");
+        }
 
         // 5. Issue JWT (embed the user's role claim for stateless RBAC checks)
         String token = jwtTokenProvider.generateToken(user.getEmail(), user.getRole().name());
