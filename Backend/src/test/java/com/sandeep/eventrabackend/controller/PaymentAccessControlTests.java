@@ -117,11 +117,11 @@ class PaymentAccessControlTests {
         registration.setEvent(event);
         registration.setUser(attendee);
         registration.setStatus("CONFIRMED");
+        registration.setTicketPrice(new BigDecimal("1000.00"));
         registration = eventRegistrationRepository.save(registration);
         registrationId = registration.getId();
 
-        planId = paymentPlanService.createPaymentPlan(
-                registrationId, new BigDecimal("1000.00"), "USD", 25, 4).getId();
+        planId = paymentPlanService.createPaymentPlan(registrationId).getId();
         paymentId = paymentRepository.findByRegistration_IdOrderByInstallmentNumberAsc(registrationId)
                 .get(0)
                 .getId();

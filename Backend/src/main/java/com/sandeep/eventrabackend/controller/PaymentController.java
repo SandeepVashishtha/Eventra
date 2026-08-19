@@ -18,7 +18,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -48,17 +47,12 @@ public class PaymentController {
     @PreAuthorize("hasAnyAuthority('ATTENDEE', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<?> createPaymentPlan(
             Authentication authentication,
-            @RequestParam Long registrationId,
-            @RequestParam(required = false, defaultValue = "1000.00") BigDecimal ticketPrice,
-            @RequestParam(required = false, defaultValue = "USD") String currency,
-            @RequestParam(required = false, defaultValue = "25") Integer upfrontPercentage,
-            @RequestParam(required = false, defaultValue = "4") Integer totalInstallments) {
+            @RequestParam Long registrationId) {
 
         paymentPlanService.requirePaymentAccessByRegistration(registrationId, authentication.getName());
 
         try {
-            PaymentPlan paymentPlan = paymentPlanService.createPaymentPlan(
-                    registrationId, ticketPrice, currency, upfrontPercentage, totalInstallments);
+            PaymentPlan paymentPlan = paymentPlanService.createPaymentPlan(registrationId);
             
             return ResponseEntity.ok(Map.of(
                     "success", true,
