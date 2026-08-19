@@ -91,7 +91,7 @@ public class ProjectService {
         // then violates the (project_id, user_id) unique constraint.
         // Surface that as a friendly conflict instead of a 500 (#11776).
         try {
-            projectUpvoteRepository.save(upvote);
+            projectUpvoteRepository.saveAndFlush(upvote);
         } catch (DataIntegrityViolationException ex) {
             throw new RegistrationConflictException("You have already upvoted this project.");
         }
