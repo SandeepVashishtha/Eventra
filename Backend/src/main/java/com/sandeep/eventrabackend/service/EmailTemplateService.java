@@ -13,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Service for managing custom email templates and sending test emails.
@@ -173,36 +175,49 @@ public class EmailTemplateService {
     /**
      * Render the template by replacing placeholders with actual data
      */
+    private static final Pattern TOKEN_PATTERN = Pattern.compile("\\{([a-zA-Z]+)\\}");
+
     private String renderTemplate(String template, Map<String, Object> event, Map<String, Object> attendee) {
         if (template == null || template.isEmpty()) {
             return "";
         }
 
-        String content = template;
-        
-        // Replace event placeholders
+        // Resolve every placeholder to its escaped value up front, then perform a
+        // single-pass substitution. This prevents a substituted value that itself
+        // contains a token literal (e.g. an attendee name of "{eventTitle}") from
+        // being re-expanded by a later replace, and avoids the O(n x tokens) full
+        // string rescans of the previous sequential replace calls (#19073).
+        Map<String, String> tokens = new HashMap<>();
+
         if (event != null) {
-            content = content.replace("{eventTitle}", escapeHtml(String.valueOf(event.getOrDefault("title", "Event"))));
-            content = content.replace("{eventDate}", escapeHtml(String.valueOf(event.getOrDefault("eventDate", "N/A"))));
-            content = content.replace("{eventTime}", escapeHtml(String.valueOf(event.getOrDefault("eventTime", "N/A"))));
-            content = content.replace("{location}", escapeHtml(String.valueOf(event.getOrDefault("location", "TBD"))));
-            content = content.replace("{refundDeadline}", escapeHtml(String.valueOf(event.getOrDefault("refundDeadline", "N/A"))));
-            content = content.replace("{organizerEmail}", sanitizeUrl(String.valueOf(event.getOrDefault("organizerEmail", "support@eventra.com"))));
+            tokens.put("eventTitle", escapeHtml(String.valueOf(event.getOrDefault("title", "Event"))));
+            tokens.put("eventDate", escapeHtml(String.valueOf(event.getOrDefault("eventDate", "N/A"))));
+            tokens.put("eventTime", escapeHtml(String.valueOf(event.getOrDefault("eventTime", "N/A"))));
+            tokens.put("location", escapeHtml(String.valueOf(event.getOrDefault("location", "TBD"))));
+            tokens.put("refundDeadline", escapeHtml(String.valueOf(event.getOrDefault("refundDeadline", "N/A"))));
+            tokens.put("organizerEmail", sanitizeUrl(String.valueOf(event.getOrDefault("organizerEmail", "support@eventra.com"))));
         }
 
-        // Replace attendee placeholders
         if (attendee != null) {
             String firstName = escapeHtml(String.valueOf(attendee.getOrDefault("firstName", "Attendee")));
             String lastName = escapeHtml(String.valueOf(attendee.getOrDefault("lastName", "")));
             String fullName = (firstName + " " + lastName).trim();
-            
-            content = content.replace("{attendeeName}", fullName.isEmpty() ? "Attendee" : fullName);
-            content = content.replace("{firstName}", firstName);
-            content = content.replace("{lastName}", lastName);
-            content = content.replace("{attendeeEmail}", sanitizeUrl(String.valueOf(attendee.getOrDefault("email", ""))));
+
+            tokens.put("attendeeName", fullName.isEmpty() ? "Attendee" : fullName);
+            tokens.put("firstName", firstName);
+            tokens.put("lastName", lastName);
+            tokens.put("attendeeEmail", sanitizeUrl(String.valueOf(attendee.getOrDefault("email", ""))));
         }
 
-        return content;
+        Matcher matcher = TOKEN_PATTERN.matcher(template);
+        StringBuffer sb = new StringBuffer();
+        while (matcher.find()) {
+            String token = matcher.group(1);
+            String value = tokens.getOrDefault(token, matcher.group(0));
+            matcher.appendReplacement(sb, Matcher.quoteReplacement(value));
+        }
+        matcher.appendTail(sb);
+        return sb.toString();
     }
 
     /**
