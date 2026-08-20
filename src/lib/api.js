@@ -243,3 +243,76 @@ export async function createProject(projectData) {
     throw err;
   }
 }
+
+/* ==========================================
+   SESSION RECOVERY API ENDPOINTS (#14203)
+   ========================================== */
+
+export async function saveSessionRecovery(sessionData) {
+  try {
+    return await fetchAPI("/api/session-recovery", {
+      method: "POST",
+      body: JSON.stringify(sessionData)
+    });
+  } catch (err) {
+    console.error("Failed to save session recovery draft:", err);
+    throw err;
+  }
+}
+
+export async function updateSessionRecovery(sessionId, sessionData) {
+  try {
+    return await fetchAPI(`/api/session-recovery/${sessionId}`, {
+      method: "PUT",
+      body: JSON.stringify(sessionData)
+    });
+  } catch (err) {
+    console.error(`Failed to update session recovery draft ${sessionId}:`, err);
+    throw err;
+  }
+}
+
+export async function getSessionRecoveryList() {
+  try {
+    const res = await fetchAPI("/api/session-recovery");
+    return res?.sessions || [];
+  } catch (err) {
+    console.error("Failed to fetch session recovery list:", err);
+    return [];
+  }
+}
+
+export async function restoreSessionRecovery(sessionId) {
+  try {
+    const res = await fetchAPI(`/api/session-recovery/${sessionId}/restore`, {
+      method: "POST"
+    });
+    return res?.session || null;
+  } catch (err) {
+    console.error(`Failed to restore session recovery draft ${sessionId}:`, err);
+    throw err;
+  }
+}
+
+export async function deleteSessionRecovery(sessionId) {
+  try {
+    return await fetchAPI(`/api/session-recovery/${sessionId}`, {
+      method: "DELETE"
+    });
+  } catch (err) {
+    console.error(`Failed to delete session recovery draft ${sessionId}:`, err);
+    throw err;
+  }
+}
+
+export async function cleanupExpiredSessionRecovery() {
+  try {
+    return await fetchAPI("/api/session-recovery/cleanup", {
+      method: "DELETE"
+    });
+  } catch (err) {
+    console.error("Failed to clean up expired session recovery drafts:", err);
+    throw err;
+  }
+}
+
