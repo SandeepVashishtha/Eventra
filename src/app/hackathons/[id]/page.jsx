@@ -17,7 +17,8 @@ import {
   Clock,
   Layers,
   Cpu,
-  Check
+  Check,
+  AlertCircle
 } from "lucide-react";
 import { getHackathonById, registerForHackathon } from "@/lib/api";
 import { CardSkeleton } from "@/components/ui/Skeleton";
@@ -29,6 +30,7 @@ export default function HackathonDetailPage() {
   const [hackathon, setHackathon] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isRegistering, setIsRegistering] = useState(false);
+  const [actionError, setActionError] = useState("");
   const [registered, setRegistered] = useState(false);
 
   useEffect(() => {
@@ -51,11 +53,13 @@ export default function HackathonDetailPage() {
 
   const handleRegister = async () => {
     setIsRegistering(true);
+    setActionError("");
     try {
       await registerForHackathon(hackathonId);
       setRegistered(true);
     } catch (err) {
       console.warn("Registration error", err);
+      setActionError(err?.message || "Could not complete your registration. Please try again.");
     } finally {
       setIsRegistering(false);
     }
@@ -252,6 +256,16 @@ export default function HackathonDetailPage() {
                   <Trophy className="w-4 h-4" />
                   <span>{isRegistering ? "Registering..." : "Register Team / Submit"}</span>
                 </button>
+              )}
+
+              {actionError && (
+                <div
+                  role="alert"
+                  className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-2xl text-xs flex items-start gap-2 font-medium"
+                >
+                  <AlertCircle className="w-4 h-4 shrink-0 text-red-600 mt-px" />
+                  <span>{actionError}</span>
+                </div>
               )}
 
               <div className="flex items-center justify-center gap-2 text-xs text-zinc-500 pt-2 border-t border-zinc-100">

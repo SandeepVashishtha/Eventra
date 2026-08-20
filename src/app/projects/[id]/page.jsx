@@ -13,7 +13,8 @@ import {
   Sparkles, 
   CheckCircle2, 
   ShieldCheck,
-  Star
+  Star,
+  AlertCircle
 } from "lucide-react";
 import { getProjectById, upvoteProject } from "@/lib/api";
 import { CardSkeleton } from "@/components/ui/Skeleton";
@@ -26,6 +27,7 @@ export default function ProjectDetailPage() {
   const [loading, setLoading] = useState(true);
   const [upvotes, setUpvotes] = useState(0);
   const [hasUpvoted, setHasUpvoted] = useState(false);
+  const [actionError, setActionError] = useState("");
 
   useEffect(() => {
     async function loadProject() {
@@ -48,12 +50,17 @@ export default function ProjectDetailPage() {
 
   const handleUpvote = async () => {
     if (hasUpvoted) return;
+    setActionError("");
+    // Optimistic update, rolled back below if the request fails.
     setUpvotes((prev) => prev + 1);
     setHasUpvoted(true);
     try {
       await upvoteProject(projectId);
     } catch (err) {
       console.warn("Upvote error", err);
+      setUpvotes((prev) => Math.max(0, prev - 1));
+      setHasUpvoted(false);
+      setActionError(err?.message || "Could not record your upvote. Please try again.");
     }
   };
 
@@ -195,6 +202,16 @@ export default function ProjectDetailPage() {
                   <ThumbsUp className="w-4 h-4" />
                   <span>{hasUpvoted ? `Upvoted (${upvotes})` : `Upvote Project (${upvotes})`}</span>
                 </button>
+
+                {actionError && (
+                  <div
+                    role="alert"
+                    className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-2xl text-xs flex items-start gap-2 font-medium"
+                  >
+                    <AlertCircle className="w-4 h-4 shrink-0 text-red-600 mt-px" />
+                    <span>{actionError}</span>
+                  </div>
+                )}
 
                 {/* GitHub Repository Link */}
                 {project.githubUrl && (
