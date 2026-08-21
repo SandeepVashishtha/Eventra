@@ -1,18 +1,15 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { 
-  Calendar, 
-  Trophy, 
-  FolderKanban, 
-  Search, 
-  RefreshCw, 
-  ChevronLeft, 
-  ChevronRight, 
-  Globe2,
-  Filter,
-  Pause,
-  Play
+  Grid3X3, 
+  LayoutGrid, 
+  Sparkles, 
+  SlidersHorizontal,
+  ArrowRight,
+  RefreshCw,
+  Search
 } from "lucide-react";
 import { getEvents, getHackathons, getProjects } from "@/lib/api";
 import EventCard from "@/components/ui/EventCard";
@@ -21,13 +18,11 @@ import ProjectCard from "@/components/ui/ProjectCard";
 import DetailDrawer from "@/components/ui/DetailDrawer";
 import { CardSkeleton } from "@/components/ui/Skeleton";
 
-export default function WhatsHappeningNow() {
-  const [activeTab, setActiveTab] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
+export default function WhatsHappeningNow({ searchQuery = "" }) {
+  const [activeTag, setActiveTag] = useState("all");
   const [loading, setLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isAutoplay, setIsAutoplay] = useState(true);
-
+  const [viewColumns, setViewColumns] = useState(3); // 3 or 4 columns
+  
   const [events, setEvents] = useState([]);
   const [hackathons, setHackathons] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -38,26 +33,21 @@ export default function WhatsHappeningNow() {
     data: null
   });
 
-  const carouselRef = useRef(null);
-
   const fetchData = async () => {
     setLoading(true);
-    setIsRefreshing(true);
     try {
       const [eventsData, hackathonsData, projectsData] = await Promise.all([
         getEvents(),
         getHackathons(),
         getProjects()
       ]);
-
       setEvents(eventsData || []);
       setHackathons(hackathonsData || []);
       setProjects(projectsData || []);
     } catch (error) {
-      console.warn("Failed to fetch live data", error);
+      console.warn("Failed to fetch live directory data", error);
     } finally {
       setLoading(false);
-      setIsRefreshing(false);
     }
   };
 
@@ -65,278 +55,229 @@ export default function WhatsHappeningNow() {
     fetchData();
   }, []);
 
-  const filteredEvents = events.filter((e) =>
-    (e.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (e.description || "").toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter items based on activeTag and searchQuery
+  const query = searchQuery.toLowerCase().trim();
 
-  const filteredHackathons = hackathons.filter((h) =>
-    (h.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (h.description || "").toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const filteredProjects = projects.filter((p) =>
-    (p.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (p.description || "").toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const getCarouselItems = () => {
-    const items = [];
-    if (activeTab === "all" || activeTab === "events") {
-      filteredEvents.forEach((item) => items.push({ type: "event", data: item }));
-    }
-    if (activeTab === "all" || activeTab === "hackathons") {
-      filteredHackathons.forEach((item) => items.push({ type: "hackathon", data: item }));
-    }
-    if (activeTab === "all" || activeTab === "projects") {
-      filteredProjects.forEach((item) => items.push({ type: "project", data: item }));
-    }
-    return items;
+  const matchesQuery = (item) => {
+    if (!query) return true;
+    const title = (item.title || "").toLowerCase();
+    const desc = (item.description || "").toLowerCase();
+    const cat = (item.category || item.mode || item.location || "").toLowerCase();
+    return title.includes(query) || desc.includes(query) || cat.includes(query);
   };
 
-  const carouselItems = getCarouselItems();
+  const getFilteredItems = () => {
+    const all = [];
 
-  const scrollSingleCard = (direction) => {
-    if (!carouselRef.current) return;
-    const firstCard = carouselRef.current.firstElementChild;
-    const cardWidth = firstCard ? firstCard.clientWidth + 24 : 340;
-    carouselRef.current.scrollBy({
-      left: direction === "next" ? cardWidth : -cardWidth,
-      behavior: "smooth"
-    });
+    // Events
+    if (activeTag === "all" || activeTag === "events" || activeTag === "virtual" || activeTag === "in-person" || activeTag === "workshops") {
+      events.forEach((ev) => {
+        let matchTag = true;
+        if (activeTag === "virtual") matchTag = (ev.location || "").toLowerCase().includes("online") || (ev.location || "").toLowerCase().includes("virtual");
+        if (activeTag === "in-person") matchTag = !(ev.location || "").toLowerCase().includes("online") && !(ev.location || "").toLowerCase().includes("virtual");
+        if (matchTag && matchesQuery(ev)) {
+          all.push({ type: "event", data: ev, id: `ev-${ev.id}` });
+        }
+      });
+    }
+
+    // Hackathons
+    if (activeTag === "all" || activeTag === "hackathons" || activeTag === "prizes" || activeTag === "ai" || activeTag === "web3") {
+      hackathons.forEach((hk) => {
+        let matchTag = true;
+        if (activeTag === "prizes") matchTag = Boolean(hk.prizePool);
+        if (activeTag === "ai") matchTag = (hk.title + " " + hk.description).toLowerCase().includes("ai") || (hk.title + " " + hk.description).toLowerCase().includes("ml");
+        if (activeTag === "web3") matchTag = (hk.title + " " + hk.description).toLowerCase().includes("web3") || (hk.title + " " + hk.description).toLowerCase().includes("crypto");
+        if (matchTag && matchesQuery(hk)) {
+          all.push({ type: "hackathon", data: hk, id: `hk-${hk.id}` });
+        }
+      });
+    }
+
+    // Projects
+    if (activeTag === "all" || activeTag === "projects" || activeTag === "opensource" || activeTag === "ai" || activeTag === "web3") {
+      projects.forEach((pj) => {
+        let matchTag = true;
+        if (activeTag === "opensource") matchTag = Boolean(pj.githubUrl);
+        if (activeTag === "ai") matchTag = (pj.title + " " + pj.description + " " + (pj.category || "")).toLowerCase().includes("ai");
+        if (activeTag === "web3") matchTag = (pj.title + " " + pj.description + " " + (pj.category || "")).toLowerCase().includes("web3");
+        if (matchTag && matchesQuery(pj)) {
+          all.push({ type: "project", data: pj, id: `pj-${pj.id}` });
+        }
+      });
+    }
+
+    return all;
   };
 
-  useEffect(() => {
-    if (!isAutoplay || loading || carouselItems.length === 0 || drawerState.isOpen) return;
+  const filteredItems = getFilteredItems();
 
-    const interval = setInterval(() => {
-      if (!carouselRef.current) return;
-      const { scrollLeft, scrollWidth, clientWidth } = carouselRef.current;
-      const firstCard = carouselRef.current.firstElementChild;
-      const step = firstCard ? firstCard.clientWidth + 24 : 340;
-
-      if (scrollLeft + clientWidth >= scrollWidth - 20) {
-        carouselRef.current.scrollTo({ left: 0, behavior: "smooth" });
-      } else {
-        carouselRef.current.scrollBy({ left: step, behavior: "smooth" });
-      }
-    }, 3200);
-
-    return () => clearInterval(interval);
-  }, [isAutoplay, loading, carouselItems.length, drawerState.isOpen]);
-
-  const openItemDrawer = (itemType, itemData) => {
-    setDrawerState({
-      isOpen: true,
-      type: itemType,
-      data: itemData
-    });
-  };
+  const tags = [
+    { id: "all", label: "All Items", count: events.length + hackathons.length + projects.length },
+    { id: "events", label: "Events", count: events.length },
+    { id: "hackathons", label: "Hackathons", count: hackathons.length },
+    { id: "projects", label: "Projects", count: projects.length },
+    { id: "ai", label: "AI & ML" },
+    { id: "opensource", label: "Open Source" },
+    { id: "prizes", label: "Prize Pools" },
+    { id: "virtual", label: "Virtual / Online" },
+    { id: "in-person", label: "In-Person" },
+  ];
 
   return (
-    <section className="py-16 bg-[#f4fbf7] border-b border-emerald-900/10">
+    <section className="py-10 bg-[#fafafa]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                </span>
-                <span>What&apos;s Happening Now</span>
-              </span>
-
-              <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-mono text-zinc-400">
-                <Globe2 className="w-3 h-3 text-zinc-400" />
-                <span>Backend Live API</span>
-              </span>
-            </div>
-
-            <h2 className="text-3xl font-extrabold tracking-tight text-zinc-900 sm:text-4xl">
-              Live & Upcoming Opportunities
-            </h2>
-            <p className="text-sm text-zinc-600 max-w-xl">
-              Real-time feed of public workshops, active hackathons, and trending open-source projects synced from Eventra API.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative flex-1 sm:w-56">
-              <Search className="w-4 h-4 absolute left-3 top-3 text-zinc-400" />
-              <input
-                type="text"
-                placeholder="Search live feed..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 text-zinc-900 placeholder-zinc-400 shadow-2xs transition-all"
-              />
-            </div>
-
-            <button
-              onClick={fetchData}
-              disabled={isRefreshing}
-              className="p-2 bg-white border border-zinc-200 hover:bg-zinc-50 rounded-xl text-zinc-600 transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
-              title="Refresh Live Feed"
-            >
-              <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin text-blue-600" : ""}`} />
-            </button>
-
-            <button
-              onClick={() => setIsAutoplay(!isAutoplay)}
-              className="p-2 bg-white border border-zinc-200 hover:bg-zinc-50 rounded-xl text-zinc-600 transition-colors shadow-2xs cursor-pointer"
-              title={isAutoplay ? "Pause Autoplay" : "Resume Autoplay"}
-            >
-              {isAutoplay ? <Pause className="w-4 h-4 text-zinc-600" /> : <Play className="w-4 h-4 text-blue-600" />}
-            </button>
-
-            <div className="flex items-center gap-1 bg-white border border-zinc-200 p-1 rounded-xl shadow-2xs">
-              <button
-                onClick={() => scrollSingleCard("prev")}
-                className="p-1.5 hover:bg-zinc-100 rounded-lg text-zinc-700 transition-colors cursor-pointer"
-                aria-label="Previous Card"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <span className="w-px h-4 bg-zinc-200" />
-              <button
-                onClick={() => scrollSingleCard("next")}
-                className="p-1.5 hover:bg-zinc-100 rounded-lg text-zinc-700 transition-colors cursor-pointer"
-                aria-label="Next Card"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center space-x-2 border-b border-zinc-200 pb-3 mb-8 overflow-x-auto">
-          <button
-            onClick={() => setActiveTab("all")}
-            className={`px-4 py-2 text-xs font-bold rounded-full transition-all cursor-pointer ${
-              activeTab === "all"
-                ? "bg-zinc-900 text-white shadow-xs"
-                : "bg-white text-zinc-600 border border-zinc-200 hover:bg-zinc-100"
-            }`}
-          >
-            All Items ({events.length + hackathons.length + projects.length})
-          </button>
-
-          <button
-            onClick={() => setActiveTab("events")}
-            className={`flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-full transition-all cursor-pointer ${
-              activeTab === "events"
-                ? "bg-blue-600 text-white shadow-xs"
-                : "bg-white text-zinc-600 border border-zinc-200 hover:bg-zinc-100"
-            }`}
-          >
-            <Calendar className="w-3.5 h-3.5" />
-            <span>Events ({events.length})</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("hackathons")}
-            className={`flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-full transition-all cursor-pointer ${
-              activeTab === "hackathons"
-                ? "bg-amber-600 text-white shadow-xs"
-                : "bg-white text-zinc-600 border border-zinc-200 hover:bg-zinc-100"
-            }`}
-          >
-            <Trophy className="w-3.5 h-3.5" />
-            <span>Hackathons ({hackathons.length})</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("projects")}
-            className={`flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-full transition-all cursor-pointer ${
-              activeTab === "projects"
-                ? "bg-emerald-600 text-white shadow-xs"
-                : "bg-white text-zinc-600 border border-zinc-200 hover:bg-zinc-100"
-            }`}
-          >
-            <FolderKanban className="w-3.5 h-3.5" />
-            <span>Projects ({projects.length})</span>
-          </button>
-        </div>
-
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <CardSkeleton />
-            <CardSkeleton />
-            <CardSkeleton />
-          </div>
-        ) : carouselItems.length === 0 ? (
-          <div className="py-12 text-center bg-white rounded-2xl border border-zinc-200 space-y-3">
-            <Filter className="w-8 h-8 text-zinc-300 mx-auto" />
-            <h4 className="text-base font-bold text-zinc-800">No items match your filter</h4>
-            <p className="text-xs text-zinc-500 max-w-sm mx-auto">
-              Try adjusting your search query or tab to discover active items.
-            </p>
-            <button
-              onClick={() => {
-                setSearchQuery("");
-                setActiveTab("all");
-              }}
-              className="mt-2 text-xs font-semibold text-blue-600 hover:underline cursor-pointer"
-            >
-              Reset Filters
-            </button>
-          </div>
-        ) : (
-          <div className="relative group">
-            <div
-              ref={carouselRef}
-              className="flex items-stretch gap-6 overflow-x-auto scrollbar-none scroll-smooth pb-4 pt-1 snap-x snap-mandatory"
-              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-              onMouseEnter={() => setIsAutoplay(false)}
-              onMouseLeave={() => setIsAutoplay(true)}
-            >
-              {carouselItems.map((item) => (
-                <div
-                  key={`${item.type}-${item.data.id}`}
-                  className="w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] shrink-0 snap-start flex flex-col"
+        
+        {/* Minimal Tags & View Toolbar */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-neutral-200/80">
+          
+          {/* Horizontal scrolling tags */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+            {tags.map((tag) => {
+              const isActive = activeTag === tag.id;
+              return (
+                <button
+                  key={tag.id}
+                  onClick={() => setActiveTag(tag.id)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${
+                    isActive
+                      ? "bg-neutral-900 text-white shadow-2xs"
+                      : "bg-white border border-neutral-200 text-neutral-600 hover:text-neutral-900 hover:border-neutral-300"
+                  }`}
                 >
-                  {item.type === "event" && (
-                    <EventCard
-                      event={item.data}
-                      onClick={(data) => openItemDrawer("event", data)}
-                    />
+                  <span>{tag.label}</span>
+                  {tag.count !== undefined && (
+                    <span className={`text-[10px] font-mono px-1 rounded ${
+                      isActive ? "bg-neutral-800 text-neutral-300" : "bg-neutral-100 text-neutral-500"
+                    }`}>
+                      {tag.count}
+                    </span>
                   )}
-                  {item.type === "hackathon" && (
-                    <HackathonCard
-                      hackathon={item.data}
-                      onClick={(data) => openItemDrawer("hackathon", data)}
-                    />
-                  )}
-                  {item.type === "project" && (
-                    <ProjectCard
-                      project={item.data}
-                      onClick={(data) => openItemDrawer("project", data)}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
+                </button>
+              );
+            })}
+          </div>
 
-            <button
-              onClick={() => scrollSingleCard("prev")}
-              className="hidden lg:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 w-11 h-11 rounded-full bg-white border border-zinc-200 text-zinc-800 items-center justify-center shadow-xl opacity-0 group-hover:opacity-100 hover:bg-zinc-50 hover:scale-110 active:scale-95 transition-all cursor-pointer z-10"
-              aria-label="Previous Single Card"
-            >
-              <ChevronLeft className="w-6 h-6 text-zinc-700" />
-            </button>
-            <button
-              onClick={() => scrollSingleCard("next")}
-              className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 w-11 h-11 rounded-full bg-white border border-zinc-200 text-zinc-800 items-center justify-center shadow-xl opacity-0 group-hover:opacity-100 hover:bg-zinc-50 hover:scale-110 active:scale-95 transition-all cursor-pointer z-10"
-              aria-label="Next Single Card"
-            >
-              <ChevronRight className="w-6 h-6 text-zinc-700" />
-            </button>
+          {/* Right: View switcher & refresh */}
+          <div className="flex items-center justify-between sm:justify-end gap-3 text-xs text-neutral-500">
+            <span className="font-mono">{filteredItems.length} curated</span>
+
+            <div className="hidden sm:flex items-center border border-neutral-200 rounded-lg p-0.5 bg-white">
+              <button
+                type="button"
+                onClick={() => setViewColumns(3)}
+                className={`p-1 rounded transition-colors ${
+                  viewColumns === 3 ? "bg-neutral-100 text-neutral-900" : "text-neutral-400 hover:text-neutral-700"
+                }`}
+                title="3 columns"
+              >
+                <Grid3X3 className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewColumns(4)}
+                className={`p-1 rounded transition-colors ${
+                  viewColumns === 4 ? "bg-neutral-100 text-neutral-900" : "text-neutral-400 hover:text-neutral-700"
+                }`}
+                title="4 columns"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        {/* The Curated Gallery Grid */}
+        <div className="pt-8">
+          {loading ? (
+            <div className={`grid grid-cols-1 sm:grid-cols-2 ${viewColumns === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3"} gap-x-6 gap-y-10`}>
+              <CardSkeleton />
+              <CardSkeleton />
+              <CardSkeleton />
+              <CardSkeleton />
+              <CardSkeleton />
+              <CardSkeleton />
+            </div>
+          ) : filteredItems.length === 0 ? (
+            <div className="py-20 text-center bg-white rounded-2xl border border-neutral-200 max-w-lg mx-auto p-8 space-y-4">
+              <div className="w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center mx-auto text-neutral-400">
+                <Search className="w-5 h-5" />
+              </div>
+              <h3 className="text-base font-semibold text-neutral-900">
+                No items match your filter
+              </h3>
+              <p className="text-xs text-neutral-500 max-w-sm mx-auto">
+                Try switching the category tag or resetting the search query to explore all opportunities.
+              </p>
+              <button
+                type="button"
+                onClick={() => { setActiveTag("all"); }}
+                className="px-4 py-2 text-xs font-semibold bg-neutral-900 text-white rounded-lg hover:bg-neutral-800 transition-colors"
+              >
+                Reset Filters
+              </button>
+            </div>
+          ) : (
+            <div className={`grid grid-cols-1 sm:grid-cols-2 ${viewColumns === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3"} gap-x-6 gap-y-10`}>
+              {filteredItems.map((item) => {
+                if (item.type === "event") {
+                  return (
+                    <EventCard
+                      key={item.id}
+                      event={item.data}
+                      onClick={(data) => setDrawerState({ isOpen: true, type: "event", data })}
+                    />
+                  );
+                }
+                if (item.type === "hackathon") {
+                  return (
+                    <HackathonCard
+                      key={item.id}
+                      hackathon={item.data}
+                      onClick={(data) => setDrawerState({ isOpen: true, type: "hackathon", data })}
+                    />
+                  );
+                }
+                if (item.type === "project") {
+                  return (
+                    <ProjectCard
+                      key={item.id}
+                      project={item.data}
+                      onClick={(data) => setDrawerState({ isOpen: true, type: "project", data })}
+                    />
+                  );
+                }
+                return null;
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Minimal Load More / Explore directory button */}
+        {!loading && filteredItems.length > 0 && (
+          <div className="pt-16 pb-6 text-center">
+            <div className="inline-flex items-center gap-4">
+              <Link
+                href="/events"
+                className="px-5 py-2.5 text-xs font-semibold border border-neutral-300 hover:border-neutral-900 bg-white text-neutral-900 rounded-full transition-colors inline-flex items-center gap-1.5"
+              >
+                <span>Browse All Events</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+              <Link
+                href="/hackathons"
+                className="px-5 py-2.5 text-xs font-semibold border border-neutral-300 hover:border-neutral-900 bg-white text-neutral-900 rounded-full transition-colors inline-flex items-center gap-1.5"
+              >
+                <span>Explore Hackathons</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
           </div>
         )}
+
       </div>
 
-      {/* Side Drawer Modal */}
       <DetailDrawer
         isOpen={drawerState.isOpen}
         onClose={() => setDrawerState({ ...drawerState, isOpen: false })}

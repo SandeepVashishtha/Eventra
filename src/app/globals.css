@@ -1,11 +1,10 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f4fbf7;
-  --foreground: #064e3b;
-  --mint-primary: #00b887;
-  --mint-dark: #065f46;
-  --mint-light: #e6f7f0;
+  --background: #fafafa;
+  --foreground: #09090b;
+  --primary: #18181b;
+  --primary-foreground: #fafafa;
 }
 
 @theme inline {
@@ -16,15 +15,16 @@
 }
 
 body {
-  background-color: #f4fbf7;
-  color: #0f172a;
-  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  background-color: #fafafa;
+  color: #09090b;
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: -0.011em;
 }
 
-/* Custom Forest Mint selection */
+/* Minimalist clean selection */
 ::selection {
-  background-color: #a7f3d0;
-  color: #064e3b;
+  background-color: #18181b;
+  color: #fafafa;
 }
 
 

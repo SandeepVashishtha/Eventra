@@ -1,12 +1,13 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import { Calendar, MapPin, Users, ArrowRight, Clock } from "lucide-react";
+import { Bookmark, ArrowUpRight, Calendar, MapPin } from "lucide-react";
 import { useDrawer } from "@/context/DrawerContext";
 
 export default function EventCard({ event, onClick }) {
   const { openDrawer } = useDrawer();
+  const [isBookmarked, setIsBookmarked] = useState(false);
 
   const formattedDate = event?.eventDate
     ? new Date(event.eventDate).toLocaleDateString(undefined, {
@@ -16,16 +17,33 @@ export default function EventCard({ event, onClick }) {
       })
     : "Date TBD";
 
-  const formattedTime = event?.eventDate
-    ? new Date(event.eventDate).toLocaleTimeString(undefined, {
-        hour: "2-digit",
-        minute: "2-digit"
-      })
-    : "";
-
   const imageUrl =
     event?.imageUrl ||
     "https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=800&auto=format&fit=crop";
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("eventra_bookmarks") || "[]");
+      setIsBookmarked(saved.some((item) => item.id === event?.id && item.type === "event"));
+    } catch (e) {}
+  }, [event?.id]);
+
+  const toggleBookmark = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      const saved = JSON.parse(localStorage.getItem("eventra_bookmarks") || "[]");
+      let updated;
+      if (isBookmarked) {
+        updated = saved.filter((item) => !(item.id === event?.id && item.type === "event"));
+        setIsBookmarked(false);
+      } else {
+        updated = [...saved, { ...event, type: "event", savedAt: Date.now() }];
+        setIsBookmarked(true);
+      }
+      localStorage.setItem("eventra_bookmarks", JSON.stringify(updated));
+    } catch (e) {}
+  };
 
   const handleCardClick = (e) => {
     e.preventDefault();
@@ -38,68 +56,66 @@ export default function EventCard({ event, onClick }) {
   };
 
   return (
-    <div
+    <article
       onClick={handleCardClick}
-      className="group h-full bg-white border border-zinc-200/90 rounded-2xl overflow-hidden shadow-2xs hover:shadow-xl hover:border-emerald-300 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between cursor-pointer select-none"
+      className="group flex flex-col gap-2.5 cursor-pointer select-none"
     >
-      <div>
-        <div className="relative h-44 w-full overflow-hidden bg-zinc-100">
-          <Image
-            src={imageUrl}
-            alt={event?.title || "Event Image"}
-            fill
-            className="object-cover group-hover:scale-105 transition-transform duration-500"
-            unoptimized
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+      {/* Media container */}
+      <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl bg-neutral-100 border border-neutral-200/80 group-hover:border-neutral-400 transition-all duration-300">
+        <Image
+          src={imageUrl}
+          alt={event?.title || "Event Cover"}
+          fill
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          className="object-cover group-hover:scale-[1.03] transition-transform duration-500 ease-out"
+          unoptimized
+        />
 
-          <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#00b887] text-white text-xs font-bold shadow-md">
-              <Calendar className="w-3.5 h-3.5" />
-              <span>Event</span>
-            </span>
-
-            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-white bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/20">
-              <Clock className="w-3 h-3 text-emerald-300" />
-              <span>{formattedDate}</span>
-            </span>
-          </div>
-
-          <div className="absolute bottom-3 left-4 right-4">
-            <h3 className="text-base font-extrabold text-white line-clamp-1 leading-snug drop-shadow-sm group-hover:text-emerald-200 transition-colors">
-              {event?.title}
-            </h3>
-          </div>
+        {/* Minimal Category Tag */}
+        <div className="absolute top-2.5 left-2.5">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-neutral-900/80 text-white backdrop-blur-md">
+            Event
+          </span>
         </div>
 
-        <div className="p-5 space-y-3">
-          <p className="text-xs text-zinc-600 leading-relaxed line-clamp-2 font-normal">
-            {event?.description}
-          </p>
-
-          <div className="pt-1 flex flex-wrap items-center gap-2 text-xs">
-            <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-zinc-100 text-zinc-700 font-medium">
-              <MapPin className="w-3 h-3 text-emerald-600" />
-              <span className="truncate max-w-[130px]">{event?.location || "Online"}</span>
-            </div>
-
-            {event?.registeredCount !== undefined && (
-              <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-zinc-100 text-zinc-700 font-medium">
-                <Users className="w-3 h-3 text-emerald-600" />
-                <span>{event.registeredCount} attending</span>
-              </div>
-            )}
-          </div>
+        {/* Floating Minimal Action Buttons */}
+        <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <button
+            type="button"
+            onClick={toggleBookmark}
+            title={isBookmarked ? "Remove Bookmark" : "Save Event"}
+            className={`w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md transition-colors ${
+              isBookmarked
+                ? "bg-neutral-900 text-white"
+                : "bg-white/90 text-neutral-800 hover:bg-white"
+            }`}
+          >
+            <Bookmark className={`w-3.5 h-3.5 ${isBookmarked ? "fill-white" : ""}`} />
+          </button>
         </div>
       </div>
 
-      <div className="px-5 py-3.5 bg-zinc-50/60 border-t border-zinc-100 flex items-center justify-between text-xs">
-        <span className="text-zinc-500 font-medium">{formattedTime ? formattedTime : "Public Workshop"}</span>
-        <div className="inline-flex items-center gap-1.5 font-bold text-[#00b887] group-hover:text-[#049d73] group-hover:translate-x-0.5 transition-all">
-          <span>View Details</span>
-          <ArrowRight className="w-3.5 h-3.5" />
+      {/* Text Details */}
+      <div className="space-y-1">
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="text-[15px] font-medium text-neutral-950 group-hover:text-neutral-600 transition-colors line-clamp-1">
+            {event?.title}
+          </h3>
+          <span className="text-xs font-mono text-neutral-400 shrink-0">
+            {formattedDate}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between text-xs text-neutral-500">
+          <span className="truncate max-w-[200px]">
+            {event?.location || "Online"}
+          </span>
+          <span className="text-neutral-400 group-hover:text-neutral-900 transition-colors inline-flex items-center gap-0.5">
+            <span>View</span>
+            <ArrowUpRight className="w-3 h-3" />
+          </span>
         </div>
       </div>
-    </div>
+    </article>
   );
 }
