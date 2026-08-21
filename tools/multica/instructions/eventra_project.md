@@ -31,8 +31,8 @@ action; never terminate an unknown process.
 
 Committed development defaults are safe and available in every worktree. The
 frontend reads `NEXT_PUBLIC_API_BASE_URL` and defaults to the local backend.
-The backend receives its stable `JWT_SECRET` and any mail credentials only by
-custom environment for Backend Engineer and Integration QA. Never commit,
+The backend receives its stable backend signing secret and any mail credentials
+only through agent custom environment for Backend Engineer and Integration QA. Never commit,
 print, place in Issue text, add to a command argument, copy into a worktree,
 or report a secret. `.env.local` stays ignored for optional user overrides.
 
