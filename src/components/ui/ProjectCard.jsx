@@ -1,12 +1,60 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import { FolderKanban, ThumbsUp, Code2, ArrowUpRight } from "lucide-react";
+import { FolderKanban, ThumbsUp, Code2, ArrowUpRight, Star } from "lucide-react";
 import { useDrawer } from "@/context/DrawerContext";
+import { upvoteProject } from "@/lib/api";
 
 export default function ProjectCard({ project, onClick }) {
   const { openDrawer } = useDrawer();
+
+  const [upvotes, setUpvotes] = useState(project?.upvotes || 0);
+  const [hasUpvoted, setHasUpvoted] = useState(false);
+  const [githubStars, setGithubStars] = useState(null);
+
+  useEffect(() => {
+    setUpvotes(project?.upvotes || 0);
+  }, [project]);
+
+  useEffect(() => {
+    async function fetchStars() {
+      if (!project?.githubUrl) return;
+      try {
+        const cleanUrl = project.githubUrl.replace(/\/$/, "");
+        const match = cleanUrl.match(/github\.com\/([^/]+\/[^/]+)/);
+        if (match && match[1]) {
+          const repoPath = match[1];
+          const res = await fetch(`https://api.github.com/repos/${repoPath}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (typeof data.stargazers_count === "number") {
+              setGithubStars(data.stargazers_count);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Could not fetch GitHub stars", err);
+      }
+    }
+    fetchStars();
+  }, [project?.githubUrl]);
+
+  const handleUpvote = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (hasUpvoted) return;
+
+    setUpvotes((prev) => prev + 1);
+    setHasUpvoted(true);
+
+    try {
+      await upvoteProject(project.id);
+    } catch (err) {
+      console.warn("Upvote API call handled", err);
+    }
+  };
 
   const thumbnailUrl =
     project?.thumbnailUrl ||
@@ -16,9 +64,9 @@ export default function ProjectCard({ project, onClick }) {
     e.preventDefault();
     e.stopPropagation();
     if (onClick) {
-      onClick(project);
+      onClick({ ...project, upvotes });
     } else {
-      openDrawer("project", project);
+      openDrawer("project", { ...project, upvotes });
     }
   };
 
@@ -44,10 +92,28 @@ export default function ProjectCard({ project, onClick }) {
               <span>{project?.category || "Project"}</span>
             </span>
 
-            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-900 bg-emerald-100/90 backdrop-blur-md px-2.5 py-1 rounded-full border border-emerald-200">
-              <ThumbsUp className="w-3 h-3 text-emerald-700" />
-              <span>{project?.upvotes || 0} Upvotes</span>
-            </span>
+            <div className="flex items-center gap-1.5">
+              {githubStars !== null && (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-900 bg-amber-100/95 backdrop-blur-md px-2.5 py-1 rounded-full border border-amber-200 shadow-xs">
+                  <Star className="w-3 h-3 text-amber-600 fill-amber-500" />
+                  <span>{githubStars}</span>
+                </span>
+              )}
+
+              <button
+                type="button"
+                onClick={handleUpvote}
+                className={`inline-flex items-center gap-1 text-[11px] font-bold backdrop-blur-md px-2.5 py-1 rounded-full border transition-all cursor-pointer ${
+                  hasUpvoted
+                    ? "bg-emerald-600 text-white border-emerald-500 shadow-sm"
+                    : "bg-emerald-100/90 text-emerald-900 border-emerald-200 hover:bg-emerald-200"
+                }`}
+                title="Upvote Project"
+              >
+                <ThumbsUp className={`w-3 h-3 ${hasUpvoted ? "text-white" : "text-emerald-700"}`} />
+                <span>{upvotes}</span>
+              </button>
+            </div>
           </div>
 
           <div className="absolute bottom-3 left-4 right-4">
@@ -88,3 +154,4 @@ export default function ProjectCard({ project, onClick }) {
     </div>
   );
 }
+
