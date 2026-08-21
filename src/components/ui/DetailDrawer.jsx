@@ -25,17 +25,30 @@ import {
 import { registerForEvent, registerForHackathon, upvoteProject } from "@/lib/api";
 
 export default function DetailDrawer({ isOpen, onClose, type, data }) {
+  if (!isOpen || !data) return null;
+
+  return (
+    <DetailDrawerContent
+      key={`${type}:${data.id}`}
+      onClose={onClose}
+      type={type}
+      data={data}
+    />
+  );
+}
+
+function DetailDrawerContent({ onClose, type, data }) {
   const [actionDone, setActionDone] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [upvotes, setUpvotes] = useState(data?.upvotes || 0);
+  const mountedRef = React.useRef(true);
 
   React.useEffect(() => {
-    setActionDone(false);
-    setActionLoading(false);
-    setUpvotes(data?.upvotes || 0);
-  }, [data, isOpen]);
-
-  if (!isOpen || !data) return null;
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const fullPageUrl =
     type === "event"
@@ -71,20 +84,26 @@ export default function DetailDrawer({ isOpen, onClose, type, data }) {
     try {
       if (type === "event") {
         await registerForEvent(data.id);
+        if (!mountedRef.current) return;
         setActionDone(true);
       } else if (type === "hackathon") {
         await registerForHackathon(data.id);
+        if (!mountedRef.current) return;
         setActionDone(true);
       } else if (type === "project") {
         await upvoteProject(data.id);
+        if (!mountedRef.current) return;
         setUpvotes((prev) => prev + 1);
         setActionDone(true);
       }
     } catch (err) {
+      if (!mountedRef.current) return;
       console.warn("Action error", err);
       setActionDone(true);
     } finally {
-      setActionLoading(false);
+      if (mountedRef.current) {
+        setActionLoading(false);
+      }
     }
   };
 

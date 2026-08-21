@@ -15,6 +15,7 @@ import {
   Play
 } from "lucide-react";
 import { getEvents, getHackathons, getProjects } from "@/lib/api";
+import { createSingleFlightGate } from "@/lib/single-flight.mjs";
 import EventCard from "@/components/ui/EventCard";
 import HackathonCard from "@/components/ui/HackathonCard";
 import ProjectCard from "@/components/ui/ProjectCard";
@@ -39,8 +40,13 @@ export default function WhatsHappeningNow() {
   });
 
   const carouselRef = useRef(null);
+  const cancelledRef = useRef(false);
+  const loadGateRef = useRef(createSingleFlightGate());
 
   const fetchData = async () => {
+    const lease = loadGateRef.current.acquire();
+    if (!lease) return;
+
     setLoading(true);
     setIsRefreshing(true);
     try {
@@ -50,19 +56,62 @@ export default function WhatsHappeningNow() {
         getProjects()
       ]);
 
-      setEvents(eventsData || []);
-      setHackathons(hackathonsData || []);
-      setProjects(projectsData || []);
+      if (!cancelledRef.current) {
+        setEvents(eventsData || []);
+        setHackathons(hackathonsData || []);
+        setProjects(projectsData || []);
+      }
     } catch (error) {
-      console.warn("Failed to fetch live data", error);
+      if (!cancelledRef.current) {
+        console.warn("Failed to fetch live data", error);
+      }
     } finally {
-      setLoading(false);
-      setIsRefreshing(false);
+      lease.release();
+      if (!cancelledRef.current) {
+        setLoading(false);
+        setIsRefreshing(false);
+      }
     }
   };
 
   useEffect(() => {
-    fetchData();
+    cancelledRef.current = false;
+    const lease = loadGateRef.current.acquire();
+    if (!lease) {
+      return () => {
+        cancelledRef.current = true;
+      };
+    }
+
+    async function loadInitialData() {
+      try {
+        const [eventsData, hackathonsData, projectsData] = await Promise.all([
+          getEvents(),
+          getHackathons(),
+          getProjects()
+        ]);
+
+        if (!cancelledRef.current) {
+          setEvents(eventsData || []);
+          setHackathons(hackathonsData || []);
+          setProjects(projectsData || []);
+        }
+      } catch (error) {
+        if (!cancelledRef.current) {
+          console.warn("Failed to fetch live data", error);
+        }
+      } finally {
+        lease.release();
+        if (!cancelledRef.current) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadInitialData();
+    return () => {
+      cancelledRef.current = true;
+    };
   }, []);
 
   const filteredEvents = events.filter((e) =>
@@ -175,8 +224,8 @@ export default function WhatsHappeningNow() {
 
             <button
               onClick={fetchData}
-              disabled={isRefreshing}
-              className="p-2 bg-white border border-zinc-200 hover:bg-zinc-50 rounded-xl text-zinc-600 transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
+              disabled={loading || isRefreshing}
+              className="p-2 bg-white border border-zinc-200 hover:bg-zinc-50 rounded-xl text-zinc-600 transition-colors shadow-2xs cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
               title="Refresh Live Feed"
             >
               <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin text-blue-600" : ""}`} />

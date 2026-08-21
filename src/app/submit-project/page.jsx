@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { 
@@ -17,11 +17,34 @@ import {
 } from "lucide-react";
 import { createProject } from "@/lib/api";
 
+function getAuthSnapshot() {
+  try {
+    return Boolean(
+      localStorage.getItem("eventra_token") ||
+      localStorage.getItem("eventra_user")
+    );
+  } catch {
+    return false;
+  }
+}
+
+function getServerAuthSnapshot() {
+  return null;
+}
+
+function subscribeToAuth(onStoreChange) {
+  window.addEventListener("storage", onStoreChange);
+  return () => window.removeEventListener("storage", onStoreChange);
+}
+
 export default function SubmitProjectPage() {
   const router = useRouter();
 
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [checkingAuth, setCheckingAuth] = useState(true);
+  const isAuthenticated = useSyncExternalStore(
+    subscribeToAuth,
+    getAuthSnapshot,
+    getServerAuthSnapshot
+  );
 
   const [formData, setFormData] = useState({
     title: "",
@@ -35,19 +58,6 @@ export default function SubmitProjectPage() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const token = localStorage.getItem("eventra_token");
-      const user = localStorage.getItem("eventra_user");
-      if (token || user) {
-        setIsAuthenticated(true);
-      } else {
-        setIsAuthenticated(false);
-      }
-    }
-    setCheckingAuth(false);
-  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -117,7 +127,7 @@ export default function SubmitProjectPage() {
     };
   };
 
-  if (checkingAuth) {
+  if (isAuthenticated === null) {
     return (
       <main className="min-h-screen bg-[#f4fbf7] py-20 text-center">
         <div className="text-sm font-semibold text-zinc-500">Verifying session...</div>

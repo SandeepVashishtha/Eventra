@@ -4,6 +4,18 @@ import React, { useState } from "react";
 import { X, Sparkles, Mail, Lock, User, ArrowRight } from "lucide-react";
 
 export default function AuthModal({ isOpen, mode: initialMode, onClose }) {
+  if (!isOpen) return null;
+
+  return (
+    <AuthModalContent
+      key={initialMode}
+      initialMode={initialMode}
+      onClose={onClose}
+    />
+  );
+}
+
+function AuthModalContent({ initialMode, onClose }) {
   const [mode, setMode] = useState(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -11,19 +23,14 @@ export default function AuthModal({ isOpen, mode: initialMode, onClose }) {
   const [submitted, setSubmitted] = useState(false);
 
   React.useEffect(() => {
-    setMode(initialMode);
-    setSubmitted(false);
-  }, [initialMode, isOpen]);
-
-  if (!isOpen) return null;
+    if (!submitted) return;
+    const closeTimer = setTimeout(onClose, 1500);
+    return () => clearTimeout(closeTimer);
+  }, [submitted, onClose]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     setSubmitted(true);
-    setTimeout(() => {
-      onClose();
-      setSubmitted(false);
-    }, 1500);
   };
 
   return (

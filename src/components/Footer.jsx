@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useSyncExternalStore } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { 
@@ -27,6 +27,45 @@ import {
   Bot 
 } from "lucide-react";
 
+const TOTAL_VISITS_KEY = "eventra_total_visits";
+const SESSION_LOGGED_KEY = "eventra_session_logged";
+const TOTAL_VISITS_EVENT = "eventra:total-visits-changed";
+
+function getTotalVisitorsSnapshot() {
+  try {
+    const parsed = Number.parseInt(localStorage.getItem(TOTAL_VISITS_KEY) || "0", 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+  } catch {
+    return 1;
+  }
+}
+
+function getServerTotalVisitorsSnapshot() {
+  return 1;
+}
+
+function subscribeToTotalVisitors(onStoreChange) {
+  window.addEventListener("storage", onStoreChange);
+  window.addEventListener(TOTAL_VISITS_EVENT, onStoreChange);
+  return () => {
+    window.removeEventListener("storage", onStoreChange);
+    window.removeEventListener(TOTAL_VISITS_EVENT, onStoreChange);
+  };
+}
+
+function recordSessionVisit() {
+  try {
+    if (sessionStorage.getItem(SESSION_LOGGED_KEY)) return;
+    const current = Number.parseInt(localStorage.getItem(TOTAL_VISITS_KEY) || "0", 10);
+    const next = (Number.isFinite(current) ? current : 0) + 1;
+    localStorage.setItem(TOTAL_VISITS_KEY, next.toString());
+    sessionStorage.setItem(SESSION_LOGGED_KEY, "true");
+    window.dispatchEvent(new Event(TOTAL_VISITS_EVENT));
+  } catch {
+    // Storage may be unavailable in hardened browser contexts; retain snapshot fallback.
+  }
+}
+
 export default function Footer() {
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
@@ -38,7 +77,15 @@ export default function Footer() {
   });
 
   const [liveVisitors, setLiveVisitors] = useState(1);
-  const [totalVisitors, setTotalVisitors] = useState(0);
+  const totalVisitors = useSyncExternalStore(
+    subscribeToTotalVisitors,
+    getTotalVisitorsSnapshot,
+    getServerTotalVisitorsSnapshot
+  );
+
+  useEffect(() => {
+    recordSessionVisit();
+  }, []);
 
   // Update live clock
   useEffect(() => {
@@ -68,17 +115,6 @@ export default function Footer() {
   // Real-time visitor tracking
   useEffect(() => {
     if (typeof window === "undefined") return;
-
-    const STORAGE_KEY = "eventra_total_visits";
-    const storedVisits = localStorage.getItem(STORAGE_KEY);
-    let count = storedVisits ? parseInt(storedVisits, 10) : 0;
-    
-    if (!sessionStorage.getItem("eventra_session_logged")) {
-      count += 1;
-      localStorage.setItem(STORAGE_KEY, count.toString());
-      sessionStorage.setItem("eventra_session_logged", "true");
-    }
-    setTotalVisitors(count || 1);
 
     const CHANNEL_NAME = "eventra_active_visitors_channel";
     const tabId = "tab_" + Math.random().toString(36).substring(2, 9);

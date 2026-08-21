@@ -4,9 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "dev:local": "bash scripts/run-local.sh",
+    "test:local-contract": "bash scripts/test-local-contract.sh",
+    "smoke:local": "bash scripts/smoke-local.sh"
   },
   "dependencies": {
     "lucide-react": "^1.31.0",
