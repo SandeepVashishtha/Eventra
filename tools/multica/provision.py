@@ -203,25 +203,27 @@ class Provisioner:
         matches = []
         for record in records:
             runtime_id = record.get("id")
-            daemon_id = record.get("daemon_id")
-            capabilities = record.get("server_capabilities")
-            if (
-                not isinstance(runtime_id, str)
-                or not runtime_id
-                or not isinstance(daemon_id, str)
-                or not daemon_id
-                or not isinstance(capabilities, list)
-                or not all(isinstance(value, str) for value in capabilities)
-            ):
+            if not isinstance(runtime_id, str) or not runtime_id:
                 raise RuntimeError("malformed runtime list")
             if runtime_id == config.runtime_id:
                 matches.append(record)
         if len(matches) != 1:
             raise RuntimeError("target runtime is missing or duplicated")
         target = matches[0]
-        if target["daemon_id"] != config.daemon_id:
+        daemon_id = target.get("daemon_id")
+        if not isinstance(daemon_id, str) or not daemon_id:
+            raise RuntimeError("malformed runtime list")
+        if daemon_id != config.daemon_id:
             raise RuntimeError("target runtime daemon does not match configuration")
-        if WORKTREE_CAPABILITY not in target["server_capabilities"]:
+        metadata = target.get("metadata")
+        if target.get("status") != "online" or not isinstance(metadata, dict):
+            raise RuntimeError("malformed runtime list")
+        capabilities = metadata.get("capabilities")
+        if not isinstance(capabilities, list) or not all(
+            isinstance(value, str) for value in capabilities
+        ):
+            raise RuntimeError("malformed runtime list")
+        if WORKTREE_CAPABILITY not in capabilities:
             raise RuntimeError(f"runtime lacks required {WORKTREE_CAPABILITY} capability")
 
     @staticmethod

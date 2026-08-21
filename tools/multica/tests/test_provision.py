@@ -65,7 +65,12 @@ class FakeRunner:
 
     def __init__(self):
         self.calls = []
-        self.runtimes = [{"id": "runtime-id", "daemon_id": "daemon-id", "server_capabilities": ["local-worktree-v1"]}]
+        self.runtimes = [{
+            "id": "runtime-id",
+            "daemon_id": "daemon-id",
+            "status": "online",
+            "metadata": {"capabilities": ["local-worktree-v1"]},
+        }]
         self.skills, self.agents, self.envs, self.bindings = {}, {}, {}, {}
         self.squads, self.projects = {}, {}
         self.response_overrides = {}
@@ -497,13 +502,85 @@ class ProvisionerTests(unittest.TestCase):
         self.assertEqual(update["positionals"], [project_id, resource_id])
         self.assertEqual(update["flags"]["--execution-mode"], "worktree")
 
+    def test_nested_target_runtime_capability_allows_unrelated_degraded_record_in_dry_run(self):
+        config = build_eventra_config(
+            "de500649-cada-4419-9d5d-279045e2eaae",
+            "019fab98-bbad-7d17-b0b7-26e56dbe1b6f",
+        )
+        self.runner.runtimes = [
+            {
+                "id": "de500649-cada-4419-9d5d-279045e2eaae",
+                "daemon_id": "019fab98-bbad-7d17-b0b7-26e56dbe1b6f",
+                "status": "online",
+                "metadata": {"capabilities": ["local-worktree-v1"]},
+            },
+            {
+                "id": "offline-profile-runtime",
+                "status": "offline",
+                "metadata": {"profile_error": "sanitized profile failure"},
+            },
+        ]
+
+        result = Provisioner(self.runner).reconcile(config, apply=False, backend_env=None)
+
+        self.assertEqual(self.runner.mutation_count, 0)
+        self.assertTrue(all(value is None for value in result.agent_ids.values()))
+
     def test_missing_or_malformed_runtime_capability_fails_closed(self):
-        cases = ([], [{"id": "runtime-id", "daemon_id": "daemon-id"}], [{"id": "runtime-id", "daemon_id": "daemon-id", "server_capabilities": []}], [{"id": "other", "daemon_id": "daemon-id", "server_capabilities": ["local-worktree-v1"]}])
+        cases = (
+            [],
+            [{"id": "runtime-id", "daemon_id": "daemon-id", "status": "online", "metadata": {}}],
+            [{"id": "runtime-id", "daemon_id": "daemon-id", "status": "online", "metadata": {"capabilities": []}}],
+            [{"id": "other"}],
+        )
         for value in cases:
             with self.subTest(value=value):
                 runner = FakeRunner()
                 runner.runtimes = value
                 with self.assertRaisesRegex(RuntimeError, "runtime|local-worktree-v1"):
+                    Provisioner(runner).reconcile(self.config, apply=True, backend_env=self.backend_env)
+                self.assertEqual(runner.mutation_count, 0)
+
+    def test_target_runtime_strict_schema_failures_stop_before_mutation(self):
+        target = {
+            "id": "runtime-id",
+            "daemon_id": "daemon-id",
+            "status": "online",
+            "metadata": {"capabilities": ["local-worktree-v1"]},
+        }
+        cases = (
+            ({**target, "daemon_id": "wrong-daemon"}, "daemon does not match"),
+            ({**target, "status": "offline"}, "malformed runtime list"),
+            ({key: value for key, value in target.items() if key != "metadata"}, "malformed runtime list"),
+            ({**target, "metadata": {"capabilities": ["local-worktree-v1", 1]}}, "malformed runtime list"),
+            ({**target, "metadata": {"capabilities": []}}, "local-worktree-v1"),
+        )
+        for runtime, message in cases:
+            with self.subTest(runtime=runtime):
+                runner = FakeRunner()
+                runner.runtimes = [runtime]
+                with self.assertRaisesRegex(RuntimeError, message):
+                    Provisioner(runner).reconcile(self.config, apply=True, backend_env=self.backend_env)
+                self.assertEqual(runner.mutation_count, 0)
+
+        runner = FakeRunner()
+        runner.runtimes = [target, copy.deepcopy(target)]
+        with self.assertRaisesRegex(RuntimeError, "missing or duplicated"):
+            Provisioner(runner).reconcile(self.config, apply=True, backend_env=self.backend_env)
+        self.assertEqual(runner.mutation_count, 0)
+
+    def test_runtime_records_require_nonempty_ids_even_when_not_targeted(self):
+        target = {
+            "id": "runtime-id",
+            "daemon_id": "daemon-id",
+            "status": "online",
+            "metadata": {"capabilities": ["local-worktree-v1"]},
+        }
+        for unrelated in ({}, {"id": ""}):
+            with self.subTest(unrelated=unrelated):
+                runner = FakeRunner()
+                runner.runtimes = [target, unrelated]
+                with self.assertRaisesRegex(RuntimeError, "malformed runtime list"):
                     Provisioner(runner).reconcile(self.config, apply=True, backend_env=self.backend_env)
                 self.assertEqual(runner.mutation_count, 0)
 
