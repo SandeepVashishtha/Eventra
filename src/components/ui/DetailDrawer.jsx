@@ -5,30 +5,30 @@ import Image from "next/image";
 import Link from "next/link";
 import { 
   X, 
-  Calendar, 
   MapPin, 
-  Users, 
   Clock, 
   Trophy, 
-  Award, 
-  Sparkles, 
+  Users, 
   FolderKanban, 
   Heart, 
   Code2, 
   ArrowUpRight, 
   CheckCircle2, 
-  ExternalLink
+  ExternalLink,
+  AlertCircle
 } from "lucide-react";
 import { registerForEvent, registerForHackathon, upvoteProject } from "@/lib/api";
 
 export default function DetailDrawer({ isOpen, onClose, type, data }) {
   const [actionDone, setActionDone] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [actionError, setActionError] = useState("");
   const [upvotes, setUpvotes] = useState(data?.upvotes || 0);
 
   React.useEffect(() => {
-    setActionDone(false);
+    setActionDone(Boolean(data?.isRegistered || data?.registered || data?.hasRegistered || data?.hasUpvoted));
     setActionLoading(false);
+    setActionError("");
     setUpvotes(data?.upvotes || 0);
   }, [data, isOpen]);
 
@@ -65,6 +65,7 @@ export default function DetailDrawer({ isOpen, onClose, type, data }) {
 
   const handleAction = async () => {
     setActionLoading(true);
+    setActionError("");
     try {
       if (type === "event") {
         await registerForEvent(data.id);
@@ -78,7 +79,8 @@ export default function DetailDrawer({ isOpen, onClose, type, data }) {
         setActionDone(true);
       }
     } catch (err) {
-      setActionDone(true);
+      console.warn("Action error", err);
+      setActionError(err?.message || "Action could not be completed. Please try again.");
     } finally {
       setActionLoading(false);
     }
@@ -266,6 +268,17 @@ export default function DetailDrawer({ isOpen, onClose, type, data }) {
                   </span>
                 )}
               </button>
+            )}
+
+            {actionError && (
+              <div
+                role="alert"
+                aria-live="polite"
+                className="p-2.5 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs flex items-start gap-2 font-medium"
+              >
+                <AlertCircle className="w-4 h-4 shrink-0 text-red-600 mt-0.5" />
+                <span>{actionError}</span>
+              </div>
             )}
           </div>
 
