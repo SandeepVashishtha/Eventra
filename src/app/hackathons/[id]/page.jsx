@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { 
   Trophy, 
   MapPin, 
@@ -25,6 +25,7 @@ import { CardSkeleton } from "@/components/ui/Skeleton";
 
 export default function HackathonDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const hackathonId = params?.id;
 
   const [hackathon, setHackathon] = useState(null);
@@ -34,24 +35,51 @@ export default function HackathonDetailPage() {
   const [registered, setRegistered] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
     async function loadHackathon() {
       setLoading(true);
+      setActionError("");
+      setRegistered(false);
       try {
         const data = await getHackathonById(hackathonId);
-        setHackathon(data);
+        if (isMounted) {
+          setHackathon(data);
+          if (data) {
+            setRegistered(Boolean(data.isRegistered || data.registered || data.hasRegistered));
+          }
+        }
       } catch (err) {
-        console.warn("Failed to load hackathon details", err);
+        if (isMounted) {
+          console.warn("Failed to load hackathon details", err);
+          setActionError("Could not load hackathon information.");
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     }
 
     if (hackathonId) {
       loadHackathon();
     }
+
+    return () => {
+      isMounted = false;
+    };
   }, [hackathonId]);
 
   const handleRegister = async () => {
+    if (!hackathon || registered || isRegistering) return;
+
+    // Check auth token before attempting registration
+    const token = typeof window !== "undefined" ? localStorage.getItem("eventra_token") : null;
+    if (!token) {
+      setActionError("You must be logged in to register for this hackathon.");
+      router.push(`/login?redirect=/hackathons/${hackathonId}`);
+      return;
+    }
+
     setIsRegistering(true);
     setActionError("");
     try {
@@ -251,6 +279,7 @@ export default function HackathonDetailPage() {
                 <button
                   onClick={handleRegister}
                   disabled={isRegistering}
+                  aria-busy={isRegistering}
                   className="w-full py-3.5 px-6 bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm rounded-2xl shadow-md shadow-amber-200 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   <Trophy className="w-4 h-4" />
@@ -261,10 +290,21 @@ export default function HackathonDetailPage() {
               {actionError && (
                 <div
                   role="alert"
-                  className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-2xl text-xs flex items-start gap-2 font-medium"
+                  aria-live="polite"
+                  className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-2xl text-xs flex flex-col gap-2 font-medium"
                 >
-                  <AlertCircle className="w-4 h-4 shrink-0 text-red-600 mt-px" />
-                  <span>{actionError}</span>
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-red-600 mt-0.5" />
+                    <span>{actionError}</span>
+                  </div>
+                  {actionError.toLowerCase().includes("logged in") && (
+                    <Link
+                      href={`/login?redirect=/hackathons/${hackathonId}`}
+                      className="text-xs font-bold text-red-800 underline hover:text-red-900 ml-6"
+                    >
+                      Sign In Now →
+                    </Link>
+                  )}
                 </div>
               )}
 
