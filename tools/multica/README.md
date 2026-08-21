@@ -63,8 +63,8 @@ agents, skills, Squad members, Projects, or resources.
 
 Use the project context and each repository's `AGENTS.md` as the operating
 contract. Frontend work uses `npm run test:local-contract`, `npm run
-dev:local`, and `npm run smoke:local`; backend work uses `./mvnw -s
-.mvn/settings-public.xml test`, `scripts/run-local.sh`, and
+dev:local`, and `npm run smoke:local`; backend work uses
+`scripts/test-local.sh`, `scripts/run-local.sh`, and
 `scripts/smoke-local.sh`. Cross-stack work freezes the API contract first,
 keeps one pull request per repository, and records exact reviewed and tested
 commit SHAs. A partial two-repository merge stops immediately and requires

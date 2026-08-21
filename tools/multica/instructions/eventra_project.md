@@ -23,7 +23,7 @@ The frontend uses port `3000` and the backend uses port `8080`.
 
 From the frontend worktree run `npm run test:local-contract`,
 `npm run dev:local`, and `npm run smoke:local`. From the backend worktree run
-`./mvnw -s .mvn/settings-public.xml test`, `scripts/run-local.sh`, and
+`scripts/test-local.sh`, `scripts/run-local.sh`, and
 `scripts/smoke-local.sh`. Inspect a reported port collision before taking any
 action; never terminate an unknown process.
 

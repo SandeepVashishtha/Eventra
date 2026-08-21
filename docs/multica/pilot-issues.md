@@ -124,9 +124,10 @@ repository change belongs in the child.
 
 - Controller and security tests cover public HTTP 200 access and the response
   schema containing `service` and `apiVersion`.
-- Run the focused controller/security tests, `./mvnw -s
-  .mvn/settings-public.xml test`, and `scripts/smoke-local.sh`; record every
-  command and exit code. The smoke result must include an observed successful
+- Run the focused controller/security tests as
+  `scripts/test-local.sh -Dtest=...`, then the complete suite as
+  `scripts/test-local.sh`, and `scripts/smoke-local.sh`; record every command
+  and exit code. The smoke result must include an observed successful
   `GET /api/meta` response without secrets.
 - The Independent Reviewer reviews the submitted exact backend SHA. Integration
   QA verifies that exact SHA's endpoint, public-access behavior, schema, and
@@ -202,8 +203,9 @@ PR. Neither child modifies the nested frontend `Backend/` directory.
 **Acceptance and required checks:**
 
 - Backend: add contract tests for the selected frozen response and public
-  endpoint behavior. Run focused tests and `./mvnw -s .mvn/settings-public.xml
-  test`, recording commands and exits.
+  endpoint behavior. Run focused tests as `scripts/test-local.sh -Dtest=...`
+  and the complete suite as `scripts/test-local.sh`, recording commands and
+  exits.
 - Frontend: add success and failure tests for footer rendering, including the
   selected `apiVersion` or `buildVersion` display and the non-disruptive
   unavailable state. Run the focused tests, `npm run test:local-contract`,
