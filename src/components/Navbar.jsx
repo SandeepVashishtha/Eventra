@@ -98,10 +98,10 @@ export default function Navbar() {
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
+          <div className="relative flex items-center justify-between">
             
             {/* Left Brand Logo */}
-            <div className="flex items-center gap-8">
+            <div className="flex items-center">
               <Link href="/" className="flex items-center gap-2.5 group">
                 <div className="w-9 h-9 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center p-1 group-hover:scale-105 transition-transform">
                   <Image
@@ -116,47 +116,47 @@ export default function Navbar() {
                   Eventra
                 </span>
               </Link>
-
-              {/* Main Navigation Links */}
-              <nav className="hidden md:flex items-center space-x-1">
-                <Link
-                  href="/events"
-                  className={`flex items-center gap-1 px-3.5 py-2 rounded-full text-xs font-bold transition-all ${
-                    pathname?.startsWith("/events")
-                      ? "bg-emerald-100/80 text-emerald-900"
-                      : "text-zinc-700 hover:text-zinc-900 hover:bg-zinc-100"
-                  }`}
-                >
-                  <Calendar className="w-3.5 h-3.5 text-[#00b887]" />
-                  <span>EVENTS</span>
-                  <ChevronDown className="w-3 h-3 opacity-60" />
-                </Link>
-
-                <Link
-                  href="/hackathons"
-                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold transition-all ${
-                    pathname?.startsWith("/hackathons")
-                      ? "bg-amber-100/80 text-amber-900"
-                      : "text-zinc-700 hover:text-zinc-900 hover:bg-zinc-100"
-                  }`}
-                >
-                  <Trophy className="w-3.5 h-3.5 text-amber-600" />
-                  <span>HACKATHONS</span>
-                </Link>
-
-                <Link
-                  href="/projects"
-                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold transition-all ${
-                    pathname?.startsWith("/projects")
-                      ? "bg-emerald-100/80 text-emerald-900"
-                      : "text-zinc-700 hover:text-zinc-900 hover:bg-zinc-100"
-                  }`}
-                >
-                  <FolderKanban className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>PROJECTS</span>
-                </Link>
-              </nav>
             </div>
+
+            {/* Main Navigation Links (Centered) */}
+            <nav className="hidden md:flex items-center space-x-1 absolute left-1/2 -translate-x-1/2">
+              <Link
+                href="/events"
+                className={`flex items-center gap-1 px-3.5 py-2 rounded-full text-xs font-bold transition-all ${
+                  pathname?.startsWith("/events")
+                    ? "bg-emerald-100/80 text-emerald-900"
+                    : "text-zinc-700 hover:text-zinc-900 hover:bg-zinc-100"
+                }`}
+              >
+                <Calendar className="w-3.5 h-3.5 text-[#00b887]" />
+                <span>EVENTS</span>
+                <ChevronDown className="w-3 h-3 opacity-60" />
+              </Link>
+
+              <Link
+                href="/hackathons"
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold transition-all ${
+                  pathname?.startsWith("/hackathons")
+                    ? "bg-amber-100/80 text-amber-900"
+                    : "text-zinc-700 hover:text-zinc-900 hover:bg-zinc-100"
+                }`}
+              >
+                <Trophy className="w-3.5 h-3.5 text-amber-600" />
+                <span>HACKATHONS</span>
+              </Link>
+
+              <Link
+                href="/projects"
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold transition-all ${
+                  pathname?.startsWith("/projects")
+                    ? "bg-emerald-100/80 text-emerald-900"
+                    : "text-zinc-700 hover:text-zinc-900 hover:bg-zinc-100"
+                }`}
+              >
+                <FolderKanban className="w-3.5 h-3.5 text-emerald-600" />
+                <span>PROJECTS</span>
+              </Link>
+            </nav>
 
             {/* Right Action Bar */}
             <div className="flex items-center space-x-3 sm:space-x-4">
