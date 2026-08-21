@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { 
   FolderKanban, 
@@ -18,6 +18,7 @@ import {
   UserCheck
 } from "lucide-react";
 import { getProjects } from "@/lib/api";
+import { createSingleFlightGate } from "@/lib/single-flight.mjs";
 import ProjectCard from "@/components/ui/ProjectCard";
 import DetailDrawer from "@/components/ui/DetailDrawer";
 import { CardSkeleton } from "@/components/ui/Skeleton";
@@ -29,8 +30,13 @@ export default function ProjectsPage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedProject, setSelectedProject] = useState(null);
   const [activeFeedTab, setActiveFeedTab] = useState("trending");
+  const cancelledRef = useRef(false);
+  const loadGateRef = useRef(createSingleFlightGate());
 
   const fetchProjectsData = async () => {
+    const lease = loadGateRef.current.acquire();
+    if (!lease) return;
+
     setLoading(true);
     try {
       const data = await getProjects();
@@ -47,16 +53,65 @@ export default function ProjectsPage() {
         } catch (e) {}
       }
 
-      setProjects(apiProjs);
+      if (!cancelledRef.current) {
+        setProjects(apiProjs);
+      }
     } catch (err) {
-      console.warn("Failed to fetch projects", err);
+      if (!cancelledRef.current) {
+        console.warn("Failed to fetch projects", err);
+      }
     } finally {
-      setLoading(false);
+      lease.release();
+      if (!cancelledRef.current) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    fetchProjectsData();
+    cancelledRef.current = false;
+    const lease = loadGateRef.current.acquire();
+    if (!lease) {
+      return () => {
+        cancelledRef.current = true;
+      };
+    }
+
+    async function loadInitialProjects() {
+      try {
+        const data = await getProjects();
+        let apiProjs = Array.isArray(data) ? data : [];
+
+        if (typeof window !== "undefined") {
+          try {
+            const localProjs = JSON.parse(localStorage.getItem("eventra_custom_projects") || "[]");
+            if (Array.isArray(localProjs) && localProjs.length > 0) {
+              const existingIds = new Set(apiProjs.map((p) => p.id));
+              const uniqueLocal = localProjs.filter((p) => !existingIds.has(p.id));
+              apiProjs = [...uniqueLocal, ...apiProjs];
+            }
+          } catch {}
+        }
+
+        if (!cancelledRef.current) {
+          setProjects(apiProjs);
+        }
+      } catch (err) {
+        if (!cancelledRef.current) {
+          console.warn("Failed to fetch projects", err);
+        }
+      } finally {
+        lease.release();
+        if (!cancelledRef.current) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadInitialProjects();
+    return () => {
+      cancelledRef.current = true;
+    };
   }, []);
 
   const filteredProjects = projects.filter((p) => {
@@ -210,7 +265,8 @@ export default function ProjectsPage() {
 
             <button
               onClick={fetchProjectsData}
-              className="p-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded-xl transition-colors cursor-pointer"
+              disabled={loading}
+              className="p-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded-xl transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
               title="Refresh projects list"
             >
               <RefreshCw className="w-4 h-4" />
@@ -325,4 +381,3 @@ function featuredEventProject(featuredProject, loading, setSelectedProject) {
     </div>
   );
 }
-

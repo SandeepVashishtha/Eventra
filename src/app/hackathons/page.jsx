@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { 
   Trophy, 
@@ -14,6 +14,7 @@ import {
   PlusCircle
 } from "lucide-react";
 import { getHackathons } from "@/lib/api";
+import { createSingleFlightGate } from "@/lib/single-flight.mjs";
 import HackathonCard from "@/components/ui/HackathonCard";
 import DetailDrawer from "@/components/ui/DetailDrawer";
 import { CardSkeleton } from "@/components/ui/Skeleton";
@@ -24,21 +25,62 @@ export default function HackathonsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMode, setSelectedMode] = useState("all");
   const [selectedHackathon, setSelectedHackathon] = useState(null);
+  const cancelledRef = useRef(false);
+  const loadGateRef = useRef(createSingleFlightGate());
 
   const fetchHackathonsData = async () => {
+    const lease = loadGateRef.current.acquire();
+    if (!lease) return;
+
     setLoading(true);
     try {
       const data = await getHackathons();
-      setHackathons(data || []);
+      if (!cancelledRef.current) {
+        setHackathons(data || []);
+      }
     } catch (err) {
-      console.warn("Failed to fetch hackathons", err);
+      if (!cancelledRef.current) {
+        console.warn("Failed to fetch hackathons", err);
+      }
     } finally {
-      setLoading(false);
+      lease.release();
+      if (!cancelledRef.current) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    fetchHackathonsData();
+    cancelledRef.current = false;
+    const lease = loadGateRef.current.acquire();
+    if (!lease) {
+      return () => {
+        cancelledRef.current = true;
+      };
+    }
+
+    async function loadInitialHackathons() {
+      try {
+        const data = await getHackathons();
+        if (!cancelledRef.current) {
+          setHackathons(data || []);
+        }
+      } catch (err) {
+        if (!cancelledRef.current) {
+          console.warn("Failed to fetch hackathons", err);
+        }
+      } finally {
+        lease.release();
+        if (!cancelledRef.current) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadInitialHackathons();
+    return () => {
+      cancelledRef.current = true;
+    };
   }, []);
 
   const filteredHackathons = hackathons.filter((h) => {
@@ -159,7 +201,8 @@ export default function HackathonsPage() {
 
             <button
               onClick={fetchHackathonsData}
-              className="p-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded-xl transition-colors cursor-pointer"
+              disabled={loading}
+              className="p-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded-xl transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
               title="Refresh hackathons list"
             >
               <RefreshCw className="w-4 h-4" />

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { 
   Search, 
@@ -18,24 +18,48 @@ import {
   CheckCircle2
 } from "lucide-react";
 import { getEvents } from "@/lib/api";
+import { createSingleFlightGate } from "@/lib/single-flight.mjs";
 import EventCard from "@/components/ui/EventCard";
 import DetailDrawer from "@/components/ui/DetailDrawer";
 import { CardSkeleton } from "@/components/ui/Skeleton";
 
 const SEARCH_HISTORY_KEY = "eventra_recent_searches";
+const SEARCH_HISTORY_EVENT = "eventra:recent-searches-changed";
+const EMPTY_RECENT_SEARCHES = Object.freeze([]);
+let cachedSearchHistoryRaw;
+let cachedRecentSearches = EMPTY_RECENT_SEARCHES;
 
 function getStoredRecentSearches() {
-  if (typeof window === "undefined") return [];
+  if (typeof window === "undefined") return EMPTY_RECENT_SEARCHES;
   try {
     const raw = localStorage.getItem(SEARCH_HISTORY_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed)
+    if (raw === cachedSearchHistoryRaw) return cachedRecentSearches;
+    const parsed = raw ? JSON.parse(raw) : [];
+    cachedSearchHistoryRaw = raw;
+    cachedRecentSearches = Array.isArray(parsed)
       ? parsed.filter((item) => typeof item === "string" && item.trim().length > 0)
-      : [];
+      : EMPTY_RECENT_SEARCHES;
+    return cachedRecentSearches;
   } catch (e) {
-    return [];
+    return EMPTY_RECENT_SEARCHES;
   }
+}
+
+function getServerRecentSearchesSnapshot() {
+  return EMPTY_RECENT_SEARCHES;
+}
+
+function subscribeToRecentSearches(onStoreChange) {
+  window.addEventListener("storage", onStoreChange);
+  window.addEventListener(SEARCH_HISTORY_EVENT, onStoreChange);
+  return () => {
+    window.removeEventListener("storage", onStoreChange);
+    window.removeEventListener(SEARCH_HISTORY_EVENT, onStoreChange);
+  };
+}
+
+function notifyRecentSearchesChanged() {
+  window.dispatchEvent(new Event(SEARCH_HISTORY_EVENT));
 }
 
 function saveStoredSearchQuery(term) {
@@ -46,9 +70,10 @@ function saveStoredSearchQuery(term) {
     const filtered = existing.filter((t) => t.toLowerCase() !== cleanTerm.toLowerCase());
     const updated = [cleanTerm, ...filtered].slice(0, 5);
     localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(updated));
+    notifyRecentSearchesChanged();
     return updated;
   } catch (e) {
-    return [];
+    return EMPTY_RECENT_SEARCHES;
   }
 }
 
@@ -56,6 +81,7 @@ function clearStoredRecentSearches() {
   if (typeof window !== "undefined") {
     try {
       localStorage.removeItem(SEARCH_HISTORY_KEY);
+      notifyRecentSearchesChanged();
     } catch (e) {}
   }
 }
@@ -67,24 +93,68 @@ export default function EventsPage() {
   const [selectedFormat, setSelectedFormat] = useState("all");
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const [recentSearches, setRecentSearches] = useState([]);
   const [toastMessage, setToastMessage] = useState("");
+  const cancelledRef = useRef(false);
+  const loadGateRef = useRef(createSingleFlightGate());
+  const recentSearches = useSyncExternalStore(
+    subscribeToRecentSearches,
+    getStoredRecentSearches,
+    getServerRecentSearchesSnapshot
+  );
 
   const fetchEventsData = async () => {
+    const lease = loadGateRef.current.acquire();
+    if (!lease) return;
+
     setLoading(true);
     try {
       const data = await getEvents();
-      setEvents(data || []);
+      if (!cancelledRef.current) {
+        setEvents(data || []);
+      }
     } catch (err) {
-      console.warn("Failed to fetch events", err);
+      if (!cancelledRef.current) {
+        console.warn("Failed to fetch events", err);
+      }
     } finally {
-      setLoading(false);
+      lease.release();
+      if (!cancelledRef.current) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    fetchEventsData();
-    setRecentSearches(getStoredRecentSearches());
+    cancelledRef.current = false;
+    const lease = loadGateRef.current.acquire();
+    if (!lease) {
+      return () => {
+        cancelledRef.current = true;
+      };
+    }
+
+    async function loadInitialEvents() {
+      try {
+        const data = await getEvents();
+        if (!cancelledRef.current) {
+          setEvents(data || []);
+        }
+      } catch (err) {
+        if (!cancelledRef.current) {
+          console.warn("Failed to fetch events", err);
+        }
+      } finally {
+        lease.release();
+        if (!cancelledRef.current) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadInitialEvents();
+    return () => {
+      cancelledRef.current = true;
+    };
   }, []);
 
   const handleSearchChange = (e) => {
@@ -94,27 +164,23 @@ export default function EventsPage() {
 
   const handleSearchKeyDown = (e) => {
     if (e.key === "Enter" && searchQuery.trim().length > 0) {
-      const updated = saveStoredSearchQuery(searchQuery);
-      setRecentSearches(updated);
+      saveStoredSearchQuery(searchQuery);
     }
   };
 
   const handleSearchBlur = () => {
     if (searchQuery.trim().length > 0) {
-      const updated = saveStoredSearchQuery(searchQuery);
-      setRecentSearches(updated);
+      saveStoredSearchQuery(searchQuery);
     }
   };
 
   const handleSelectRecentSearch = (term) => {
     setSearchQuery(term);
-    const updated = saveStoredSearchQuery(term);
-    setRecentSearches(updated);
+    saveStoredSearchQuery(term);
   };
 
   const handleClearAllRecentSearches = () => {
     clearStoredRecentSearches();
-    setRecentSearches([]);
     setToastMessage("Search history cleared successfully!");
     setTimeout(() => setToastMessage(""), 3000);
   };
@@ -125,8 +191,8 @@ export default function EventsPage() {
       const filtered = recentSearches.filter((t) => t !== termToRemove);
       try {
         localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(filtered));
+        notifyRecentSearchesChanged();
       } catch (err) {}
-      setRecentSearches(filtered);
     }
   };
 
@@ -281,7 +347,8 @@ export default function EventsPage() {
 
             <button
               onClick={fetchEventsData}
-              className="p-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded-xl transition-colors cursor-pointer"
+              disabled={loading}
+              className="p-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded-xl transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
               title="Refresh events list"
             >
               <RefreshCw className="w-4 h-4" />
@@ -388,4 +455,3 @@ export default function EventsPage() {
     </main>
   );
 }
-

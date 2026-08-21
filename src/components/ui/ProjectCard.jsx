@@ -9,13 +9,13 @@ import { upvoteProject } from "@/lib/api";
 export default function ProjectCard({ project, onClick }) {
   const { openDrawer } = useDrawer();
 
-  const [upvotes, setUpvotes] = useState(project?.upvotes || 0);
-  const [hasUpvoted, setHasUpvoted] = useState(false);
+  const [optimisticUpvote, setOptimisticUpvote] = useState(null);
   const [githubStars, setGithubStars] = useState(null);
-
-  useEffect(() => {
-    setUpvotes(project?.upvotes || 0);
-  }, [project]);
+  const upvotedProjectId = optimisticUpvote?.projectId;
+  const hasUpvoted = upvotedProjectId === project?.id;
+  const upvotes = hasUpvoted
+    ? Math.max(project?.upvotes || 0, optimisticUpvote.upvotes)
+    : project?.upvotes || 0;
 
   useEffect(() => {
     async function fetchStars() {
@@ -46,8 +46,10 @@ export default function ProjectCard({ project, onClick }) {
 
     if (hasUpvoted) return;
 
-    setUpvotes((prev) => prev + 1);
-    setHasUpvoted(true);
+    setOptimisticUpvote({
+      projectId: project.id,
+      upvotes: (project?.upvotes || 0) + 1
+    });
 
     try {
       await upvoteProject(project.id);
@@ -154,4 +156,3 @@ export default function ProjectCard({ project, onClick }) {
     </div>
   );
 }
-

@@ -28,14 +28,23 @@ tracked environment file.
 ## Inspection and reconciliation
 
 Use the Multica CLI JSON views to inspect the resulting state, substituting
-the identifiers printed by the provisioner:
+the identifiers printed by the provisioner. Multica 0.4.31 uses `--output
+json`, positional object IDs, singular `squad member` and `project resource`
+commands, and workspace-scoped list commands without runtime or daemon
+filters:
 
 ```bash
-multica agent list --runtime-id RUNTIME_ID --daemon-id DAEMON_ID --json
-multica agent skills list --agent-id AGENT_ID --json
-multica squad members list --squad-id SQUAD_ID --json
-multica project resources list --project-id PROJECT_ID --json
-multica skill list --runtime-id RUNTIME_ID --daemon-id DAEMON_ID --json
+multica runtime list --output json
+multica daemon status --output json
+multica agent list --output json
+multica agent get AGENT_ID --output json
+multica agent skills list AGENT_ID --output json
+multica squad get SQUAD_ID --output json
+multica squad member list SQUAD_ID --output json
+multica project get PROJECT_ID --output json
+multica project resource list PROJECT_ID --output json
+multica skill list --output json
+multica skill get SKILL_ID --output json
 ```
 
 Compare every listed skill origin with the public GitHub URL map in

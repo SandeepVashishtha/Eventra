@@ -15,6 +15,10 @@ Use npm and these standard commands:
 - `npm run test:local-contract` checks the committed local configuration.
 - `npm run smoke:local` checks frontend and backend readiness.
 
+This project uses Next.js 16. Keep `npm run build` mapped exactly to `next
+build --webpack`; the local execution environment cannot run Turbopack's
+temporary CSS-worker port, while the Webpack production build is supported.
+
 The committed development API default is `http://localhost:8080` through
 `NEXT_PUBLIC_API_BASE_URL`.
 
