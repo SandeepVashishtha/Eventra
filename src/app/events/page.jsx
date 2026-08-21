@@ -28,14 +28,18 @@ function getStoredRecentSearches() {
   if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(SEARCH_HISTORY_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed)
+      ? parsed.filter((item) => typeof item === "string" && item.trim().length > 0)
+      : [];
   } catch (e) {
     return [];
   }
 }
 
 function saveStoredSearchQuery(term) {
-  if (typeof window === "undefined" || !term || !term.trim()) return [];
+  if (typeof window === "undefined" || typeof term !== "string" || !term.trim()) return [];
   const cleanTerm = term.trim();
   try {
     const existing = getStoredRecentSearches();
@@ -89,14 +93,14 @@ export default function EventsPage() {
   };
 
   const handleSearchKeyDown = (e) => {
-    if (e.key === "Enter" && searchQuery.trim().length > 1) {
+    if (e.key === "Enter" && searchQuery.trim().length > 0) {
       const updated = saveStoredSearchQuery(searchQuery);
       setRecentSearches(updated);
     }
   };
 
   const handleSearchBlur = () => {
-    if (searchQuery.trim().length > 1) {
+    if (searchQuery.trim().length > 0) {
       const updated = saveStoredSearchQuery(searchQuery);
       setRecentSearches(updated);
     }
@@ -293,6 +297,7 @@ export default function EventsPage() {
                   <span>Recent Searches</span>
                 </div>
                 <button
+                  type="button"
                   onClick={handleClearAllRecentSearches}
                   className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700 hover:underline cursor-pointer transition-colors"
                   aria-label="Clear all recent search history"
@@ -304,20 +309,27 @@ export default function EventsPage() {
 
               <div className="flex flex-wrap items-center gap-2">
                 {recentSearches.map((term, idx) => (
-                  <div
+                  <span
                     key={`recent-search-${idx}-${term}`}
-                    onClick={() => handleSelectRecentSearch(term)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-zinc-100 hover:bg-emerald-50 hover:border-emerald-300 text-zinc-700 hover:text-emerald-900 text-xs font-semibold rounded-full border border-zinc-200/80 transition-all cursor-pointer select-none group"
+                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-zinc-100 hover:bg-emerald-50 hover:border-emerald-300 text-zinc-700 hover:text-emerald-900 text-xs font-semibold rounded-full border border-zinc-200/80 transition-all select-none group"
                   >
-                    <span>{term}</span>
                     <button
+                      type="button"
+                      onClick={() => handleSelectRecentSearch(term)}
+                      className="hover:underline cursor-pointer bg-transparent border-none p-0 text-left font-semibold text-zinc-700 hover:text-emerald-900"
+                    >
+                      {term}
+                    </button>
+                    <button
+                      type="button"
                       onClick={(e) => handleRemoveSingleSearch(e, term)}
-                      className="p-0.5 text-zinc-400 hover:text-red-500 rounded-full transition-colors"
+                      className="p-0.5 text-zinc-400 hover:text-red-500 rounded-full transition-colors cursor-pointer"
                       title="Remove search"
+                      aria-label={`Remove ${term} from recent searches`}
                     >
                       <X className="w-3 h-3" />
                     </button>
-                  </div>
+                  </span>
                 ))}
               </div>
             </div>
