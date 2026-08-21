@@ -60,3 +60,28 @@ dev:local`, and `npm run smoke:local`; backend work uses `./mvnw -s
 keeps one pull request per repository, and records exact reviewed and tested
 commit SHAs. A partial two-repository merge stops immediately and requires
 human escalation; it does not trigger rollback or deployment.
+
+## Pilot dispatch and evidence runbook
+
+Use [the pilot Issue bodies](../../docs/multica/pilot-issues.md) to exercise
+the `frontend-only`, `backend-only`, and `cross-stack` routing modes. For each
+pilot, create one parent Issue, bind it to `Eventra Local Development`, assign
+it to `Eventra Local Delivery`, and move it from backlog to todo. The Delivery
+Lead creates the routed child Issue or Issues, keeps the parent in progress,
+and records all evidence before closure.
+
+Each implementer hands the Delivery Lead its repository, branch, PR, changed
+paths, commands and exit codes, concerns, and an exact SHA. The Delivery Lead
+sends that immutable SHA (or the cross-stack SHA pair) to Independent Reviewer
+and Integration QA. Their decisions apply only to those exact SHAs; any new
+commit repeats the affected gate. The full per-pilot test matrix, frozen API
+contracts, cross-stack `buildVersion` variant, and copy-ready Issue text are in
+the linked runbook.
+
+Automatic merge is permitted only when the final exact SHA set has passed the
+required tests, builds, repository checks, independent review, Integration QA,
+and mergeability checks. Cross-stack PRs wait for one coordinated gate decision
+and merge in API-compatible order; a partial merge stops and escalates. After
+merge, record merged local smoke evidence. Local services may be started for
+that smoke test, but production deployment remains human-triggered and is never
+automatic.
