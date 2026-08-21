@@ -11,12 +11,54 @@ import {
   RefreshCw, 
   Sparkles, 
   ArrowRight, 
-  PlusCircle
+  PlusCircle,
+  History,
+  Trash2,
+  X,
+  CheckCircle2
 } from "lucide-react";
 import { getEvents } from "@/lib/api";
 import EventCard from "@/components/ui/EventCard";
 import DetailDrawer from "@/components/ui/DetailDrawer";
 import { CardSkeleton } from "@/components/ui/Skeleton";
+
+const SEARCH_HISTORY_KEY = "eventra_recent_searches";
+
+function getStoredRecentSearches() {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(SEARCH_HISTORY_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed)
+      ? parsed.filter((item) => typeof item === "string" && item.trim().length > 0)
+      : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveStoredSearchQuery(term) {
+  if (typeof window === "undefined" || typeof term !== "string" || !term.trim()) return [];
+  const cleanTerm = term.trim();
+  try {
+    const existing = getStoredRecentSearches();
+    const filtered = existing.filter((t) => t.toLowerCase() !== cleanTerm.toLowerCase());
+    const updated = [cleanTerm, ...filtered].slice(0, 5);
+    localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(updated));
+    return updated;
+  } catch (e) {
+    return [];
+  }
+}
+
+function clearStoredRecentSearches() {
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.removeItem(SEARCH_HISTORY_KEY);
+    } catch (e) {}
+  }
+}
 
 export default function EventsPage() {
   const [events, setEvents] = useState([]);
@@ -25,6 +67,8 @@ export default function EventsPage() {
   const [selectedFormat, setSelectedFormat] = useState("all");
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [recentSearches, setRecentSearches] = useState([]);
+  const [toastMessage, setToastMessage] = useState("");
 
   const fetchEventsData = async () => {
     setLoading(true);
@@ -40,7 +84,51 @@ export default function EventsPage() {
 
   useEffect(() => {
     fetchEventsData();
+    setRecentSearches(getStoredRecentSearches());
   }, []);
+
+  const handleSearchChange = (e) => {
+    const val = e.target.value;
+    setSearchQuery(val);
+  };
+
+  const handleSearchKeyDown = (e) => {
+    if (e.key === "Enter" && searchQuery.trim().length > 0) {
+      const updated = saveStoredSearchQuery(searchQuery);
+      setRecentSearches(updated);
+    }
+  };
+
+  const handleSearchBlur = () => {
+    if (searchQuery.trim().length > 0) {
+      const updated = saveStoredSearchQuery(searchQuery);
+      setRecentSearches(updated);
+    }
+  };
+
+  const handleSelectRecentSearch = (term) => {
+    setSearchQuery(term);
+    const updated = saveStoredSearchQuery(term);
+    setRecentSearches(updated);
+  };
+
+  const handleClearAllRecentSearches = () => {
+    clearStoredRecentSearches();
+    setRecentSearches([]);
+    setToastMessage("Search history cleared successfully!");
+    setTimeout(() => setToastMessage(""), 3000);
+  };
+
+  const handleRemoveSingleSearch = (e, termToRemove) => {
+    e.stopPropagation();
+    if (typeof window !== "undefined") {
+      const filtered = recentSearches.filter((t) => t !== termToRemove);
+      try {
+        localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(filtered));
+      } catch (err) {}
+      setRecentSearches(filtered);
+    }
+  };
 
   const filteredEvents = events.filter((e) => {
     const matchesSearch =
@@ -90,6 +178,19 @@ export default function EventsPage() {
             </Link>
           </div>
         </div>
+
+        {/* Toast Alert Feedback Banner */}
+        {toastMessage && (
+          <div className="max-w-md mx-auto p-3.5 bg-emerald-600 text-white rounded-2xl shadow-lg flex items-center justify-between text-xs font-bold animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-200" />
+              <span>{toastMessage}</span>
+            </div>
+            <button onClick={() => setToastMessage("")} className="p-1 hover:bg-emerald-700 rounded-full transition-colors cursor-pointer">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
 
         {featuredEvent && !loading && (
           <div className="bg-white border border-emerald-900/10 rounded-3xl p-8 shadow-sm hover:shadow-md transition-all">
@@ -150,7 +251,9 @@ export default function EventsPage() {
                 type="text"
                 placeholder="Search events by keyword, topic, or location..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={handleSearchChange}
+                onKeyDown={handleSearchKeyDown}
+                onBlur={handleSearchBlur}
                 className="w-full pl-10 pr-4 py-2.5 text-sm bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00b887] text-zinc-900 placeholder-zinc-400 transition-all"
               />
             </div>
@@ -184,6 +287,53 @@ export default function EventsPage() {
               <RefreshCw className="w-4 h-4" />
             </button>
           </div>
+
+          {/* Recent Search History Section with Clear All Action */}
+          {recentSearches.length > 0 && (
+            <div className="pt-2 pb-1 border-t border-zinc-100 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-500">
+                  <History className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Recent Searches</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleClearAllRecentSearches}
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700 hover:underline cursor-pointer transition-colors"
+                  aria-label="Clear all recent search history"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Clear All</span>
+                </button>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {recentSearches.map((term, idx) => (
+                  <span
+                    key={`recent-search-${idx}-${term}`}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-zinc-100 hover:bg-emerald-50 hover:border-emerald-300 text-zinc-700 hover:text-emerald-900 text-xs font-semibold rounded-full border border-zinc-200/80 transition-all select-none group"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => handleSelectRecentSearch(term)}
+                      className="hover:underline cursor-pointer bg-transparent border-none p-0 text-left font-semibold text-zinc-700 hover:text-emerald-900"
+                    >
+                      {term}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => handleRemoveSingleSearch(e, term)}
+                      className="p-0.5 text-zinc-400 hover:text-red-500 rounded-full transition-colors cursor-pointer"
+                      title="Remove search"
+                      aria-label={`Remove ${term} from recent searches`}
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center justify-between text-xs text-zinc-500 font-medium pt-1 border-t border-zinc-100">
             <span>Showing {filteredEvents.length} public events</span>
@@ -238,3 +388,4 @@ export default function EventsPage() {
     </main>
   );
 }
+
