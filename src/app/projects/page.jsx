@@ -12,7 +12,10 @@ import {
   Sparkles, 
   ArrowRight, 
   PlusCircle, 
-  ArrowUpRight
+  ArrowUpRight,
+  TrendingUp,
+  Clock,
+  UserCheck
 } from "lucide-react";
 import { getProjects } from "@/lib/api";
 import ProjectCard from "@/components/ui/ProjectCard";
@@ -25,12 +28,26 @@ export default function ProjectsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedProject, setSelectedProject] = useState(null);
+  const [activeFeedTab, setActiveFeedTab] = useState("trending");
 
   const fetchProjectsData = async () => {
     setLoading(true);
     try {
       const data = await getProjects();
-      setProjects(data || []);
+      let apiProjs = Array.isArray(data) ? data : [];
+
+      if (typeof window !== "undefined") {
+        try {
+          const localProjs = JSON.parse(localStorage.getItem("eventra_custom_projects") || "[]");
+          if (Array.isArray(localProjs) && localProjs.length > 0) {
+            const existingIds = new Set(apiProjs.map((p) => p.id));
+            const uniqueLocal = localProjs.filter((p) => !existingIds.has(p.id));
+            apiProjs = [...uniqueLocal, ...apiProjs];
+          }
+        } catch (e) {}
+      }
+
+      setProjects(apiProjs);
     } catch (err) {
       console.warn("Failed to fetch projects", err);
     } finally {
@@ -52,14 +69,43 @@ export default function ProjectsPage() {
       selectedCategory === "all" ||
       (p.category || "").toLowerCase().includes(selectedCategory.toLowerCase());
 
+    if (activeFeedTab === "my") {
+      let isMine = false;
+      if (typeof window !== "undefined") {
+        const storedUser = localStorage.getItem("eventra_user");
+        if (storedUser) {
+          try {
+            const parsed = JSON.parse(storedUser);
+            if (parsed.email && p.authorEmail === parsed.email) isMine = true;
+          } catch (e) {}
+        }
+        const localProjs = JSON.parse(localStorage.getItem("eventra_custom_projects") || "[]");
+        if (localProjs.some((lp) => lp.id === p.id)) isMine = true;
+      }
+      return matchesSearch && matchesCategory && isMine;
+    }
+
     return matchesSearch && matchesCategory;
+  });
+
+  const sortedProjects = [...filteredProjects].sort((a, b) => {
+    if (activeFeedTab === "trending") {
+      return (b.upvotes || 0) - (a.upvotes || 0);
+    } else if (activeFeedTab === "newest") {
+      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : a.id || 0;
+      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : b.id || 0;
+      return timeB - timeA;
+    }
+    return 0;
   });
 
   const featuredProject = projects[0];
 
   return (
     <main className="min-h-screen bg-[#f4fbf7] text-zinc-900 font-sans py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+        
+        {/* Header Hero */}
         <div className="text-center max-w-3xl mx-auto space-y-4 pt-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-100/70 border border-emerald-200 text-emerald-900 text-xs font-semibold">
             <FolderKanban className="w-3.5 h-3.5 text-[#00b887]" />
@@ -85,49 +131,58 @@ export default function ProjectsPage() {
           </div>
         </div>
 
-        {featuredProject && !loading && (
-          <div className="bg-white border border-emerald-900/10 rounded-3xl p-8 shadow-sm hover:shadow-md transition-all">
-            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
-              <div className="space-y-3 max-w-2xl">
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 text-xs font-bold">
-                    <Sparkles className="w-3.5 h-3.5 text-[#00b887]" />
-                    <span>Spotlight Project</span>
-                  </span>
-                  <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                    👍 {featuredProject.upvotes || 0} Upvotes
-                  </span>
-                </div>
+        {/* Discovery Feed Tab Bar */}
+        <div className="flex items-center justify-between border-b border-zinc-200 pb-3 flex-wrap gap-3">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setActiveFeedTab("trending")}
+              className={`inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                activeFeedTab === "trending"
+                  ? "bg-[#00b887] text-white shadow-md shadow-emerald-200"
+                  : "bg-white text-zinc-700 hover:bg-zinc-100 border border-zinc-200"
+              }`}
+            >
+              <TrendingUp className="w-3.5 h-3.5" />
+              <span>Trending Projects</span>
+            </button>
 
-                <h2 className="text-2xl font-extrabold text-zinc-900">
-                  {featuredProject.title}
-                </h2>
+            <button
+              onClick={() => setActiveFeedTab("newest")}
+              className={`inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                activeFeedTab === "newest"
+                  ? "bg-[#00b887] text-white shadow-md shadow-emerald-200"
+                  : "bg-white text-zinc-700 hover:bg-zinc-100 border border-zinc-200"
+              }`}
+            >
+              <Clock className="w-3.5 h-3.5" />
+              <span>Newest Releases</span>
+            </button>
 
-                <p className="text-sm text-zinc-600 leading-relaxed">
-                  {featuredProject.description}
-                </p>
-
-                <div className="flex items-center gap-3 text-xs text-zinc-500 font-medium pt-2">
-                  <span className="flex items-center gap-1">
-                    <Code2 className="w-4 h-4 text-emerald-600" />
-                    <span>{featuredProject.category || "Open Source"}</span>
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
-                <button
-                  onClick={() => setSelectedProject(featuredProject)}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[#00b887] hover:bg-[#049d73] text-white font-bold text-xs rounded-2xl shadow-md shadow-emerald-200 transition-all cursor-pointer"
-                >
-                  <span>Quick View Details</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
+            <button
+              onClick={() => setActiveFeedTab("my")}
+              className={`inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                activeFeedTab === "my"
+                  ? "bg-[#00b887] text-white shadow-md shadow-emerald-200"
+                  : "bg-white text-zinc-700 hover:bg-zinc-100 border border-zinc-200"
+              }`}
+            >
+              <UserCheck className="w-3.5 h-3.5" />
+              <span>My Projects</span>
+            </button>
           </div>
-        )}
 
+          <Link
+            href="/submit-project"
+            className="text-xs font-bold text-[#00b887] hover:underline inline-flex items-center gap-1"
+          >
+            <PlusCircle className="w-3.5 h-3.5" />
+            <span>Publish Project</span>
+          </Link>
+        </div>
+
+        {featuredEventProject(featuredProject, loading, setSelectedProject)}
+
+        {/* Search & Filter Bar */}
         <div className="bg-white p-5 rounded-2xl border border-emerald-900/10 shadow-2xs space-y-4">
           <div className="flex flex-col md:flex-row items-center gap-4">
             <div className="relative flex-1 w-full">
@@ -163,7 +218,7 @@ export default function ProjectsPage() {
           </div>
 
           <div className="flex items-center justify-between text-xs text-zinc-500 font-medium pt-1 border-t border-zinc-100">
-            <span>Showing {filteredProjects.length} open source projects</span>
+            <span>Showing {sortedProjects.length} open source projects ({activeFeedTab} feed)</span>
             {searchQuery || selectedCategory !== "all" ? (
               <button
                 onClick={() => {
@@ -178,23 +233,33 @@ export default function ProjectsPage() {
           </div>
         </div>
 
+        {/* Project Cards Grid */}
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <CardSkeleton />
             <CardSkeleton />
             <CardSkeleton />
           </div>
-        ) : filteredProjects.length === 0 ? (
+        ) : sortedProjects.length === 0 ? (
           <div className="py-16 text-center bg-white rounded-3xl border border-emerald-900/10 space-y-3">
             <Filter className="w-10 h-10 text-zinc-300 mx-auto" />
             <h3 className="text-lg font-bold text-zinc-800">No projects found</h3>
             <p className="text-xs text-zinc-500 max-w-sm mx-auto">
-              No open source projects match your search criteria. Try adjusting your search query.
+              No open source projects match your feed criteria. Try switching feed tabs or submit your project.
             </p>
+            <div className="pt-2">
+              <Link
+                href="/submit-project"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#00b887] text-white text-xs font-bold rounded-xl shadow-xs"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>Submit a Project</span>
+              </Link>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {filteredProjects.map((project) => (
+            {sortedProjects.map((project) => (
               <ProjectCard
                 key={`project-${project.id}`}
                 project={project}
@@ -214,3 +279,50 @@ export default function ProjectsPage() {
     </main>
   );
 }
+
+function featuredEventProject(featuredProject, loading, setSelectedProject) {
+  if (!featuredProject || loading) return null;
+  return (
+    <div className="bg-white border border-emerald-900/10 rounded-3xl p-8 shadow-sm hover:shadow-md transition-all">
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
+        <div className="space-y-3 max-w-2xl">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 text-xs font-bold">
+              <Sparkles className="w-3.5 h-3.5 text-[#00b887]" />
+              <span>Spotlight Project</span>
+            </span>
+            <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+              👍 {featuredProject.upvotes || 0} Upvotes
+            </span>
+          </div>
+
+          <h2 className="text-2xl font-extrabold text-zinc-900">
+            {featuredProject.title}
+          </h2>
+
+          <p className="text-sm text-zinc-600 leading-relaxed">
+            {featuredProject.description}
+          </p>
+
+          <div className="flex items-center gap-3 text-xs text-zinc-500 font-medium pt-2">
+            <span className="flex items-center gap-1">
+              <Code2 className="w-4 h-4 text-emerald-600" />
+              <span>{featuredProject.category || "Open Source"}</span>
+            </span>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
+          <button
+            onClick={() => setSelectedProject(featuredProject)}
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[#00b887] hover:bg-[#049d73] text-white font-bold text-xs rounded-2xl shadow-md shadow-emerald-200 transition-all cursor-pointer"
+          >
+            <span>Quick View Details</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
