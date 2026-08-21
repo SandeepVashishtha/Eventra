@@ -64,7 +64,12 @@ export default function SubmitProjectPage() {
       return;
     }
 
+    // Guard against duplicate submissions during redirect delay
+    if (submitting) return;
     setSubmitting(true);
+
+    let redirectTimer = null;
+
     try {
       await createProject({
         title: formData.title.trim(),
@@ -76,31 +81,40 @@ export default function SubmitProjectPage() {
       });
 
       setSuccessMessage("Project submitted successfully! Redirecting to projects gallery...");
-      setTimeout(() => {
+      redirectTimer = setTimeout(() => {
         router.push("/projects");
       }, 1500);
     } catch (err) {
-      console.warn("Project submission error", err);
-      // Fallback local persistence so user flow succeeds smoothly
-      try {
-        const storedProjects = JSON.parse(localStorage.getItem("eventra_custom_projects") || "[]");
-        const newProj = {
-          id: Date.now(),
-          ...formData,
-          upvotes: 1,
-          createdAt: new Date().toISOString()
-        };
-        localStorage.setItem("eventra_custom_projects", JSON.stringify([newProj, ...storedProjects]));
-        setSuccessMessage("Project published successfully! Redirecting...");
-        setTimeout(() => {
-          router.push("/projects");
-        }, 1500);
-      } catch (localErr) {
+      // Only fall back to localStorage for network/server errors (status >= 500 or no response)
+      // Do not silently save on 4xx validation errors from the server
+      const isNetworkError = !err?.status || err?.status >= 500;
+      if (isNetworkError && typeof window !== "undefined") {
+        try {
+          const storedProjects = JSON.parse(localStorage.getItem("eventra_custom_projects") || "[]");
+          const newProj = {
+            id: Date.now(),
+            ...formData,
+            upvotes: 0,
+            createdAt: new Date().toISOString()
+          };
+          localStorage.setItem("eventra_custom_projects", JSON.stringify([newProj, ...storedProjects]));
+          setSuccessMessage("Project saved locally! Redirecting...");
+          redirectTimer = setTimeout(() => {
+            router.push("/projects");
+          }, 1500);
+        } catch (localErr) {
+          setErrorMessage("Failed to submit project. Please check your connection and try again.");
+        }
+      } else {
         setErrorMessage(err?.message || "Failed to submit project. Please try again.");
       }
     } finally {
       setSubmitting(false);
     }
+
+    return () => {
+      if (redirectTimer) clearTimeout(redirectTimer);
+    };
   };
 
   if (checkingAuth) {
@@ -186,8 +200,9 @@ export default function SubmitProjectPage() {
 
           <form onSubmit={handleSubmit} className="space-y-5 text-xs font-semibold">
             <div>
-              <label className="block mb-1.5 text-zinc-700">Project Title *</label>
+              <label htmlFor="project-title" className="block mb-1.5 text-zinc-700">Project Title *</label>
               <input
+                id="project-title"
                 type="text"
                 name="title"
                 required
@@ -199,8 +214,9 @@ export default function SubmitProjectPage() {
             </div>
 
             <div>
-              <label className="block mb-1.5 text-zinc-700">Description *</label>
+              <label htmlFor="project-description" className="block mb-1.5 text-zinc-700">Description *</label>
               <textarea
+                id="project-description"
                 name="description"
                 required
                 rows={4}
@@ -213,8 +229,9 @@ export default function SubmitProjectPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block mb-1.5 text-zinc-700">Category *</label>
+                <label htmlFor="project-category" className="block mb-1.5 text-zinc-700">Category *</label>
                 <select
+                  id="project-category"
                   name="category"
                   value={formData.category}
                   onChange={handleChange}
@@ -229,11 +246,12 @@ export default function SubmitProjectPage() {
               </div>
 
               <div>
-                <label className="block mb-1.5 text-zinc-700 flex items-center gap-1">
+                <label htmlFor="project-github-url" className="block mb-1.5 text-zinc-700 flex items-center gap-1">
                   <Code2 className="w-3.5 h-3.5 text-zinc-500" />
                   <span>GitHub Repository URL</span>
                 </label>
                 <input
+                  id="project-github-url"
                   type="url"
                   name="githubUrl"
                   placeholder="https://github.com/username/repository"
@@ -246,11 +264,12 @@ export default function SubmitProjectPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block mb-1.5 text-zinc-700 flex items-center gap-1">
+                <label htmlFor="project-demo-url" className="block mb-1.5 text-zinc-700 flex items-center gap-1">
                   <Globe className="w-3.5 h-3.5 text-zinc-500" />
                   <span>Live Demo URL</span>
                 </label>
                 <input
+                  id="project-demo-url"
                   type="url"
                   name="demoUrl"
                   placeholder="https://my-demo-app.vercel.app"
@@ -261,11 +280,12 @@ export default function SubmitProjectPage() {
               </div>
 
               <div>
-                <label className="block mb-1.5 text-zinc-700 flex items-center gap-1">
+                <label htmlFor="project-thumbnail-url" className="block mb-1.5 text-zinc-700 flex items-center gap-1">
                   <ImageIcon className="w-3.5 h-3.5 text-zinc-500" />
                   <span>Cover / Thumbnail Image URL</span>
                 </label>
                 <input
+                  id="project-thumbnail-url"
                   type="url"
                   name="thumbnailUrl"
                   placeholder="https://images.unsplash.com/..."
