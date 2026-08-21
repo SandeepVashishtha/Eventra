@@ -1,0 +1,121 @@
+"""Eventra-specific composition of the reusable Multica delivery blueprint."""
+
+from dataclasses import dataclass, replace
+from pathlib import Path
+from types import MappingProxyType
+from typing import Mapping
+
+from .blueprint import AgentSpec, TeamBlueprint, build_multi_repo_blueprint
+
+
+PUBLIC_SKILL_URLS = {
+    "using-superpowers": "https://github.com/obra/superpowers/tree/main/skills/using-superpowers",
+    "brainstorming": "https://github.com/obra/superpowers/tree/main/skills/brainstorming",
+    "writing-plans": "https://github.com/obra/superpowers/tree/main/skills/writing-plans",
+    "executing-plans": "https://github.com/obra/superpowers/tree/main/skills/executing-plans",
+    "test-driven-development": "https://github.com/obra/superpowers/tree/main/skills/test-driven-development",
+    "systematic-debugging": "https://github.com/obra/superpowers/tree/main/skills/systematic-debugging",
+    "requesting-code-review": "https://github.com/obra/superpowers/tree/main/skills/requesting-code-review",
+    "receiving-code-review": "https://github.com/obra/superpowers/tree/main/skills/receiving-code-review",
+    "verification-before-completion": "https://github.com/obra/superpowers/tree/main/skills/verification-before-completion",
+    "react-best-practices": "https://github.com/vercel-labs/agent-skills/tree/main/skills/react-best-practices",
+    "rest-api-conventions": "https://github.com/rrezartprebreza/spring-boot-skills/tree/main/skills/spring-boot-3/rest-api-conventions",
+    "testing-pyramid": "https://github.com/rrezartprebreza/spring-boot-skills/tree/main/skills/spring-boot-3/testing-pyramid",
+    "spring-security-jwt": "https://github.com/rrezartprebreza/spring-boot-skills/tree/main/skills/spring-boot-3/spring-security-jwt",
+    "playwright-cli": "https://github.com/microsoft/playwright-cli/tree/main/skills/playwright-cli",
+}
+
+
+@dataclass(frozen=True)
+class SkillSource:
+    """A named, auditable public skill origin."""
+
+    key: str
+    url: str
+
+
+@dataclass(frozen=True)
+class LocalResource:
+    """One authoritative local Git checkout registered with Multica."""
+
+    name: str
+    local_path: str
+    execution_mode: str
+    resource_type: str = "local_directory"
+
+
+@dataclass(frozen=True)
+class ProjectConfig:
+    """All Eventra-specific values consumed by the Multica provisioner."""
+
+    runtime_id: str
+    daemon_id: str
+    project_title: str
+    project_description: str
+    project_context_file: Path
+    blueprint: TeamBlueprint
+    agents: tuple[AgentSpec, ...]
+    skills: Mapping[str, SkillSource]
+    resources: tuple[LocalResource, ...]
+    forbidden_paths: tuple[str, ...]
+
+
+def _eventra_agents(blueprint: TeamBlueprint) -> tuple[AgentSpec, ...]:
+    """Add stack skills and secret recipients without mutating the blueprint."""
+
+    additions = {
+        "frontend_engineer": ("react-best-practices",),
+        "backend_engineer": (
+            "rest-api-conventions",
+            "testing-pyramid",
+            "spring-security-jwt",
+        ),
+        "integration_qa": ("playwright-cli",),
+    }
+    backend_env_roles = {"backend_engineer", "integration_qa"}
+    return tuple(
+        replace(
+            agent,
+            skill_keys=agent.skill_keys + additions.get(agent.role, ()),
+            needs_backend_env=agent.role in backend_env_roles,
+        )
+        for agent in blueprint.agents
+    )
+
+
+def build_eventra_config(runtime_id: str, daemon_id: str) -> ProjectConfig:
+    """Build the isolated local-development configuration for Eventra."""
+
+    blueprint = build_multi_repo_blueprint("Eventra")
+    skills = MappingProxyType(
+        {
+            key: SkillSource(key=key, url=url)
+            for key, url in PUBLIC_SKILL_URLS.items()
+        }
+    )
+    return ProjectConfig(
+        runtime_id=runtime_id,
+        daemon_id=daemon_id,
+        project_title="Eventra Local Development",
+        project_description=(
+            "Quality-gated local delivery across the authoritative Eventra frontend "
+            "and backend repositories."
+        ),
+        project_context_file=Path(__file__).with_name("instructions") / "eventra_project.md",
+        blueprint=blueprint,
+        agents=_eventra_agents(blueprint),
+        skills=skills,
+        resources=(
+            LocalResource(
+                name="Eventra Frontend",
+                local_path="/Users/didi/Eventra-workspace/Eventra",
+                execution_mode="worktree",
+            ),
+            LocalResource(
+                name="Eventra Backend",
+                local_path="/Users/didi/Eventra-workspace/Eventra-Backend",
+                execution_mode="worktree",
+            ),
+        ),
+        forbidden_paths=("/Users/didi/Eventra-workspace/Eventra/Backend",),
+    )
