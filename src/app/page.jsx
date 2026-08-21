@@ -1,34 +1,25 @@
-import React from "react";
+"use client";
+
+import React, { useState } from "react";
 import Hero from "@/components/home/Hero";
 import WhatsHappeningNow from "@/components/home/WhatsHappeningNow";
-import TrendingEvents from "@/components/home/TrendingEvents";
-import EventCategoryBreakdown from "@/components/home/EventCategoryBreakdown";
-import HackathonCategoryBreakdown from "@/components/home/HackathonCategoryBreakdown";
-import Workflow from "@/components/home/Workflow";
 import HostCTA from "@/components/home/HostCTA";
 
 export default function Home() {
+  const [searchQuery, setSearchQuery] = useState("");
+
   return (
-    <main className="min-h-screen bg-[#f4fbf7] text-zinc-900 font-sans">
-      {/* 1. Hero Section */}
-      <Hero />
+    <main className="min-h-screen bg-[#fafafa] text-neutral-900 font-sans">
+      {/* 1. Minimal Editorial Hero with Search */}
+      <Hero
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+      />
 
-      {/* 2. What's Happening Now (Live API Carousel Feed) */}
-      <WhatsHappeningNow />
+      {/* 2. Minimal Gallery Curated Grid with Tags & Filters */}
+      <WhatsHappeningNow searchQuery={searchQuery} />
 
-      {/* 3. Trending Events Section (6 Minimalist & Beautiful Event Cards) */}
-      <TrendingEvents />
-
-      {/* 4. Detailed Event Formats Breakdown */}
-      <EventCategoryBreakdown />
-
-      {/* 5. Detailed Hackathon Tracks Breakdown */}
-      <HackathonCategoryBreakdown />
-
-      {/* 6. 3-Step Participant & Organizer Workflow */}
-      <Workflow />
-
-      {/* 7. Host Event Call To Action */}
+      {/* 3. Submissions & Weekly Digest Callout */}
       <HostCTA />
     </main>
   );

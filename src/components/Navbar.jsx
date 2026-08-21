@@ -5,20 +5,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { 
-  Trophy, 
-  FolderKanban, 
-  Menu, 
-  X, 
-  ChevronDown,
-  Globe,
-  Search,
-  BookOpen,
-  Users,
-  HelpCircle,
-  Calendar,
-  Sparkles,
-  User,
-  LogOut
+  Bookmark,
+  Plus, 
+  User, 
+  LogOut,
+  X,
+  ArrowUpRight
 } from "lucide-react";
 import AuthModal from "./AuthModal";
 
@@ -26,11 +18,9 @@ export default function Navbar() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [language, setLanguage] = useState("English");
-  const [isLangOpen, setIsLangOpen] = useState(false);
-
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [bookmarkCount, setBookmarkCount] = useState(0);
 
   const [authModalState, setAuthModalState] = useState({
     isOpen: false,
@@ -39,7 +29,7 @@ export default function Navbar() {
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
+      setIsScrolled(window.scrollY > 12);
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
@@ -60,6 +50,14 @@ export default function Navbar() {
         } else {
           setIsLoggedIn(false);
           setCurrentUser(null);
+        }
+
+        // Count saved bookmarks if any
+        try {
+          const saved = JSON.parse(localStorage.getItem("eventra_bookmarks") || "[]");
+          setBookmarkCount(Array.isArray(saved) ? saved.length : 0);
+        } catch {
+          setBookmarkCount(0);
         }
       }
     };
@@ -82,161 +80,151 @@ export default function Navbar() {
     setIsMobileMenuOpen(false);
   };
 
-  const miscLinks = [
-    { name: "Community Hub", href: "/community", icon: Users, desc: "Connect with event organizers & builders" },
-    { name: "Resources & Docs", href: "/resources", icon: BookOpen, desc: "Guides, templates, and event toolkits" },
-    { name: "Help & Support", href: "/help", icon: HelpCircle, desc: "FAQs, ticket submission, and live chat" },
-  ];
-
   return (
     <>
       <header
         className={`sticky top-0 z-40 w-full transition-all duration-200 border-b ${
           isScrolled
-            ? "bg-[#f4fbf7]/90 backdrop-blur-md border-emerald-900/10 shadow-2xs py-3"
-            : "bg-[#f4fbf7] border-emerald-900/10 py-4"
+            ? "bg-[#fafafa]/90 backdrop-blur-md border-neutral-200 shadow-2xs"
+            : "bg-[#fafafa] border-neutral-200/80"
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-16">
+          <div className="relative h-full flex items-center justify-between">
             
-            {/* Left Brand Logo */}
-            <div className="flex items-center">
-              <Link href="/" className="flex items-center gap-2.5 group">
-                <div className="w-9 h-9 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center p-1 group-hover:scale-105 transition-transform">
+            {/* Left: Clean Navigation Links */}
+            <nav className="hidden md:flex items-center gap-7">
+              <Link
+                href="/events"
+                className={`text-sm font-medium transition-colors ${
+                  pathname?.startsWith("/events")
+                    ? "text-neutral-950 font-semibold"
+                    : "text-neutral-600 hover:text-neutral-950"
+                }`}
+              >
+                Events
+              </Link>
+
+              <Link
+                href="/hackathons"
+                className={`text-sm font-medium transition-colors ${
+                  pathname?.startsWith("/hackathons")
+                    ? "text-neutral-950 font-semibold"
+                    : "text-neutral-600 hover:text-neutral-950"
+                }`}
+              >
+                Hackathons
+              </Link>
+
+              <Link
+                href="/projects"
+                className={`text-sm font-medium transition-colors ${
+                  pathname?.startsWith("/projects")
+                    ? "text-neutral-950 font-semibold"
+                    : "text-neutral-600 hover:text-neutral-950"
+                }`}
+              >
+                Projects
+              </Link>
+            </nav>
+
+            {/* Center: Brand Name & Logo */}
+            <div className="flex items-center md:absolute md:left-1/2 md:-translate-x-1/2">
+              <Link
+                href="/"
+                className="flex items-center gap-2 group text-neutral-950"
+              >
+                <div className="w-6 h-6 rounded-md bg-neutral-950 text-white flex items-center justify-center p-1 transition-transform group-hover:scale-105">
                   <Image
                     src="/logo_transparent.png"
                     alt="Eventra Logo"
-                    width={32}
-                    height={32}
-                    className="w-full h-full object-contain"
+                    width={20}
+                    height={20}
+                    className="w-full h-full object-contain invert brightness-0"
                   />
                 </div>
-                <span className="font-black text-xl tracking-tight text-zinc-900">
+                <span className="font-semibold text-base sm:text-lg tracking-tight text-neutral-950">
                   Eventra
                 </span>
               </Link>
             </div>
 
-            {/* Main Navigation Links (Centered) */}
-            <nav className="hidden md:flex items-center space-x-1 absolute left-1/2 -translate-x-1/2">
-              <Link
-                href="/events"
-                className={`flex items-center gap-1 px-3.5 py-2 rounded-full text-xs font-bold transition-all ${
-                  pathname?.startsWith("/events")
-                    ? "bg-emerald-100/80 text-emerald-900"
-                    : "text-zinc-700 hover:text-zinc-900 hover:bg-zinc-100"
-                }`}
-              >
-                <Calendar className="w-3.5 h-3.5 text-[#00b887]" />
-                <span>EVENTS</span>
-                <ChevronDown className="w-3 h-3 opacity-60" />
-              </Link>
-
-              <Link
-                href="/hackathons"
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold transition-all ${
-                  pathname?.startsWith("/hackathons")
-                    ? "bg-amber-100/80 text-amber-900"
-                    : "text-zinc-700 hover:text-zinc-900 hover:bg-zinc-100"
-                }`}
-              >
-                <Trophy className="w-3.5 h-3.5 text-amber-600" />
-                <span>HACKATHONS</span>
-              </Link>
-
-              <Link
-                href="/projects"
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold transition-all ${
-                  pathname?.startsWith("/projects")
-                    ? "bg-emerald-100/80 text-emerald-900"
-                    : "text-zinc-700 hover:text-zinc-900 hover:bg-zinc-100"
-                }`}
-              >
-                <FolderKanban className="w-3.5 h-3.5 text-emerald-600" />
-                <span>PROJECTS</span>
-              </Link>
-            </nav>
-
-            {/* Right Action Bar */}
-            <div className="flex items-center space-x-3 sm:space-x-4">
+            {/* Right: Actions & Menu */}
+            <div className="flex items-center gap-4 sm:gap-5">
               
-              {/* Language Selector Dropdown */}
-              <div className="relative hidden lg:block">
-                <button
-                  onClick={() => setIsLangOpen(!isLangOpen)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-zinc-200 bg-white hover:bg-zinc-100 text-xs font-medium text-zinc-700 transition-colors cursor-pointer"
-                >
-                  <Globe className="w-3.5 h-3.5 text-zinc-500" />
-                  <span>{language}</span>
-                  <ChevronDown className="w-3 h-3 text-zinc-400" />
-                </button>
+              <Link
+                href="/submit-project"
+                className="hidden sm:inline-flex items-center gap-1 text-sm font-medium text-neutral-600 hover:text-neutral-950 transition-colors"
+              >
+                <span>Submit</span>
+                <Plus className="w-3.5 h-3.5 text-neutral-400" />
+              </Link>
 
-                {isLangOpen && (
-                  <div className="absolute right-0 mt-2 w-32 bg-white border border-zinc-200 rounded-xl shadow-lg p-1 z-50 text-xs">
-                    {["English", "Spanish", "French", "German"].map((lang) => (
-                      <button
-                        key={lang}
-                        onClick={() => {
-                          setLanguage(lang);
-                          setIsLangOpen(false);
-                        }}
-                        className="w-full text-left px-3 py-1.5 rounded-lg hover:bg-zinc-100 text-zinc-700 cursor-pointer"
-                      >
-                        {lang}
-                      </button>
-                    ))}
-                  </div>
+              {/* Bookmarks link */}
+              <Link
+                href="/dashboard?tab=bookmarks"
+                className="hidden lg:inline-flex items-center gap-1.5 text-sm font-medium text-neutral-600 hover:text-neutral-950 transition-colors"
+                title="Saved Items"
+              >
+                <Bookmark className="w-4 h-4 text-neutral-500" />
+                <span>Bookmarks</span>
+                {bookmarkCount > 0 && (
+                  <span className="text-[11px] font-mono px-1.5 py-0.5 rounded-full bg-neutral-200 text-neutral-800">
+                    {bookmarkCount}
+                  </span>
                 )}
-              </div>
+              </Link>
 
-              {/* Conditional Auth Buttons */}
+              {/* Auth actions */}
               {isLoggedIn ? (
                 <div className="flex items-center gap-3">
                   <Link
                     href="/dashboard"
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100/90 border border-emerald-300 text-emerald-950 text-xs font-extrabold hover:bg-emerald-200 transition-all shadow-2xs"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-neutral-900 text-white hover:bg-neutral-800 transition-colors"
                   >
-                    <User className="w-3.5 h-3.5 text-[#00b887]" />
-                    <span>{currentUser?.firstName || "Dashboard"}</span>
+                    <User className="w-3.5 h-3.5" />
+                    <span>{currentUser?.firstName || "Account"}</span>
                   </Link>
 
                   <button
                     onClick={handleLogout}
-                    className="hidden sm:inline-flex items-center gap-1 text-xs font-bold text-red-600 hover:text-red-700 transition-colors cursor-pointer"
+                    className="hidden sm:inline-flex text-xs font-medium text-neutral-500 hover:text-neutral-900 transition-colors cursor-pointer"
+                    title="Sign Out"
                   >
-                    <LogOut className="w-3.5 h-3.5" />
-                    <span>Sign Out</span>
+                    <LogOut className="w-4 h-4" />
                   </button>
                 </div>
               ) : (
-                <>
+                <div className="flex items-center gap-3">
                   <Link
                     href="/login"
-                    className="hidden sm:inline-flex items-center text-sm font-semibold text-zinc-800 hover:text-[#00b887] transition-colors"
+                    className="text-sm font-medium text-neutral-700 hover:text-neutral-950 transition-colors"
                   >
-                    Sign In
+                    Sign in
                   </Link>
 
                   <Link
                     href="/signup"
-                    className="inline-flex items-center justify-center px-5 py-2 text-sm font-bold text-white bg-[#00b887] hover:bg-[#049d73] active:scale-95 rounded-full shadow-md shadow-emerald-200 transition-all cursor-pointer"
+                    className="hidden sm:inline-flex items-center justify-center px-3.5 py-1.5 text-xs font-medium text-white bg-neutral-900 hover:bg-neutral-800 rounded-full transition-colors"
                   >
                     Get Started
                   </Link>
-                </>
+                </div>
               )}
 
-              {/* Hamburger Button */}
+              {/* Minimal 2-bar hamburger icon (exact minimal.gallery style) */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="p-2 text-zinc-700 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors focus:outline-none cursor-pointer"
-                aria-label="Toggle Menu"
+                className="p-2 -mr-2 text-neutral-700 hover:text-neutral-950 rounded-lg transition-colors cursor-pointer"
+                aria-label="Toggle Navigation Menu"
               >
                 {isMobileMenuOpen ? (
-                  <X className="w-6 h-6" />
+                  <X className="w-5 h-5" />
                 ) : (
-                  <Menu className="w-6 h-6" />
+                  <div className="w-5 h-4 flex flex-col justify-between items-end">
+                    <span className="w-5 h-[1.5px] bg-neutral-900 rounded-full"></span>
+                    <span className="w-3.5 h-[1.5px] bg-neutral-900 rounded-full"></span>
+                  </div>
                 )}
               </button>
 
@@ -246,116 +234,114 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* Mobile Drawer */}
+      {/* Minimal Mobile Drawer */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-50 overflow-hidden">
           <div
-            className="fixed inset-0 bg-zinc-950/40 backdrop-blur-xs transition-opacity"
+            className="fixed inset-0 bg-neutral-950/20 backdrop-blur-xs transition-opacity"
             onClick={() => setIsMobileMenuOpen(false)}
           />
 
-          <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-            <div className="w-screen max-w-md bg-white shadow-2xl flex flex-col justify-between border-l border-zinc-200">
+          <div className="fixed inset-y-0 right-0 max-w-full flex">
+            <div className="w-screen max-w-sm bg-white p-6 shadow-2xl flex flex-col justify-between border-l border-neutral-200">
               
-              <div className="p-5 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
-                <Link
-                  href="/"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-2.5"
-                >
-                  <Image
-                    src="/logo_transparent.png"
-                    alt="Eventra Logo"
-                    width={28}
-                    height={28}
-                    className="w-7 h-7 object-contain"
-                  />
-                  <span className="font-extrabold text-lg text-zinc-900">Eventra Menu</span>
-                </Link>
-                <button
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="p-2 text-zinc-400 hover:text-zinc-700 rounded-lg hover:bg-zinc-200/60 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+              <div>
+                <div className="flex items-center justify-between pb-6 border-b border-neutral-100">
+                  <span className="text-sm font-semibold text-neutral-950">Navigation</span>
+                  <button
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="p-1 text-neutral-400 hover:text-neutral-900 rounded-md transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
 
-              <div className="flex-1 overflow-y-auto p-5 space-y-6">
-                <div>
-                  <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2.5">
-                    Main Navigation
-                  </h4>
-                  <div className="space-y-1">
+                <div className="py-6 space-y-4">
+                  <div className="space-y-3">
                     <Link
                       href="/events"
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-100 transition-colors font-medium text-zinc-900"
+                      className="flex items-center justify-between text-base font-medium text-neutral-800 hover:text-neutral-950"
                     >
-                      <Calendar className="w-5 h-5 text-[#00b887]" />
                       <span>Events</span>
+                      <ArrowUpRight className="w-4 h-4 text-neutral-400" />
                     </Link>
+
                     <Link
                       href="/hackathons"
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-100 transition-colors font-medium text-zinc-900"
+                      className="flex items-center justify-between text-base font-medium text-neutral-800 hover:text-neutral-950"
                     >
-                      <Trophy className="w-5 h-5 text-amber-500" />
                       <span>Hackathons</span>
+                      <ArrowUpRight className="w-4 h-4 text-neutral-400" />
                     </Link>
+
                     <Link
                       href="/projects"
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-100 transition-colors font-medium text-zinc-900"
+                      className="flex items-center justify-between text-base font-medium text-neutral-800 hover:text-neutral-950"
                     >
-                      <FolderKanban className="w-5 h-5 text-emerald-500" />
                       <span>Projects</span>
+                      <ArrowUpRight className="w-4 h-4 text-neutral-400" />
+                    </Link>
+
+                    <Link
+                      href="/submit-project"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex items-center justify-between text-base font-medium text-neutral-800 hover:text-neutral-950"
+                    >
+                      <span>Submit Opportunity</span>
+                      <Plus className="w-4 h-4 text-neutral-400" />
                     </Link>
                   </div>
-                </div>
 
-                {isLoggedIn && (
-                  <div>
-                    <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2.5">
-                      Account Session
-                    </h4>
+                  <div className="pt-6 border-t border-neutral-100 space-y-3">
+                    <span className="text-xs font-mono uppercase tracking-wider text-neutral-400">
+                      Platform
+                    </span>
+                    <div className="space-y-2 text-sm text-neutral-600">
+                      <Link href="/about" onClick={() => setIsMobileMenuOpen(false)} className="block hover:text-neutral-950">About Eventra</Link>
+                      <Link href="/resources" onClick={() => setIsMobileMenuOpen(false)} className="block hover:text-neutral-950">Resources & Docs</Link>
+                      <Link href="/help" onClick={() => setIsMobileMenuOpen(false)} className="block hover:text-neutral-950">Help & Support</Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-6 border-t border-neutral-100">
+                {isLoggedIn ? (
+                  <div className="space-y-3">
                     <Link
                       href="/dashboard"
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50 border border-emerald-200 font-bold text-emerald-950"
+                      className="w-full flex items-center justify-center py-2.5 px-4 rounded-full text-xs font-semibold bg-neutral-900 text-white hover:bg-neutral-800"
                     >
-                      <User className="w-5 h-5 text-[#00b887]" />
-                      <span>My Dashboard ({currentUser?.firstName || "User"})</span>
+                      Go to Dashboard
                     </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-center text-xs font-medium text-neutral-500 hover:text-neutral-900"
+                    >
+                      Sign Out
+                    </button>
                   </div>
-                )}
-              </div>
-
-              <div className="p-5 border-t border-zinc-100 bg-zinc-50/80 space-y-2">
-                {isLoggedIn ? (
-                  <button
-                    onClick={handleLogout}
-                    className="w-full py-2.5 px-4 text-sm font-semibold text-red-700 bg-red-50 border border-red-200 hover:bg-red-100 rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span>Sign Out</span>
-                  </button>
                 ) : (
-                  <>
+                  <div className="space-y-2">
                     <Link
                       href="/login"
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className="block text-center w-full py-2.5 px-4 text-sm font-semibold text-zinc-700 bg-white border border-zinc-200 hover:bg-zinc-100 rounded-xl transition-colors cursor-pointer"
+                      className="w-full flex items-center justify-center py-2.5 px-4 rounded-full text-xs font-semibold border border-neutral-300 text-neutral-800 hover:bg-neutral-50"
                     >
                       Sign In
                     </Link>
                     <Link
                       href="/signup"
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className="block text-center w-full py-2.5 px-4 text-sm font-semibold text-white bg-[#00b887] hover:bg-[#049d73] rounded-full shadow-sm transition-colors cursor-pointer"
+                      className="w-full flex items-center justify-center py-2.5 px-4 rounded-full text-xs font-semibold bg-neutral-900 text-white hover:bg-neutral-800"
                     >
                       Get Started
                     </Link>
-                  </>
+                  </div>
                 )}
               </div>
 
