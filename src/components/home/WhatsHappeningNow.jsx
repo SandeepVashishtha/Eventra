@@ -125,7 +125,7 @@ export default function WhatsHappeningNow({ searchQuery = "" }) {
   ];
 
   return (
-    <section className="py-10 bg-[#fafafa]">
+    <section id="directory" className="py-12 bg-[#fafafa] scroll-mt-14 sm:scroll-mt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Minimal Tags & View Toolbar */}

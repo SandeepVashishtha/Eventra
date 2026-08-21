@@ -134,7 +134,7 @@ export default function Navbar() {
                 href="/"
                 className="flex items-center gap-2 group text-neutral-950"
               >
-                <div className="w-6 h-6 rounded-md bg-neutral-950 text-white flex items-center justify-center p-1 transition-transform group-hover:scale-105">
+                {/* <div className="w-6 h-6 rounded-md bg-neutral-950 text-white flex items-center justify-center p-1 transition-transform group-hover:scale-105">
                   <Image
                     src="/logo_transparent.png"
                     alt="Eventra Logo"
@@ -142,9 +142,9 @@ export default function Navbar() {
                     height={20}
                     className="w-full h-full object-contain invert brightness-0"
                   />
-                </div>
+                </div> */}
                 <span className="font-semibold text-base sm:text-lg tracking-tight text-neutral-950">
-                  Eventra
+                  Eventra 
                 </span>
               </Link>
             </div>
