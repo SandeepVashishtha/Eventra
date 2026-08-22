@@ -141,7 +141,9 @@ class Provisioner:
         self._validate_backend_env(backend_env)
         desired_skills = self._desired_skills(config)
         state = self._preflight(config, desired_skills)
-        self._validate_env_preconditions(config, state, apply, backend_env)
+        canonical_env = self._validate_env_preconditions(
+            config, state, apply, backend_env
+        )
 
         if not apply:
             return ProvisioningResult(
@@ -164,7 +166,11 @@ class Provisioner:
 
         skill_ids = self._reconcile_skills(desired_skills, state.skill_details)
         agent_ids = self._reconcile_agents(
-            config, state.agent_details, state.agent_envs, backend_env
+            config,
+            state.agent_details,
+            state.agent_envs,
+            backend_env,
+            canonical_env,
         )
         self._reconcile_bindings(config, agent_ids, skill_ids)
         squad_id = self._reconcile_squad(config, state.squad_detail, state.members, agent_ids)
@@ -308,15 +314,18 @@ class Provisioner:
             raise ValueError("JWT secret must contain at least 64 characters")
 
     @staticmethod
-    def _validate_env_preconditions(config, state, apply, backend_env) -> None:
+    def _validate_env_preconditions(
+        config, state, apply, backend_env
+    ) -> dict[str, str] | None:
         if not apply or backend_env is not None:
-            return
+            return None
         recipient_envs = [state.agent_envs[role] for role in ENV_RECIPIENTS]
         if (
             any(not Provisioner._is_valid_backend_env(env) for env in recipient_envs)
             or recipient_envs[0] != recipient_envs[1]
         ):
             raise ValueError("backend environment is required before applying agent changes")
+        return dict(recipient_envs[0])
 
     @staticmethod
     def _is_valid_backend_env(value: object) -> bool:
@@ -349,7 +358,7 @@ class Provisioner:
             ids[key] = detail["id"]
         return ids
 
-    def _reconcile_agents(self, config, details, envs, backend_env):
+    def _reconcile_agents(self, config, details, envs, backend_env, canonical_env):
         ids = {}
         for agent in config.agents:
             desired = self._desired_agent(config, agent)
@@ -401,7 +410,7 @@ class Provisioner:
                 if backend_env is not None:
                     matches_env = current_env == backend_env
                 else:
-                    matches_env = self._is_valid_backend_env(current_env)
+                    matches_env = current_env == canonical_env
                 if not matches_env:
                     raise RuntimeError(f"agent environment reconciliation failed for {agent.role}")
         return ids

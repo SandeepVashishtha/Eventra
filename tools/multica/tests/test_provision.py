@@ -93,6 +93,7 @@ class FakeRunner:
         self.replace_bindings_on_add = False
         self.omit_execution_mode_on_resource_reads = False
         self.corrupt_env_after_set = None
+        self.env_replacement_after_agent_update = None
         self._next = {kind: 1 for kind in ("skill", "agent", "squad", "project", "resource")}
 
     @property
@@ -176,6 +177,10 @@ class FakeRunner:
             agent_id = positionals[0]
             if "agent" not in self.freeze_updates:
                 self.agents[agent_id].update(self._agent_from_flags(agent_id, flags))
+                if self.env_replacement_after_agent_update is not None:
+                    self.envs[agent_id] = copy.deepcopy(
+                        self.env_replacement_after_agent_update
+                    )
             return copy.deepcopy(override if override is not None else self.agents[agent_id])
         if command == ("agent", "env", "get"):
             agent_id = positionals[0]
@@ -553,6 +558,47 @@ class ProvisionerTests(unittest.TestCase):
         self.assertEqual(second.mutation_count, 0)
         self.assertEqual(self.runner.mutation_count, mutation_count)
         self.assertEqual(self.runner.envs, envs)
+
+    def test_no_env_apply_rejects_recipient_drift_after_agent_update(self):
+        for source in self.config.skills.values():
+            self.runner.seed_skill(source.key, source.url)
+        agent_ids = {
+            agent.role: self._matching_agent(agent) for agent in self.config.agents
+        }
+        for role in ("backend_engineer", "integration_qa"):
+            self.runner.envs[agent_ids[role]] = copy.deepcopy(self.backend_env)
+        backend_id = agent_ids["backend_engineer"]
+        self.runner.agents[backend_id]["description"] = "stale description"
+        drifted_env = {
+            **self.backend_env,
+            "MAIL_PASSWORD": "different-valid-password",
+        }
+        self.runner.env_replacement_after_agent_update = drifted_env
+
+        with self.assertRaisesRegex(
+            RuntimeError, "agent environment reconciliation failed"
+        ) as caught:
+            self.provisioner.reconcile(
+                self.config, apply=True, backend_env=None
+            )
+
+        mutations = [
+            call for call in self.runner.calls if call["command"] in FakeRunner.MUTATIONS
+        ]
+        self.assertEqual(
+            [(call["command"], call["positionals"]) for call in mutations],
+            [(("agent", "update"), [backend_id])],
+        )
+        self.assertFalse(
+            any(call["command"] == ("agent", "env", "set") for call in self.runner.calls)
+        )
+        rendered = str(caught.exception)
+        for private_value in (
+            *self.backend_env,
+            *self.backend_env.values(),
+            *drifted_env.values(),
+        ):
+            self.assertNotIn(private_value, rendered)
 
     def test_apply_json_contains_only_state_ids_and_mutation_count(self):
         runner = FakeRunner()
@@ -1067,6 +1113,88 @@ class ProvisionerTests(unittest.TestCase):
             self.provisioner.reconcile(
                 self.config, apply=True, backend_env=self.backend_env
             )
+
+    def test_reconciliation_preserves_unrelated_top_level_state(self):
+        unrelated_skill_id = self.runner.seed_skill(
+            "unrelated-skill",
+            "https://github.com/example/public-skills/tree/main/skills/unrelated",
+        )
+        unrelated_agent_id = self.runner.seed_agent(
+            "Unrelated Agent",
+            description="unrelated description",
+            instructions="unrelated instructions",
+            runtime_id="runtime-id",
+            visibility="workspace",
+            max_concurrent_tasks=1,
+        )
+        self.runner.bindings[unrelated_agent_id].add(unrelated_skill_id)
+        unrelated_squad_id = self.runner._id("squad")
+        unrelated_membership_id = (
+            f"membership-{unrelated_squad_id}-{unrelated_agent_id}"
+        )
+        self.runner.squads[unrelated_squad_id] = {
+            "id": unrelated_squad_id,
+            "name": "Unrelated Squad",
+            "description": "unrelated squad description",
+            "instructions": "unrelated squad instructions",
+            "leader_id": unrelated_agent_id,
+            "members": {
+                unrelated_agent_id: {
+                    "id": unrelated_membership_id,
+                    "squad_id": unrelated_squad_id,
+                    "member_id": unrelated_agent_id,
+                    "member_type": "agent",
+                    "role": "leader",
+                }
+            },
+        }
+        unrelated_project_id = self.runner.seed_project(
+            "Unrelated Project", "unrelated project description"
+        )
+        unrelated_resource_id = self.runner.seed_resource(
+            unrelated_project_id, "/tmp/unrelated-project"
+        )
+
+        def unrelated_state():
+            return {
+                "skill": self.runner.skills[unrelated_skill_id],
+                "agent": self.runner.agents[unrelated_agent_id],
+                "environment": self.runner.envs[unrelated_agent_id],
+                "bindings": sorted(self.runner.bindings[unrelated_agent_id]),
+                "squad": self.runner.squads[unrelated_squad_id],
+                "project": self.runner.projects[unrelated_project_id],
+            }
+
+        before = copy.deepcopy(unrelated_state())
+        before_bytes = json.dumps(
+            before, sort_keys=True, separators=(",", ":")
+        ).encode()
+
+        self.provisioner.reconcile(
+            self.config, apply=True, backend_env=self.backend_env
+        )
+
+        after = copy.deepcopy(unrelated_state())
+        self.assertEqual(after, before)
+        self.assertEqual(
+            json.dumps(after, sort_keys=True, separators=(",", ":")).encode(),
+            before_bytes,
+        )
+        unrelated_ids = {
+            unrelated_skill_id,
+            unrelated_agent_id,
+            unrelated_squad_id,
+            unrelated_membership_id,
+            unrelated_project_id,
+            unrelated_resource_id,
+        }
+        for call in self.runner.calls:
+            if call["command"] not in FakeRunner.MUTATIONS:
+                continue
+            targeted_ids = {
+                item for argument in call["args"] for item in argument.split(",")
+            }
+            self.assertTrue(unrelated_ids.isdisjoint(targeted_ids), call["args"])
 
 
 class RecoveryModeTests(unittest.TestCase):
