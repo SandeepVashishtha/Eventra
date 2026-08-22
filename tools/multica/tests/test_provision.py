@@ -1,4 +1,6 @@
 import copy
+import contextlib
+import io
 import json
 import os
 import subprocess
@@ -7,7 +9,13 @@ from dataclasses import replace
 from unittest.mock import patch
 
 from tools.multica.eventra_adapter import build_eventra_config
-from tools.multica.provision import MulticaRunner, Provisioner, prompt_backend_env
+from tools.multica.provision import (
+    MulticaRunner,
+    Provisioner,
+    main,
+    prompt_backend_env,
+    recover_backend_env,
+)
 
 
 class FakeRunner:
@@ -70,6 +78,7 @@ class FakeRunner:
 
     def __init__(self):
         self.calls = []
+        self.stdin_object_ids = []
         self.runtimes = [{
             "id": "runtime-id",
             "daemon_id": "daemon-id",
@@ -122,6 +131,7 @@ class FakeRunner:
             raise AssertionError("stdin JSON supplied without a supported stdin flag")
         if "--custom-env-stdin" in flags and stdin_json is None:
             raise AssertionError("stdin flag requires stdin JSON")
+        self.stdin_object_ids.append(None if stdin_json is None else id(stdin_json))
         self.calls.append({"args": list(args), "command": command, "positionals": positionals, "flags": flags, "stdin_json": copy.deepcopy(stdin_json)})
         override = self.response_overrides.get(command)
 
@@ -162,7 +172,11 @@ class FakeRunner:
                 self.agents[agent_id].update(self._agent_from_flags(agent_id, flags))
             return copy.deepcopy(override if override is not None else self.agents[agent_id])
         if command == ("agent", "env", "get"):
-            return self._response(command, self.envs[positionals[0]])
+            agent_id = positionals[0]
+            return self._response(
+                command,
+                {"agent_id": agent_id, "custom_env": copy.deepcopy(self.envs[agent_id])},
+            )
         if command == ("agent", "env", "set"):
             agent_id = positionals[0]
             if "env" not in self.freeze_updates:
@@ -541,6 +555,15 @@ class ProvisionerTests(unittest.TestCase):
             )
         )
 
+    def test_accepts_real_agent_environment_envelope(self):
+        result = self.provisioner.reconcile(
+            self.config, apply=True, backend_env=self.backend_env
+        )
+
+        self.assertEqual(
+            self.runner.envs[result.agent_ids["backend_engineer"]], self.backend_env
+        )
+
     def test_binds_manifest_skill_name_when_it_differs_from_url_path(self):
         result = self.provisioner.reconcile(
             self.config, apply=True, backend_env=self.backend_env
@@ -774,6 +797,153 @@ class ProvisionerTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "unsafe resource state"):
             Provisioner(runner).reconcile(self.config, apply=True, backend_env=self.backend_env)
         self.assertEqual(runner.mutation_count, 0)
+
+
+class RecoveryModeTests(unittest.TestCase):
+    def setUp(self):
+        self.config = build_eventra_config("runtime-id", "daemon-id")
+        self.backend_env = {
+            "JWT_SECRET": "r" * 64,
+            "MAIL_USERNAME": "recovery@example.test",
+            "MAIL_PASSWORD": "recovery-password",
+        }
+
+    def _agent(self, role):
+        return next(agent for agent in self.config.agents if agent.role == role)
+
+    def _matching_agent(self, runner, agent):
+        return runner.seed_agent(
+            agent.name,
+            description=agent.description,
+            instructions=agent.instructions_file.read_text(),
+            runtime_id=self.config.runtime_id,
+            visibility="workspace",
+            max_concurrent_tasks=1,
+        )
+
+    def _seed_recovery_backend(self, runner, env=None):
+        agent_id = self._matching_agent(runner, self._agent("backend_engineer"))
+        runner.envs[agent_id] = copy.deepcopy(self.backend_env if env is None else env)
+        return agent_id
+
+    def _seed_env_recipients(self, runner, backend_env, qa_env):
+        backend_id = self._seed_recovery_backend(runner, backend_env)
+        qa_id = self._matching_agent(runner, self._agent("integration_qa"))
+        runner.envs[qa_id] = copy.deepcopy(qa_env)
+        return backend_id, qa_id
+
+    def test_recovers_exact_existing_backend_environment_in_memory_only(self):
+        runner = FakeRunner()
+        backend_id = self._seed_recovery_backend(runner)
+        stdout, stderr = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            recovered = recover_backend_env(self.config, runner)
+
+        self.assertEqual(recovered, self.backend_env)
+        self.assertEqual(
+            [(call["command"], call["positionals"]) for call in runner.calls],
+            [(("agent", "list"), []), (("agent", "env", "get"), [backend_id])],
+        )
+        for value in self.backend_env.values():
+            self.assertNotIn(value, stdout.getvalue())
+            self.assertNotIn(value, stderr.getvalue())
+            self.assertFalse(any(value in argument for call in runner.calls for argument in call["args"]))
+
+    def test_missing_or_duplicate_backend_fails_before_mutation(self):
+        for duplicate in (False, True):
+            with self.subTest(duplicate=duplicate):
+                runner = FakeRunner()
+                if duplicate:
+                    self._seed_recovery_backend(runner)
+                    self._seed_recovery_backend(runner)
+                with self.assertRaisesRegex(RuntimeError, "backend environment") as caught:
+                    recover_backend_env(self.config, runner)
+                self.assertEqual(runner.mutation_count, 0)
+                for value in self.backend_env.values():
+                    self.assertNotIn(value, str(caught.exception))
+
+    def test_recovery_rejects_invalid_environment_state_before_mutation(self):
+        invalid_envs = (
+            {"agent_id": "wrong-agent", "custom_env": self.backend_env},
+            {"agent_id": "agent-1", "custom_env": {"JWT_SECRET": "r" * 64}},
+            {"agent_id": "agent-1", "custom_env": {**self.backend_env, "EXTRA": "x"}},
+            {"agent_id": "agent-1", "custom_env": {**self.backend_env, "JWT_SECRET": "short"}},
+        )
+        for envelope in invalid_envs:
+            with self.subTest(envelope=envelope):
+                runner = FakeRunner()
+                self._seed_recovery_backend(runner)
+                runner.response_overrides[("agent", "env", "get")] = envelope
+                with self.assertRaisesRegex((RuntimeError, ValueError), "environment") as caught:
+                    recover_backend_env(self.config, runner)
+                self.assertEqual(runner.mutation_count, 0)
+                for value in self.backend_env.values():
+                    self.assertNotIn(value, str(caught.exception))
+
+    def test_environment_mode_flags_are_mutually_exclusive(self):
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr), self.assertRaises(SystemExit) as caught:
+            main(
+                [
+                    "--runtime-id", "runtime-id",
+                    "--daemon-id", "daemon-id",
+                    "--prompt-backend-env",
+                    "--reuse-backend-env",
+                ]
+            )
+        self.assertEqual(caught.exception.code, 2)
+        self.assertIn("not allowed with argument", stderr.getvalue())
+
+    def test_recovery_skips_matching_backend_set_and_copies_qa_stdin(self):
+        runner = FakeRunner()
+        backend_id = self._seed_recovery_backend(runner)
+        recovered = recover_backend_env(self.config, runner)
+        Provisioner(runner).reconcile(self.config, apply=True, backend_env=recovered)
+
+        backend_sets = [
+            call for call in runner.calls
+            if call["command"] == ("agent", "env", "set")
+            and call["positionals"] == [backend_id]
+        ]
+        self.assertEqual(backend_sets, [])
+        qa_id = next(
+            agent_id for agent_id, agent in runner.agents.items()
+            if agent["name"] == self._agent("integration_qa").name
+        )
+        qa_create_index = next(
+            index for index, call in enumerate(runner.calls)
+            if call["command"] == ("agent", "create")
+            and call["flags"]["--name"] == self._agent("integration_qa").name
+        )
+        self.assertNotEqual(runner.stdin_object_ids[qa_create_index], id(recovered))
+        self.assertEqual(runner.calls[qa_create_index]["stdin_json"], recovered)
+        self.assertEqual(runner.envs[qa_id], recovered)
+        self.assertTrue(any(
+            call["command"] == ("agent", "env", "get")
+            and call["positionals"] == [qa_id]
+            for call in runner.calls[qa_create_index + 1 :]
+        ))
+        result = Provisioner(runner).reconcile(self.config, apply=True, backend_env=None)
+        for value in self.backend_env.values():
+            self.assertNotIn(value, repr(result))
+
+    def test_normal_apply_requires_exact_equal_recipient_environment_maps(self):
+        invalid_pairs = (
+            ({**self.backend_env, "EXTRA": "x"}, self.backend_env),
+            (self.backend_env, {**self.backend_env, "EXTRA": "x"}),
+            (self.backend_env, {**self.backend_env, "MAIL_PASSWORD": "different"}),
+            ({**self.backend_env, "JWT_SECRET": "short"}, self.backend_env),
+            (self.backend_env, {**self.backend_env, "JWT_SECRET": "short"}),
+        )
+        for backend_env, qa_env in invalid_pairs:
+            with self.subTest(backend_keys=set(backend_env), qa_keys=set(qa_env)):
+                runner = FakeRunner()
+                self._seed_env_recipients(runner, backend_env, qa_env)
+                with self.assertRaisesRegex(ValueError, "backend environment") as caught:
+                    Provisioner(runner).reconcile(self.config, apply=True, backend_env=None)
+                self.assertEqual(runner.mutation_count, 0)
+                for value in (*backend_env.values(), *qa_env.values()):
+                    self.assertNotIn(value, str(caught.exception))
 
 
 class PromptTests(unittest.TestCase):

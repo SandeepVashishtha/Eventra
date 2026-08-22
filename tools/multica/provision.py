@@ -10,6 +10,7 @@ import subprocess
 from dataclasses import dataclass
 from typing import Any, Sequence
 
+from .contracts import parse_agent_environment, parse_agent_list
 from .eventra_adapter import ProjectConfig, build_eventra_config
 
 
@@ -270,12 +271,21 @@ class Provisioner:
     def _validate_env_preconditions(config, state, apply, backend_env) -> None:
         if not apply or backend_env is not None:
             return
-        for agent in config.agents:
-            if not agent.needs_backend_env:
-                continue
-            existing = state.agent_envs[agent.role]
-            if existing is None or not REQUIRED_ENV_KEYS.issubset(existing):
-                raise ValueError("backend environment is required before applying agent changes")
+        recipient_envs = [state.agent_envs[role] for role in ENV_RECIPIENTS]
+        if (
+            any(not Provisioner._is_valid_backend_env(env) for env in recipient_envs)
+            or recipient_envs[0] != recipient_envs[1]
+        ):
+            raise ValueError("backend environment is required before applying agent changes")
+
+    @staticmethod
+    def _is_valid_backend_env(value: object) -> bool:
+        return (
+            isinstance(value, dict)
+            and all(isinstance(key, str) and isinstance(item, str) for key, item in value.items())
+            and set(value) == REQUIRED_ENV_KEYS
+            and len(value["JWT_SECRET"]) >= 64
+        )
 
     @staticmethod
     def _desired_skills(config: ProjectConfig) -> dict[str, Any]:
@@ -358,7 +368,7 @@ class Provisioner:
             ids[agent.role] = agent_id
 
             if agent.needs_backend_env:
-                if not created and backend_env is not None:
+                if not created and backend_env is not None and envs[agent.role] != backend_env:
                     self._object(
                         self.runner.run(
                             ["agent", "env", "set", agent_id, "--custom-env-stdin", "--output", "json"],
@@ -370,7 +380,7 @@ class Provisioner:
                 if backend_env is not None:
                     matches_env = current_env == backend_env
                 else:
-                    matches_env = REQUIRED_ENV_KEYS.issubset(current_env)
+                    matches_env = self._is_valid_backend_env(current_env)
                 if not matches_env:
                     raise RuntimeError(f"agent environment reconciliation failed for {agent.role}")
         return ids
@@ -617,13 +627,10 @@ class Provisioner:
         return detail
 
     def _agent_env_get(self, agent_id):
-        value = self._object(
+        return parse_agent_environment(
             self.runner.run(["agent", "env", "get", agent_id, "--output", "json"]),
-            "agent environment",
+            agent_id,
         )
-        if not all(isinstance(key, str) and isinstance(item, str) for key, item in value.items()):
-            raise RuntimeError("malformed agent environment")
-        return value
 
     def _squad_get(self, squad_id):
         detail = self._object(
@@ -780,6 +787,35 @@ def prompt_backend_env() -> dict[str, str]:
     }
 
 
+def recover_backend_env(config: ProjectConfig, runner: MulticaRunner) -> dict[str, str]:
+    """Read the exact Backend Engineer environment without rendering it."""
+
+    backend_agents = [agent for agent in config.agents if agent.role == "backend_engineer"]
+    if len(backend_agents) != 1:
+        raise RuntimeError("backend environment recovery failed")
+    backend_name = backend_agents[0].name
+    try:
+        matches = [
+            record
+            for record in parse_agent_list(
+                runner.run(["agent", "list", "--output", "json"])
+            )
+            if record["name"] == backend_name
+        ]
+        if len(matches) != 1:
+            raise RuntimeError("backend environment recovery failed")
+        value = parse_agent_environment(
+            runner.run(
+                ["agent", "env", "get", matches[0]["id"], "--output", "json"]
+            ),
+            matches[0]["id"],
+        )
+        Provisioner._validate_backend_env(value)
+    except (RuntimeError, ValueError):
+        raise RuntimeError("backend environment recovery failed") from None
+    return dict(value)
+
+
 def _planned_output(config: ProjectConfig) -> str:
     lines = ["Planned Multica reconciliation:"]
     lines.extend(f"agent: {agent.name}" for agent in config.agents)
@@ -795,11 +831,20 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--runtime-id", required=True)
     parser.add_argument("--daemon-id", required=True)
     parser.add_argument("--apply", action="store_true")
-    parser.add_argument("--prompt-backend-env", action="store_true")
+    environment_mode = parser.add_mutually_exclusive_group()
+    environment_mode.add_argument("--prompt-backend-env", action="store_true")
+    environment_mode.add_argument("--reuse-backend-env", action="store_true")
     args = parser.parse_args(argv)
     config = build_eventra_config(args.runtime_id, args.daemon_id)
-    backend_env = prompt_backend_env() if args.prompt_backend_env else None
-    result = Provisioner(MulticaRunner()).reconcile(
+    runner = MulticaRunner()
+    backend_env = (
+        prompt_backend_env()
+        if args.prompt_backend_env
+        else recover_backend_env(config, runner)
+        if args.reuse_backend_env
+        else None
+    )
+    result = Provisioner(runner).reconcile(
         config, apply=args.apply, backend_env=backend_env
     )
     if args.apply:
