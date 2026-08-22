@@ -84,7 +84,7 @@ class FakeRunner:
 
     def seed_skill(self, name, source_url):
         skill_id = self._id("skill")
-        self.skills[skill_id] = {"id": skill_id, "name": name, "source_url": source_url}
+        self.skills[skill_id] = self._skill_detail(skill_id, name, source_url)
         return skill_id
 
     def seed_agent(self, name, **overrides):
@@ -128,9 +128,15 @@ class FakeRunner:
             return self._response(command, self.skills[positionals[0]])
         if command == ("skill", "import"):
             skill_id, url = self._id("skill"), flags["--url"]
-            item = {"id": skill_id, "name": url.rstrip("/").rsplit("/", 1)[-1], "source_url": url}
+            item = self._skill_detail(
+                skill_id, url.rstrip("/").rsplit("/", 1)[-1], url
+            )
             self.skills[skill_id] = item
-            return copy.deepcopy(override if override is not None else item)
+            response = {
+                "skill": item,
+                "status": "created",
+            }
+            return copy.deepcopy(override if override is not None else response)
 
         if command == ("agent", "list"):
             return self._response(command, [{"id": x["id"], "name": x["name"]} for x in self.agents.values()])
@@ -271,6 +277,31 @@ class FakeRunner:
     @staticmethod
     def _public(item, excluded):
         return copy.deepcopy({key: value for key, value in item.items() if key != excluded})
+
+    @staticmethod
+    def _skill_detail(skill_id, name, source_url):
+        url_parts = source_url.split("/")
+        return {
+            "config": {
+                "origin": {
+                    "owner": url_parts[3],
+                    "path": "/".join(url_parts[7:]),
+                    "ref": url_parts[6],
+                    "repo": url_parts[4],
+                    "source_url": source_url,
+                    "type": "github",
+                }
+            },
+            "content": "---\nname: fixture\n---\n",
+            "created_at": "2026-08-22T16:25:50Z",
+            "created_by": "user-id",
+            "description": "fixture skill",
+            "files": [],
+            "id": skill_id,
+            "name": name,
+            "updated_at": "2026-08-22T16:25:50Z",
+            "workspace_id": "workspace-id",
+        }
 
 
 class MulticaRunnerTests(unittest.TestCase):
@@ -486,8 +517,26 @@ class ProvisionerTests(unittest.TestCase):
         self.assertTrue(any(call["command"] == ("skill", "get") and call["positionals"] == [skill_id] for call in self.runner.calls))
         self.assertFalse(any(call["command"] == ("skill", "import") and source.url in call["args"] for call in self.runner.calls))
 
+    def test_accepts_multica_0_4_31_nested_skill_import_response(self):
+        result = self.provisioner.reconcile(
+            self.config, apply=True, backend_env=self.backend_env
+        )
+
+        skill_id = result.skill_ids["using-superpowers"]
+        self.assertEqual(skill_id, "skill-1")
+        self.assertTrue(
+            any(
+                call["command"] == ("skill", "get")
+                and call["positionals"] == [skill_id]
+                for call in self.runner.calls
+            )
+        )
+
     def test_same_name_skill_from_other_origin_fails_closed(self):
-        self.runner.seed_skill("using-superpowers", "https://github.com/attacker/repo")
+        self.runner.seed_skill(
+            "using-superpowers",
+            "https://github.com/attacker/repo/tree/main/skills/using-superpowers",
+        )
         with self.assertRaisesRegex(RuntimeError, "unapproved origin"):
             self.provisioner.reconcile(self.config, apply=True, backend_env=self.backend_env)
         self.assertEqual(self.runner.mutation_count, 0)

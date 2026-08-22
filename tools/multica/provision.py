@@ -296,7 +296,10 @@ class Provisioner:
                     ),
                     "skill import",
                 )
-                skill_id = self._create_response_id(response, key, "skill import")
+                imported_skill = self._object(response.get("skill"), "skill import")
+                skill_id = self._create_response_id(
+                    imported_skill, key, "skill import"
+                )
                 detail = self._skill_get(skill_id)
                 if detail["name"] != key or self._skill_origin(detail) != source.url:
                     raise RuntimeError(f"skill reconciliation failed for {key}")
@@ -589,13 +592,14 @@ class Provisioner:
 
     @staticmethod
     def _skill_origin(detail):
-        for key in ("source_url", "url", "origin_url"):
-            if isinstance(detail.get(key), str) and detail[key]:
-                return detail[key]
-        origin = detail.get("origin")
-        if isinstance(origin, dict) and isinstance(origin.get("url"), str) and origin["url"]:
-            return origin["url"]
-        return None
+        config = detail.get("config")
+        if not isinstance(config, dict):
+            return None
+        origin = config.get("origin")
+        if not isinstance(origin, dict):
+            return None
+        source_url = origin.get("source_url")
+        return source_url if isinstance(source_url, str) and source_url else None
 
     def _agent_get(self, agent_id):
         detail = self._object(
