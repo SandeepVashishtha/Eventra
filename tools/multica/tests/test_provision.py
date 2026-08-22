@@ -212,7 +212,23 @@ class FakeRunner:
             return self._response(command, self._public(self.squads[positionals[0]], "members"))
         if command == ("squad", "create"):
             squad_id = self._id("squad")
-            item = {"id": squad_id, "name": flags["--name"], "description": flags.get("--description", ""), "instructions": "", "leader_id": flags["--leader"], "members": {}}
+            leader_id = flags["--leader"]
+            item = {
+                "id": squad_id,
+                "name": flags["--name"],
+                "description": flags.get("--description", ""),
+                "instructions": "",
+                "leader_id": leader_id,
+                "members": {
+                    leader_id: {
+                        "id": f"membership-{squad_id}-{leader_id}",
+                        "squad_id": squad_id,
+                        "member_id": leader_id,
+                        "member_type": "agent",
+                        "role": "leader",
+                    }
+                },
+            }
             self.squads[squad_id] = item
             return copy.deepcopy(override if override is not None else self._public(item, "members"))
         if command == ("squad", "update"):
@@ -414,6 +430,28 @@ class ProvisionerTests(unittest.TestCase):
             runtime_id=self.config.runtime_id, visibility="workspace", max_concurrent_tasks=1,
         )
 
+    def test_fake_squad_create_includes_the_server_managed_leader_member(self):
+        self.runner.run(
+            [
+                "squad", "create", "--name", "fixture", "--description", "fixture",
+                "--leader", "agent-leader", "--output", "json",
+            ]
+        )
+
+        squad = self.runner.squads["squad-1"]
+        self.assertEqual(
+            squad["members"],
+            {
+                "agent-leader": {
+                    "id": "membership-squad-1-agent-leader",
+                    "squad_id": "squad-1",
+                    "member_id": "agent-leader",
+                    "member_type": "agent",
+                    "role": "leader",
+                }
+            },
+        )
+
     def test_apply_uses_frozen_cli_and_builds_complete_state(self):
         result = self.provisioner.reconcile(self.config, apply=True, backend_env=self.backend_env)
         self.assertEqual(set(result.agent_ids), {agent.role for agent in self.config.agents})
@@ -486,6 +524,68 @@ class ProvisionerTests(unittest.TestCase):
             {(x["resource_ref"]["local_path"], x["resource_type"], x["resource_ref"]["execution_mode"]) for x in project["resources"].values()},
             {(self.config.resources[0].local_path, "local_directory", "worktree"), (self.config.resources[1].local_path, "local_directory", "worktree")},
         )
+        self.assertEqual(
+            {
+                member_id: member["role"]
+                for member_id, member in self.runner.squads[result.squad_id]["members"].items()
+            },
+            {
+                result.agent_ids["delivery_lead"]: "leader",
+                result.agent_ids["frontend_engineer"]: "frontend_engineer",
+                result.agent_ids["backend_engineer"]: "backend_engineer",
+                result.agent_ids["integration_qa"]: "integration_qa",
+                result.agent_ids["independent_reviewer"]: "independent_reviewer",
+            },
+        )
+        leader_mutations = [
+            call for call in self.runner.calls
+            if call["command"] in {("squad", "member", "add"), ("squad", "member", "set-role")}
+            and call["flags"]["--member-id"] == result.agent_ids["delivery_lead"]
+        ]
+        self.assertEqual(leader_mutations, [])
+
+    def test_invalid_server_managed_leader_fails_before_member_mutation(self):
+        first = self.provisioner.reconcile(
+            self.config, apply=True, backend_env=self.backend_env
+        )
+        leader_id = first.agent_ids["delivery_lead"]
+        squad = self.runner.squads[first.squad_id]
+        cases = {
+            "missing": lambda: squad["members"].pop(leader_id),
+            "wrong type": lambda: squad["members"][leader_id].update(member_type="group"),
+            "wrong member id": lambda: squad["members"][leader_id].update(member_id="agent-wrong"),
+            "wrong role": lambda: squad["members"][leader_id].update(role="member"),
+        }
+        for name, corrupt in cases.items():
+            with self.subTest(name=name):
+                state = copy.deepcopy(squad["members"])
+                corrupt()
+                mutation_count = self.runner.mutation_count
+                with self.assertRaisesRegex(RuntimeError, "Squad leader reconciliation failed"):
+                    self.provisioner.reconcile(
+                        self.config, apply=True, backend_env=None
+                    )
+                self.assertEqual(self.runner.mutation_count, mutation_count)
+                squad["members"] = state
+
+    def test_unrelated_sixth_target_squad_member_fails_before_member_mutation(self):
+        first = self.provisioner.reconcile(
+            self.config, apply=True, backend_env=self.backend_env
+        )
+        squad = self.runner.squads[first.squad_id]
+        squad["members"]["unrelated-agent"] = {
+            "id": "membership-unrelated-agent",
+            "squad_id": first.squad_id,
+            "member_id": "unrelated-agent",
+            "member_type": "agent",
+            "role": "observer",
+        }
+        mutation_count = self.runner.mutation_count
+
+        with self.assertRaisesRegex(RuntimeError, "unsafe Squad member state"):
+            self.provisioner.reconcile(self.config, apply=True, backend_env=None)
+
+        self.assertEqual(self.runner.mutation_count, mutation_count)
 
     def test_fresh_apply_without_required_env_fails_before_mutation(self):
         with self.assertRaisesRegex(ValueError, "backend environment"):
@@ -1021,7 +1121,16 @@ class ProvisionerTests(unittest.TestCase):
         leader_id = runner.seed_agent(agent.name)
         runner.squads["squad-1"] = {
             "id": "squad-1", "name": self.config.blueprint.squad_name,
-            "description": "old", "instructions": "old", "leader_id": leader_id, "members": {},
+            "description": "old", "instructions": "old", "leader_id": leader_id,
+            "members": {
+                leader_id: {
+                    "id": f"membership-squad-1-{leader_id}",
+                    "squad_id": "squad-1",
+                    "member_id": leader_id,
+                    "member_type": "agent",
+                    "role": "leader",
+                }
+            },
         }
         runner._next["squad"] = 2
         runner.response_overrides[("squad", "update")] = {

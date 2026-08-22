@@ -473,13 +473,14 @@ class Provisioner:
             squad_id = detail["id"]
             if not self._matches(detail, {**desired, "instructions": ""}):
                 raise RuntimeError("Squad reconciliation failed")
+            members = self._member_records(squad_id)
             self.runner.run(
                 ["squad", "update", squad_id, "--instructions", desired["instructions"], "--output", "json"]
             )
             detail = self._squad_by_name(
                 blueprint.squad_name, expected_id=squad_id
             )
-            members = []
+            members = self._member_records(squad_id)
         elif not self._matches(detail, desired):
             squad_id = detail["id"]
             self.runner.run(
@@ -494,18 +495,38 @@ class Provisioner:
             detail = self._squad_by_name(
                 blueprint.squad_name, expected_id=squad_id
             )
+            members = self._member_records(squad_id)
         if not self._matches(detail, desired):
             raise RuntimeError("Squad reconciliation failed")
         squad_id = detail["id"]
+        leader_id = desired["leader_id"]
+        leader = next(
+            (record for record in members if record["member_id"] == leader_id),
+            None,
+        )
+        if (
+            leader is None
+            or leader["member_type"] != "agent"
+            or leader["role"] != "leader"
+        ):
+            raise RuntimeError("Squad leader reconciliation failed")
         by_member = self._validate_members(members)
-        wanted = {
+        wanted = {leader_id: "leader"}
+        wanted.update(
+            {
+                agent_ids[agent.role]: agent.role
+                for agent in config.agents
+                if agent.role != blueprint.leader_role
+            }
+        )
+        non_leader_wanted = {
             agent_ids[agent.role]: agent.role
             for agent in config.agents
             if agent.role != blueprint.leader_role
         }
         if set(by_member).difference(wanted):
             raise RuntimeError("unsafe Squad member state")
-        for member_id, role in wanted.items():
+        for member_id, role in non_leader_wanted.items():
             existing = by_member.get(member_id)
             if existing is None:
                 self.runner.run(
