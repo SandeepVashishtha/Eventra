@@ -108,6 +108,14 @@ def _read(runner: MulticaRunner, args: list[str]) -> dict[str, Any] | list[Any]:
     return runner.run(args)
 
 
+def _parse_audit_environment(value: Any, expected_id: str) -> None:
+    """Require the exact envelope so no unexpected key names can be reported."""
+
+    parse_agent_environment(value, expected_id)
+    if set(value) != {"agent_id", "custom_env"}:
+        raise RuntimeError("malformed agent environment")
+
+
 def collect_contract_audit(
     runtime_id: str, daemon_id: str, runner: MulticaRunner
 ) -> dict[str, Any]:
@@ -147,7 +155,7 @@ def collect_contract_audit(
             environment = _read(
                 runner, ["agent", "env", "get", agent_id, "--output", "json"]
             )
-            parse_agent_environment(environment, agent_id)
+            _parse_audit_environment(environment, agent_id)
             agent_environments.append(
                 _shape(environment, target_id=agent_id, target_field="agent_id")
             )

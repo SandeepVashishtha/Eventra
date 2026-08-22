@@ -161,6 +161,24 @@ class ContractAuditTests(unittest.TestCase):
         self.assertEqual(mutation_calls, set())
         self.assertTrue(all(stdin_json is None for _, stdin_json in runner.calls))
 
+    def test_audit_rejects_unexpected_environment_envelope_key_without_output(self):
+        replies = copy.deepcopy(audit_replies())
+        sentinel = "ENV_KEY_SHOULD_NOT_ESCAPE"
+        replies[("agent", "env", "get", SENTINELS["agent_id"], "--output", "json")][
+            sentinel
+        ] = "unexpected"
+        runner = RecordingRunner(replies)
+        stdout = io.StringIO()
+
+        with contextlib.redirect_stdout(stdout):
+            with self.assertRaisesRegex(RuntimeError, "malformed agent environment") as caught:
+                collect_contract_audit(
+                    SENTINELS["runtime_id"], SENTINELS["daemon_id"], runner
+                )
+
+        self.assertNotIn(sentinel, str(caught.exception))
+        self.assertNotIn(sentinel, stdout.getvalue())
+
     def test_audit_samples_existing_squad_and_project_when_eventra_records_are_absent(self):
         replies = copy.deepcopy(audit_replies())
         replies[("squad", "list", "--output", "json")][0]["name"] = "OTHER_SQUAD"
