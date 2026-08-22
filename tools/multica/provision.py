@@ -10,7 +10,21 @@ import subprocess
 from dataclasses import dataclass
 from typing import Any, Sequence
 
-from .contracts import parse_agent_environment, parse_agent_list
+from .contracts import (
+    parse_agent_detail,
+    parse_agent_environment,
+    parse_agent_list,
+    parse_agent_skill_list,
+    parse_project_detail,
+    parse_project_list,
+    parse_project_resources,
+    parse_runtime_list,
+    parse_skill_detail,
+    parse_skill_list,
+    parse_squad_detail,
+    parse_squad_list,
+    parse_squad_members,
+)
 from .eventra_adapter import ProjectConfig, build_eventra_config
 
 
@@ -20,6 +34,23 @@ MAX_AGENT_DESCRIPTION = 255
 WORKTREE_CAPABILITY = "local-worktree-v1"
 ENV_RECIPIENTS = frozenset({"backend_engineer", "integration_qa"})
 REQUIRED_ENV_KEYS = frozenset({"JWT_SECRET", "MAIL_USERNAME", "MAIL_PASSWORD"})
+MUTATION_COMMAND_PREFIXES = frozenset(
+    {
+        ("skill", "import"),
+        ("agent", "create"),
+        ("agent", "update"),
+        ("agent", "env", "set"),
+        ("agent", "skills", "add"),
+        ("squad", "create"),
+        ("squad", "update"),
+        ("squad", "member", "add"),
+        ("squad", "member", "set-role"),
+        ("project", "create"),
+        ("project", "update"),
+        ("project", "resource", "add"),
+        ("project", "resource", "update"),
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -31,6 +62,7 @@ class ProvisioningResult:
     squad_id: str | None
     project_id: str | None
     resource_ids: dict[str, str | None]
+    mutation_count: int
 
 
 @dataclass(frozen=True)
@@ -47,6 +79,13 @@ class _Preflight:
 class MulticaRunner:
     """Strict, non-shelling JSON boundary around Multica CLI 0.4.31."""
 
+    def __init__(self) -> None:
+        self._mutation_count = 0
+
+    @property
+    def mutation_count(self) -> int:
+        return self._mutation_count
+
     def run(
         self,
         args: list[str],
@@ -55,6 +94,8 @@ class MulticaRunner:
     ) -> dict[str, Any] | list[Any]:
         if not isinstance(args, list) or not all(isinstance(arg, str) for arg in args):
             raise TypeError("Multica arguments must be a list of strings")
+        if any(tuple(args[: len(prefix)]) == prefix for prefix in MUTATION_COMMAND_PREFIXES):
+            self._mutation_count += 1
         child_env = os.environ.copy()
         child_env["MULTICA_HTTP_TIMEOUT"] = HTTP_TIMEOUT
         try:
@@ -95,6 +136,7 @@ class Provisioner:
         apply: bool,
         backend_env: dict[str, str] | None,
     ) -> ProvisioningResult:
+        starting_mutation_count = self.runner.mutation_count
         self._validate_config(config)
         self._validate_backend_env(backend_env)
         desired_skills = self._desired_skills(config)
@@ -117,6 +159,7 @@ class Provisioner:
                     path: None if detail is None else detail["id"]
                     for path, detail in state.resources.items()
                 },
+                mutation_count=self.runner.mutation_count - starting_mutation_count,
             )
 
         skill_ids = self._reconcile_skills(desired_skills, state.skill_details)
@@ -127,32 +170,35 @@ class Provisioner:
         squad_id = self._reconcile_squad(config, state.squad_detail, state.members, agent_ids)
         project_id = self._reconcile_project(config, state.project_detail)
         resource_ids = self._reconcile_resources(config, project_id, state.resources)
-        return ProvisioningResult(agent_ids, skill_ids, squad_id, project_id, resource_ids)
+        return ProvisioningResult(
+            agent_ids,
+            skill_ids,
+            squad_id,
+            project_id,
+            resource_ids,
+            self.runner.mutation_count - starting_mutation_count,
+        )
 
     def _preflight(self, config, desired_skills) -> _Preflight:
         self._validate_runtime_capability(config)
 
-        skill_index = self._index_records(
-            self._records(["skill", "list", "--output", "json"], "skill list"),
-            "skill list",
-            "name",
+        skill_records = parse_skill_list(
+            self.runner.run(["skill", "list", "--output", "json"])
         )
         skill_details = {}
         for key, source in desired_skills.items():
-            item = self._unique_index(skill_index, key, "skill")
+            item = self._exact_record(skill_records, key, "name", "skill")
             detail = None if item is None else self._skill_get(item["id"])
             if detail is not None and self._skill_origin(detail) != source.url:
                 raise RuntimeError(f"skill {key} has an unapproved origin")
             skill_details[key] = detail
 
-        agent_index = self._index_records(
-            self._records(["agent", "list", "--output", "json"], "agent list"),
-            "agent list",
-            "name",
+        agent_records = parse_agent_list(
+            self.runner.run(["agent", "list", "--output", "json"])
         )
         agent_details, agent_envs = {}, {}
         for agent in config.agents:
-            item = self._unique_index(agent_index, agent.name, "agent")
+            item = self._exact_record(agent_records, agent.name, "name", "agent")
             detail = None if item is None else self._agent_get(item["id"])
             agent_details[agent.role] = detail
             agent_envs[agent.role] = (
@@ -161,12 +207,12 @@ class Provisioner:
                 else self._agent_env_get(detail["id"])
             )
 
-        squad_index = self._index_records(
-            self._records(["squad", "list", "--output", "json"], "Squad list"),
-            "Squad list",
-            "name",
+        squad_records = parse_squad_list(
+            self.runner.run(["squad", "list", "--output", "json"])
         )
-        squad_item = self._unique_index(squad_index, config.blueprint.squad_name, "Squad")
+        squad_item = self._exact_record(
+            squad_records, config.blueprint.squad_name, "name", "Squad"
+        )
         squad_detail = None if squad_item is None else self._squad_get(squad_item["id"])
         members = (
             []
@@ -174,12 +220,12 @@ class Provisioner:
             else self._member_records(squad_detail["id"])
         )
 
-        project_index = self._index_records(
-            self._records(["project", "list", "--output", "json"], "Project list"),
-            "Project list",
-            "title",
+        project_records = parse_project_list(
+            self.runner.run(["project", "list", "--output", "json"])
         )
-        project_item = self._unique_index(project_index, config.project_title, "Project")
+        project_item = self._exact_record(
+            project_records, config.project_title, "title", "Project"
+        )
         project_detail = (
             None if project_item is None else self._project_get(project_item["id"])
         )
@@ -200,30 +246,24 @@ class Provisioner:
         )
 
     def _validate_runtime_capability(self, config) -> None:
-        records = self._records(["runtime", "list", "--output", "json"], "runtime list")
+        records = parse_runtime_list(
+            self.runner.run(["runtime", "list", "--output", "json"])
+        )
         matches = []
         for record in records:
-            runtime_id = record.get("id")
-            if not isinstance(runtime_id, str) or not runtime_id:
-                raise RuntimeError("malformed runtime list")
+            runtime_id = record["id"]
             if runtime_id == config.runtime_id:
                 matches.append(record)
         if len(matches) != 1:
             raise RuntimeError("target runtime is missing or duplicated")
         target = matches[0]
-        daemon_id = target.get("daemon_id")
-        if not isinstance(daemon_id, str) or not daemon_id:
-            raise RuntimeError("malformed runtime list")
+        daemon_id = target["daemon_id"]
         if daemon_id != config.daemon_id:
             raise RuntimeError("target runtime daemon does not match configuration")
-        metadata = target.get("metadata")
-        if target.get("status") != "online" or not isinstance(metadata, dict):
+        metadata = target["metadata"]
+        if target["status"] != "online":
             raise RuntimeError("malformed runtime list")
-        capabilities = metadata.get("capabilities")
-        if not isinstance(capabilities, list) or not all(
-            isinstance(value, str) for value in capabilities
-        ):
-            raise RuntimeError("malformed runtime list")
+        capabilities = metadata["capabilities"]
         if WORKTREE_CAPABILITY not in capabilities:
             raise RuntimeError(f"runtime lacks required {WORKTREE_CAPABILITY} capability")
 
@@ -300,17 +340,10 @@ class Provisioner:
         for key, source in desired.items():
             detail = details[key]
             if detail is None:
-                response = self._object(
-                    self.runner.run(
-                        ["skill", "import", "--url", source.url, "--on-conflict", "fail", "--output", "json"]
-                    ),
-                    "skill import",
+                self.runner.run(
+                    ["skill", "import", "--url", source.url, "--on-conflict", "fail", "--output", "json"]
                 )
-                imported_skill = self._object(response.get("skill"), "skill import")
-                skill_id = self._create_response_id(
-                    imported_skill, key, "skill import"
-                )
-                detail = self._skill_get(skill_id)
+                detail = self._skill_by_name(key)
                 if detail["name"] != key or self._skill_origin(detail) != source.url:
                     raise RuntimeError(f"skill reconciliation failed for {key}")
             ids[key] = detail["id"]
@@ -336,32 +369,23 @@ class Provisioner:
                     args.append("--custom-env-stdin")
                     stdin_json = dict(backend_env)
                 args.extend(["--output", "json"])
-                response = self._object(
-                    self.runner.run(args, stdin_json=stdin_json), "agent create"
-                )
-                agent_id = self._create_response_id(response, agent.name, "agent create")
-                detail = self._agent_get(agent_id)
+                self.runner.run(args, stdin_json=stdin_json)
+                detail = self._agent_by_name(agent.name)
             elif not self._matches(detail, desired):
                 agent_id = detail["id"]
-                response = self._object(
-                    self.runner.run(
-                        [
-                            "agent", "update", agent_id,
-                            "--name", agent.name,
-                            "--description", agent.description,
-                            "--instructions", desired["instructions"],
-                            "--runtime-id", config.runtime_id,
-                            "--visibility", "workspace",
-                            "--max-concurrent-tasks", "1",
-                            "--output", "json",
-                        ]
-                    ),
-                    "agent update",
+                self.runner.run(
+                    [
+                        "agent", "update", agent_id,
+                        "--name", agent.name,
+                        "--description", agent.description,
+                        "--instructions", desired["instructions"],
+                        "--runtime-id", config.runtime_id,
+                        "--visibility", "workspace",
+                        "--max-concurrent-tasks", "1",
+                        "--output", "json",
+                    ]
                 )
-                self._assert_update_response(
-                    response, agent_id, agent.name, "agent update"
-                )
-                detail = self._agent_get(agent_id)
+                detail = self._agent_by_name(agent.name, expected_id=agent_id)
             if not self._matches(detail, desired):
                 raise RuntimeError(f"agent reconciliation failed for {agent.role}")
             agent_id = detail["id"]
@@ -369,12 +393,9 @@ class Provisioner:
 
             if agent.needs_backend_env:
                 if not created and backend_env is not None and envs[agent.role] != backend_env:
-                    self._object(
-                        self.runner.run(
-                            ["agent", "env", "set", agent_id, "--custom-env-stdin", "--output", "json"],
-                            stdin_json=dict(backend_env),
-                        ),
-                        "agent env set",
+                    self.runner.run(
+                        ["agent", "env", "set", agent_id, "--custom-env-stdin", "--output", "json"],
+                        stdin_json=dict(backend_env),
                     )
                 current_env = self._agent_env_get(agent_id)
                 if backend_env is not None:
@@ -403,29 +424,23 @@ class Provisioner:
             existing = self._binding_ids(agent_id)
             missing = [skill_ids[key] for key in agent.skill_keys if skill_ids[key] not in existing]
             if missing:
-                self._object(
-                    self.runner.run(
-                        ["agent", "skills", "add", agent_id, "--skill-ids", ",".join(missing), "--output", "json"]
-                    ),
-                    "agent skills add",
+                self.runner.run(
+                    ["agent", "skills", "add", agent_id, "--skill-ids", ",".join(missing), "--output", "json"]
                 )
             final = self._binding_ids(agent_id)
-            if not {skill_ids[key] for key in agent.skill_keys}.issubset(final):
+            if (
+                not existing.issubset(final)
+                or not {skill_ids[key] for key in agent.skill_keys}.issubset(final)
+            ):
                 raise RuntimeError(f"agent skill reconciliation failed for {agent.role}")
 
     def _binding_ids(self, agent_id):
-        records = self._records(
-            ["agent", "skills", "list", agent_id, "--output", "json"],
-            "agent skill list",
+        records = parse_agent_skill_list(
+            self.runner.run(
+                ["agent", "skills", "list", agent_id, "--output", "json"]
+            )
         )
-        result = set()
-        for record in records:
-            skill_id = record.get("id")
-            name = record.get("name")
-            if not isinstance(skill_id, str) or not skill_id or not isinstance(name, str) or not name:
-                raise RuntimeError("malformed agent skill list")
-            result.add(skill_id)
-        return result
+        return {record["id"] for record in records}
 
     def _reconcile_squad(self, config, detail, members, agent_ids):
         blueprint = config.blueprint
@@ -438,46 +453,38 @@ class Provisioner:
         }
         created = detail is None
         if created:
-            response = self._object(
-                self.runner.run(
-                    [
-                        "squad", "create", "--name", blueprint.squad_name,
-                        "--description", blueprint.squad_description,
-                        "--leader", desired["leader_id"], "--output", "json",
-                    ]
-                ),
-                "Squad create",
+            self.runner.run(
+                [
+                    "squad", "create", "--name", blueprint.squad_name,
+                    "--description", blueprint.squad_description,
+                    "--leader", desired["leader_id"], "--output", "json",
+                ]
             )
-            squad_id = self._create_response_id(response, blueprint.squad_name, "Squad create")
-            response = self._object(
-                self.runner.run(
-                    ["squad", "update", squad_id, "--instructions", desired["instructions"], "--output", "json"]
-                ),
-                "Squad update",
+            detail = self._squad_by_name(blueprint.squad_name)
+            squad_id = detail["id"]
+            if not self._matches(detail, {**desired, "instructions": ""}):
+                raise RuntimeError("Squad reconciliation failed")
+            self.runner.run(
+                ["squad", "update", squad_id, "--instructions", desired["instructions"], "--output", "json"]
             )
-            self._assert_update_response(
-                response, squad_id, blueprint.squad_name, "Squad update"
+            detail = self._squad_by_name(
+                blueprint.squad_name, expected_id=squad_id
             )
-            detail = self._squad_get(squad_id)
             members = []
         elif not self._matches(detail, desired):
             squad_id = detail["id"]
-            response = self._object(
-                self.runner.run(
-                    [
-                        "squad", "update", squad_id,
-                        "--name", blueprint.squad_name,
-                        "--description", blueprint.squad_description,
-                        "--instructions", desired["instructions"],
-                        "--leader", desired["leader_id"], "--output", "json",
-                    ]
-                ),
-                "Squad update",
+            self.runner.run(
+                [
+                    "squad", "update", squad_id,
+                    "--name", blueprint.squad_name,
+                    "--description", blueprint.squad_description,
+                    "--instructions", desired["instructions"],
+                    "--leader", desired["leader_id"], "--output", "json",
+                ]
             )
-            self._assert_update_response(
-                response, squad_id, blueprint.squad_name, "Squad update"
+            detail = self._squad_by_name(
+                blueprint.squad_name, expected_id=squad_id
             )
-            detail = self._squad_get(squad_id)
         if not self._matches(detail, desired):
             raise RuntimeError("Squad reconciliation failed")
         squad_id = detail["id"]
@@ -492,27 +499,30 @@ class Provisioner:
         for member_id, role in wanted.items():
             existing = by_member.get(member_id)
             if existing is None:
-                self._object(
-                    self.runner.run(
-                        [
-                            "squad", "member", "add", squad_id,
-                            "--member-id", member_id, "--type", "agent",
-                            "--role", role, "--output", "json",
-                        ]
-                    ),
-                    "Squad member add",
+                self.runner.run(
+                    [
+                        "squad", "member", "add", squad_id,
+                        "--member-id", member_id, "--type", "agent",
+                        "--role", role, "--output", "json",
+                    ]
                 )
             elif existing["role"] != role:
-                self._object(
-                    self.runner.run(
-                        [
-                            "squad", "member", "set-role", squad_id,
-                            "--member-id", member_id, "--member-type", "agent",
-                            "--role", role, "--output", "json",
-                        ]
-                    ),
-                    "Squad member set-role",
+                self.runner.run(
+                    [
+                        "squad", "member", "set-role", squad_id,
+                        "--member-id", member_id, "--member-type", "agent",
+                        "--role", role, "--output", "json",
+                    ]
                 )
+            if existing is None or existing["role"] != role:
+                by_member = self._validate_members(self._member_records(squad_id))
+                observed = by_member.get(member_id)
+                if (
+                    observed is None
+                    or observed["member_type"] != "agent"
+                    or observed["role"] != role
+                ):
+                    raise RuntimeError("Squad member reconciliation failed")
         final = self._validate_members(self._member_records(squad_id))
         if {member_id: item["role"] for member_id, item in final.items()} != wanted:
             raise RuntimeError("Squad member reconciliation failed")
@@ -525,26 +535,18 @@ class Provisioner:
             "description": config.project_context_file.read_text(),
         }
         if detail is None:
-            response = self._object(
-                self.runner.run(
-                    ["project", "create", "--title", desired["title"], "--description", desired["description"], "--output", "json"]
-                ),
-                "Project create",
+            self.runner.run(
+                ["project", "create", "--title", desired["title"], "--description", desired["description"], "--output", "json"]
             )
-            project_id = self._create_response_id(response, desired["title"], "Project create", "title")
-            detail = self._project_get(project_id)
+            detail = self._project_by_title(desired["title"])
         elif not self._matches(detail, desired):
             project_id = detail["id"]
-            response = self._object(
-                self.runner.run(
-                    ["project", "update", project_id, "--title", desired["title"], "--description", desired["description"], "--output", "json"]
-                ),
-                "Project update",
+            self.runner.run(
+                ["project", "update", project_id, "--title", desired["title"], "--description", desired["description"], "--output", "json"]
             )
-            self._assert_update_response(
-                response, project_id, desired["title"], "Project update", "title"
+            detail = self._project_by_title(
+                desired["title"], expected_id=project_id
             )
-            detail = self._project_get(project_id)
         if not self._matches(detail, desired):
             raise RuntimeError("Project reconciliation failed")
         return detail["id"]
@@ -554,77 +556,74 @@ class Provisioner:
         for resource in config.resources:
             detail = matches[resource.local_path]
             if detail is None:
-                response = self._object(
-                    self.runner.run(
-                        [
-                            "project", "resource", "add", project_id,
-                            "--type", "local_directory", "--local-path", resource.local_path,
-                            "--daemon-id", config.daemon_id,
-                            "--execution-mode", "worktree", "--output", "json",
-                        ]
-                    ),
-                    "Project resource add",
+                self.runner.run(
+                    [
+                        "project", "resource", "add", project_id,
+                        "--type", "local_directory", "--local-path", resource.local_path,
+                        "--daemon-id", config.daemon_id,
+                        "--execution-mode", "worktree", "--output", "json",
+                    ]
                 )
-                ids[resource.local_path] = self._record_id(response, "Project resource add")
+                post = self._validate_resource_state(
+                    config, self._resource_records(project_id)
+                )[resource.local_path]
+                self._assert_target_resource(post, config.daemon_id)
+                ids[resource.local_path] = post["id"]
             else:
                 ids[resource.local_path] = detail["id"]
                 ref = detail["resource_ref"]
-                if ref["execution_mode"] != "worktree" or ref["daemon_id"] != config.daemon_id:
-                    self._object(
-                        self.runner.run(
-                            [
-                                "project", "resource", "update", project_id, detail["id"],
-                                "--daemon-id", config.daemon_id,
-                                "--execution-mode", "worktree", "--output", "json",
-                            ]
-                        ),
-                        "Project resource update",
+                if ref.get("execution_mode") != "worktree" or ref["daemon_id"] != config.daemon_id:
+                    self.runner.run(
+                        [
+                            "project", "resource", "update", project_id, detail["id"],
+                            "--daemon-id", config.daemon_id,
+                            "--execution-mode", "worktree", "--output", "json",
+                        ]
+                    )
+                    post = self._validate_resource_state(
+                        config, self._resource_records(project_id)
+                    )[resource.local_path]
+                    self._assert_target_resource(
+                        post, config.daemon_id, expected_id=detail["id"]
                     )
         final = self._validate_resource_state(config, self._resource_records(project_id))
         if any(detail is None for detail in final.values()):
             raise RuntimeError("Project resource reconciliation failed")
         for path, detail in final.items():
-            ref = detail["resource_ref"]
-            if ref["execution_mode"] != "worktree" or ref["daemon_id"] != config.daemon_id:
-                raise RuntimeError("Project resource reconciliation failed")
+            self._assert_target_resource(detail, config.daemon_id)
             ids[path] = detail["id"]
         return ids
 
     def _skill_get(self, skill_id):
-        detail = self._object(
+        return parse_skill_detail(
             self.runner.run(["skill", "get", skill_id, "--output", "json"]),
-            "skill detail",
+            skill_id,
         )
-        self._strict_strings(detail, ("id", "name"), "skill detail")
-        if detail["id"] != skill_id or self._skill_origin(detail) is None:
-            raise RuntimeError("malformed skill detail")
-        return detail
+
+    def _skill_by_name(self, name):
+        records = parse_skill_list(
+            self.runner.run(["skill", "list", "--output", "json"])
+        )
+        item = self._exact_record(records, name, "name", "skill", required=True)
+        return self._skill_get(item["id"])
 
     @staticmethod
     def _skill_origin(detail):
-        config = detail.get("config")
-        if not isinstance(config, dict):
-            return None
-        origin = config.get("origin")
-        if not isinstance(origin, dict):
-            return None
-        source_url = origin.get("source_url")
-        return source_url if isinstance(source_url, str) and source_url else None
+        return detail["config"]["origin"]["source_url"]
 
     def _agent_get(self, agent_id):
-        detail = self._object(
+        return parse_agent_detail(
             self.runner.run(["agent", "get", agent_id, "--output", "json"]),
-            "agent detail",
+            agent_id,
         )
-        self._strict_strings(
-            detail,
-            ("id", "name", "runtime_id", "visibility"),
-            "agent detail",
+
+    def _agent_by_name(self, name, expected_id=None):
+        records = parse_agent_list(
+            self.runner.run(["agent", "list", "--output", "json"])
         )
-        self._string_types(detail, ("description", "instructions"), "agent detail")
-        if detail["id"] != agent_id or not isinstance(detail.get("max_concurrent_tasks"), int):
-            raise RuntimeError("malformed agent detail")
-        return detail
+        item = self._exact_record(records, name, "name", "agent", required=True)
+        self._assert_expected_id(item, expected_id, "agent")
+        return self._agent_get(item["id"])
 
     def _agent_env_get(self, agent_id):
         return parse_agent_environment(
@@ -633,137 +632,99 @@ class Provisioner:
         )
 
     def _squad_get(self, squad_id):
-        detail = self._object(
+        return parse_squad_detail(
             self.runner.run(["squad", "get", squad_id, "--output", "json"]),
-            "Squad detail",
+            squad_id,
         )
-        self._strict_strings(
-            detail,
-            ("id", "name", "leader_id"),
-            "Squad detail",
+
+    def _squad_by_name(self, name, expected_id=None):
+        records = parse_squad_list(
+            self.runner.run(["squad", "list", "--output", "json"])
         )
-        self._string_types(detail, ("description", "instructions"), "Squad detail")
-        if detail["id"] != squad_id:
-            raise RuntimeError("malformed Squad detail")
-        return detail
+        item = self._exact_record(records, name, "name", "Squad", required=True)
+        self._assert_expected_id(item, expected_id, "Squad")
+        return self._squad_get(item["id"])
 
     def _project_get(self, project_id):
-        detail = self._object(
+        return parse_project_detail(
             self.runner.run(["project", "get", project_id, "--output", "json"]),
-            "Project detail",
+            project_id,
         )
-        self._strict_strings(detail, ("id", "title"), "Project detail")
-        self._string_types(detail, ("description",), "Project detail")
-        if detail["id"] != project_id:
-            raise RuntimeError("malformed Project detail")
-        return detail
+
+    def _project_by_title(self, title, expected_id=None):
+        records = parse_project_list(
+            self.runner.run(["project", "list", "--output", "json"])
+        )
+        item = self._exact_record(records, title, "title", "Project", required=True)
+        self._assert_expected_id(item, expected_id, "Project")
+        return self._project_get(item["id"])
 
     def _member_records(self, squad_id):
-        return self._records(
-            ["squad", "member", "list", squad_id, "--output", "json"],
-            "Squad member list",
+        return parse_squad_members(
+            self.runner.run(
+                ["squad", "member", "list", squad_id, "--output", "json"]
+            ),
+            squad_id,
         )
 
     def _validate_members(self, records):
         result = {}
         for record in records:
-            self._strict_strings(record, ("member_id", "member_type", "role"), "Squad member list")
             if record["member_type"] != "agent" or record["member_id"] in result:
                 raise RuntimeError("unsafe Squad member state")
             result[record["member_id"]] = record
         return result
 
     def _resource_records(self, project_id):
-        return self._records(
-            ["project", "resource", "list", project_id, "--output", "json"],
-            "Project resource list",
+        return parse_project_resources(
+            self.runner.run(
+                ["project", "resource", "list", project_id, "--output", "json"]
+            ),
+            project_id,
         )
 
     def _validate_resource_state(self, config, records):
         wanted = {resource.local_path for resource in config.resources}
         by_path = {path: [] for path in wanted}
         for record in records:
-            resource_id = self._record_id(record, "Project resource list")
-            if record.get("resource_type") != "local_directory":
+            if record["resource_type"] != "local_directory":
                 raise RuntimeError("unsafe resource state")
-            ref = record.get("resource_ref")
-            if not isinstance(ref, dict):
-                raise RuntimeError("unsafe resource state")
-            self._strict_strings(
-                ref,
-                ("local_path", "daemon_id", "execution_mode"),
-                "Project resource list",
-            )
+            ref = record["resource_ref"]
             path = ref["local_path"]
-            if path not in wanted or ref["execution_mode"] not in {"in_place", "worktree"}:
+            execution_mode = ref.get("execution_mode")
+            if path not in wanted or execution_mode not in {None, "in_place", "worktree"}:
                 raise RuntimeError("unsafe resource state")
-            record["id"] = resource_id
             by_path[path].append(record)
         if any(len(values) > 1 for values in by_path.values()):
             raise RuntimeError("unsafe resource state")
         return {path: values[0] if values else None for path, values in by_path.items()}
 
-    def _records(self, args, label):
-        value = self.runner.run(args)
-        if not isinstance(value, list) or not all(isinstance(item, dict) for item in value):
-            raise RuntimeError(f"malformed {label}")
-        return value
-
     @staticmethod
-    def _object(value, label):
-        if not isinstance(value, dict):
-            raise RuntimeError(f"malformed {label}")
-        return value
-
-    def _index_records(self, records, label, name_field):
-        result = {}
-        ids = set()
-        for record in records:
-            self._strict_strings(record, ("id", name_field), label)
-            if record["id"] in ids:
-                raise RuntimeError(f"malformed {label}")
-            ids.add(record["id"])
-            result.setdefault(record[name_field], []).append(record)
-        return result
-
-    @staticmethod
-    def _unique_index(index, name, label):
-        values = index.get(name, [])
+    def _exact_record(records, name, name_field, label, required=False):
+        values = [record for record in records if record[name_field] == name]
         if len(values) > 1:
             raise RuntimeError(f"duplicate {label} state for {name}")
+        if not values and required:
+            raise RuntimeError(f"missing {label} state for {name}")
         return values[0] if values else None
 
     @staticmethod
-    def _strict_strings(record, keys, label):
-        if any(not isinstance(record.get(key), str) or not record[key] for key in keys):
-            raise RuntimeError(f"malformed {label}")
+    def _assert_expected_id(record, expected_id, label):
+        if expected_id is not None and record["id"] != expected_id:
+            raise RuntimeError(f"{label} reconciliation targeted the wrong id")
 
     @staticmethod
-    def _string_types(record, keys, label):
-        if any(not isinstance(record.get(key), str) for key in keys):
-            raise RuntimeError(f"malformed {label}")
-
-    @staticmethod
-    def _record_id(record, label):
-        value = record.get("id")
-        if not isinstance(value, str) or not value:
-            raise RuntimeError(f"malformed {label}")
-        return value
-
-    def _create_response_id(self, response, expected_name, label, name_field="name"):
-        self._strict_strings(response, ("id", name_field), label)
-        if response[name_field] != expected_name:
-            raise RuntimeError(f"malformed {label}")
-        return response["id"]
-
-    def _assert_update_response(
-        self, response, target_id, expected_name, label, name_field="name"
-    ):
-        response_id = self._create_response_id(
-            response, expected_name, label, name_field
-        )
-        if response_id != target_id:
-            raise RuntimeError(f"{label} returned the wrong target id")
+    def _assert_target_resource(detail, daemon_id, expected_id=None):
+        if detail is None:
+            raise RuntimeError("Project resource reconciliation failed")
+        ref = detail["resource_ref"]
+        if (
+            (expected_id is not None and detail["id"] != expected_id)
+            or detail["resource_type"] != "local_directory"
+            or ref["daemon_id"] != daemon_id
+            or ref.get("execution_mode") != "worktree"
+        ):
+            raise RuntimeError("Project resource reconciliation failed")
 
     @staticmethod
     def _matches(detail, desired):

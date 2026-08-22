@@ -233,14 +233,22 @@ def parse_project_resources(value: Any, expected_project_id: str) -> list[dict[s
             _error(contract)
         local_path = resource_ref.get("local_path")
         daemon_id = resource_ref.get("daemon_id")
-        if not _string(local_path) or not _string(daemon_id):
+        execution_mode = resource_ref.get("execution_mode")
+        if (
+            not _string(local_path)
+            or not _string(daemon_id)
+            or ("execution_mode" in resource_ref and not _string(execution_mode))
+        ):
             _error(contract)
         ids.add(record_id)
+        normalized_ref = {"local_path": local_path, "daemon_id": daemon_id}
+        if "execution_mode" in resource_ref:
+            normalized_ref["execution_mode"] = execution_mode
         result.append(
             {
                 "id": record_id,
                 "resource_type": resource_type,
-                "resource_ref": {"local_path": local_path, "daemon_id": daemon_id},
+                "resource_ref": normalized_ref,
             }
         )
     return result

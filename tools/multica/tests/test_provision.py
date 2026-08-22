@@ -88,7 +88,10 @@ class FakeRunner:
         self.skills, self.agents, self.envs, self.bindings = {}, {}, {}, {}
         self.squads, self.projects = {}, {}
         self.response_overrides = {}
+        self.freeze_mutations = set()
         self.freeze_updates = set()
+        self.replace_bindings_on_add = False
+        self.omit_execution_mode_on_resource_reads = False
         self.corrupt_env_after_set = None
         self._next = {kind: 1 for kind in ("skill", "agent", "squad", "project", "resource")}
 
@@ -121,7 +124,8 @@ class FakeRunner:
         ref = {"local_path": local_path, "daemon_id": "daemon-id", "execution_mode": "worktree"}
         ref.update(overrides.pop("resource_ref", {}))
         self.projects[project_id]["resources"][resource_id] = {
-            "id": resource_id, "resource_type": "local_directory", "resource_ref": ref, **overrides,
+            "id": resource_id, "project_id": project_id,
+            "resource_type": "local_directory", "resource_ref": ref, **overrides,
         }
         return resource_id
 
@@ -134,6 +138,8 @@ class FakeRunner:
         self.stdin_object_ids.append(None if stdin_json is None else id(stdin_json))
         self.calls.append({"args": list(args), "command": command, "positionals": positionals, "flags": flags, "stdin_json": copy.deepcopy(stdin_json)})
         override = self.response_overrides.get(command)
+        if command in self.freeze_mutations:
+            return copy.deepcopy(override if override is not None else {"ok": True})
 
         if command == ("runtime", "list"):
             return self._response(command, self.runtimes)
@@ -188,7 +194,11 @@ class FakeRunner:
             value = [{"id": skill_id, "name": self.skills.get(skill_id, {}).get("name", "external")} for skill_id in sorted(self.bindings[positionals[0]])]
             return self._response(command, value)
         if command == ("agent", "skills", "add"):
-            self.bindings[positionals[0]].update(flags["--skill-ids"].split(","))
+            skill_ids = set(flags["--skill-ids"].split(","))
+            if self.replace_bindings_on_add:
+                self.bindings[positionals[0]] = skill_ids
+            else:
+                self.bindings[positionals[0]].update(skill_ids)
             return self._response(command, {"ok": True})
 
         if command == ("squad", "list"):
@@ -210,7 +220,13 @@ class FakeRunner:
             return self._response(command, list(self.squads[positionals[0]]["members"].values()))
         if command == ("squad", "member", "add"):
             squad_id, member_id = positionals[0], flags["--member-id"]
-            member = {"member_id": member_id, "member_type": flags.get("--type", "agent"), "role": flags.get("--role", "member")}
+            member = {
+                "id": f"membership-{squad_id}-{member_id}",
+                "squad_id": squad_id,
+                "member_id": member_id,
+                "member_type": flags.get("--type", "agent"),
+                "role": flags.get("--role", "member"),
+            }
             self.squads[squad_id]["members"][member_id] = member
             return self._response(command, member)
         if command == ("squad", "member", "set-role"):
@@ -236,10 +252,16 @@ class FakeRunner:
                     self.projects[project_id]["description"] = flags["--description"]
             return copy.deepcopy(override if override is not None else self._public(self.projects[project_id], "resources"))
         if command == ("project", "resource", "list"):
-            return self._response(command, list(self.projects[positionals[0]]["resources"].values()))
+            value = copy.deepcopy(
+                list(self.projects[positionals[0]]["resources"].values())
+            )
+            if self.omit_execution_mode_on_resource_reads:
+                for item in value:
+                    item["resource_ref"].pop("execution_mode", None)
+            return self._response(command, value)
         if command == ("project", "resource", "add"):
             project_id, resource_id = positionals[0], self._id("resource")
-            item = {"id": resource_id, "resource_type": flags["--type"], "resource_ref": {"local_path": flags["--local-path"], "daemon_id": flags["--daemon-id"], "execution_mode": flags["--execution-mode"]}}
+            item = {"id": resource_id, "project_id": project_id, "resource_type": flags["--type"], "resource_ref": {"local_path": flags["--local-path"], "daemon_id": flags["--daemon-id"], "execution_mode": flags["--execution-mode"]}}
             self.projects[project_id]["resources"][resource_id] = item
             return copy.deepcopy(override if override is not None else item)
         if command == ("project", "resource", "update"):
@@ -356,6 +378,22 @@ class MulticaRunnerTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "invalid JSON response") as malformed:
                 MulticaRunner().run(["agent", "list", "--output", "json"])
             self.assertNotIn("PRIVATE", str(malformed.exception))
+
+    @patch("tools.multica.provision.subprocess.run")
+    def test_counts_attempted_mutations_from_the_allowlist(self, run):
+        run.side_effect = (
+            subprocess.CompletedProcess([], 0, "[]", ""),
+            subprocess.CompletedProcess([], 0, "{}", ""),
+            subprocess.CompletedProcess([], 9, "", "private stderr"),
+        )
+        runner = MulticaRunner()
+
+        runner.run(["agent", "list", "--output", "json"])
+        runner.run(["agent", "create", "--output", "json"])
+        with self.assertRaisesRegex(RuntimeError, "failed with exit 9"):
+            runner.run(["agent", "env", "set", "agent-1", "--output", "json"])
+
+        self.assertEqual(runner.mutation_count, 2)
 
 
 class ProvisionerTests(unittest.TestCase):
@@ -506,9 +544,48 @@ class ProvisionerTests(unittest.TestCase):
         first = self.provisioner.reconcile(self.config, apply=True, backend_env=self.backend_env)
         mutation_count, envs = self.runner.mutation_count, copy.deepcopy(self.runner.envs)
         second = self.provisioner.reconcile(self.config, apply=True, backend_env=None)
-        self.assertEqual(second, first)
+        self.assertEqual(second.agent_ids, first.agent_ids)
+        self.assertEqual(second.skill_ids, first.skill_ids)
+        self.assertEqual(second.squad_id, first.squad_id)
+        self.assertEqual(second.project_id, first.project_id)
+        self.assertEqual(second.resource_ids, first.resource_ids)
+        self.assertGreater(first.mutation_count, 0)
+        self.assertEqual(second.mutation_count, 0)
         self.assertEqual(self.runner.mutation_count, mutation_count)
         self.assertEqual(self.runner.envs, envs)
+
+    def test_apply_json_contains_only_state_ids_and_mutation_count(self):
+        runner = FakeRunner()
+        stdout = io.StringIO()
+        with (
+            patch("tools.multica.provision.MulticaRunner", return_value=runner),
+            patch("tools.multica.provision.prompt_backend_env", return_value=self.backend_env),
+            contextlib.redirect_stdout(stdout),
+        ):
+            self.assertEqual(
+                main(
+                    [
+                        "--runtime-id", "runtime-id",
+                        "--daemon-id", "daemon-id",
+                        "--apply",
+                        "--prompt-backend-env",
+                    ]
+                ),
+                0,
+            )
+
+        output = json.loads(stdout.getvalue())
+        self.assertEqual(
+            set(output),
+            {
+                "agent_ids", "skill_ids", "squad_id", "project_id",
+                "resource_ids", "mutation_count",
+            },
+        )
+        self.assertEqual(output["mutation_count"], runner.mutation_count)
+        rendered = stdout.getvalue()
+        for secret in self.backend_env.values():
+            self.assertNotIn(secret, rendered)
 
     def test_dry_run_has_zero_mutations_even_without_env(self):
         result = self.provisioner.reconcile(self.config, apply=False, backend_env=None)
@@ -564,6 +641,142 @@ class ProvisionerTests(unittest.TestCase):
             self.runner.envs[result.agent_ids["backend_engineer"]], self.backend_env
         )
 
+    def test_mutation_acknowledgements_do_not_define_state(self):
+        acknowledgements = ({}, {"ok": True}, [{"unrelated": "acknowledgement"}])
+        self.runner.response_overrides.update(
+            {
+                command: copy.deepcopy(acknowledgements[index % len(acknowledgements)])
+                for index, command in enumerate(sorted(FakeRunner.MUTATIONS))
+            }
+        )
+
+        first = self.provisioner.reconcile(
+            self.config, apply=True, backend_env=self.backend_env
+        )
+        first_mutations = {
+            call["command"] for call in self.runner.calls
+            if call["command"] in FakeRunner.MUTATIONS
+        }
+
+        lead_id = first.agent_ids["delivery_lead"]
+        backend_id = first.agent_ids["backend_engineer"]
+        frontend_id = first.agent_ids["frontend_engineer"]
+        self.runner.agents[lead_id]["description"] = "stale agent description"
+        self.runner.envs[backend_id]["MAIL_PASSWORD"] = "stale mail password"
+        self.runner.squads[first.squad_id]["description"] = "stale Squad description"
+        self.runner.squads[first.squad_id]["members"][frontend_id]["role"] = "stale_role"
+        self.runner.projects[first.project_id]["description"] = "stale Project context"
+        resource_id = first.resource_ids[self.config.resources[0].local_path]
+        self.runner.projects[first.project_id]["resources"][resource_id]["resource_ref"][
+            "execution_mode"
+        ] = "in_place"
+
+        second = self.provisioner.reconcile(
+            self.config, apply=True, backend_env=self.backend_env
+        )
+        all_mutations = first_mutations | {
+            call["command"] for call in self.runner.calls
+            if call["command"] in FakeRunner.MUTATIONS
+        }
+
+        self.assertEqual(second.agent_ids, first.agent_ids)
+        self.assertEqual(second.skill_ids, first.skill_ids)
+        self.assertEqual(second.squad_id, first.squad_id)
+        self.assertEqual(second.project_id, first.project_id)
+        self.assertEqual(second.resource_ids, first.resource_ids)
+        self.assertGreater(first.mutation_count, 0)
+        self.assertGreater(second.mutation_count, 0)
+        self.assertEqual(all_mutations, FakeRunner.MUTATIONS)
+        self.assertEqual(self.runner.envs[backend_id], self.backend_env)
+        self.assertEqual(
+            self.runner.squads[first.squad_id]["members"][frontend_id]["role"],
+            "frontend_engineer",
+        )
+        self.assertEqual(
+            self.runner.projects[first.project_id]["resources"][resource_id][
+                "resource_ref"
+            ]["execution_mode"],
+            "worktree",
+        )
+
+    def test_every_mutation_requires_authoritative_post_state(self):
+        cases = (
+            (("skill", "import"), ("skill", "list")),
+            (("agent", "create"), ("agent", "list")),
+            (("agent", "update"), ("agent", "list")),
+            (("agent", "env", "set"), ("agent", "env", "get")),
+            (("agent", "skills", "add"), ("agent", "skills", "list")),
+            (("squad", "create"), ("squad", "list")),
+            (("squad", "update"), ("squad", "list")),
+            (("squad", "member", "add"), ("squad", "member", "list")),
+            (("squad", "member", "set-role"), ("squad", "member", "list")),
+            (("project", "create"), ("project", "list")),
+            (("project", "update"), ("project", "list")),
+            (("project", "resource", "add"), ("project", "resource", "list")),
+            (("project", "resource", "update"), ("project", "resource", "list")),
+        )
+        for mutation, authoritative_read in cases:
+            with self.subTest(mutation=mutation):
+                runner = FakeRunner()
+                provisioner = Provisioner(runner)
+                result = provisioner.reconcile(
+                    self.config, apply=True, backend_env=self.backend_env
+                )
+                lead_id = result.agent_ids["delivery_lead"]
+                backend_id = result.agent_ids["backend_engineer"]
+                frontend_id = result.agent_ids["frontend_engineer"]
+                first_skill_id = result.skill_ids[self.config.agents[0].skill_keys[0]]
+                first_path = self.config.resources[0].local_path
+                first_resource_id = result.resource_ids[first_path]
+
+                if mutation == ("skill", "import"):
+                    del runner.skills[first_skill_id]
+                elif mutation == ("agent", "create"):
+                    del runner.agents[lead_id]
+                    del runner.envs[lead_id]
+                    del runner.bindings[lead_id]
+                elif mutation == ("agent", "update"):
+                    runner.agents[lead_id]["description"] = "stale"
+                elif mutation == ("agent", "env", "set"):
+                    runner.envs[backend_id]["MAIL_PASSWORD"] = "stale"
+                elif mutation == ("agent", "skills", "add"):
+                    runner.bindings[lead_id].remove(first_skill_id)
+                elif mutation == ("squad", "create"):
+                    del runner.squads[result.squad_id]
+                elif mutation == ("squad", "update"):
+                    runner.squads[result.squad_id]["description"] = "stale"
+                elif mutation == ("squad", "member", "add"):
+                    del runner.squads[result.squad_id]["members"][frontend_id]
+                elif mutation == ("squad", "member", "set-role"):
+                    runner.squads[result.squad_id]["members"][frontend_id]["role"] = "stale"
+                elif mutation == ("project", "create"):
+                    del runner.projects[result.project_id]
+                elif mutation == ("project", "update"):
+                    runner.projects[result.project_id]["description"] = "stale"
+                elif mutation == ("project", "resource", "add"):
+                    del runner.projects[result.project_id]["resources"][first_resource_id]
+                elif mutation == ("project", "resource", "update"):
+                    runner.projects[result.project_id]["resources"][first_resource_id][
+                        "resource_ref"
+                    ]["execution_mode"] = "in_place"
+
+                runner.calls.clear()
+                runner.response_overrides[mutation] = {"ok": True}
+                runner.freeze_mutations.add(mutation)
+                with self.assertRaises(RuntimeError):
+                    provisioner.reconcile(
+                        self.config, apply=True, backend_env=self.backend_env
+                    )
+
+                mutation_index = next(
+                    index for index, call in enumerate(runner.calls)
+                    if call["command"] == mutation
+                )
+                self.assertLess(mutation_index + 1, len(runner.calls))
+                self.assertEqual(
+                    runner.calls[mutation_index + 1]["command"], authoritative_read
+                )
+
     def test_binds_manifest_skill_name_when_it_differs_from_url_path(self):
         result = self.provisioner.reconcile(
             self.config, apply=True, backend_env=self.backend_env
@@ -596,6 +809,34 @@ class ProvisionerTests(unittest.TestCase):
         self.assertEqual(update["positionals"], [project_id, resource_id])
         self.assertEqual(update["flags"]["--execution-mode"], "worktree")
 
+    def test_resource_update_fails_when_post_read_omits_execution_mode(self):
+        project_id = self.runner.seed_project(
+            self.config.project_title,
+            self.config.project_context_file.read_text(),
+        )
+        path = self.config.resources[0].local_path
+        self.runner.seed_resource(
+            project_id, path, resource_ref={"execution_mode": "in_place"}
+        )
+        self.runner.omit_execution_mode_on_resource_reads = True
+        self.runner.response_overrides[("project", "resource", "update")] = {
+            "ok": True
+        }
+
+        with self.assertRaisesRegex(RuntimeError, "resource reconciliation"):
+            self.provisioner.reconcile(
+                self.config, apply=True, backend_env=self.backend_env
+            )
+
+        update_index = next(
+            index for index, call in enumerate(self.runner.calls)
+            if call["command"] == ("project", "resource", "update")
+        )
+        self.assertEqual(
+            self.runner.calls[update_index + 1]["command"],
+            ("project", "resource", "list"),
+        )
+
     def test_nested_target_runtime_capability_allows_unrelated_degraded_record_in_dry_run(self):
         config = build_eventra_config(
             "de500649-cada-4419-9d5d-279045e2eaae",
@@ -610,8 +851,12 @@ class ProvisionerTests(unittest.TestCase):
             },
             {
                 "id": "offline-profile-runtime",
+                "daemon_id": "offline-daemon",
                 "status": "offline",
-                "metadata": {"profile_error": "sanitized profile failure"},
+                "metadata": {
+                    "capabilities": ["synthetic-degraded-capability"],
+                    "profile_error": "sanitized profile failure",
+                },
             },
         ]
 
@@ -659,7 +904,7 @@ class ProvisionerTests(unittest.TestCase):
 
         runner = FakeRunner()
         runner.runtimes = [target, copy.deepcopy(target)]
-        with self.assertRaisesRegex(RuntimeError, "missing or duplicated"):
+        with self.assertRaisesRegex(RuntimeError, "malformed|missing or duplicated"):
             Provisioner(runner).reconcile(self.config, apply=True, backend_env=self.backend_env)
         self.assertEqual(runner.mutation_count, 0)
 
@@ -688,7 +933,7 @@ class ProvisionerTests(unittest.TestCase):
                     Provisioner(runner).reconcile(self.config, apply=True, backend_env=self.backend_env)
                 self.assertEqual(runner.mutation_count, 0)
 
-    def test_malformed_detail_and_create_response_fail_closed(self):
+    def test_malformed_detail_fails_closed_and_create_ack_is_ignored(self):
         agent = self.config.agents[0]
         runner = FakeRunner()
         agent_id = runner.seed_agent(agent.name)
@@ -699,8 +944,12 @@ class ProvisionerTests(unittest.TestCase):
 
         runner = FakeRunner()
         runner.response_overrides[("agent", "create")] = {"id": "agent-1", "name": "Wrong"}
-        with self.assertRaisesRegex(RuntimeError, "agent create"):
-            Provisioner(runner).reconcile(self.config, apply=True, backend_env=self.backend_env)
+        result = Provisioner(runner).reconcile(
+            self.config, apply=True, backend_env=self.backend_env
+        )
+        self.assertEqual(
+            runner.agents[result.agent_ids[agent.role]]["name"], agent.name
+        )
 
     def test_wrong_post_write_state_is_detected(self):
         for frozen, expected in (("agent", "agent reconciliation"), ("squad", "Squad reconciliation"), ("project", "Project reconciliation")):
@@ -718,13 +967,15 @@ class ProvisionerTests(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, expected):
                     Provisioner(runner).reconcile(self.config, apply=True, backend_env=self.backend_env)
 
-    def test_update_responses_must_echo_the_exact_target_id(self):
+    def test_update_acknowledgements_need_not_echo_the_target_id(self):
         agent = self.config.agents[0]
         runner = FakeRunner()
-        runner.seed_agent(agent.name)
+        agent_id = runner.seed_agent(agent.name)
         runner.response_overrides[("agent", "update")] = {"id": "wrong-agent", "name": agent.name}
-        with self.assertRaisesRegex(RuntimeError, "agent update"):
-            Provisioner(runner).reconcile(self.config, apply=True, backend_env=self.backend_env)
+        result = Provisioner(runner).reconcile(
+            self.config, apply=True, backend_env=self.backend_env
+        )
+        self.assertEqual(result.agent_ids[agent.role], agent_id)
 
         runner = FakeRunner()
         leader_id = runner.seed_agent(agent.name)
@@ -736,26 +987,33 @@ class ProvisionerTests(unittest.TestCase):
         runner.response_overrides[("squad", "update")] = {
             "id": "wrong-squad", "name": self.config.blueprint.squad_name,
         }
-        with self.assertRaisesRegex(RuntimeError, "Squad update"):
-            Provisioner(runner).reconcile(self.config, apply=True, backend_env=self.backend_env)
+        result = Provisioner(runner).reconcile(
+            self.config, apply=True, backend_env=self.backend_env
+        )
+        self.assertEqual(result.squad_id, "squad-1")
 
         runner = FakeRunner()
-        runner.seed_project(self.config.project_title)
+        project_id = runner.seed_project(self.config.project_title)
         runner.response_overrides[("project", "update")] = {
             "id": "wrong-project", "title": self.config.project_title,
         }
-        with self.assertRaisesRegex(RuntimeError, "Project update"):
-            Provisioner(runner).reconcile(self.config, apply=True, backend_env=self.backend_env)
+        result = Provisioner(runner).reconcile(
+            self.config, apply=True, backend_env=self.backend_env
+        )
+        self.assertEqual(result.project_id, project_id)
 
-    def test_fresh_squad_instructions_update_must_echo_target_id_and_name(self):
+    def test_fresh_squad_instructions_update_ack_is_ignored(self):
         runner = FakeRunner()
         runner.response_overrides[("squad", "update")] = {
             "id": "wrong-squad", "name": self.config.blueprint.squad_name,
         }
-        with self.assertRaisesRegex(RuntimeError, "Squad update"):
-            Provisioner(runner).reconcile(
-                self.config, apply=True, backend_env=self.backend_env
-            )
+        result = Provisioner(runner).reconcile(
+            self.config, apply=True, backend_env=self.backend_env
+        )
+        self.assertEqual(
+            runner.squads[result.squad_id]["instructions"],
+            self.config.blueprint.squad_instructions_file.read_text(),
+        )
 
     def test_local_validation_rejects_overlong_short_secret_and_mutated_recipients(self):
         unsafe = replace(self.config, agents=(replace(self.config.agents[0], description="x" * 256), *self.config.agents[1:]))
@@ -797,6 +1055,18 @@ class ProvisionerTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "unsafe resource state"):
             Provisioner(runner).reconcile(self.config, apply=True, backend_env=self.backend_env)
         self.assertEqual(runner.mutation_count, 0)
+
+    def test_binding_add_fails_if_unrelated_binding_is_not_preserved(self):
+        agent = self.config.agents[0]
+        agent_id = self._matching_agent(agent)
+        self.runner.bindings[agent_id].add("unrelated-skill")
+        self.runner.replace_bindings_on_add = True
+        self.runner.response_overrides[("agent", "skills", "add")] = {"ok": True}
+
+        with self.assertRaisesRegex(RuntimeError, "skill reconciliation"):
+            self.provisioner.reconcile(
+                self.config, apply=True, backend_env=self.backend_env
+            )
 
 
 class RecoveryModeTests(unittest.TestCase):

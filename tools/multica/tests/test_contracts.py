@@ -218,6 +218,27 @@ class MulticaReadContractTests(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, "malformed project resource list"):
                     parse_project_resources(malformed, "project-synthetic")
 
+    def test_project_resource_execution_mode_is_optional_but_strict_when_present(self):
+        value = fixture("project-local-resource-list.json")
+        self.assertNotIn(
+            "execution_mode",
+            parse_project_resources(value, "project-synthetic")[0]["resource_ref"],
+        )
+
+        observed = copy.deepcopy(value)
+        observed[0]["resource_ref"]["execution_mode"] = "worktree"
+        self.assertEqual(
+            parse_project_resources(observed, "project-synthetic")[0]["resource_ref"][
+                "execution_mode"
+            ],
+            "worktree",
+        )
+
+        malformed = copy.deepcopy(value)
+        malformed[0]["resource_ref"]["execution_mode"] = 7
+        with self.assertRaisesRegex(RuntimeError, "malformed project resource list"):
+            parse_project_resources(malformed, "project-synthetic")
+
 
 if __name__ == "__main__":
     unittest.main()
