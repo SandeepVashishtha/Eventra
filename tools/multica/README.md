@@ -25,6 +25,61 @@ and passes it only through those agents' custom environment. Do not put a
 secret in shell history, Issue text, logs, pull-request descriptions, or a
 tracked environment file.
 
+## Contract recovery runbook
+
+Use this sequence only after an interrupted Eventra reconciliation. Do not
+substitute identifiers from shell history or infer resource state from a prior
+command's argv. The read-only audit is scalar-free: its output may establish
+only JSON structure, keys, array lengths, and target-ID equality. If the
+authoritative resource read cannot prove the worktree execution mode and
+local-path state, stop before any mutation. Obtain a supported authoritative
+read contract; do not guess from a create or update command.
+
+Reusable recovery commands keep identifiers as placeholders:
+
+```bash
+# 1. Audit scalar-free read shapes before any recovery action.
+python3 -m tools.multica.contract_audit \
+  --runtime-id RUNTIME_ID \
+  --daemon-id DAEMON_ID
+
+# 2. Confirm the planned reconciliation without mutation.
+python3 -m tools.multica.provision \
+  --runtime-id RUNTIME_ID \
+  --daemon-id DAEMON_ID
+```
+
+For the approved Eventra recovery target only, run the following in this exact
+order after the audit and dry run succeed:
+
+```bash
+# 3. One recovery apply; it does not prompt for backend environment input.
+python3 -m tools.multica.provision \
+  --runtime-id de500649-cada-4419-9d5d-279045e2eaae \
+  --daemon-id 019fab98-bbad-7d17-b0b7-26e56dbe1b6f \
+  --apply \
+  --reuse-backend-env
+
+# 4. Prove idempotency with a normal apply: no environment-mode flag.
+python3 -m tools.multica.provision \
+  --runtime-id de500649-cada-4419-9d5d-279045e2eaae \
+  --daemon-id 019fab98-bbad-7d17-b0b7-26e56dbe1b6f \
+  --apply
+```
+
+The final command must report a `mutation_count` of `0`. If either apply
+fails, stop; inspect only sanitized shapes and resume from verified state. Do
+not delete or roll back partially reconciled resources automatically.
+
+`--reuse-backend-env` reads the exact existing Backend Engineer custom
+environment in the same process, validates it, and forwards that dictionary
+only through stdin to Backend Engineer and Integration QA. It never puts an
+environment value in argv, files, logs, exceptions, reports, or this runbook.
+
+Merge recovery changes only through the personal `codeExploreHub/Eventra`
+fork. Production deployment is a separate manual production deployment action;
+this local-recovery process never deploys production.
+
 ## Inspection and reconciliation
 
 Use the Multica CLI JSON views to inspect the resulting state, substituting

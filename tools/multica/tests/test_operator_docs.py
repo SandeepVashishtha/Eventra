@@ -62,6 +62,53 @@ class OperatorDocsTests(unittest.TestCase):
             with self.subTest(fragment=fragment):
                 self.assertNotIn(fragment, inspection_section)
 
+    def test_contract_recovery_runbook(self):
+        """Recovery must stop on unobservable worktrees and preserve env boundaries."""
+
+        readme = Path("tools/multica/README.md").read_text()
+        self.assertIn("## Contract recovery runbook", readme)
+        recovery = readme.split("## Contract recovery runbook", 1)[1].split(
+            "## Inspection and reconciliation", 1
+        )[0]
+
+        required_fragments = (
+            "python3 -m tools.multica.contract_audit",
+            "python3 -m tools.multica.provision ",
+            "--reuse-backend-env",
+            "`mutation_count` of `0`",
+            "cannot prove the worktree",
+            "codeExploreHub/Eventra",
+            "manual production deployment",
+            "stdin",
+        )
+        for fragment in required_fragments:
+            with self.subTest(fragment=fragment):
+                self.assertIn(fragment, recovery)
+
+        audit_index = recovery.index("python3 -m tools.multica.contract_audit")
+        dry_run_index = recovery.index(
+            "python3 -m tools.multica.provision ", audit_index
+        )
+        recovery_apply_index = recovery.index("# 3. One recovery apply")
+        normal_apply_index = recovery.index("# 4. Prove idempotency")
+        normal_apply_block = recovery[normal_apply_index:].split("```", 1)[0]
+        self.assertLess(audit_index, dry_run_index)
+        self.assertLess(dry_run_index, recovery_apply_index)
+        self.assertLess(recovery_apply_index, normal_apply_index)
+        self.assertIn("--apply", normal_apply_block)
+        self.assertNotIn("--prompt-backend-env", normal_apply_block)
+        self.assertNotIn("--reuse-backend-env", normal_apply_block)
+
+        forbidden_fragments = (
+            "Aprim-OPC",
+            "SkillsHub",
+            "JWT_SECRET=",
+            "MAIL_PASSWORD=",
+        )
+        for fragment in forbidden_fragments:
+            with self.subTest(fragment=fragment):
+                self.assertNotIn(fragment, recovery)
+
 
 if __name__ == "__main__":
     unittest.main()
