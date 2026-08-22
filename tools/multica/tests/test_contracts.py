@@ -39,7 +39,7 @@ class MulticaReadContractTests(unittest.TestCase):
     def test_valid_fixtures_normalize_only_reconciliation_fields_without_mutation(self):
         cases = (
             (
-                "runtime-list.json", parse_runtime_list, (),
+                "runtime-list.json", parse_runtime_list, ("runtime-synthetic",),
                 [{"id": "runtime-synthetic", "daemon_id": "daemon-synthetic", "status": "online", "metadata": {"capabilities": ["local-worktree-v1", "synthetic-capability"]}}],
             ),
             ("skill-list.json", parse_skill_list, (), [{"id": "skill-synthetic", "name": "synthetic-skill"}]),
@@ -96,7 +96,29 @@ class MulticaReadContractTests(unittest.TestCase):
                 self.assertNotIn("KEY", str(caught.exception))
                 self.assertNotIn("other-agent", str(caught.exception))
 
-    def test_runtime_list_rejects_missing_or_duplicate_ids_and_malformed_capabilities(self):
+    def test_runtime_list_normalizes_unrelated_degraded_records_to_ids(self):
+        target = fixture("runtime-list.json")[0]
+        unrelated_id = "unrelated-degraded-runtime"
+
+        self.assertEqual(
+            parse_runtime_list([target, {"id": unrelated_id}], "runtime-synthetic"),
+            [
+                {
+                    "id": "runtime-synthetic",
+                    "daemon_id": "daemon-synthetic",
+                    "status": "online",
+                    "metadata": {
+                        "capabilities": [
+                            "local-worktree-v1",
+                            "synthetic-capability",
+                        ]
+                    },
+                },
+                {"id": unrelated_id},
+            ],
+        )
+
+    def test_runtime_list_rejects_missing_or_duplicate_ids_and_malformed_target(self):
         value = fixture("runtime-list.json")
         bad_capabilities = copy.deepcopy(value)
         bad_capabilities[0]["metadata"]["capabilities"] = ["local-worktree-v1", 7]
@@ -108,7 +130,12 @@ class MulticaReadContractTests(unittest.TestCase):
         ):
             with self.subTest(malformed=malformed):
                 with self.assertRaisesRegex(RuntimeError, "malformed runtime list"):
-                    parse_runtime_list(malformed)
+                    parse_runtime_list(malformed, "runtime-synthetic")
+
+        for unrelated in ({}, {"id": ""}):
+            with self.subTest(unrelated=unrelated):
+                with self.assertRaisesRegex(RuntimeError, "malformed runtime list"):
+                    parse_runtime_list([value[0], unrelated], "runtime-synthetic")
 
     def test_skill_contracts_reject_duplicate_ids_wrong_targets_and_bad_origin(self):
         listing = fixture("skill-list.json")

@@ -253,7 +253,7 @@ class Provisioner:
 
     def _validate_runtime_capability(self, config) -> None:
         records = parse_runtime_list(
-            self.runner.run(["runtime", "list", "--output", "json"])
+            self.runner.run(["runtime", "list", "--output", "json"]), config.runtime_id
         )
         matches = []
         for record in records:

@@ -37,28 +37,34 @@ def _named_records(value: Any, contract: str, name: str) -> list[dict[str, str]]
     return result
 
 
-def parse_runtime_list(value: Any) -> list[dict[str, Any]]:
+def parse_runtime_list(value: Any, expected_runtime_id: str) -> list[dict[str, Any]]:
     """Normalize runtime records required for worktree-capability checks."""
 
     contract = "runtime list"
+    if not _string(expected_runtime_id):
+        _error(contract)
     result = []
     ids = set()
     for record in _records(value, contract):
         record_id = _id(record, contract)
+        if record_id in ids:
+            _error(contract)
+        ids.add(record_id)
+        if record_id != expected_runtime_id:
+            result.append({"id": record_id})
+            continue
         daemon_id = record.get("daemon_id")
         status = record.get("status")
         metadata = record.get("metadata")
+        capabilities = metadata.get("capabilities") if isinstance(metadata, dict) else None
         if (
-            record_id in ids
-            or not _string(daemon_id)
+            not _string(daemon_id)
             or not _string(status)
             or not isinstance(metadata, dict)
+            or not isinstance(capabilities, list)
+            or not all(_string(item) for item in capabilities)
         ):
             _error(contract)
-        capabilities = metadata.get("capabilities")
-        if not isinstance(capabilities, list) or not all(_string(item) for item in capabilities):
-            _error(contract)
-        ids.add(record_id)
         result.append(
             {
                 "id": record_id,

@@ -124,7 +124,7 @@ def collect_contract_audit(
     config = build_eventra_config(runtime_id, daemon_id)
 
     runtime_list = _read(runner, ["runtime", "list", "--output", "json"])
-    parse_runtime_list(runtime_list)
+    parse_runtime_list(runtime_list, config.runtime_id)
     report: dict[str, Any] = {
         "runtime_list": _shape(runtime_list, target_id=config.runtime_id, target_field="id")
     }

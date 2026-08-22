@@ -161,6 +161,19 @@ class ContractAuditTests(unittest.TestCase):
         self.assertEqual(mutation_calls, set())
         self.assertTrue(all(stdin_json is None for _, stdin_json in runner.calls))
 
+    def test_audit_accepts_an_unrelated_degraded_runtime_without_scalars(self):
+        replies = copy.deepcopy(audit_replies())
+        replies[("runtime", "list", "--output", "json")].append(
+            {"id": "UNRELATED_DEGRADED_RUNTIME"}
+        )
+
+        report = collect_contract_audit(
+            SENTINELS["runtime_id"], SENTINELS["daemon_id"], RecordingRunner(replies)
+        )
+
+        self.assertEqual(report["runtime_list"]["length"], 2)
+        self.assertNotIn("UNRELATED_DEGRADED_RUNTIME", json.dumps(report, sort_keys=True))
+
     def test_audit_rejects_unexpected_environment_envelope_key_without_output(self):
         replies = copy.deepcopy(audit_replies())
         sentinel = "ENV_KEY_SHOULD_NOT_ESCAPE"

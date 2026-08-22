@@ -897,12 +897,6 @@ class ProvisionerTests(unittest.TestCase):
             },
             {
                 "id": "offline-profile-runtime",
-                "daemon_id": "offline-daemon",
-                "status": "offline",
-                "metadata": {
-                    "capabilities": ["synthetic-degraded-capability"],
-                    "profile_error": "sanitized profile failure",
-                },
             },
         ]
 
