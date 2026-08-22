@@ -474,6 +474,7 @@ class Provisioner:
             if not self._matches(detail, {**desired, "instructions": ""}):
                 raise RuntimeError("Squad reconciliation failed")
             members = self._member_records(squad_id)
+            self._validate_new_squad_members(members, desired["leader_id"])
             self.runner.run(
                 ["squad", "update", squad_id, "--instructions", desired["instructions"], "--output", "json"]
             )
@@ -500,16 +501,7 @@ class Provisioner:
             raise RuntimeError("Squad reconciliation failed")
         squad_id = detail["id"]
         leader_id = desired["leader_id"]
-        leader = next(
-            (record for record in members if record["member_id"] == leader_id),
-            None,
-        )
-        if (
-            leader is None
-            or leader["member_type"] != "agent"
-            or leader["role"] != "leader"
-        ):
-            raise RuntimeError("Squad leader reconciliation failed")
+        self._validate_server_managed_leader(members, leader_id)
         by_member = self._validate_members(members)
         wanted = {leader_id: "leader"}
         wanted.update(
@@ -704,6 +696,21 @@ class Provisioner:
                 raise RuntimeError("unsafe Squad member state")
             result[record["member_id"]] = record
         return result
+
+    def _validate_new_squad_members(self, records, leader_id):
+        if len(records) != 1:
+            raise RuntimeError("Squad leader reconciliation failed")
+        self._validate_server_managed_leader(records, leader_id)
+
+    @staticmethod
+    def _validate_server_managed_leader(records, leader_id):
+        leaders = [record for record in records if record["member_id"] == leader_id]
+        if (
+            len(leaders) != 1
+            or leaders[0]["member_type"] != "agent"
+            or leaders[0]["role"] != "leader"
+        ):
+            raise RuntimeError("Squad leader reconciliation failed")
 
     def _resource_records(self, project_id):
         return parse_project_resources(

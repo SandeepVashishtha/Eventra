@@ -94,6 +94,8 @@ class FakeRunner:
         self.omit_execution_mode_on_resource_reads = False
         self.corrupt_env_after_set = None
         self.env_replacement_after_agent_update = None
+        self.squad_create_leader_issue = None
+        self.restore_leader_on_squad_update = False
         self._next = {kind: 1 for kind in ("skill", "agent", "squad", "project", "resource")}
 
     @property
@@ -229,6 +231,18 @@ class FakeRunner:
                     }
                 },
             }
+            if self.squad_create_leader_issue == "missing":
+                item["members"] = {}
+            elif self.squad_create_leader_issue == "wrong role":
+                item["members"][leader_id]["role"] = "member"
+            elif self.squad_create_leader_issue == "extra member":
+                item["members"]["agent-extra"] = {
+                    "id": f"membership-{squad_id}-agent-extra",
+                    "squad_id": squad_id,
+                    "member_id": "agent-extra",
+                    "member_type": "agent",
+                    "role": "observer",
+                }
             self.squads[squad_id] = item
             return copy.deepcopy(override if override is not None else self._public(item, "members"))
         if command == ("squad", "update"):
@@ -236,6 +250,15 @@ class FakeRunner:
             if "squad" not in self.freeze_updates:
                 mapping = {"--name": "name", "--description": "description", "--instructions": "instructions", "--leader": "leader_id"}
                 self.squads[squad_id].update({target: flags[source] for source, target in mapping.items() if source in flags})
+                if self.restore_leader_on_squad_update:
+                    leader_id = self.squads[squad_id]["leader_id"]
+                    self.squads[squad_id]["members"][leader_id] = {
+                        "id": f"membership-{squad_id}-{leader_id}",
+                        "squad_id": squad_id,
+                        "member_id": leader_id,
+                        "member_type": "agent",
+                        "role": "leader",
+                    }
             return copy.deepcopy(override if override is not None else self._public(self.squads[squad_id], "members"))
         if command == ("squad", "member", "list"):
             return self._response(command, list(self.squads[positionals[0]]["members"].values()))
@@ -567,6 +590,27 @@ class ProvisionerTests(unittest.TestCase):
                     )
                 self.assertEqual(self.runner.mutation_count, mutation_count)
                 squad["members"] = state
+
+    def test_fresh_create_invalid_member_state_fails_before_update_can_repair_it(self):
+        for issue in ("missing", "wrong role", "extra member"):
+            with self.subTest(issue=issue):
+                runner = FakeRunner()
+                runner.squad_create_leader_issue = issue
+                runner.restore_leader_on_squad_update = True
+
+                with self.assertRaisesRegex(RuntimeError, "Squad leader reconciliation failed"):
+                    Provisioner(runner).reconcile(
+                        self.config, apply=True, backend_env=self.backend_env
+                    )
+
+                blocked_commands = {
+                    ("squad", "update"),
+                    ("squad", "member", "add"),
+                    ("squad", "member", "set-role"),
+                }
+                self.assertFalse(
+                    any(call["command"] in blocked_commands for call in runner.calls)
+                )
 
     def test_unrelated_sixth_target_squad_member_fails_before_member_mutation(self):
         first = self.provisioner.reconcile(
