@@ -207,6 +207,95 @@ class ContractAuditTests(unittest.TestCase):
         self.assertEqual(len(report["projects"]["details"]), 1)
         self.assertIn("resources", report["projects"])
 
+    def test_audit_uses_later_unrelated_local_resource_when_first_project_is_github_only(self):
+        replies = copy.deepcopy(audit_replies())
+        first_project_id = "FIRST_UNRELATED_PROJECT"
+        later_project_id = "LATER_UNRELATED_PROJECT"
+        replies[("project", "list", "--output", "json")] = [
+            {"id": first_project_id, "title": "FIRST_UNRELATED_TITLE"},
+            {"id": later_project_id, "title": "LATER_UNRELATED_TITLE"},
+        ]
+        replies[("project", "get", first_project_id, "--output", "json")] = {
+            "id": first_project_id,
+            "title": "FIRST_UNRELATED_TITLE",
+            "description": "FIRST_UNRELATED_DESCRIPTION",
+        }
+        replies[("project", "resource", "list", first_project_id, "--output", "json")] = [
+            {
+                "id": "GITHUB_RESOURCE_SENTINEL",
+                "project_id": first_project_id,
+                "resource_type": "github_repo",
+                "resource_ref": {"repository": "GITHUB_REPOSITORY_SENTINEL"},
+            }
+        ]
+        replies[("project", "resource", "list", later_project_id, "--output", "json")] = [
+            {
+                "id": "LATER_LOCAL_RESOURCE_SENTINEL",
+                "project_id": later_project_id,
+                "resource_type": "local_directory",
+                "resource_ref": {
+                    "local_path": "/LATER_LOCAL_PATH_SENTINEL",
+                    "daemon_id": SENTINELS["daemon_id"],
+                },
+            }
+        ]
+        runner = RecordingRunner(replies)
+
+        report = collect_contract_audit(
+            SENTINELS["runtime_id"], SENTINELS["daemon_id"], runner
+        )
+
+        self.assertTrue(report["projects"]["local_resource_contract_available"])
+        self.assertIn(
+            ("project", "resource", "list", later_project_id, "--output", "json"),
+            [tuple(args) for args, _ in runner.calls],
+        )
+        rendered = json.dumps(report, sort_keys=True)
+        self.assertNotIn("GITHUB_RESOURCE_SENTINEL", rendered)
+        self.assertNotIn("GITHUB_REPOSITORY_SENTINEL", rendered)
+        self.assertNotIn("LATER_LOCAL_RESOURCE_SENTINEL", rendered)
+        self.assertNotIn("LATER_LOCAL_PATH_SENTINEL", rendered)
+
+    def test_audit_reports_unavailable_local_contract_when_unrelated_projects_have_no_local_resources(self):
+        replies = copy.deepcopy(audit_replies())
+        replies[("project", "list", "--output", "json")][0]["title"] = "OTHER_PROJECT"
+        replies[("project", "resource", "list", SENTINELS["project_id"], "--output", "json")] = [
+            {
+                "id": "GITHUB_RESOURCE_SENTINEL",
+                "project_id": SENTINELS["project_id"],
+                "resource_type": "github_repo",
+                "resource_ref": {"repository": "GITHUB_REPOSITORY_SENTINEL"},
+            }
+        ]
+
+        report = collect_contract_audit(
+            SENTINELS["runtime_id"], SENTINELS["daemon_id"], RecordingRunner(replies)
+        )
+
+        self.assertFalse(report["projects"]["local_resource_contract_available"])
+        rendered = json.dumps(report, sort_keys=True)
+        self.assertNotIn("GITHUB_RESOURCE_SENTINEL", rendered)
+        self.assertNotIn("GITHUB_REPOSITORY_SENTINEL", rendered)
+
+    def test_audit_strictly_rejects_foreign_resource_for_exact_eventra_project(self):
+        replies = copy.deepcopy(audit_replies())
+        foreign_resource = "FOREIGN_RESOURCE_SENTINEL"
+        replies[("project", "resource", "list", SENTINELS["project_id"], "--output", "json")] = [
+            {
+                "id": foreign_resource,
+                "project_id": SENTINELS["project_id"],
+                "resource_type": "github_repo",
+                "resource_ref": {"repository": "GITHUB_REPOSITORY_SENTINEL"},
+            }
+        ]
+
+        with self.assertRaisesRegex(RuntimeError, "malformed project resource list") as caught:
+            collect_contract_audit(
+                SENTINELS["runtime_id"], SENTINELS["daemon_id"], RecordingRunner(replies)
+            )
+
+        self.assertNotIn(foreign_resource, str(caught.exception))
+
     def test_cli_rejects_apply_and_unknown_command_flags(self):
         parser = build_parser()
         for argv in (

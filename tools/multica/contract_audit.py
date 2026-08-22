@@ -102,6 +102,18 @@ def _target_or_sample_id(
     )
 
 
+def _local_resource_subset(value: Any) -> list[dict[str, Any]]:
+    """Return only local-directory records from an unrelated resource sample."""
+
+    if not isinstance(value, list):
+        return []
+    return [
+        record
+        for record in value
+        if isinstance(record, dict) and record.get("resource_type") == "local_directory"
+    ]
+
+
 def _read(runner: MulticaRunner, args: list[str]) -> dict[str, Any] | list[Any]:
     """Run an internally constructed list/get command with no stdin surface."""
 
@@ -186,10 +198,8 @@ def collect_contract_audit(
 
     project_list = _read(runner, ["project", "list", "--output", "json"])
     project_records = parse_project_list(project_list)
-    project_id = _target_or_sample_id(
-        project_records, "title", config.project_title
-    )
     project_report: dict[str, Any] = {"list": _shape(project_list), "details": []}
+    project_id = _exact_id(project_records, "title", config.project_title)
     if project_id is not None:
         detail = _read(runner, ["project", "get", project_id, "--output", "json"])
         parse_project_detail(detail, project_id)
@@ -204,6 +214,52 @@ def collect_contract_audit(
         project_report["resources"] = _shape(
             resources, target_id=project_id, target_field="project_id"
         )
+    elif project_records:
+        sample_project_id = project_records[0]["id"]
+        detail = _read(
+            runner, ["project", "get", sample_project_id, "--output", "json"]
+        )
+        parse_project_detail(detail, sample_project_id)
+        project_report["details"].append(
+            _shape(detail, target_id=sample_project_id, target_field="id")
+        )
+
+        sampled_resources: Any = None
+        sampled_project_id_for_resources: str | None = None
+        local_resource_contract_available = False
+        for record in project_records:
+            candidate_project_id = record["id"]
+            resources = _read(
+                runner,
+                [
+                    "project",
+                    "resource",
+                    "list",
+                    candidate_project_id,
+                    "--output",
+                    "json",
+                ],
+            )
+            if sampled_resources is None:
+                sampled_resources = resources
+                sampled_project_id_for_resources = candidate_project_id
+            local_resources = _local_resource_subset(resources)
+            if local_resources:
+                parse_project_resources(local_resources, candidate_project_id)
+                sampled_resources = resources
+                sampled_project_id_for_resources = candidate_project_id
+                local_resource_contract_available = True
+                break
+        project_report["local_resource_contract_available"] = (
+            local_resource_contract_available
+        )
+        project_report["resources"] = _shape(
+            sampled_resources,
+            target_id=sampled_project_id_for_resources,
+            target_field="project_id",
+        )
+    else:
+        project_report["local_resource_contract_available"] = False
     report["projects"] = project_report
     return report
 
