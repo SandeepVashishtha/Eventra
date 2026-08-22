@@ -1,0 +1,21 @@
+{
+  "id": "skill-synthetic",
+  "name": "synthetic-skill",
+  "description": "Synthetic Skill description",
+  "content": "---\nname: synthetic-skill\n---\n",
+  "files": [],
+  "config": {
+    "origin": {
+      "type": "github",
+      "owner": "synthetic-owner",
+      "repo": "synthetic-repository",
+      "ref": "synthetic-ref",
+      "path": "skills/synthetic-skill",
+      "source_url": "https://example.invalid/synthetic/skill"
+    }
+  },
+  "created_at": "2026-01-02T03:04:05Z",
+  "updated_at": "2026-01-02T03:04:05Z",
+  "created_by": "user-synthetic",
+  "workspace_id": "workspace-synthetic"
+}

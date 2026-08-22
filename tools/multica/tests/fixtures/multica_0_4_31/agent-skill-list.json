@@ -1,0 +1,15 @@
+[
+  {
+    "id": "skill-synthetic",
+    "name": "synthetic-skill",
+    "description": "Synthetic Skill description",
+    "content": "---\nname: synthetic-skill\n---\n",
+    "files": [],
+    "config": {
+      "origin": {
+        "type": "github",
+        "source_url": "https://example.invalid/synthetic/skill"
+      }
+    }
+  }
+]

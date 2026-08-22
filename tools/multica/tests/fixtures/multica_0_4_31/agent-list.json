@@ -1,0 +1,8 @@
+[
+  {
+    "id": "agent-synthetic",
+    "name": "Synthetic Agent",
+    "description": "Synthetic description",
+    "runtime_id": "runtime-synthetic"
+  }
+]

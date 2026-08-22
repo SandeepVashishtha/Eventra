@@ -1,0 +1,10 @@
+[
+  {
+    "id": "membership-synthetic",
+    "squad_id": "squad-synthetic",
+    "member_id": "agent-member",
+    "member_type": "agent",
+    "role": "synthetic_role",
+    "created_at": "2026-01-02T03:04:05Z"
+  }
+]

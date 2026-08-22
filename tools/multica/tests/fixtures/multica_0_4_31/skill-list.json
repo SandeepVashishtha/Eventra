@@ -1,0 +1,12 @@
+[
+  {
+    "id": "skill-synthetic",
+    "name": "synthetic-skill",
+    "description": "Synthetic Skill description",
+    "config": {
+      "origin": {
+        "source_url": "https://example.invalid/synthetic/skill"
+      }
+    }
+  }
+]

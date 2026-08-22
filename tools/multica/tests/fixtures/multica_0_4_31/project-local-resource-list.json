@@ -1,0 +1,12 @@
+[
+  {
+    "id": "resource-synthetic",
+    "project_id": "project-synthetic",
+    "resource_type": "local_directory",
+    "resource_ref": {
+      "local_path": "/synthetic/project",
+      "daemon_id": "daemon-synthetic"
+    },
+    "created_at": "2026-01-02T03:04:05Z"
+  }
+]
