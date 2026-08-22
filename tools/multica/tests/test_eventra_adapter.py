@@ -53,7 +53,7 @@ class EventraAdapterTests(unittest.TestCase):
             "requesting-code-review",
             "receiving-code-review",
             "verification-before-completion",
-            "react-best-practices",
+            "vercel-react-best-practices",
             "rest-api-conventions",
             "testing-pyramid",
             "spring-security-jwt",
