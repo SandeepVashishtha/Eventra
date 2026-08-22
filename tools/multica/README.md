@@ -37,13 +37,17 @@ read contract; do not guess from a create or update command.
 
 Reusable recovery commands keep identifiers as placeholders:
 
+1. Audit scalar-free read shapes before any recovery action.
+
 ```bash
-# 1. Audit scalar-free read shapes before any recovery action.
 python3 -m tools.multica.contract_audit \
   --runtime-id RUNTIME_ID \
   --daemon-id DAEMON_ID
+```
 
-# 2. Confirm the planned reconciliation without mutation.
+2. Confirm the planned reconciliation without mutation.
+
+```bash
 python3 -m tools.multica.provision \
   --runtime-id RUNTIME_ID \
   --daemon-id DAEMON_ID
@@ -52,15 +56,19 @@ python3 -m tools.multica.provision \
 For the approved Eventra recovery target only, run the following in this exact
 order after the audit and dry run succeed:
 
+3. Run one recovery apply; it does not prompt for backend environment input.
+
 ```bash
-# 3. One recovery apply; it does not prompt for backend environment input.
 python3 -m tools.multica.provision \
   --runtime-id de500649-cada-4419-9d5d-279045e2eaae \
   --daemon-id 019fab98-bbad-7d17-b0b7-26e56dbe1b6f \
   --apply \
   --reuse-backend-env
+```
 
-# 4. Prove idempotency with a normal apply: no environment-mode flag.
+4. Prove idempotency with a normal apply and no environment-mode flag.
+
+```bash
 python3 -m tools.multica.provision \
   --runtime-id de500649-cada-4419-9d5d-279045e2eaae \
   --daemon-id 019fab98-bbad-7d17-b0b7-26e56dbe1b6f \

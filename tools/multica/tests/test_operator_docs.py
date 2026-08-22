@@ -1,3 +1,4 @@
+import re
 import unittest
 from pathlib import Path
 
@@ -72,9 +73,6 @@ class OperatorDocsTests(unittest.TestCase):
         )[0]
 
         required_fragments = (
-            "python3 -m tools.multica.contract_audit",
-            "python3 -m tools.multica.provision ",
-            "--reuse-backend-env",
             "`mutation_count` of `0`",
             "cannot prove the worktree",
             "codeExploreHub/Eventra",
@@ -85,29 +83,56 @@ class OperatorDocsTests(unittest.TestCase):
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, recovery)
 
-        audit_index = recovery.index("python3 -m tools.multica.contract_audit")
-        dry_run_index = recovery.index(
-            "python3 -m tools.multica.provision ", audit_index
-        )
-        recovery_apply_index = recovery.index("# 3. One recovery apply")
-        normal_apply_index = recovery.index("# 4. Prove idempotency")
-        normal_apply_block = recovery[normal_apply_index:].split("```", 1)[0]
-        self.assertLess(audit_index, dry_run_index)
-        self.assertLess(dry_run_index, recovery_apply_index)
-        self.assertLess(recovery_apply_index, normal_apply_index)
-        self.assertIn("--apply", normal_apply_block)
-        self.assertNotIn("--prompt-backend-env", normal_apply_block)
-        self.assertNotIn("--reuse-backend-env", normal_apply_block)
+        blocks = [
+            " ".join(match.group(1).replace("\\\n", " ").split())
+            for match in re.finditer(r"```bash\n(.*?)\n```", recovery, re.DOTALL)
+        ]
+        self.assertEqual(4, len(blocks))
+        audit, dry_run, recovery_apply, normal_apply = blocks
 
-        forbidden_fragments = (
-            "Aprim-OPC",
-            "SkillsHub",
-            "JWT_SECRET=",
-            "MAIL_PASSWORD=",
+        self.assertEqual(
+            "python3 -m tools.multica.contract_audit --runtime-id RUNTIME_ID --daemon-id DAEMON_ID",
+            audit,
         )
-        for fragment in forbidden_fragments:
-            with self.subTest(fragment=fragment):
-                self.assertNotIn(fragment, recovery)
+        self.assertEqual(
+            "python3 -m tools.multica.provision --runtime-id RUNTIME_ID --daemon-id DAEMON_ID",
+            dry_run,
+        )
+
+        approved_runtime = "de500649-cada-4419-9d5d-279045e2eaae"
+        approved_daemon = "019fab98-bbad-7d17-b0b7-26e56dbe1b6f"
+        self.assertEqual(
+            f"python3 -m tools.multica.provision --runtime-id {approved_runtime} "
+            f"--daemon-id {approved_daemon} --apply --reuse-backend-env",
+            recovery_apply,
+        )
+        self.assertEqual(
+            f"python3 -m tools.multica.provision --runtime-id {approved_runtime} "
+            f"--daemon-id {approved_daemon} --apply",
+            normal_apply,
+        )
+
+        reusable = "\n".join((audit, dry_run))
+        eventra_specific = "\n".join((recovery_apply, normal_apply))
+        uuid_pattern = r"\b[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\b"
+        self.assertEqual([], re.findall(uuid_pattern, reusable))
+        self.assertEqual(
+            {approved_runtime, approved_daemon},
+            set(re.findall(uuid_pattern, eventra_specific)),
+        )
+        self.assertNotIn("--prompt-backend-env", recovery_apply)
+        self.assertNotIn("--prompt-backend-env", normal_apply)
+        self.assertNotIn("--reuse-backend-env", normal_apply)
+
+        command_text = "\n".join(blocks)
+        forbidden_command_patterns = (
+            r"(?m)(?:^|[;\s])(?:export\s+)?[A-Za-z_][A-Za-z0-9_]*=",
+            r"\b[A-Za-z_][A-Za-z0-9_]*(?:_SENTINEL|_VALUE|_SECRET|_PASSWORD)\b",
+            r"Aprim-OPC|SkillsHub",
+        )
+        for pattern in forbidden_command_patterns:
+            with self.subTest(pattern=pattern):
+                self.assertIsNone(re.search(pattern, command_text))
 
 
 if __name__ == "__main__":
