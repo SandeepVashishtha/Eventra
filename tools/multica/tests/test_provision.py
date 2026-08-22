@@ -13,6 +13,11 @@ from tools.multica.provision import MulticaRunner, Provisioner, prompt_backend_e
 class FakeRunner:
     """Stateful fake whose argv grammar is frozen independently from production."""
 
+    IMPORTED_NAMES_BY_URL = {
+        "https://github.com/vercel-labs/agent-skills/tree/main/skills/react-best-practices":
+            "vercel-react-best-practices",
+    }
+
     SCHEMAS = {
         ("runtime", "list"): (0, {"--output"}, set()),
         ("skill", "list"): (0, {"--output"}, set()),
@@ -129,7 +134,11 @@ class FakeRunner:
         if command == ("skill", "import"):
             skill_id, url = self._id("skill"), flags["--url"]
             item = self._skill_detail(
-                skill_id, url.rstrip("/").rsplit("/", 1)[-1], url
+                skill_id,
+                self.IMPORTED_NAMES_BY_URL.get(
+                    url, url.rstrip("/").rsplit("/", 1)[-1]
+                ),
+                url,
             )
             self.skills[skill_id] = item
             response = {
@@ -531,6 +540,19 @@ class ProvisionerTests(unittest.TestCase):
                 for call in self.runner.calls
             )
         )
+
+    def test_binds_manifest_skill_name_when_it_differs_from_url_path(self):
+        result = self.provisioner.reconcile(
+            self.config, apply=True, backend_env=self.backend_env
+        )
+
+        skill_id = result.skill_ids["vercel-react-best-practices"]
+        frontend_id = result.agent_ids["frontend_engineer"]
+        self.assertEqual(
+            self.runner.skills[skill_id]["name"],
+            "vercel-react-best-practices",
+        )
+        self.assertIn(skill_id, self.runner.bindings[frontend_id])
 
     def test_same_name_skill_from_other_origin_fails_closed(self):
         self.runner.seed_skill(

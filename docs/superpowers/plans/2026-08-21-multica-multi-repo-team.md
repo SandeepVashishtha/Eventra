@@ -770,7 +770,7 @@ PUBLIC_SKILL_URLS = {
     "requesting-code-review": "https://github.com/obra/superpowers/tree/main/skills/requesting-code-review",
     "receiving-code-review": "https://github.com/obra/superpowers/tree/main/skills/receiving-code-review",
     "verification-before-completion": "https://github.com/obra/superpowers/tree/main/skills/verification-before-completion",
-    "react-best-practices": "https://github.com/vercel-labs/agent-skills/tree/main/skills/react-best-practices",
+    "vercel-react-best-practices": "https://github.com/vercel-labs/agent-skills/tree/main/skills/react-best-practices",
     "rest-api-conventions": "https://github.com/rrezartprebreza/spring-boot-skills/tree/main/skills/spring-boot-3/rest-api-conventions",
     "testing-pyramid": "https://github.com/rrezartprebreza/spring-boot-skills/tree/main/skills/spring-boot-3/testing-pyramid",
     "spring-security-jwt": "https://github.com/rrezartprebreza/spring-boot-skills/tree/main/skills/spring-boot-3/spring-security-jwt",

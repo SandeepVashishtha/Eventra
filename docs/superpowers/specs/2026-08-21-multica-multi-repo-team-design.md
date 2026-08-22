@@ -149,7 +149,7 @@ Skills:
 - `requesting-code-review`
 - `receiving-code-review`
 - `verification-before-completion`
-- Vercel's public [`react-best-practices`](https://github.com/vercel-labs/agent-skills)
+- Vercel's public [`vercel-react-best-practices`](https://github.com/vercel-labs/agent-skills)
 
 Next.js 16 guidance is kept version-matched in the repository `AGENTS.md`
 rather than using the obsolete standalone `next-best-practices` skill.
