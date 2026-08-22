@@ -114,6 +114,17 @@ def _local_resource_subset(value: Any) -> list[dict[str, Any]]:
     ]
 
 
+def _require_only_local_directory_resources(value: Any) -> None:
+    """Reject a target Project resource list containing foreign resource types."""
+
+    if not isinstance(value, list) or any(
+        not isinstance(record, dict)
+        or record.get("resource_type") != "local_directory"
+        for record in value
+    ):
+        raise RuntimeError("malformed project resource list")
+
+
 def _read(runner: MulticaRunner, args: list[str]) -> dict[str, Any] | list[Any]:
     """Run an internally constructed list/get command with no stdin surface."""
 
@@ -207,7 +218,9 @@ def collect_contract_audit(
             runner,
             ["project", "resource", "list", project_id, "--output", "json"],
         )
-        parse_project_resources(resources, project_id)
+        _require_only_local_directory_resources(resources)
+        parsed_resources = parse_project_resources(resources, project_id)
+        _require_only_local_directory_resources(parsed_resources)
         project_report["details"].append(
             _shape(detail, target_id=project_id, target_field="id")
         )

@@ -285,7 +285,11 @@ class ContractAuditTests(unittest.TestCase):
                 "id": foreign_resource,
                 "project_id": SENTINELS["project_id"],
                 "resource_type": "github_repo",
-                "resource_ref": {"repository": "GITHUB_REPOSITORY_SENTINEL"},
+                "resource_ref": {
+                    "local_path": "/FOREIGN_LOCAL_PATH_SENTINEL",
+                    "daemon_id": SENTINELS["daemon_id"],
+                    "execution_mode": "worktree",
+                },
             }
         ]
 
