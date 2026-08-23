@@ -25,6 +25,69 @@ and passes it only through those agents' custom environment. Do not put a
 secret in shell history, Issue text, logs, pull-request descriptions, or a
 tracked environment file.
 
+## Contract recovery runbook
+
+Use this sequence only after an interrupted Eventra reconciliation. Do not
+substitute identifiers from shell history or infer resource state from a prior
+command's argv. The read-only audit is scalar-free: its output may establish
+only JSON structure, keys, array lengths, and target-ID equality. If the
+authoritative resource read cannot prove the worktree execution mode and
+local-path state, stop before any mutation. Obtain a supported authoritative
+read contract; do not guess from a create or update command.
+
+Reusable recovery commands keep identifiers as placeholders:
+
+1. Audit scalar-free read shapes before any recovery action.
+
+```bash
+python3 -m tools.multica.contract_audit \
+  --runtime-id RUNTIME_ID \
+  --daemon-id DAEMON_ID
+```
+
+2. Confirm the planned reconciliation without mutation.
+
+```bash
+python3 -m tools.multica.provision \
+  --runtime-id RUNTIME_ID \
+  --daemon-id DAEMON_ID
+```
+
+For the approved Eventra recovery target only, run the following in this exact
+order after the audit and dry run succeed:
+
+3. Run one recovery apply; it does not prompt for backend environment input.
+
+```bash
+python3 -m tools.multica.provision \
+  --runtime-id de500649-cada-4419-9d5d-279045e2eaae \
+  --daemon-id 019fab98-bbad-7d17-b0b7-26e56dbe1b6f \
+  --apply \
+  --reuse-backend-env
+```
+
+4. Prove idempotency with a normal apply and no environment-mode flag.
+
+```bash
+python3 -m tools.multica.provision \
+  --runtime-id de500649-cada-4419-9d5d-279045e2eaae \
+  --daemon-id 019fab98-bbad-7d17-b0b7-26e56dbe1b6f \
+  --apply
+```
+
+The final command must report a `mutation_count` of `0`. If either apply
+fails, stop; inspect only sanitized shapes and resume from verified state. Do
+not delete or roll back partially reconciled resources automatically.
+
+`--reuse-backend-env` reads the exact existing Backend Engineer custom
+environment in the same process, validates it, and forwards that dictionary
+only through stdin to Backend Engineer and Integration QA. It never puts an
+environment value in argv, files, logs, exceptions, reports, or this runbook.
+
+Merge recovery changes only through the personal `codeExploreHub/Eventra`
+fork. Production deployment is a separate manual production deployment action;
+this local-recovery process never deploys production.
+
 ## Inspection and reconciliation
 
 Use the Multica CLI JSON views to inspect the resulting state, substituting
@@ -53,11 +116,13 @@ origin is a hard stop: resolve it explicitly before applying again. The
 provisioner makes additive bindings with `agent skills add`; it never invokes
 `agent skills set`, so it does not replace existing bindings.
 
-The Project must contain exactly two `local_directory` resources in `worktree`
-mode: the Eventra frontend and the sibling Eventra backend. The nested frontend
-`Backend` directory is forbidden. Re-running a dry run or an already-applied
-matching configuration is reconciliation, not permission to create duplicate
-agents, skills, Squad members, Projects, or resources.
+Multica 0.4.31 permits only one `local_directory` per Project on the same
+daemon. The adapter therefore maintains two fixed Projects under one Squad:
+`Eventra Local Development` is the parent-Issue entry point and owns the
+frontend worktree; `Eventra Backend Local Development` owns the backend
+worktree and backend child Issues. The nested frontend `Backend` directory is
+forbidden. Re-running a dry run or an already-applied matching configuration
+is reconciliation, not permission to create duplicates.
 
 ## Delivery operation
 
@@ -70,14 +135,22 @@ keeps one pull request per repository, and records exact reviewed and tested
 commit SHAs. A partial two-repository merge stops immediately and requires
 human escalation; it does not trigger rollback or deployment.
 
+Cross-stack gates respect the one-worktree Project boundary. Reviewer tasks run
+once per Project and are combined by Delivery Lead. QA verifies the backend SHA
+in the backend Project, then Backend Engineer keeps that verified SHA running
+on port 8080 while Integration QA tests the frontend SHA from the frontend
+Project through the shared daemon network. If the exact service handoff cannot
+be maintained and verified, the gate blocks rather than being waived.
+
 ## Pilot dispatch and evidence runbook
 
 Use [the pilot Issue bodies](../../docs/multica/pilot-issues.md) to exercise
 the `frontend-only`, `backend-only`, and `cross-stack` routing modes. For each
 pilot, create one parent Issue, bind it to `Eventra Local Development`, assign
 it to `Eventra Local Delivery`, and move it from backlog to todo. The Delivery
-Lead creates the routed child Issue or Issues, keeps the parent in progress,
-and records all evidence before closure.
+Lead keeps frontend children there, routes backend children to `Eventra Backend
+Local Development`, keeps the parent in progress, and records all evidence
+before closure.
 
 Each implementer hands the Delivery Lead its repository, branch, PR, changed
 paths, commands and exit codes, concerns, and an exact SHA. The Delivery Lead

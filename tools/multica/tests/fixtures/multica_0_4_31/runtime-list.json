@@ -1,0 +1,12 @@
+[
+  {
+    "id": "runtime-synthetic",
+    "daemon_id": "daemon-synthetic",
+    "status": "online",
+    "metadata": {
+      "capabilities": ["local-worktree-v1", "synthetic-capability"],
+      "display_name": "Synthetic Runtime"
+    },
+    "created_at": "2026-01-02T03:04:05Z"
+  }
+]

@@ -1,0 +1,8 @@
+{
+  "agent_id": "agent-backend",
+  "custom_env": {
+    "JWT_SECRET": "synthetic-jwt-value-not-a-live-secret",
+    "MAIL_USERNAME": "synthetic-user@example.invalid",
+    "MAIL_PASSWORD": "synthetic-mail-password"
+  }
+}

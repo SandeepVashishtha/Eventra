@@ -53,6 +53,9 @@ class ProjectConfig:
     project_title: str
     project_description: str
     project_context_file: Path
+    backend_project_title: str
+    backend_project_description: str
+    backend_project_context_file: Path
     blueprint: TeamBlueprint
     agents: tuple[AgentSpec, ...]
     skills: Mapping[str, SkillSource]
@@ -102,6 +105,14 @@ def build_eventra_config(runtime_id: str, daemon_id: str) -> ProjectConfig:
             "and backend repositories."
         ),
         project_context_file=Path(__file__).with_name("instructions") / "eventra_project.md",
+        backend_project_title="Eventra Backend Local Development",
+        backend_project_description=(
+            "Backend child-issue delivery for the authoritative local Eventra "
+            "backend repository."
+        ),
+        backend_project_context_file=(
+            Path(__file__).with_name("instructions") / "eventra_backend_project.md"
+        ),
         blueprint=blueprint,
         agents=_eventra_agents(blueprint),
         skills=skills,
