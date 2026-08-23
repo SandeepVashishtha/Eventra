@@ -4,6 +4,22 @@ You coordinate, decompose, assign, verify, and merge. You never modify business
 code. Keep the parent Issue in progress while child Issues run. A child marked
 done is evidence to inspect, not automatic proof that the parent is complete.
 
+Every parent Issue starts in **Eventra Local Development**. Keep frontend child
+Issues there. Create backend-only children and the backend child of cross-stack
+work in **Eventra Backend Local Development**, link them back to the parent, and
+keep one coordinated gate decision across both Projects.
+
+For cross-stack review, create or route one exact-SHA review task in each
+Project and combine the two Reviewer decisions only after both pass. For
+cross-stack QA, route backend verification to the backend Project first. Then
+have Backend Engineer start the verified backend SHA on port 8080 and keep its
+child active while Integration QA runs the frontend exact SHA from the frontend
+Project against that service. Require a readiness handoff containing the
+backend exact SHA, daemon identity, command, exit status, and safe health/API
+observation. After QA, ask the process owner to stop only that known service.
+If the service cannot be kept available across the two tasks, block the parent;
+do not waive integration QA or merge.
+
 ## Ownership and inputs
 
 Own delivery coordination, Issue classification, task decomposition, gate

@@ -4,6 +4,21 @@ from pathlib import Path
 
 
 class OperatorDocsTests(unittest.TestCase):
+    def test_cross_stack_qa_has_executable_dual_project_service_handoff(self):
+        project_context = Path(
+            "tools/multica/instructions/eventra_project.md"
+        ).read_text()
+        backend_context = Path(
+            "tools/multica/instructions/eventra_backend_project.md"
+        ).read_text()
+        pilot = Path("docs/multica/pilot-issues.md").read_text()
+
+        for rendered in (project_context, backend_context, pilot):
+            self.assertIn("port 8080", rendered)
+            self.assertIn("exact SHA", rendered)
+        self.assertIn("keeps the backend child active", pilot)
+        self.assertIn("one Reviewer task per Project", pilot)
+
     def test_pilot_backend_checks_use_deterministic_test_wrapper(self):
         pilot = Path("docs/multica/pilot-issues.md").read_text()
         normalized_pilot = " ".join(pilot.split())

@@ -16,6 +16,12 @@ class EventraAdapterTests(unittest.TestCase):
 
     def test_builds_the_named_project_for_the_supplied_runtime_and_daemon(self):
         self.assertEqual(self.config.project_title, "Eventra Local Development")
+        self.assertEqual(
+            self.config.backend_project_title,
+            "Eventra Backend Local Development",
+        )
+        self.assertTrue(self.config.project_context_file.is_file())
+        self.assertTrue(self.config.backend_project_context_file.is_file())
         self.assertEqual(self.config.runtime_id, "runtime-id")
         self.assertEqual(self.config.daemon_id, "daemon-id")
 
@@ -34,6 +40,16 @@ class EventraAdapterTests(unittest.TestCase):
                     execution_mode="worktree",
                 ),
             ),
+        )
+
+    def test_routes_each_authoritative_repository_to_its_own_project(self):
+        self.assertIn(
+            "owns only the frontend local resource",
+            " ".join(self.config.project_context_file.read_text().split()),
+        )
+        self.assertIn(
+            self.config.resources[1].local_path,
+            self.config.backend_project_context_file.read_text(),
         )
 
     def test_forbids_the_nested_backend_duplicate(self):

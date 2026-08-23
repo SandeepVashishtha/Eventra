@@ -187,3 +187,15 @@ test data or exposing secrets.
   review, and exact-SHA verification pass before merge.
 - Merge remains limited to the personal `codeExploreHub/Eventra` fork and does
   not trigger production deployment.
+
+## Approved topology amendment — 2026-08-23
+
+Connected recovery proved that Multica CLI 0.4.31 rejects a second
+`local_directory` on the same Project and daemon. The user approved the bounded
+Eventra-specific correction: keep `Eventra Local Development` as the parent
+Issue/frontend Project, add `Eventra Backend Local Development` for the backend
+worktree and backend child Issues, and use the same five-agent Squad for both.
+The provisioner reconciles exactly these two Projects with one authoritative
+worktree each. This amendment does not introduce a generic multi-project
+framework. References above to one Project/two resources are superseded by
+this section.

@@ -209,24 +209,35 @@ def collect_contract_audit(
 
     project_list = _read(runner, ["project", "list", "--output", "json"])
     project_records = parse_project_list(project_list)
-    project_report: dict[str, Any] = {"list": _shape(project_list), "details": []}
-    project_id = _exact_id(project_records, "title", config.project_title)
-    if project_id is not None:
-        detail = _read(runner, ["project", "get", project_id, "--output", "json"])
-        parse_project_detail(detail, project_id)
-        resources = _read(
-            runner,
-            ["project", "resource", "list", project_id, "--output", "json"],
-        )
-        _require_only_local_directory_resources(resources)
-        parsed_resources = parse_project_resources(resources, project_id)
-        _require_only_local_directory_resources(parsed_resources)
-        project_report["details"].append(
-            _shape(detail, target_id=project_id, target_field="id")
-        )
-        project_report["resources"] = _shape(
-            resources, target_id=project_id, target_field="project_id"
-        )
+    project_report: dict[str, Any] = {
+        "list": _shape(project_list),
+        "details": [],
+        "target_resources": [],
+    }
+    target_project_ids = [
+        project_id
+        for title in (config.project_title, config.backend_project_title)
+        if (project_id := _exact_id(project_records, "title", title)) is not None
+    ]
+    if target_project_ids:
+        for project_id in target_project_ids:
+            detail = _read(
+                runner, ["project", "get", project_id, "--output", "json"]
+            )
+            parse_project_detail(detail, project_id)
+            resources = _read(
+                runner,
+                ["project", "resource", "list", project_id, "--output", "json"],
+            )
+            _require_only_local_directory_resources(resources)
+            parsed_resources = parse_project_resources(resources, project_id)
+            _require_only_local_directory_resources(parsed_resources)
+            project_report["details"].append(
+                _shape(detail, target_id=project_id, target_field="id")
+            )
+            project_report["target_resources"].append(
+                _shape(resources, target_id=project_id, target_field="project_id")
+            )
     elif project_records:
         sample_project_id = project_records[0]["id"]
         detail = _read(

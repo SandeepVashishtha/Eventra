@@ -7,6 +7,11 @@ The only authoritative repositories are:
 - Frontend: `/Users/didi/Eventra-workspace/Eventra`
 - Backend: `/Users/didi/Eventra-workspace/Eventra-Backend`
 
+This Project is the parent-Issue entry point and owns only the frontend local
+resource. Backend child Issues run in **Eventra Backend Local Development**,
+which owns the backend resource. The same **Eventra Local Delivery** Squad
+coordinates both Projects.
+
 `/Users/didi/Eventra-workspace/Eventra/Backend` is a duplicate nested backend
 tree. It is forbidden for every agent: do not inspect, edit, test, commit, or
 register it. Multica creates isolated worktrees for the two authoritative
@@ -38,7 +43,9 @@ or report a secret. `.env.local` stays ignored for optional user overrides.
 
 ## Delivery and evidence contract
 
-Classify the parent Issue as frontend-only, backend-only, or cross-stack. A
+Create every parent Issue in this Project. Classify it as frontend-only,
+backend-only, or cross-stack. Keep frontend children here and route backend
+children to **Eventra Backend Local Development**. A
 cross-stack change has one linked pull request per affected repository. Freeze
 the API contract before parallel work; otherwise encode the real dependency
 and sequence implementation. Each handoff records repository, base branch,
@@ -56,3 +63,10 @@ merge consecutively only after both pull requests pass their gates. If the
 second merge fails after the first succeeds, stop immediately: do not deploy,
 auto-revert, or continue. Mark the parent Issue blocked and escalate the
 partial merge with the exact merge evidence.
+
+For cross-stack QA, this Project supplies only the frontend exact-SHA worktree.
+The verified backend exact SHA must already be running on port 8080 from an
+active backend child in **Eventra Backend Local Development** on the same
+daemon. Integration QA records the backend service SHA and readiness handoff
+before testing the frontend. Lack of a verifiable matching service blocks the
+gate.

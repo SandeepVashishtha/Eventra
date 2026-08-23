@@ -30,6 +30,7 @@ SENTINELS = {
     "project_title": "PROJECT_TITLE_SENTINEL",
     "resource_id": "RESOURCE_ID_SENTINEL",
     "resource_path": "/RESOURCE_PATH_SENTINEL",
+    "backend_project_id": "BACKEND_PROJECT_ID_SENTINEL",
 }
 
 
@@ -160,6 +161,27 @@ class ContractAuditTests(unittest.TestCase):
         }
         self.assertEqual(mutation_calls, set())
         self.assertTrue(all(stdin_json is None for _, stdin_json in runner.calls))
+
+    def test_audit_reads_both_eventra_projects_when_both_exist(self):
+        replies = copy.deepcopy(audit_replies())
+        backend_id = SENTINELS["backend_project_id"]
+        replies[("project", "list", "--output", "json")].append(
+            {"id": backend_id, "title": "Eventra Backend Local Development"}
+        )
+        replies[("project", "get", backend_id, "--output", "json")] = {
+            "id": backend_id,
+            "title": "Eventra Backend Local Development",
+            "description": "BACKEND_DESCRIPTION_SENTINEL",
+        }
+        replies[("project", "resource", "list", backend_id, "--output", "json")] = []
+
+        report = collect_contract_audit(
+            SENTINELS["runtime_id"], SENTINELS["daemon_id"], RecordingRunner(replies)
+        )
+
+        self.assertEqual(len(report["projects"]["details"]), 2)
+        self.assertEqual(len(report["projects"]["target_resources"]), 2)
+        self.assertNotIn("BACKEND_DESCRIPTION_SENTINEL", json.dumps(report))
 
     def test_audit_accepts_an_unrelated_degraded_runtime_without_scalars(self):
         replies = copy.deepcopy(audit_replies())

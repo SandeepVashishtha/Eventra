@@ -12,7 +12,9 @@ small, copy-ready pilots of the three Multica routing modes: `frontend-only`,
    Lead classifies and decomposes it, then keeps the parent **in progress**
    until every listed gate, merge, and post-merge smoke check has evidence.
 2. The Delivery Lead creates and assigns the routed child Issue or Issues
-   below. Each child names its owner, authoritative repository, base SHA,
+   below. Frontend children remain in **Eventra Local Development**; backend
+   children are created in **Eventra Backend Local Development** and link back
+   to the parent. Each child names its owner, authoritative repository, base SHA,
    acceptance criteria, interface contract (when applicable), and evidence.
    The nested frontend `Backend/` directory is never a repository target.
 3. Every implementer returns its child Issue to the Delivery Lead with the
@@ -23,6 +25,13 @@ small, copy-ready pilots of the three Multica routing modes: `frontend-only`,
    **Independent Reviewer** and **Integration QA**. Their approval or QA
    result is valid only for that SHA set. A replacement commit requires fresh
    review and QA on its new exact SHA.
+   For a cross-stack pair, create one Reviewer task per Project. Integration QA
+   first verifies the backend SHA in **Eventra Backend Local Development**;
+   Backend Engineer then starts that verified SHA on port 8080 and keeps its
+   child active while Integration QA verifies the frontend SHA in **Eventra
+   Local Development** against `localhost:8080`. Record the shared daemon,
+   service SHA, start/readiness evidence, and process-owner cleanup. If the
+   exact service cannot remain available, block the gate.
 5. An **automatic merge** is permitted only after each affected PR is
    mergeable, its head equals the reviewed and QA-tested exact SHA, all Issue
    acceptance criteria and required repository checks pass, and both
@@ -103,7 +112,8 @@ the frontend child; a corrected commit supplies a new exact SHA for both gates.
 **Classification and dispatch:** `backend-only`. Bind this one parent Issue to
 **Eventra Local Development**, assign it to **Eventra Local Delivery**, and
 move it from backlog to todo. The Delivery Lead creates one backend child Issue
-assigned to **Eventra Backend Engineer**. Keep the parent in progress until the
+in **Eventra Backend Local Development**, links it to the parent, and assigns it
+to **Eventra Backend Engineer**. Keep the parent in progress until the
 exact-SHA gates, automatic merge, and merged local backend smoke evidence are
 recorded.
 
@@ -153,7 +163,9 @@ child; a changed SHA repeats review and QA.
 **Eventra Local Development**, assign it to **Eventra Local Delivery**, and
 move it from backlog to todo. The Delivery Lead creates two linked child
 Issues: a backend child assigned to **Eventra Backend Engineer** and a frontend
-child assigned to **Eventra Frontend Engineer**. Keep the parent in progress
+child assigned to **Eventra Frontend Engineer**. Place the backend child in
+**Eventra Backend Local Development**, keep the frontend child with the parent,
+and link both children to it. Keep the parent in progress
 until the exact-SHA pair passes independent review and QA, both PRs complete
 the coordinated automatic merge, and merged local smoke evidence is recorded.
 
@@ -210,10 +222,16 @@ PR. Neither child modifies the nested frontend `Backend/` directory.
   selected `apiVersion` or `buildVersion` display and the non-disruptive
   unavailable state. Run the focused tests, `npm run test:local-contract`,
   `npm run lint`, and `npm run build`, recording commands and exits.
-- Submit the immutable exact backend SHA and exact frontend SHA together to the
-  Independent Reviewer for cross-repository review. Submit that same SHA pair
-  to Integration QA for Playwright/local-browser evidence against the two exact
-  SHAs, including the success view and unavailable state.
+- Submit the immutable exact backend SHA to a Reviewer task in the backend
+  Project and the exact frontend SHA to a Reviewer task in the frontend
+  Project; Delivery Lead combines both component decisions. Integration QA
+  first verifies the backend SHA in the backend Project. Backend Engineer then
+  starts that same verified SHA on port 8080 and keeps the backend child active.
+  After its exact-SHA readiness handoff, Integration QA verifies the frontend
+  SHA in the frontend Project with Playwright/local-browser evidence against
+  `localhost:8080`, including the success view and unavailable state. Record
+  that both tasks use the configured daemon and have the process owner clean up
+  only the known backend service after QA.
 - Both PRs must be mergeable; both heads must still equal the SHA pair reviewed
   and QA-tested; every listed test, build, acceptance criterion, and required
   repository check must pass. The Delivery Lead records one coordinated gate

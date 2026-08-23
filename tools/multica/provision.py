@@ -61,6 +61,7 @@ class ProvisioningResult:
     skill_ids: dict[str, str | None]
     squad_id: str | None
     project_id: str | None
+    backend_project_id: str | None
     resource_ids: dict[str, str | None]
     mutation_count: int
 
@@ -73,7 +74,9 @@ class _Preflight:
     squad_detail: dict[str, Any] | None
     members: list[dict[str, Any]]
     project_detail: dict[str, Any] | None
+    backend_project_detail: dict[str, Any] | None
     resources: dict[str, dict[str, Any] | None]
+    backend_resources: dict[str, dict[str, Any] | None]
 
 
 class MulticaRunner:
@@ -157,9 +160,17 @@ class Provisioner:
                 },
                 squad_id=None if state.squad_detail is None else state.squad_detail["id"],
                 project_id=None if state.project_detail is None else state.project_detail["id"],
+                backend_project_id=(
+                    None
+                    if state.backend_project_detail is None
+                    else state.backend_project_detail["id"]
+                ),
                 resource_ids={
                     path: None if detail is None else detail["id"]
-                    for path, detail in state.resources.items()
+                    for path, detail in {
+                        **state.resources,
+                        **state.backend_resources,
+                    }.items()
                 },
                 mutation_count=self.runner.mutation_count - starting_mutation_count,
             )
@@ -174,13 +185,33 @@ class Provisioner:
         )
         self._reconcile_bindings(config, agent_ids, skill_ids)
         squad_id = self._reconcile_squad(config, state.squad_detail, state.members, agent_ids)
-        project_id = self._reconcile_project(config, state.project_detail)
-        resource_ids = self._reconcile_resources(config, project_id, state.resources)
+        project_id = self._reconcile_project(
+            config.project_title,
+            config.project_context_file.read_text(),
+            state.project_detail,
+        )
+        backend_project_id = self._reconcile_project(
+            config.backend_project_title,
+            config.backend_project_context_file.read_text(),
+            state.backend_project_detail,
+        )
+        resource_ids = self._reconcile_resources(
+            config, project_id, (config.resources[0],), state.resources
+        )
+        resource_ids.update(
+            self._reconcile_resources(
+                config,
+                backend_project_id,
+                (config.resources[1],),
+                state.backend_resources,
+            )
+        )
         return ProvisioningResult(
             agent_ids,
             skill_ids,
             squad_id,
             project_id,
+            backend_project_id,
             resource_ids,
             self.runner.mutation_count - starting_mutation_count,
         )
@@ -240,7 +271,25 @@ class Provisioner:
             if project_detail is None
             else self._resource_records(project_detail["id"])
         )
-        resources = self._validate_resource_state(config, raw_resources)
+        resources = self._validate_resource_state(
+            raw_resources, (config.resources[0].local_path,)
+        )
+        backend_project_item = self._exact_record(
+            project_records, config.backend_project_title, "title", "Project"
+        )
+        backend_project_detail = (
+            None
+            if backend_project_item is None
+            else self._project_get(backend_project_item["id"])
+        )
+        raw_backend_resources = (
+            []
+            if backend_project_detail is None
+            else self._resource_records(backend_project_detail["id"])
+        )
+        backend_resources = self._validate_resource_state(
+            raw_backend_resources, (config.resources[1].local_path,)
+        )
         return _Preflight(
             skill_details,
             agent_details,
@@ -248,7 +297,9 @@ class Provisioner:
             squad_detail,
             members,
             project_detail,
+            backend_project_detail,
             resources,
+            backend_resources,
         )
 
     def _validate_runtime_capability(self, config) -> None:
@@ -288,6 +339,8 @@ class Provisioner:
                 )
         if len(config.resources) != 2:
             raise ValueError("configuration must define exactly two resources")
+        if config.project_title == config.backend_project_title:
+            raise ValueError("frontend and backend Project titles must be distinct")
         paths = [resource.local_path for resource in config.resources]
         if len(set(paths)) != 2:
             raise ValueError("configuration resource paths must be unique")
@@ -550,11 +603,11 @@ class Provisioner:
             raise RuntimeError("Squad member reconciliation failed")
         return squad_id
 
-    def _reconcile_project(self, config, detail):
+    def _reconcile_project(self, title, description, detail):
         desired = {
             "id": None,
-            "title": config.project_title,
-            "description": config.project_context_file.read_text(),
+            "title": title,
+            "description": description,
         }
         if detail is None:
             self.runner.run(
@@ -573,9 +626,10 @@ class Provisioner:
             raise RuntimeError("Project reconciliation failed")
         return detail["id"]
 
-    def _reconcile_resources(self, config, project_id, matches):
+    def _reconcile_resources(self, config, project_id, resources, matches):
         ids = {}
-        for resource in config.resources:
+        wanted_paths = tuple(resource.local_path for resource in resources)
+        for resource in resources:
             detail = matches[resource.local_path]
             if detail is None:
                 self.runner.run(
@@ -587,7 +641,7 @@ class Provisioner:
                     ]
                 )
                 post = self._validate_resource_state(
-                    config, self._resource_records(project_id)
+                    self._resource_records(project_id), wanted_paths
                 )[resource.local_path]
                 self._assert_target_resource(post, config.daemon_id)
                 ids[resource.local_path] = post["id"]
@@ -603,12 +657,14 @@ class Provisioner:
                         ]
                     )
                     post = self._validate_resource_state(
-                        config, self._resource_records(project_id)
+                        self._resource_records(project_id), wanted_paths
                     )[resource.local_path]
                     self._assert_target_resource(
                         post, config.daemon_id, expected_id=detail["id"]
                     )
-        final = self._validate_resource_state(config, self._resource_records(project_id))
+        final = self._validate_resource_state(
+            self._resource_records(project_id), wanted_paths
+        )
         if any(detail is None for detail in final.values()):
             raise RuntimeError("Project resource reconciliation failed")
         for path, detail in final.items():
@@ -720,8 +776,8 @@ class Provisioner:
             project_id,
         )
 
-    def _validate_resource_state(self, config, records):
-        wanted = {resource.local_path for resource in config.resources}
+    def _validate_resource_state(self, records, wanted_paths):
+        wanted = set(wanted_paths)
         by_path = {path: [] for path in wanted}
         for record in records:
             if record["resource_type"] != "local_directory":
@@ -820,6 +876,7 @@ def _planned_output(config: ProjectConfig) -> str:
     lines.extend(f"skill: {source.key} <- {source.url}" for source in config.skills.values())
     lines.append(f"Squad: {config.blueprint.squad_name}")
     lines.append(f"Project: {config.project_title}")
+    lines.append(f"Backend Project: {config.backend_project_title}")
     lines.extend(f"resource: {resource.local_path} (worktree)" for resource in config.resources)
     return "\n".join(lines)
 

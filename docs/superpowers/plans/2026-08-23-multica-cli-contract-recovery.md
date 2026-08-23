@@ -514,6 +514,16 @@ return to the relevant TDD task and require a fresh review.
 
 - [ ] **Step 3: Run the connected read-only audit**
 
+### Approved topology amendment — 2026-08-23
+
+Before Step 3, reconcile the user-approved fixed two-Project topology: retain
+`Eventra Local Development` with the frontend worktree and create `Eventra
+Backend Local Development` with the backend worktree. Update the fixed project
+contexts, Delivery Lead routing, scalar-free audit, stateful tests, and pilot
+runbook. Keep one Squad and one parent-Issue entry point; do not generalize the
+adapter. All later verification steps must expect two Projects and one resource
+per Project.
+
 Run with host execution:
 
 ```bash

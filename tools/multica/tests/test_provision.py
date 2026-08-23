@@ -305,6 +305,14 @@ class FakeRunner:
             return self._response(command, value)
         if command == ("project", "resource", "add"):
             project_id, resource_id = positionals[0], self._id("resource")
+            if any(
+                item["resource_type"] == "local_directory"
+                and item["resource_ref"]["daemon_id"] == flags["--daemon-id"]
+                for item in self.projects[project_id]["resources"].values()
+            ):
+                raise RuntimeError(
+                    "this daemon already has a local_directory attached to the project"
+                )
             item = {"id": resource_id, "project_id": project_id, "resource_type": flags["--type"], "resource_ref": {"local_path": flags["--local-path"], "daemon_id": flags["--daemon-id"], "execution_mode": flags["--execution-mode"]}}
             self.projects[project_id]["resources"][resource_id] = item
             return copy.deepcopy(override if override is not None else item)
@@ -488,6 +496,10 @@ class ProvisionerTests(unittest.TestCase):
         self.assertIn("squad update squad-1 --instructions", rendered)
         self.assertIn("--member-id agent-2 --type agent --role frontend_engineer", rendered)
         self.assertIn("project create --title Eventra Local Development --description", rendered)
+        self.assertIn(
+            "project create --title Eventra Backend Local Development --description",
+            rendered,
+        )
         self.assertIn("--execution-mode worktree", rendered)
         for value in self.backend_env.values():
             self.assertNotIn(value, rendered)
@@ -542,10 +554,24 @@ class ProvisionerTests(unittest.TestCase):
         project = self.runner.projects[result.project_id]
         self.assertEqual(project["description"], self.config.project_context_file.read_text())
         self.assertIn("stable backend signing secret", project["description"])
-        self.assertEqual(len(project["resources"]), 2)
+        backend_project = self.runner.projects[result.backend_project_id]
+        self.assertEqual(len(project["resources"]), 1)
+        self.assertEqual(len(backend_project["resources"]), 1)
         self.assertEqual(
-            {(x["resource_ref"]["local_path"], x["resource_type"], x["resource_ref"]["execution_mode"]) for x in project["resources"].values()},
+            {
+                (x["resource_ref"]["local_path"], x["resource_type"], x["resource_ref"]["execution_mode"])
+                for target in (project, backend_project)
+                for x in target["resources"].values()
+            },
             {(self.config.resources[0].local_path, "local_directory", "worktree"), (self.config.resources[1].local_path, "local_directory", "worktree")},
+        )
+        self.assertEqual(
+            next(iter(project["resources"].values()))["resource_ref"]["local_path"],
+            self.config.resources[0].local_path,
+        )
+        self.assertEqual(
+            next(iter(backend_project["resources"].values()))["resource_ref"]["local_path"],
+            self.config.resources[1].local_path,
         )
         self.assertEqual(
             {
@@ -697,11 +723,53 @@ class ProvisionerTests(unittest.TestCase):
         self.assertEqual(second.skill_ids, first.skill_ids)
         self.assertEqual(second.squad_id, first.squad_id)
         self.assertEqual(second.project_id, first.project_id)
+        self.assertEqual(second.backend_project_id, first.backend_project_id)
         self.assertEqual(second.resource_ids, first.resource_ids)
         self.assertGreater(first.mutation_count, 0)
         self.assertEqual(second.mutation_count, 0)
         self.assertEqual(self.runner.mutation_count, mutation_count)
         self.assertEqual(self.runner.envs, envs)
+
+    def test_partial_frontend_project_state_creates_only_backend_project_and_resource(self):
+        first = self.provisioner.reconcile(
+            self.config, apply=True, backend_env=self.backend_env
+        )
+        del self.runner.projects[first.backend_project_id]
+        self.runner.calls.clear()
+
+        recovered = self.provisioner.reconcile(
+            self.config, apply=True, backend_env=None
+        )
+
+        mutations = [
+            call for call in self.runner.calls
+            if call["command"] in FakeRunner.MUTATIONS
+        ]
+        self.assertEqual(
+            [call["command"] for call in mutations],
+            [("project", "create"), ("project", "resource", "add")],
+        )
+        self.assertEqual(
+            mutations[0]["flags"]["--title"], self.config.backend_project_title
+        )
+        self.assertEqual(
+            mutations[1]["flags"]["--local-path"],
+            self.config.resources[1].local_path,
+        )
+        self.assertEqual(recovered.project_id, first.project_id)
+        self.assertNotEqual(recovered.backend_project_id, first.backend_project_id)
+
+    def test_rejects_duplicate_frontend_and_backend_project_titles_before_reads(self):
+        config = replace(
+            self.config, backend_project_title=self.config.project_title
+        )
+
+        with self.assertRaisesRegex(ValueError, "titles must be distinct"):
+            self.provisioner.reconcile(
+                config, apply=True, backend_env=self.backend_env
+            )
+
+        self.assertEqual(self.runner.calls, [])
 
     def test_no_env_apply_rejects_recipient_drift_after_agent_update(self):
         for source in self.config.skills.values():
@@ -769,7 +837,7 @@ class ProvisionerTests(unittest.TestCase):
             set(output),
             {
                 "agent_ids", "skill_ids", "squad_id", "project_id",
-                "resource_ids", "mutation_count",
+                "backend_project_id", "resource_ids", "mutation_count",
             },
         )
         self.assertEqual(output["mutation_count"], runner.mutation_count)
@@ -873,6 +941,7 @@ class ProvisionerTests(unittest.TestCase):
         self.assertEqual(second.skill_ids, first.skill_ids)
         self.assertEqual(second.squad_id, first.squad_id)
         self.assertEqual(second.project_id, first.project_id)
+        self.assertEqual(second.backend_project_id, first.backend_project_id)
         self.assertEqual(second.resource_ids, first.resource_ids)
         self.assertGreater(first.mutation_count, 0)
         self.assertGreater(second.mutation_count, 0)

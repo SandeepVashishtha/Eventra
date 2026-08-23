@@ -116,11 +116,13 @@ origin is a hard stop: resolve it explicitly before applying again. The
 provisioner makes additive bindings with `agent skills add`; it never invokes
 `agent skills set`, so it does not replace existing bindings.
 
-The Project must contain exactly two `local_directory` resources in `worktree`
-mode: the Eventra frontend and the sibling Eventra backend. The nested frontend
-`Backend` directory is forbidden. Re-running a dry run or an already-applied
-matching configuration is reconciliation, not permission to create duplicate
-agents, skills, Squad members, Projects, or resources.
+Multica 0.4.31 permits only one `local_directory` per Project on the same
+daemon. The adapter therefore maintains two fixed Projects under one Squad:
+`Eventra Local Development` is the parent-Issue entry point and owns the
+frontend worktree; `Eventra Backend Local Development` owns the backend
+worktree and backend child Issues. The nested frontend `Backend` directory is
+forbidden. Re-running a dry run or an already-applied matching configuration
+is reconciliation, not permission to create duplicates.
 
 ## Delivery operation
 
@@ -133,14 +135,22 @@ keeps one pull request per repository, and records exact reviewed and tested
 commit SHAs. A partial two-repository merge stops immediately and requires
 human escalation; it does not trigger rollback or deployment.
 
+Cross-stack gates respect the one-worktree Project boundary. Reviewer tasks run
+once per Project and are combined by Delivery Lead. QA verifies the backend SHA
+in the backend Project, then Backend Engineer keeps that verified SHA running
+on port 8080 while Integration QA tests the frontend SHA from the frontend
+Project through the shared daemon network. If the exact service handoff cannot
+be maintained and verified, the gate blocks rather than being waived.
+
 ## Pilot dispatch and evidence runbook
 
 Use [the pilot Issue bodies](../../docs/multica/pilot-issues.md) to exercise
 the `frontend-only`, `backend-only`, and `cross-stack` routing modes. For each
 pilot, create one parent Issue, bind it to `Eventra Local Development`, assign
 it to `Eventra Local Delivery`, and move it from backlog to todo. The Delivery
-Lead creates the routed child Issue or Issues, keeps the parent in progress,
-and records all evidence before closure.
+Lead keeps frontend children there, routes backend children to `Eventra Backend
+Local Development`, keeps the parent in progress, and records all evidence
+before closure.
 
 Each implementer hands the Delivery Lead its repository, branch, PR, changed
 paths, commands and exit codes, concerns, and an exact SHA. The Delivery Lead
