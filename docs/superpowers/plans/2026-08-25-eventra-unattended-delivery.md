@@ -104,8 +104,9 @@ on the first invalid record.
 
 Normalize Issue detail to `id`, `identifier`, `parent_issue_id`, `stage`,
 `status`, `assignee_id`, `assignee_type`, `project_id`, and `updated_at`.
-Normalize every run to `id`, `issue_id`, `status`, `created_at`, and
-`updated_at`. Require nonempty string IDs, exact identifier match, parent
+Normalize every run to `id`, `issue_id`, `status`, `created_at`, and a derived
+`activity_at` selected from `completed_at`, `started_at`, `dispatched_at`, then
+`created_at`. Require nonempty string IDs, exact identifier match, parent
 relation, integer stage `>=1`, supported statuses, ISO-8601 task timestamps,
 and exact child/run ownership. Error messages are generic and never
 interpolate response values.
