@@ -538,6 +538,46 @@ class FakeRunner:
 
 class MulticaRunnerTests(unittest.TestCase):
     @patch("tools.multica.provision.subprocess.run")
+    def test_retries_allowlisted_read_after_transient_cli_failure(self, run):
+        run.side_effect = (
+            subprocess.CompletedProcess([], 2, "", "temporary private failure"),
+            subprocess.CompletedProcess([], 0, '{"id":"skill-1"}', ""),
+        )
+
+        result = MulticaRunner().run(
+            ["skill", "get", "skill-1", "--output", "json"]
+        )
+
+        self.assertEqual(result, {"id": "skill-1"})
+        self.assertEqual(run.call_count, 2)
+
+    @patch("tools.multica.provision.subprocess.run")
+    def test_read_retry_is_bounded_to_three_total_attempts(self, run):
+        run.return_value = subprocess.CompletedProcess(
+            [], 2, "", "temporary private failure"
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "failed with exit 2"):
+            MulticaRunner().run(["agent", "skills", "list", "agent-1"])
+
+        self.assertEqual(run.call_count, 3)
+
+    @patch("tools.multica.provision.subprocess.run")
+    def test_mutation_and_unknown_commands_are_never_retried(self, run):
+        run.return_value = subprocess.CompletedProcess([], 2, "", "private")
+        runner = MulticaRunner()
+
+        for argv in (
+            ["agent", "update", "agent-1", "--output", "json"],
+            ["issue", "rerun", "PRO-35", "--output", "json"],
+        ):
+            before = run.call_count
+            with self.subTest(argv=argv):
+                with self.assertRaisesRegex(RuntimeError, "failed with exit 2"):
+                    runner.run(argv)
+                self.assertEqual(run.call_count - before, 1)
+
+    @patch("tools.multica.provision.subprocess.run")
     def test_uses_argv_strict_json_bounded_timeout_and_secret_stdin(self, run):
         secret = "s" * 64
         run.return_value = subprocess.CompletedProcess([], 0, '{"id":"agent-1"}', "")

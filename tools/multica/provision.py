@@ -32,6 +32,7 @@ from .eventra_adapter import ProjectConfig, build_eventra_config
 
 HTTP_TIMEOUT = "90s"
 PROCESS_TIMEOUT_SECONDS = 95
+READ_ONLY_MAX_ATTEMPTS = 3
 MAX_AGENT_DESCRIPTION = 255
 WORKTREE_CAPABILITY = "local-worktree-v1"
 ENV_RECIPIENTS = frozenset({"backend_engineer", "integration_qa"})
@@ -55,6 +56,30 @@ MUTATION_COMMAND_PREFIXES = frozenset(
         ("autopilot", "update"),
         ("autopilot", "trigger-add"),
         ("autopilot", "trigger-update"),
+    }
+)
+READ_ONLY_COMMAND_PREFIXES = frozenset(
+    {
+        ("runtime", "list"),
+        ("skill", "list"),
+        ("skill", "get"),
+        ("agent", "list"),
+        ("agent", "get"),
+        ("agent", "env", "get"),
+        ("agent", "skills", "list"),
+        ("squad", "list"),
+        ("squad", "get"),
+        ("squad", "member", "list"),
+        ("project", "list"),
+        ("project", "get"),
+        ("project", "resource", "list"),
+        ("autopilot", "list"),
+        ("autopilot", "get"),
+        ("issue", "list"),
+        ("issue", "get"),
+        ("issue", "children"),
+        ("issue", "runs"),
+        ("issue", "metadata", "list"),
     }
 )
 
@@ -105,26 +130,40 @@ class MulticaRunner:
     ) -> dict[str, Any] | list[Any]:
         if not isinstance(args, list) or not all(isinstance(arg, str) for arg in args):
             raise TypeError("Multica arguments must be a list of strings")
-        if any(tuple(args[: len(prefix)]) == prefix for prefix in MUTATION_COMMAND_PREFIXES):
+        is_mutation = any(
+            tuple(args[: len(prefix)]) == prefix
+            for prefix in MUTATION_COMMAND_PREFIXES
+        )
+        if is_mutation:
             self._mutation_count += 1
         child_env = os.environ.copy()
         child_env["MULTICA_HTTP_TIMEOUT"] = HTTP_TIMEOUT
-        try:
-            completed = subprocess.run(
-                ["multica", *args],
-                input=None if stdin_json is None else json.dumps(stdin_json),
-                text=True,
-                capture_output=True,
-                check=False,
-                env=child_env,
-                timeout=PROCESS_TIMEOUT_SECONDS,
-            )
-        except subprocess.TimeoutExpired:
-            raise RuntimeError("Multica command timed out") from None
-        except OSError:
-            raise RuntimeError("Multica command could not be started") from None
-        if completed.returncode != 0:
-            raise RuntimeError(f"Multica command failed with exit {completed.returncode}")
+        retryable_read = stdin_json is None and any(
+            tuple(args[: len(prefix)]) == prefix
+            for prefix in READ_ONLY_COMMAND_PREFIXES
+        )
+        max_attempts = READ_ONLY_MAX_ATTEMPTS if retryable_read else 1
+        for attempt in range(max_attempts):
+            try:
+                completed = subprocess.run(
+                    ["multica", *args],
+                    input=None if stdin_json is None else json.dumps(stdin_json),
+                    text=True,
+                    capture_output=True,
+                    check=False,
+                    env=child_env,
+                    timeout=PROCESS_TIMEOUT_SECONDS,
+                )
+            except subprocess.TimeoutExpired:
+                raise RuntimeError("Multica command timed out") from None
+            except OSError:
+                raise RuntimeError("Multica command could not be started") from None
+            if completed.returncode == 0:
+                break
+            if attempt + 1 == max_attempts:
+                raise RuntimeError(
+                    f"Multica command failed with exit {completed.returncode}"
+                )
         try:
             parsed = json.loads(completed.stdout)
         except (json.JSONDecodeError, TypeError):
