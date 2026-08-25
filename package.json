@@ -7,6 +7,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
+    "test:layout-hydration": "node --test scripts/test-layout-hydration.mjs",
     "dev:local": "bash scripts/run-local.sh",
     "test:local-contract": "bash scripts/test-local-contract.sh",
     "smoke:local": "bash scripts/smoke-local.sh"
