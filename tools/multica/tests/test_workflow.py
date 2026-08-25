@@ -412,6 +412,38 @@ class ParentDecisionTests(unittest.TestCase):
         self.assertEqual(decision.kind, "create_repair_stage")
         self.assertIn(":1:frontend:", decision.action_key)
 
+    def test_cross_stack_repair_may_target_only_affected_repository(self):
+        backend_sha = "b" * 40
+        children = (
+            phase("PRO-36", 1, "implementation"),
+            phase(
+                "PRO-37",
+                1,
+                "implementation",
+                frontend_sha=None,
+                backend_sha=backend_sha,
+            ),
+            phase("PRO-38", 2, "review", result="fail"),
+            phase(
+                "PRO-39",
+                2,
+                "review",
+                frontend_sha=None,
+                backend_sha=backend_sha,
+            ),
+            phase("PRO-40", 2, "qa", backend_sha=backend_sha),
+            phase("PRO-41", 3, "repair", attempt=1),
+        )
+        decision = decide_parent_action(
+            parent_snapshot(
+                classification="cross-stack",
+                attempt=1,
+                candidate_backend_sha=backend_sha,
+                children=children,
+            )
+        )
+        self.assertEqual(decision.kind, "create_gate_stage")
+
     def test_second_failed_complete_repair_cycle_blocks_without_third(self):
         children = (
             phase("PRO-36", 1, "implementation"),
@@ -544,6 +576,29 @@ class ParentDecisionTests(unittest.TestCase):
             ).kind,
             "complete_parent",
         )
+
+    def test_merged_smoke_failure_cannot_bypass_completed_attempt_history(self):
+        children = (
+            phase("PRO-36", 1, "implementation"),
+            phase("PRO-37", 2, "review", result="fail"),
+            phase("PRO-38", 2, "qa"),
+            phase("PRO-39", 3, "repair", attempt=1),
+            phase("PRO-40", 4, "review", result="fail", attempt=1),
+            phase("PRO-41", 4, "qa", attempt=1),
+            phase("PRO-42", 5, "repair", attempt=2),
+            phase("PRO-43", 6, "review", attempt=2),
+            phase("PRO-44", 6, "qa", attempt=2),
+            phase("PRO-45", 7, "smoke", result="fail", attempt=2),
+        )
+        decision = decide_parent_action(
+            parent_snapshot(
+                attempt=0,
+                merge_state="merged",
+                children=children,
+            )
+        )
+        self.assertEqual(decision.kind, "block_parent")
+        self.assertIn("attempt", decision.reason)
 
     def test_incomplete_stage_and_recorded_action_are_noops(self):
         incomplete = (
@@ -919,14 +974,9 @@ class WatchWorkflowTests(unittest.TestCase):
 
         self.assertEqual(result.decision, "rerun_parent")
 
-    def test_structured_active_member_approval_suppresses_recovery(self):
+    def test_active_member_assignment_suppresses_recovery_without_metadata(self):
         runner = FakeWatchRunner()
         runner.child["assignee_type"] = "member"
-        runner.metadata["PRO-36"] = {
-            "eventra.workflow.version": "1",
-            "eventra.workflow.approval_state": "requested",
-            "eventra.workflow.approval_request_id": COMMENT_ID,
-        }
 
         result = watch_projects(runner, runner.PROJECTS, apply=False)
 

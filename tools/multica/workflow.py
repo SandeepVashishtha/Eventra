@@ -333,9 +333,11 @@ def _expected_repositories(snapshot: ParentSnapshot) -> set[str]:
     }
 
 
-def _implementation_coverage(
+def _work_repository_coverage(
     snapshot: ParentSnapshot,
     phases: tuple[PhaseSnapshot, ...],
+    *,
+    require_full_scope: bool,
 ) -> bool:
     expected = _expected_repositories(snapshot)
     observed: list[str] = []
@@ -351,7 +353,11 @@ def _implementation_coverage(
         if len(repositories) != 1 or item.attempt != snapshot.attempt:
             return False
         observed.extend(repositories)
-    return len(observed) == len(expected) and set(observed) == expected
+    if not observed or len(observed) != len(set(observed)):
+        return False
+    if require_full_scope:
+        return set(observed) == expected
+    return set(observed) <= expected
 
 
 def _attempt_history_is_consistent(snapshot: ParentSnapshot) -> bool:
@@ -453,6 +459,12 @@ def decide_parent_action(snapshot: ParentSnapshot) -> ParentDecision:
         latest = ()
 
     if snapshot.merge_state == "merged":
+        if not _attempt_history_is_consistent(snapshot):
+            return _parent_decision(
+                snapshot,
+                "block_parent",
+                "parent attempt conflicts with completed child history",
+            )
         if latest and {item.kind for item in latest} == {"smoke"}:
             if any(item.status != "done" for item in latest):
                 return ParentDecision("noop", None, "smoke stage is still active")
@@ -502,11 +514,15 @@ def decide_parent_action(snapshot: ParentSnapshot) -> ParentDecision:
                 "block_parent",
                 "implementation evidence does not match current candidates",
             )
-        if not _implementation_coverage(snapshot, latest):
+        if not _work_repository_coverage(
+            snapshot,
+            latest,
+            require_full_scope=kinds == {"implementation"},
+        ):
             return _parent_decision(
                 snapshot,
                 "block_parent",
-                "implementation repository coverage is incomplete",
+                "implementation or repair repository coverage is invalid",
             )
         return _parent_decision(
             snapshot,
@@ -859,16 +875,10 @@ def _is_uuid(value: str | None) -> bool:
     return True
 
 
-def _is_structured_human_wait(
-    issue: dict[str, object],
-    metadata: dict[str, str],
-) -> bool:
+def _is_human_wait(issue: dict[str, object]) -> bool:
     return (
         issue["assignee_type"] == "member"
         and issue["status"] in {"todo", "in_progress", "in_review"}
-        and metadata.get("eventra.workflow.version") == "1"
-        and metadata.get("eventra.workflow.approval_state") == "requested"
-        and _is_uuid(metadata.get("eventra.workflow.approval_request_id"))
     )
 
 
@@ -898,7 +908,7 @@ def load_workflow_snapshot(
         str(parent["id"]),
     )
     snapshots: list[ChildRunSnapshot] = []
-    has_human_wait = _is_structured_human_wait(parent, parent_metadata)
+    has_human_wait = _is_human_wait(parent)
     for child in children:
         child_key = str(child["identifier"])
         metadata = parse_issue_metadata(
@@ -912,10 +922,7 @@ def load_workflow_snapshot(
         )
         latest = max(runs, key=lambda item: item["activity_at"]) if runs else None
         has_active = any(item["status"] in ACTIVE_RUN_STATUSES for item in runs)
-        has_human_wait = has_human_wait or _is_structured_human_wait(
-            child,
-            metadata,
-        )
+        has_human_wait = has_human_wait or _is_human_wait(child)
         snapshots.append(
             ChildRunSnapshot(
                 issue_id=str(child["id"]),
