@@ -151,6 +151,12 @@ parent. Phase `done` means execution finished, while metadata records
 `pass|fail|blocked`. FAIL and BLOCKED therefore wake the parent instead of
 leaving a child permanently `in_review`.
 
+When planning returns `complete_parent`, Delivery Lead runs
+`python3 -B -m tools.multica.workflow finish-parent PRO-M`. The helper reads the
+authoritative merged-smoke state twice, refuses human-approval or changing
+state, and moves a verified unattended local-development parent directly to
+`done`. It does not deploy production.
+
 Provisioning reconciles one run-only **Eventra · Stalled Work Watcher** with a
 30-minute `Asia/Shanghai` schedule. Its rendered task invokes
 `python3 -B -m tools.multica.workflow watch` for only the two configured

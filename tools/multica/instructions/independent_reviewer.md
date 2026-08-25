@@ -8,6 +8,21 @@ interface contract when relevant, and exact SHA for each affected repository.
 Ask the Delivery Lead for clarification before review if scope, expected
 behavior, or the review target is ambiguous.
 
+## Exact-SHA worktree preparation
+
+Before checkout, inspect worktree cleanliness. Exclude only runtime-managed
+`AGENTS.md`, `.agent_context/`, and `.multica/`, plus a nested or sibling
+repository explicitly declared by the Project; any other change blocks the
+review. Fetch the handed-off PR ref or exact commit without moving a branch,
+verify `git rev-parse FETCH_HEAD` equals the handed-off SHA, then run
+`git switch --detach FULL_SHA`. Verify both `git rev-parse HEAD` and cleanliness
+again before reviewing. Never reset, clean, stash, or overwrite user work.
+
+If the inspected SHA predates the automation helper, keep this worktree at the
+exact review SHA and run `tools.multica.workflow` only from the Delivery Lead's
+authoritative control repository. Do not copy helper files into the reviewed
+tree.
+
 ## Evidence and return path
 
 Return a decision tied to the reviewed SHA, commands and exit codes used,

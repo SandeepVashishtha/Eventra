@@ -7,6 +7,7 @@ import json
 import re
 import subprocess
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Literal, Sequence
 
@@ -60,6 +61,14 @@ class PhaseResult:
     status: str
     kind: str
     result: str
+    mutation_count: int
+
+
+@dataclass(frozen=True)
+class ParentCompletionResult:
+    issue_id: str
+    issue_key: str
+    status: str
     mutation_count: int
 
 
@@ -1148,6 +1157,74 @@ def finish_phase(
     )
 
 
+def finish_parent(
+    runner: MulticaRunner,
+    parent_key: str,
+    snapshot_loader: Callable[[], ParentSnapshot],
+) -> ParentCompletionResult:
+    """Finish an unattended parent only after a stable merged-smoke PASS."""
+
+    if (
+        not isinstance(parent_key, str)
+        or ISSUE_KEY_PATTERN.fullmatch(parent_key) is None
+    ):
+        raise ValueError("invalid issue identifier")
+    detail = parse_issue_detail(
+        runner.run(["issue", "get", parent_key, "--output", "json"]),
+        parent_key,
+    )
+    if detail["parent_issue_id"] is not None or detail["stage"] is not None:
+        raise RuntimeError("parent completion requires a parent issue")
+    if detail["status"] == "done":
+        return ParentCompletionResult(str(detail["id"]), parent_key, "done", 0)
+    if detail["assignee_type"] == "member":
+        raise RuntimeError("parent has a human approval wait")
+    if detail["status"] not in {"in_progress", "in_review"}:
+        raise RuntimeError("parent issue is not mutable")
+
+    initial_snapshot = snapshot_loader()
+    initial_decision = decide_parent_action(initial_snapshot)
+    fresh_snapshot = snapshot_loader()
+    fresh_decision = decide_parent_action(fresh_snapshot)
+    if (
+        initial_snapshot.identifier != parent_key
+        or fresh_snapshot != initial_snapshot
+        or initial_decision != fresh_decision
+        or fresh_decision.kind != "complete_parent"
+    ):
+        raise RuntimeError("parent completion is not authorized")
+
+    before_write = parse_issue_detail(
+        runner.run(["issue", "get", parent_key, "--output", "json"]),
+        parent_key,
+    )
+    if (
+        before_write["parent_issue_id"] is not None
+        or before_write["stage"] is not None
+        or before_write["status"] not in {"in_progress", "in_review"}
+        or before_write["assignee_type"] == "member"
+    ):
+        raise RuntimeError("parent completion is not authorized")
+    runner.run(
+        [
+            "issue",
+            "status",
+            parent_key,
+            "done",
+            "--no-start",
+            "--output",
+            "json",
+        ]
+    )
+    final = parse_issue_detail(
+        runner.run(["issue", "get", parent_key, "--output", "json"]),
+        parent_key,
+    )
+    if final["status"] != "done":
+        raise RuntimeError("parent completion failed")
+    return ParentCompletionResult(str(final["id"]), parent_key, "done", 1)
+
+
 def build_workflow_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Advance Eventra Multica workflow state deterministically."
@@ -1164,6 +1241,8 @@ def build_workflow_parser() -> argparse.ArgumentParser:
     finish.add_argument("--pr")
     plan_parent = subparsers.add_parser("plan-parent")
     plan_parent.add_argument("parent")
+    finish_parent_parser = subparsers.add_parser("finish-parent")
+    finish_parent_parser.add_argument("parent")
     watch = subparsers.add_parser("watch")
     watch.add_argument("--project-id", required=True)
     watch.add_argument("--backend-project-id", required=True)
@@ -1175,6 +1254,13 @@ def print_phase_result(value: PhaseResult) -> None:
     print(
         f"issue={value.issue_key} status={value.status} kind={value.kind} "
         f"result={value.result} mutations={value.mutation_count}"
+    )
+
+
+def print_parent_result(value: ParentCompletionResult) -> None:
+    print(
+        f"issue={value.issue_key} status={value.status} "
+        f"mutations={value.mutation_count}"
     )
 
 
@@ -1210,6 +1296,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         print_parent_decision(
             decide_parent_action(
                 load_parent_snapshot(runner, GitHubRunner(), args.parent)
+            )
+        )
+    elif args.command == "finish-parent":
+        print_parent_result(
+            finish_parent(
+                runner,
+                args.parent,
+                lambda: load_parent_snapshot(runner, GitHubRunner(), args.parent),
             )
         )
     elif args.command == "watch":
