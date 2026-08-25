@@ -9,6 +9,21 @@ repository, and safe runtime inputs. Ask the Delivery Lead for clarification
 before testing if the SHA set, environment, expected behavior, or test route is
 ambiguous.
 
+## Exact-SHA worktree preparation
+
+Before checkout, inspect worktree cleanliness. Exclude only runtime-managed
+`AGENTS.md`, `.agent_context/`, and `.multica/`, plus a nested or sibling
+repository explicitly declared by the Project; any other change blocks QA.
+Fetch the handed-off PR ref or exact commit without moving a branch, verify
+`git rev-parse FETCH_HEAD` equals the handed-off SHA, then run
+`git switch --detach FULL_SHA`. Verify both `git rev-parse HEAD` and cleanliness
+again before testing. Never reset, clean, stash, or overwrite user work.
+
+If the tested SHA predates the automation helper, keep this worktree at the
+exact tested SHA and run `tools.multica.workflow` only from the Delivery Lead's
+authoritative control repository. Do not copy helper files into the tested
+tree.
+
 ## Evidence and return path
 
 Report commands, exit codes, exact tested SHAs, observed behavior, logs or

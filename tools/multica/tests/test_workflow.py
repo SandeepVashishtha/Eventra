@@ -19,10 +19,12 @@ from tools.multica.workflow import (
     build_workflow_parser,
     decide_parent_action,
     decide_recovery,
+    finish_parent,
     finish_phase,
     load_parent_snapshot,
     print_phase_result,
     print_parent_decision,
+    print_parent_result,
     recover_once,
     watch_projects,
 )
@@ -620,6 +622,117 @@ class ParentDecisionTests(unittest.TestCase):
         first = decide_parent_action(parent_snapshot())
         second = decide_parent_action(parent_snapshot(last_action=first.action_key))
         self.assertEqual(second.kind, "noop")
+
+
+class FakeParentCompletionRunner:
+    def __init__(self, *, status="in_review", assignee_type="squad"):
+        self.issue = raw_issue(
+            identifier="PRO-35",
+            parent_issue_id=None,
+            stage=None,
+            status=status,
+            assignee_type=assignee_type,
+        )
+        self.calls = []
+        self.freeze_status = False
+
+    def run(self, args, *, stdin_json=None):
+        if stdin_json is not None:
+            raise AssertionError("workflow commands never accept stdin JSON")
+        call = tuple(args)
+        self.calls.append(call)
+        if call == ("issue", "get", "PRO-35", "--output", "json"):
+            return copy.deepcopy(self.issue)
+        if call == (
+            "issue", "status", "PRO-35", "done", "--no-start", "--output", "json"
+        ):
+            if not self.freeze_status:
+                self.issue["status"] = "done"
+            return {"ignored": "mutation acknowledgement"}
+        raise AssertionError(f"unsupported argv: {call!r}")
+
+
+class ParentCompletionTests(unittest.TestCase):
+    def completion_snapshot(self, **overrides):
+        values = {
+            "merge_state": "merged",
+            "children": (phase("PRO-50", 4, "smoke"),),
+        }
+        values.update(overrides)
+        return parent_snapshot(**values)
+
+    def test_verified_merged_smoke_moves_parent_directly_to_done(self):
+        runner = FakeParentCompletionRunner()
+        snapshots = iter((self.completion_snapshot(), self.completion_snapshot()))
+
+        result = finish_parent(runner, "PRO-35", lambda: next(snapshots))
+
+        self.assertEqual(result.issue_key, "PRO-35")
+        self.assertEqual(result.status, "done")
+        self.assertEqual(result.mutation_count, 1)
+        self.assertIn(
+            (
+                "issue", "status", "PRO-35", "done", "--no-start",
+                "--output", "json",
+            ),
+            runner.calls,
+        )
+        output = io.StringIO()
+        with redirect_stdout(output):
+            print_parent_result(result)
+        self.assertEqual(output.getvalue(), "issue=PRO-35 status=done mutations=1\n")
+
+    def test_parent_completion_is_idempotent_after_done(self):
+        runner = FakeParentCompletionRunner(status="done")
+
+        result = finish_parent(
+            runner,
+            "PRO-35",
+            lambda: self.fail("done parent must not reload mutable gate state"),
+        )
+
+        self.assertEqual(result.mutation_count, 0)
+        self.assertFalse(any(call[:2] == ("issue", "status") for call in runner.calls))
+
+    def test_parent_completion_fails_closed_without_stable_gate_decision(self):
+        cases = (
+            (
+                self.completion_snapshot(
+                    children=(phase("PRO-50", 4, "smoke", result="fail"),)
+                ),
+            )
+            * 2,
+            (
+                self.completion_snapshot(),
+                self.completion_snapshot(candidate_frontend_sha="c" * 40),
+            ),
+        )
+        for snapshots in cases:
+            runner = FakeParentCompletionRunner()
+            with self.subTest(snapshots=snapshots):
+                with self.assertRaisesRegex(
+                    RuntimeError, "parent completion is not authorized"
+                ):
+                    finish_parent(runner, "PRO-35", iter(snapshots).__next__)
+                self.assertFalse(
+                    any(call[:2] == ("issue", "status") for call in runner.calls)
+                )
+
+    def test_parent_completion_rejects_human_wait_and_unverified_status_write(self):
+        human = FakeParentCompletionRunner(assignee_type="member")
+        with self.assertRaisesRegex(RuntimeError, "human approval wait"):
+            finish_parent(human, "PRO-35", self.completion_snapshot)
+
+        frozen = FakeParentCompletionRunner()
+        frozen.freeze_status = True
+        with self.assertRaisesRegex(RuntimeError, "parent completion failed"):
+            finish_parent(frozen, "PRO-35", self.completion_snapshot)
+
+    def test_parser_accepts_finish_parent_without_deployment_flags(self):
+        args = build_workflow_parser().parse_args(["finish-parent", "PRO-35"])
+        self.assertEqual(args.command, "finish-parent")
+        self.assertEqual(args.parent, "PRO-35")
+        self.assertFalse(hasattr(args, "deploy"))
 
 
 def stalled_workflow(**overrides):

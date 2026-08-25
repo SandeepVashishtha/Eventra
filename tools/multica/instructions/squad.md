@@ -51,6 +51,12 @@ monotonic and idempotent. At most two complete repair attempts are automatic.
 The scheduled Watcher may rerun one stale existing assignment; it never invents
 work, waives a gate, merges, or deploys.
 
+After an automatic merge and post-merge smoke PASS, approved unattended local
+development calls `tools.multica.workflow finish-parent` and moves the parent
+directly to `done`. Routine acceptance does not stop in `in_review`. The helper
+must fail closed if the merged smoke decision is incomplete or changes between
+its two authoritative reads.
+
 ## Merge and deployment gates
 
 Automatic merge is permitted only when every affected child has satisfied its

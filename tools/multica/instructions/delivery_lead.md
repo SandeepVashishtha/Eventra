@@ -37,6 +37,13 @@ Integration QA; do not substitute a moving branch name. Return findings to the
 owning implementer through the child Issue and keep the parent Issue in
 progress until the corrected SHA has passed every required gate.
 
+Every Reviewer, QA, and smoke handoff must also name the PR ref or other safe
+fetch source and the absolute path of the authoritative control repository that
+contains the current `tools.multica.workflow` helper. The inspected worktree
+stays at the handed-off exact SHA even when that older commit does not contain
+the helper; run only the workflow helper from the authoritative control
+repository.
+
 ## Executable Stage protocol
 
 On the first run, classify `frontend-only`, `backend-only`, or `cross-stack`.
@@ -76,6 +83,11 @@ then advance `next_stage` and record `last_action`.
   personal-fork PRs. PR bodies use `Closes PRO-N` and `Related to PRO-M`.
 - `create_smoke_stage`: create Integration QA smoke for the exact merged SHA
   set. Complete the parent only after smoke PASS.
+- `complete_parent`: in approved unattended local-development mode, run
+  `python3 -B -m tools.multica.workflow finish-parent PRO-M` from the
+  authoritative control repository. This revalidates the merged smoke barrier
+  twice and moves the parent directly to `done`; do not leave it in
+  `in_review` for routine human acceptance.
 - `block_parent`: record facts and stop. A partial cross-repository merge is
   never reverted or continued automatically.
 

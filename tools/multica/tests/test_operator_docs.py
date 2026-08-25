@@ -35,6 +35,40 @@ class OperatorDocsTests(unittest.TestCase):
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, rendered)
 
+    def test_unattended_parent_completion_and_exact_sha_checkout_are_explicit(self):
+        instructions = Path("tools/multica/instructions")
+        lead = (instructions / "delivery_lead.md").read_text()
+        reviewer = (instructions / "independent_reviewer.md").read_text()
+        qa = (instructions / "integration_qa.md").read_text()
+        squad = (instructions / "squad.md").read_text()
+        readme = Path("tools/multica/README.md").read_text()
+
+        for fragment in (
+            "tools.multica.workflow finish-parent",
+            "directly to `done`",
+            "production deployment is always human-triggered",
+            "authoritative control repository",
+        ):
+            with self.subTest(role="lead", fragment=fragment):
+                self.assertIn(fragment, " ".join(lead.split()))
+
+        for role, rendered in (("reviewer", reviewer), ("qa", qa)):
+            normalized = " ".join(rendered.split())
+            for fragment in (
+                "git switch --detach FULL_SHA",
+                "FETCH_HEAD",
+                "runtime-managed `AGENTS.md`, `.agent_context/`, and `.multica/`",
+                "authoritative control repository",
+            ):
+                with self.subTest(role=role, fragment=fragment):
+                    self.assertIn(fragment, normalized)
+
+        for role, rendered in (("squad", squad), ("runbook", readme)):
+            normalized = " ".join(rendered.split())
+            with self.subTest(role=role):
+                self.assertIn("tools.multica.workflow finish-parent", normalized)
+                self.assertIn("directly to `done`", normalized)
+
     def test_runbook_documents_watcher_and_one_time_pro_35_recovery(self):
         readme = Path("tools/multica/README.md").read_text()
         for fragment in (
