@@ -360,8 +360,7 @@ def parse_autopilot_detail(
         or trigger.get("kind") != "schedule"
         or not _string(cron_expression)
         or not _string(timezone)
-        or not cron_expression.startswith(f"TZ={timezone} ")
-        or len(cron_expression.removeprefix(f"TZ={timezone} ").split()) != 5
+        or len(cron_expression.split()) != 5
         or not isinstance(enabled, bool)
         or (label is not None and not isinstance(label, str))
         or trigger.get("has_signing_secret") is not False

@@ -417,11 +417,9 @@ class FakeRunner:
             )
             if "trigger" not in self.freeze_updates:
                 if "--cron" in flags:
-                    trigger["cron_expression"] = f"TZ={flags.get('--timezone', trigger['timezone'])} {flags['--cron']}"
+                    trigger["cron_expression"] = flags["--cron"]
                 if "--timezone" in flags:
-                    cron = trigger["cron_expression"].split(" ", 1)[1]
                     trigger["timezone"] = flags["--timezone"]
-                    trigger["cron_expression"] = f"TZ={trigger['timezone']} {cron}"
                 if "--label" in flags:
                     trigger["label"] = flags["--label"]
                 if "--enabled" in flags:
@@ -487,7 +485,7 @@ class FakeRunner:
             "id": trigger_id,
             "autopilot_id": autopilot_id,
             "kind": flags["--kind"],
-            "cron_expression": f"TZ={timezone} {flags['--cron']}",
+            "cron_expression": flags["--cron"],
             "timezone": timezone,
             "enabled": True,
             "label": flags.get("--label"),
@@ -787,7 +785,7 @@ class ProvisionerTests(unittest.TestCase):
         self.assertEqual(watcher["triggers"][0]["timezone"], "Asia/Shanghai")
         self.assertEqual(
             watcher["triggers"][0]["cron_expression"],
-            "TZ=Asia/Shanghai */30 * * * *",
+            "*/30 * * * *",
         )
 
     def test_existing_watcher_and_trigger_drift_are_updated_authoritatively(self):
@@ -797,7 +795,7 @@ class ProvisionerTests(unittest.TestCase):
         watcher = self.runner.autopilots[result.autopilot_id]
         watcher["description"] = "drift"
         watcher["project_id"] = result.backend_project_id
-        watcher["triggers"][0]["cron_expression"] = "TZ=UTC 0 0 * * *"
+        watcher["triggers"][0]["cron_expression"] = "0 0 * * *"
         watcher["triggers"][0]["timezone"] = "UTC"
         watcher["triggers"][0]["enabled"] = False
         before = self.runner.mutation_count
@@ -1190,7 +1188,7 @@ class ProvisionerTests(unittest.TestCase):
         ] = "UTC"
         self.runner.autopilots[first.autopilot_id]["triggers"][0][
             "cron_expression"
-        ] = "TZ=UTC 0 0 * * *"
+        ] = "0 0 * * *"
 
         second = self.provisioner.reconcile(
             self.config, apply=True, backend_env=self.backend_env
