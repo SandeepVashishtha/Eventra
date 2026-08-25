@@ -816,9 +816,7 @@ class Provisioner:
         wanted_trigger = {
             "autopilot_id": autopilot_id,
             "kind": "schedule",
-            "cron_expression": (
-                f"TZ={config.watcher.timezone} {config.watcher.cron}"
-            ),
+            "cron_expression": config.watcher.cron,
             "timezone": config.watcher.timezone,
             "enabled": True,
             "label": config.watcher.label,

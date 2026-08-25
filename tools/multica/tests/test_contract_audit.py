@@ -156,7 +156,7 @@ def audit_replies():
                     "id": s["trigger_id"],
                     "autopilot_id": s["autopilot_id"],
                     "kind": "schedule",
-                    "cron_expression": "TZ=Asia/Shanghai */30 * * * *",
+                    "cron_expression": "*/30 * * * *",
                     "timezone": "Asia/Shanghai",
                     "enabled": True,
                     "label": "Eventra stalled-work recovery",

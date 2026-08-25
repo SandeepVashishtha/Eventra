@@ -71,7 +71,7 @@ class MulticaAutopilotContractTests(unittest.TestCase):
                     "id": "trigger-synthetic",
                     "autopilot_id": "autopilot-synthetic",
                     "kind": "schedule",
-                    "cron_expression": "TZ=Asia/Shanghai */30 * * * *",
+                    "cron_expression": "*/30 * * * *",
                     "timezone": "Asia/Shanghai",
                     "enabled": True,
                     "label": "Eventra stalled-work recovery",
@@ -111,12 +111,17 @@ class MulticaAutopilotContractTests(unittest.TestCase):
         multiple["triggers"].append(copy.deepcopy(multiple["triggers"][0]))
         secret = copy.deepcopy(value)
         secret["triggers"][0]["webhook_token"] = "must-not-be-accepted"
+        inline_timezone = copy.deepcopy(value)
+        inline_timezone["triggers"][0]["cron_expression"] = (
+            "TZ=Asia/Shanghai */30 * * * *"
+        )
         for malformed, expected_id in (
             (value, "autopilot-other"),
             ({**value, "collaborators": [{}]}, "autopilot-synthetic"),
             (webhook, "autopilot-synthetic"),
             (multiple, "autopilot-synthetic"),
             (secret, "autopilot-synthetic"),
+            (inline_timezone, "autopilot-synthetic"),
         ):
             with self.subTest(expected_id=expected_id):
                 with self.assertRaisesRegex(RuntimeError, "malformed autopilot detail"):

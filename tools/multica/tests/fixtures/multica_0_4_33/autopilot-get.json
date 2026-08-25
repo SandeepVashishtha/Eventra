@@ -25,7 +25,7 @@
     {
       "autopilot_id": "autopilot-synthetic",
       "created_at": "2026-08-25T10:00:00Z",
-      "cron_expression": "TZ=Asia/Shanghai */30 * * * *",
+      "cron_expression": "*/30 * * * *",
       "enabled": true,
       "has_signing_secret": false,
       "has_webhook_token": false,
