@@ -136,7 +136,7 @@ class WorkflowSnapshot:
     active_parent_has_no_executable_successor: bool
     children: tuple[ChildRunSnapshot, ...]
 
-    def first_terminal_run_without_phase_completion(
+    def first_terminal_run_needing_transition(
         self,
     ) -> ChildRunSnapshot | None:
         candidates = sorted(
@@ -144,7 +144,8 @@ class WorkflowSnapshot:
                 child
                 for child in self.children
                 if child.latest_run_status in {"completed", "failed"}
-                and not child.has_phase_completion
+                and child.issue_status in {"todo", "in_progress", "in_review"}
+                and not child.has_active_run
             ),
             key=lambda child: (
                 child.latest_run_activity_at or "",
@@ -321,10 +322,8 @@ def _phase_shas_match(snapshot: ParentSnapshot, phases: tuple[PhaseSnapshot, ...
     return True
 
 
-def _gate_coverage(snapshot: ParentSnapshot, phases: tuple[PhaseSnapshot, ...]) -> bool:
-    if {item.kind for item in phases} != {"review", "qa"}:
-        return False
-    expected = {
+def _expected_repositories(snapshot: ParentSnapshot) -> set[str]:
+    return {
         repository
         for repository, sha in (
             ("frontend", snapshot.candidate_frontend_sha),
@@ -332,6 +331,52 @@ def _gate_coverage(snapshot: ParentSnapshot, phases: tuple[PhaseSnapshot, ...]) 
         )
         if sha is not None
     }
+
+
+def _implementation_coverage(
+    snapshot: ParentSnapshot,
+    phases: tuple[PhaseSnapshot, ...],
+) -> bool:
+    expected = _expected_repositories(snapshot)
+    observed: list[str] = []
+    for item in phases:
+        repositories = {
+            repository
+            for repository, sha in (
+                ("frontend", item.frontend_sha),
+                ("backend", item.backend_sha),
+            )
+            if sha is not None
+        }
+        if len(repositories) != 1 or item.attempt != snapshot.attempt:
+            return False
+        observed.extend(repositories)
+    return len(observed) == len(expected) and set(observed) == expected
+
+
+def _attempt_history_is_consistent(snapshot: ParentSnapshot) -> bool:
+    completed = tuple(item for item in snapshot.children if item.status == "done")
+    if not completed:
+        return snapshot.attempt == 0
+    if max(item.attempt for item in completed) != snapshot.attempt:
+        return False
+    stage_attempts: dict[int, set[int]] = {}
+    for item in completed:
+        stage_attempts.setdefault(item.stage, set()).add(item.attempt)
+    if any(len(attempts) != 1 for attempts in stage_attempts.values()):
+        return False
+    repair_attempts = {
+        item.attempt
+        for item in completed
+        if item.kind == "repair"
+    }
+    return repair_attempts == set(range(1, snapshot.attempt + 1))
+
+
+def _gate_coverage(snapshot: ParentSnapshot, phases: tuple[PhaseSnapshot, ...]) -> bool:
+    if {item.kind for item in phases} != {"review", "qa"}:
+        return False
+    expected = _expected_repositories(snapshot)
     return all(
         {
             repository
@@ -428,6 +473,12 @@ def decide_parent_action(snapshot: ParentSnapshot) -> ParentDecision:
         return ParentDecision("noop", None, "parent has no completed stage")
     if any(item.status != "done" for item in latest):
         return ParentDecision("noop", None, "latest stage is still active")
+    if not _attempt_history_is_consistent(snapshot):
+        return _parent_decision(
+            snapshot,
+            "block_parent",
+            "parent attempt conflicts with completed child history",
+        )
     if any(item.result not in PHASE_RESULTS for item in latest):
         return _parent_decision(
             snapshot,
@@ -437,6 +488,12 @@ def decide_parent_action(snapshot: ParentSnapshot) -> ParentDecision:
 
     kinds = {item.kind for item in latest}
     if kinds <= {"implementation", "repair"}:
+        if kinds not in ({"implementation"}, {"repair"}):
+            return _parent_decision(
+                snapshot,
+                "block_parent",
+                "latest stage mixes implementation and repair phases",
+            )
         if not all(item.result == "pass" for item in latest):
             return _repair_or_block(snapshot)
         if not _phase_shas_match(snapshot, latest):
@@ -444,6 +501,12 @@ def decide_parent_action(snapshot: ParentSnapshot) -> ParentDecision:
                 snapshot,
                 "block_parent",
                 "implementation evidence does not match current candidates",
+            )
+        if not _implementation_coverage(snapshot, latest):
+            return _parent_decision(
+                snapshot,
+                "block_parent",
+                "implementation repository coverage is incomplete",
             )
         return _parent_decision(
             snapshot,
@@ -490,8 +553,8 @@ def decide_recovery(snapshot: WorkflowSnapshot) -> RecoveryDecision:
 
     if snapshot.has_human_approval_wait or snapshot.has_malformed_state:
         return RecoveryDecision("noop", None, "state is not auto-recoverable")
-    stalled_child = snapshot.first_terminal_run_without_phase_completion()
-    if stalled_child is not None and not stalled_child.has_active_run:
+    stalled_child = snapshot.first_terminal_run_needing_transition()
+    if stalled_child is not None:
         return RecoveryDecision(
             "rerun_child",
             stalled_child.identifier,
@@ -555,6 +618,15 @@ def recover_once(runner: MulticaRunner, snapshot_loader) -> RecoveryResult:
         runner.run(["issue", "runs", issue_key, "--output", "json"]),
         issue_id,
     )
+    if any(item["status"] in ACTIVE_RUN_STATUSES for item in before):
+        return RecoveryResult(
+            RecoveryDecision(
+                "noop",
+                None,
+                "active run appeared before recovery mutation",
+            ),
+            0,
+        )
     before_ids = {item["id"] for item in before}
     runner.run(["issue", "rerun", issue_key, "--output", "json"])
     after = parse_issue_runs(
@@ -647,7 +719,12 @@ def _parse_pull_request(
     repository: str,
 ) -> PullRequestSnapshot:
     if not isinstance(value, dict) or set(value) != {
-        "url", "headRefOid", "state", "mergeable", "statusCheckRollup"
+        "url",
+        "headRefOid",
+        "state",
+        "mergeable",
+        "mergeStateStatus",
+        "statusCheckRollup",
     }:
         raise RuntimeError("malformed GitHub pull request")
     if value.get("url") != expected_url:
@@ -655,12 +732,23 @@ def _parse_pull_request(
     head_sha = value.get("headRefOid")
     state = value.get("state")
     mergeable = value.get("mergeable")
+    merge_state_status = value.get("mergeStateStatus")
     checks = value.get("statusCheckRollup")
     if (
         not isinstance(head_sha, str)
         or SHA_PATTERN.fullmatch(head_sha) is None
         or state not in {"OPEN", "CLOSED", "MERGED"}
         or mergeable not in {"MERGEABLE", "CONFLICTING", "UNKNOWN"}
+        or merge_state_status not in {
+            "BEHIND",
+            "BLOCKED",
+            "CLEAN",
+            "DIRTY",
+            "DRAFT",
+            "HAS_HOOKS",
+            "UNKNOWN",
+            "UNSTABLE",
+        }
         or not isinstance(checks, list)
         or not all(isinstance(item, dict) for item in checks)
     ):
@@ -668,7 +756,7 @@ def _parse_pull_request(
     conclusions = [item.get("conclusion") for item in checks]
     if any(item is not None and not isinstance(item, str) for item in conclusions):
         raise RuntimeError("malformed GitHub pull request")
-    checks_pass = all(
+    checks_pass = merge_state_status == "CLEAN" and all(
         conclusion in {"SUCCESS", "NEUTRAL", "SKIPPED"}
         for conclusion in conclusions
     )
@@ -735,7 +823,8 @@ def load_parent_snapshot(
         raw = github.run(
             [
                 "pr", "view", url,
-                "--json", "url,headRefOid,state,mergeable,statusCheckRollup",
+                "--json",
+                "url,headRefOid,state,mergeable,mergeStateStatus,statusCheckRollup",
             ]
         )
         pull_requests.append(_parse_pull_request(raw, url, repository))
@@ -770,6 +859,19 @@ def _is_uuid(value: str | None) -> bool:
     return True
 
 
+def _is_structured_human_wait(
+    issue: dict[str, object],
+    metadata: dict[str, str],
+) -> bool:
+    return (
+        issue["assignee_type"] == "member"
+        and issue["status"] in {"todo", "in_progress", "in_review"}
+        and metadata.get("eventra.workflow.version") == "1"
+        and metadata.get("eventra.workflow.approval_state") == "requested"
+        and _is_uuid(metadata.get("eventra.workflow.approval_request_id"))
+    )
+
+
 def load_workflow_snapshot(
     runner: MulticaRunner,
     parent_key: str,
@@ -796,7 +898,7 @@ def load_workflow_snapshot(
         str(parent["id"]),
     )
     snapshots: list[ChildRunSnapshot] = []
-    has_human_wait = parent["assignee_type"] == "member"
+    has_human_wait = _is_structured_human_wait(parent, parent_metadata)
     for child in children:
         child_key = str(child["identifier"])
         metadata = parse_issue_metadata(
@@ -810,7 +912,10 @@ def load_workflow_snapshot(
         )
         latest = max(runs, key=lambda item: item["activity_at"]) if runs else None
         has_active = any(item["status"] in ACTIVE_RUN_STATUSES for item in runs)
-        has_human_wait = has_human_wait or child["assignee_type"] == "member"
+        has_human_wait = has_human_wait or _is_structured_human_wait(
+            child,
+            metadata,
+        )
         snapshots.append(
             ChildRunSnapshot(
                 issue_id=str(child["id"]),

@@ -375,6 +375,33 @@ class ParentDecisionTests(unittest.TestCase):
             ),
         )
 
+    def test_cross_stack_implementation_requires_exact_repository_coverage(self):
+        backend_sha = "b" * 40
+        snapshot = parent_snapshot(
+            classification="cross-stack",
+            candidate_backend_sha=backend_sha,
+            children=(phase("PRO-36", 1, "implementation"),),
+        )
+        self.assertEqual(decide_parent_action(snapshot).kind, "block_parent")
+
+        backend_implementation = phase(
+            "PRO-37",
+            1,
+            "implementation",
+            frontend_sha=None,
+            backend_sha=backend_sha,
+        )
+        complete = ParentSnapshot(
+            **{
+                **snapshot.__dict__,
+                "children": snapshot.children + (backend_implementation,),
+            }
+        )
+        self.assertEqual(
+            decide_parent_action(complete).kind,
+            "create_gate_stage",
+        )
+
     def test_gate_failure_routes_bounded_repair_and_never_merge(self):
         children = (
             phase("PRO-36", 1, "implementation"),
@@ -387,14 +414,39 @@ class ParentDecisionTests(unittest.TestCase):
 
     def test_second_failed_complete_repair_cycle_blocks_without_third(self):
         children = (
-            phase("PRO-40", 5, "review", result="fail", attempt=2),
-            phase("PRO-41", 5, "qa", attempt=2),
+            phase("PRO-36", 1, "implementation"),
+            phase("PRO-37", 2, "review", result="fail"),
+            phase("PRO-38", 2, "qa"),
+            phase("PRO-39", 3, "repair", attempt=1),
+            phase("PRO-40", 4, "review", result="fail", attempt=1),
+            phase("PRO-41", 4, "qa", attempt=1),
+            phase("PRO-42", 5, "repair", attempt=2),
+            phase("PRO-43", 6, "review", result="fail", attempt=2),
+            phase("PRO-44", 6, "qa", attempt=2),
         )
         decision = decide_parent_action(
             parent_snapshot(attempt=2, children=children)
         )
         self.assertEqual(decision.kind, "block_parent")
         self.assertNotIn("repair", decision.reason)
+
+    def test_attempt_metadata_cannot_reset_completed_repair_history(self):
+        children = (
+            phase("PRO-36", 1, "implementation"),
+            phase("PRO-37", 2, "review", result="fail"),
+            phase("PRO-38", 2, "qa"),
+            phase("PRO-39", 3, "repair", attempt=1),
+            phase("PRO-40", 4, "review", result="fail", attempt=1),
+            phase("PRO-41", 4, "qa", attempt=1),
+            phase("PRO-42", 5, "repair", attempt=2),
+            phase("PRO-43", 6, "review", result="fail", attempt=2),
+            phase("PRO-44", 6, "qa", attempt=2),
+        )
+        decision = decide_parent_action(
+            parent_snapshot(attempt=0, children=children)
+        )
+        self.assertEqual(decision.kind, "block_parent")
+        self.assertIn("attempt", decision.reason)
 
     def test_replacement_sha_invalidates_old_pass_and_creates_fresh_gates(self):
         replacement = "c" * 40
@@ -574,6 +626,21 @@ class RecoveryDecisionTests(unittest.TestCase):
         self.assertEqual(decision.kind, "rerun_parent")
         self.assertEqual(decision.issue_key, "PRO-35")
 
+    def test_verified_phase_metadata_with_nonterminal_issue_is_recovered(self):
+        child = ChildRunSnapshot(
+            issue_id=ISSUE_ID,
+            identifier="PRO-36",
+            stage=1,
+            issue_status="in_review",
+            latest_run_status="completed",
+            latest_run_activity_at="2026-08-25T08:50:28Z",
+            has_active_run=False,
+            has_phase_completion=True,
+        )
+        decision = decide_recovery(stalled_workflow(children=(child,)))
+        self.assertEqual(decision.kind, "rerun_child")
+        self.assertEqual(decision.issue_key, "PRO-36")
+
     def test_nonterminal_agent_child_without_any_run_is_recovered(self):
         child = ChildRunSnapshot(
             issue_id=ISSUE_ID,
@@ -684,6 +751,27 @@ class RecoveryMutationTests(unittest.TestCase):
         self.assertEqual(result.mutation_count, 0)
         self.assertFalse(any(call[:2] == ("issue", "rerun") for call in runner.calls))
 
+    def test_recover_once_stops_if_native_wakeup_appears_before_rerun(self):
+        runner = FakeRecoveryRunner()
+        runner.runs.append(
+            {
+                "id": "01a00000-0000-7000-8000-000000000032",
+                "issue_id": ISSUE_ID,
+                "status": "queued",
+                "created_at": "2026-08-25T09:59:59Z",
+                "dispatched_at": None,
+                "started_at": None,
+                "completed_at": None,
+            }
+        )
+        snapshots = [stalled_workflow(), stalled_workflow()]
+
+        result = recover_once(runner, lambda: snapshots.pop(0))
+
+        self.assertEqual(result.decision.kind, "noop")
+        self.assertEqual(result.mutation_count, 0)
+        self.assertFalse(any(call[:2] == ("issue", "rerun") for call in runner.calls))
+
 
 class FakeWatchRunner:
     PROJECTS = (PROJECT_ID, "00000000-0000-4000-8000-000000000040")
@@ -741,9 +829,15 @@ class FakeWatchRunner:
         if call[:2] == ("issue", "get"):
             return copy.deepcopy(self.parent if call[2] == "PRO-35" else self.child)
         if call == ("issue", "children", "PRO-35", "--output", "json"):
+            child_done = int(self.child["status"] == "done")
             return {
                 "stages": [
-                    {"stage": 1, "total": 1, "done": 0, "issues": [copy.deepcopy(self.child)]}
+                    {
+                        "stage": 1,
+                        "total": 1,
+                        "done": child_done,
+                        "issues": [copy.deepcopy(self.child)],
+                    }
                 ],
                 "total": 1,
                 "unstaged": [],
@@ -812,6 +906,32 @@ class WatchWorkflowTests(unittest.TestCase):
         self.assertEqual(args.command, "watch")
         self.assertFalse(args.apply)
 
+    def test_historical_member_child_does_not_suppress_recovery(self):
+        runner = FakeWatchRunner()
+        runner.child["assignee_type"] = "member"
+        runner.child["status"] = "done"
+        runner.metadata["PRO-36"] = build_phase_metadata(
+            implementation_completion()
+        )
+        runner.child["updated_at"] = "2026-08-25T08:51:00Z"
+
+        result = watch_projects(runner, runner.PROJECTS, apply=False)
+
+        self.assertEqual(result.decision, "rerun_parent")
+
+    def test_structured_active_member_approval_suppresses_recovery(self):
+        runner = FakeWatchRunner()
+        runner.child["assignee_type"] = "member"
+        runner.metadata["PRO-36"] = {
+            "eventra.workflow.version": "1",
+            "eventra.workflow.approval_state": "requested",
+            "eventra.workflow.approval_request_id": COMMENT_ID,
+        }
+
+        result = watch_projects(runner, runner.PROJECTS, apply=False)
+
+        self.assertEqual(result, WatchResult(1, 0, 0, "noop"))
+
 
 class FakeParentRunner(FakeWatchRunner):
     def __init__(self):
@@ -852,7 +972,7 @@ class FakeGitHubRunner:
         self.calls.append(tuple(args))
         if tuple(args) != (
             "pr", "view", FRONTEND_PR,
-            "--json", "url,headRefOid,state,mergeable,statusCheckRollup",
+            "--json", "url,headRefOid,state,mergeable,mergeStateStatus,statusCheckRollup",
         ):
             raise AssertionError(f"unsupported gh argv: {args!r}")
         return {
@@ -860,6 +980,7 @@ class FakeGitHubRunner:
             "headRefOid": FRONTEND_SHA,
             "state": "OPEN",
             "mergeable": "MERGEABLE",
+            "mergeStateStatus": "CLEAN",
             "statusCheckRollup": [],
         }
 
@@ -894,6 +1015,19 @@ class ParentSnapshotReadTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "malformed parent workflow metadata"):
             load_parent_snapshot(runner, github, "PRO-35")
         self.assertEqual(github.calls, [])
+
+    def test_empty_check_rollup_requires_clean_merge_state(self):
+        github = FakeGitHubRunner()
+        original_run = github.run
+
+        def blocked(args):
+            value = original_run(args)
+            value["mergeStateStatus"] = "BLOCKED"
+            return value
+
+        github.run = blocked
+        snapshot = load_parent_snapshot(FakeParentRunner(), github, "PRO-35")
+        self.assertFalse(snapshot.pull_requests[0].checks_pass)
 
 
 if __name__ == "__main__":
