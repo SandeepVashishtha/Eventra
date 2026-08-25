@@ -142,6 +142,35 @@ on port 8080 while Integration QA tests the frontend SHA from the frontend
 Project through the shared daemon network. If the exact service handoff cannot
 be maintained and verified, the gate blocks rather than being waived.
 
+## Native Stage automation and Watcher
+
+The native Stage barrier is the primary wakeup path. Every execution child
+finishes with `python3 -B -m tools.multica.workflow finish-phase`; Delivery Lead
+uses `python3 -B -m tools.multica.workflow plan-parent` after Multica wakes the
+parent. Phase `done` means execution finished, while metadata records
+`pass|fail|blocked`. FAIL and BLOCKED therefore wake the parent instead of
+leaving a child permanently `in_review`.
+
+Provisioning reconciles one run-only **Eventra · Stalled Work Watcher** with a
+30-minute `Asia/Shanghai` schedule. Its rendered task invokes
+`python3 -B -m tools.multica.workflow watch` for only the two configured
+Projects. It performs at most one verified rerun and is a recovery fallback,
+not a second coordinator.
+
+For the one-time existing PRO-35 recovery, first merge and apply these updated
+instructions and prove the second apply reports zero mutations. Reread PRO-35,
+PRO-36, PR #6, current head, and runs, then invoke exactly once:
+
+```text
+multica issue rerun PRO-35 --output json
+```
+
+The updated Delivery Lead must recover the existing PRO-36 assignment and PR;
+it must not create another child or PR. Do not manually mark PRO-36 PASS. The
+Frontend Engineer records the real build result, posts evidence, and calls
+`finish-phase`. Native Stages then drive review, QA, bounded repair, merge, and
+local smoke. Production remains untouched.
+
 ## Pilot dispatch and evidence runbook
 
 Use [the pilot Issue bodies](../../docs/multica/pilot-issues.md) to exercise

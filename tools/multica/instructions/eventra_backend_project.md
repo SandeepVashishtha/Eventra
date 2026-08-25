@@ -27,3 +27,10 @@ Use `scripts/test-local.sh`, `scripts/run-local.sh`, and
 must never appear in Issues, logs, commands, files, or commits. Automatic merge
 is allowed only after all quality gates pass. Local merged smoke checks may run
 automatically; production deployment is always human-triggered.
+
+Backend children use workflow contract version `1` and the ordered Stage of
+their frontend-Project parent. Finish implementation, repair, review, QA, and
+smoke through `tools.multica.workflow finish-phase`; a `pass|fail|blocked`
+verdict is separate from terminal `done`. PR bodies use `Closes PRO-N` for the
+backend child and `Related to PRO-M` for its parent. The scheduled Watcher may
+only rerun an existing stale assignment and never creates another child or PR.
