@@ -1,6 +1,6 @@
 # Eventra unattended Multica delivery design
 
-Date: 2026-08-25  
+Date: 2026-08-25
 Status: approved by user
 
 ## Problem and observed evidence
