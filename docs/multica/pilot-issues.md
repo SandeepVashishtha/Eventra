@@ -17,10 +17,18 @@ small, copy-ready pilots of the three Multica routing modes: `frontend-only`,
    to the parent. Each child names its owner, authoritative repository, base SHA,
    acceptance criteria, interface contract (when applicable), and evidence.
    The nested frontend `Backend/` directory is never a repository target.
+   Create implementation children in Stage 1 with `--parent` and `--stage`.
+   Later Stages are exact-SHA review/QA, bounded repair followed by fresh
+   gates, and post-merge smoke. Never reuse a Stage ordinal.
 3. Every implementer returns its child Issue to the Delivery Lead with the
    repository, base and feature branches, pull-request link, **exact SHA**,
    changed paths, commands and exit codes, results, contract notes, and
    concerns. A branch name is not evidence.
+   The PR body includes `Closes PRO-N` for the implementation child and
+   `Related to PRO-M` for its parent. After evidence, every execution role
+   calls `tools.multica.workflow finish-phase`. Child `done` means phase
+   execution finished; `eventra.phase.result=pass|fail|blocked` is the verdict.
+   FAIL and BLOCKED still become `done` so the native Stage barrier advances.
 4. The Delivery Lead sends the immutable exact SHA (or exact SHA pair) to the
    **Independent Reviewer** and **Integration QA**. Their approval or QA
    result is valid only for that SHA set. A replacement commit requires fresh
@@ -40,6 +48,8 @@ small, copy-ready pilots of the three Multica routing modes: `frontend-only`,
    automatic merge; merge in the API-compatible order. If one merge succeeds
    and the other fails, stop, mark the parent blocked, preserve the exact merge
    evidence, and escalate—do not deploy, auto-revert, or continue.
+   Delivery Lead calls read-only `tools.multica.workflow plan-parent` before
+   each transition and permits at most two complete repair attempts.
 6. After merge, record the merged SHA(s), started local services, commands and
    exit codes, and observed result. Local development may automatically start
    the merged applications and run smoke checks. **Production deployment is

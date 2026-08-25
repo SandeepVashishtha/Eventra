@@ -45,6 +45,17 @@ class LocalResource:
 
 
 @dataclass(frozen=True)
+class AutopilotSpec:
+    """One reconciled run-only scheduled workflow safety net."""
+
+    title: str
+    description_file: Path
+    cron: str
+    timezone: str
+    label: str
+
+
+@dataclass(frozen=True)
 class ProjectConfig:
     """All Eventra-specific values consumed by the Multica provisioner."""
 
@@ -61,6 +72,7 @@ class ProjectConfig:
     skills: Mapping[str, SkillSource]
     resources: tuple[LocalResource, ...]
     forbidden_paths: tuple[str, ...]
+    watcher: AutopilotSpec
 
 
 def _eventra_agents(blueprint: TeamBlueprint) -> tuple[AgentSpec, ...]:
@@ -129,4 +141,14 @@ def build_eventra_config(runtime_id: str, daemon_id: str) -> ProjectConfig:
             ),
         ),
         forbidden_paths=("/Users/didi/Eventra-workspace/Eventra/Backend",),
+        watcher=AutopilotSpec(
+            title="Eventra · Stalled Work Watcher",
+            description_file=(
+                Path(__file__).with_name("instructions")
+                / "stalled_work_watcher.md"
+            ),
+            cron="*/30 * * * *",
+            timezone="Asia/Shanghai",
+            label="Eventra stalled-work recovery",
+        ),
     )

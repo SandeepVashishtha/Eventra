@@ -4,6 +4,48 @@ from pathlib import Path
 
 
 class OperatorDocsTests(unittest.TestCase):
+    def test_every_execution_role_uses_terminal_phase_helper(self):
+        instructions = Path("tools/multica/instructions")
+        for name in (
+            "frontend_engineer.md",
+            "backend_engineer.md",
+            "independent_reviewer.md",
+            "integration_qa.md",
+        ):
+            rendered = (instructions / name).read_text()
+            with self.subTest(role=name):
+                self.assertIn("tools.multica.workflow finish-phase", rendered)
+                self.assertIn("done means phase execution finished", rendered)
+                self.assertIn("pass|fail|blocked", rendered)
+
+    def test_delivery_lead_uses_native_stages_and_deterministic_parent_plan(self):
+        rendered = Path(
+            "tools/multica/instructions/delivery_lead.md"
+        ).read_text()
+        for fragment in (
+            "tools.multica.workflow plan-parent",
+            "--stage",
+            "eventra.workflow.next_stage",
+            "eventra.workflow.last_action",
+            "two complete repair attempts",
+            "Closes PRO-N",
+            "Related to PRO-M",
+            "production deployment is always human-triggered",
+        ):
+            with self.subTest(fragment=fragment):
+                self.assertIn(fragment, rendered)
+
+    def test_runbook_documents_watcher_and_one_time_pro_35_recovery(self):
+        readme = Path("tools/multica/README.md").read_text()
+        for fragment in (
+            "Eventra · Stalled Work Watcher",
+            "native Stage barrier",
+            "python3 -B -m tools.multica.workflow watch",
+            "multica issue rerun PRO-35 --output json",
+            "Do not manually mark PRO-36 PASS",
+        ):
+            with self.subTest(fragment=fragment):
+                self.assertIn(fragment, readme)
     def test_cross_stack_qa_has_executable_dual_project_service_handoff(self):
         project_context = Path(
             "tools/multica/instructions/eventra_project.md"

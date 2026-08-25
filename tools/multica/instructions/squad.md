@@ -38,6 +38,19 @@ commands with exit codes, evidence, and concerns. Reviewer or QA failures
 return to the owning child Issue; the implementer supplies a replacement SHA
 for fresh review and QA.
 
+All children use ordered native Multica Stages: implementation, exact-SHA
+review/QA, bounded repair plus fresh gates, then post-merge smoke. Child `done`
+means execution finished, not PASS. Each child records workflow version, phase
+kind, `pass|fail|blocked`, attempt, evidence comment UUID, affected SHA, and
+implementation/repair PR as string metadata. FAIL and BLOCKED children still
+become `done` so the Stage barrier wakes Delivery Lead.
+
+Delivery Lead calls `tools.multica.workflow plan-parent`; execution roles call
+`tools.multica.workflow finish-phase`. Stage ordinals and action keys are
+monotonic and idempotent. At most two complete repair attempts are automatic.
+The scheduled Watcher may rerun one stale existing assignment; it never invents
+work, waives a gate, merges, or deploys.
+
 ## Merge and deployment gates
 
 Automatic merge is permitted only when every affected child has satisfied its

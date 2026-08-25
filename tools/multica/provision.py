@@ -24,6 +24,8 @@ from .contracts import (
     parse_squad_detail,
     parse_squad_list,
     parse_squad_members,
+    parse_autopilot_detail,
+    parse_autopilot_list,
 )
 from .eventra_adapter import ProjectConfig, build_eventra_config
 
@@ -49,6 +51,10 @@ MUTATION_COMMAND_PREFIXES = frozenset(
         ("project", "update"),
         ("project", "resource", "add"),
         ("project", "resource", "update"),
+        ("autopilot", "create"),
+        ("autopilot", "update"),
+        ("autopilot", "trigger-add"),
+        ("autopilot", "trigger-update"),
     }
 )
 
@@ -63,6 +69,7 @@ class ProvisioningResult:
     project_id: str | None
     backend_project_id: str | None
     resource_ids: dict[str, str | None]
+    autopilot_id: str | None
     mutation_count: int
 
 
@@ -77,6 +84,7 @@ class _Preflight:
     backend_project_detail: dict[str, Any] | None
     resources: dict[str, dict[str, Any] | None]
     backend_resources: dict[str, dict[str, Any] | None]
+    autopilot_detail: dict[str, Any] | None
 
 
 class MulticaRunner:
@@ -172,6 +180,11 @@ class Provisioner:
                         **state.backend_resources,
                     }.items()
                 },
+                autopilot_id=(
+                    None
+                    if state.autopilot_detail is None
+                    else state.autopilot_detail["autopilot"]["id"]
+                ),
                 mutation_count=self.runner.mutation_count - starting_mutation_count,
             )
 
@@ -206,14 +219,22 @@ class Provisioner:
                 state.backend_resources,
             )
         )
-        return ProvisioningResult(
-            agent_ids,
-            skill_ids,
-            squad_id,
+        autopilot_id = self._reconcile_autopilot(
+            config,
+            state.autopilot_detail,
+            agent_ids[config.blueprint.leader_role],
             project_id,
             backend_project_id,
-            resource_ids,
-            self.runner.mutation_count - starting_mutation_count,
+        )
+        return ProvisioningResult(
+            agent_ids=agent_ids,
+            skill_ids=skill_ids,
+            squad_id=squad_id,
+            project_id=project_id,
+            backend_project_id=backend_project_id,
+            resource_ids=resource_ids,
+            autopilot_id=autopilot_id,
+            mutation_count=self.runner.mutation_count - starting_mutation_count,
         )
 
     def _preflight(self, config, desired_skills) -> _Preflight:
@@ -290,6 +311,20 @@ class Provisioner:
         backend_resources = self._validate_resource_state(
             raw_backend_resources, (config.resources[1].local_path,)
         )
+        autopilot_records = parse_autopilot_list(
+            self.runner.run(["autopilot", "list", "--output", "json"])
+        )
+        autopilot_item = self._exact_record(
+            autopilot_records,
+            config.watcher.title,
+            "title",
+            "Autopilot",
+        )
+        autopilot_detail = (
+            None
+            if autopilot_item is None
+            else self._autopilot_get(autopilot_item["id"])
+        )
         return _Preflight(
             skill_details,
             agent_details,
@@ -300,6 +335,7 @@ class Provisioner:
             backend_project_detail,
             resources,
             backend_resources,
+            autopilot_detail,
         )
 
     def _validate_runtime_capability(self, config) -> None:
@@ -352,6 +388,14 @@ class Provisioner:
             for resource in config.resources
         ):
             raise ValueError("configuration resources must be local_directory worktrees")
+        watcher_text = config.watcher.description_file.read_text()
+        if (
+            watcher_text.count("__FRONTEND_PROJECT_ID__") != 1
+            or watcher_text.count("__BACKEND_PROJECT_ID__") != 1
+            or config.watcher.cron != "*/30 * * * *"
+            or config.watcher.timezone != "Asia/Shanghai"
+        ):
+            raise ValueError("watcher configuration is invalid")
 
     @staticmethod
     def _validate_backend_env(backend_env: dict[str, str] | None) -> None:
@@ -671,6 +715,125 @@ class Provisioner:
             self._assert_target_resource(detail, config.daemon_id)
             ids[path] = detail["id"]
         return ids
+
+    def _reconcile_autopilot(
+        self,
+        config,
+        detail,
+        delivery_lead_id,
+        frontend_project_id,
+        backend_project_id,
+    ):
+        description = (
+            config.watcher.description_file.read_text()
+            .replace("__FRONTEND_PROJECT_ID__", frontend_project_id)
+            .replace("__BACKEND_PROJECT_ID__", backend_project_id)
+        )
+        wanted = {
+            "id": None,
+            "title": config.watcher.title,
+            "description": description,
+            "execution_mode": "run_only",
+            "project_id": frontend_project_id,
+            "assignee_id": delivery_lead_id,
+            "assignee_type": "agent",
+            "status": "active",
+        }
+        if detail is None:
+            self.runner.run(
+                [
+                    "autopilot", "create",
+                    "--title", wanted["title"],
+                    "--description", wanted["description"],
+                    "--agent", delivery_lead_id,
+                    "--mode", "run_only",
+                    "--project", frontend_project_id,
+                    "--output", "json",
+                ]
+            )
+            detail = self._autopilot_by_title(wanted["title"])
+        elif not self._matches(detail["autopilot"], wanted):
+            autopilot_id = detail["autopilot"]["id"]
+            self.runner.run(
+                [
+                    "autopilot", "update", autopilot_id,
+                    "--title", wanted["title"],
+                    "--description", wanted["description"],
+                    "--agent", delivery_lead_id,
+                    "--mode", "run_only",
+                    "--project", frontend_project_id,
+                    "--status", "active",
+                    "--output", "json",
+                ]
+            )
+            detail = self._autopilot_by_title(
+                wanted["title"], expected_id=autopilot_id
+            )
+        if not self._matches(detail["autopilot"], wanted):
+            raise RuntimeError("Autopilot reconciliation failed")
+
+        autopilot_id = detail["autopilot"]["id"]
+        triggers = detail["triggers"]
+        wanted_trigger = {
+            "autopilot_id": autopilot_id,
+            "kind": "schedule",
+            "cron_expression": (
+                f"TZ={config.watcher.timezone} {config.watcher.cron}"
+            ),
+            "timezone": config.watcher.timezone,
+            "enabled": True,
+            "label": config.watcher.label,
+        }
+        if not triggers:
+            self.runner.run(
+                [
+                    "autopilot", "trigger-add", autopilot_id,
+                    "--kind", "schedule",
+                    "--cron", config.watcher.cron,
+                    "--timezone", config.watcher.timezone,
+                    "--label", config.watcher.label,
+                    "--output", "json",
+                ]
+            )
+        elif not self._matches(triggers[0], wanted_trigger):
+            self.runner.run(
+                [
+                    "autopilot", "trigger-update", autopilot_id,
+                    triggers[0]["id"],
+                    "--cron", config.watcher.cron,
+                    "--timezone", config.watcher.timezone,
+                    "--label", config.watcher.label,
+                    "--enabled",
+                    "--output", "json",
+                ]
+            )
+        final = self._autopilot_get(autopilot_id)
+        if (
+            not self._matches(final["autopilot"], wanted)
+            or len(final["triggers"]) != 1
+            or not self._matches(final["triggers"][0], wanted_trigger)
+        ):
+            raise RuntimeError("Autopilot reconciliation failed")
+        return autopilot_id
+
+    def _autopilot_get(self, autopilot_id):
+        autopilot, triggers = parse_autopilot_detail(
+            self.runner.run(
+                ["autopilot", "get", autopilot_id, "--output", "json"]
+            ),
+            autopilot_id,
+        )
+        return {"autopilot": autopilot, "triggers": triggers}
+
+    def _autopilot_by_title(self, title, expected_id=None):
+        records = parse_autopilot_list(
+            self.runner.run(["autopilot", "list", "--output", "json"])
+        )
+        item = self._exact_record(
+            records, title, "title", "Autopilot", required=True
+        )
+        self._assert_expected_id(item, expected_id, "Autopilot")
+        return self._autopilot_get(item["id"])
 
     def _skill_get(self, skill_id):
         return parse_skill_detail(

@@ -65,8 +65,30 @@ class FakeRunner:
             {"--type", "--local-path", "--daemon-id", "--execution-mode"},
         ),
         ("project", "resource", "update"): (2, {"--daemon-id", "--execution-mode", "--output"}, set()),
+        ("autopilot", "list"): (0, {"--output"}, set()),
+        ("autopilot", "get"): (1, {"--output"}, set()),
+        ("autopilot", "create"): (
+            0,
+            {"--title", "--description", "--agent", "--mode", "--project", "--output"},
+            {"--title", "--description", "--agent", "--mode", "--project"},
+        ),
+        ("autopilot", "update"): (
+            1,
+            {"--title", "--description", "--agent", "--mode", "--project", "--status", "--output"},
+            set(),
+        ),
+        ("autopilot", "trigger-add"): (
+            1,
+            {"--kind", "--cron", "--timezone", "--label", "--output"},
+            {"--kind", "--cron", "--timezone"},
+        ),
+        ("autopilot", "trigger-update"): (
+            2,
+            {"--cron", "--timezone", "--label", "--enabled", "--output"},
+            set(),
+        ),
     }
-    BOOLEAN_FLAGS = {"--custom-env-stdin"}
+    BOOLEAN_FLAGS = {"--custom-env-stdin", "--enabled"}
     MUTATIONS = {
         ("skill", "import"), ("agent", "create"), ("agent", "update"),
         ("agent", "env", "set"), ("agent", "skills", "add"),
@@ -74,6 +96,8 @@ class FakeRunner:
         ("squad", "member", "set-role"), ("project", "create"),
         ("project", "update"), ("project", "resource", "add"),
         ("project", "resource", "update"),
+        ("autopilot", "create"), ("autopilot", "update"),
+        ("autopilot", "trigger-add"), ("autopilot", "trigger-update"),
     }
 
     def __init__(self):
@@ -86,7 +110,7 @@ class FakeRunner:
             "metadata": {"capabilities": ["local-worktree-v1"]},
         }]
         self.skills, self.agents, self.envs, self.bindings = {}, {}, {}, {}
-        self.squads, self.projects = {}, {}
+        self.squads, self.projects, self.autopilots = {}, {}, {}
         self.response_overrides = {}
         self.freeze_mutations = set()
         self.freeze_updates = set()
@@ -96,7 +120,7 @@ class FakeRunner:
         self.env_replacement_after_agent_update = None
         self.squad_create_leader_issue = None
         self.restore_leader_on_squad_update = False
-        self._next = {kind: 1 for kind in ("skill", "agent", "squad", "project", "resource")}
+        self._next = {kind: 1 for kind in ("skill", "agent", "squad", "project", "resource", "autopilot", "trigger")}
 
     @property
     def mutation_count(self):
@@ -131,6 +155,22 @@ class FakeRunner:
             "resource_type": "local_directory", "resource_ref": ref, **overrides,
         }
         return resource_id
+
+    def seed_autopilot(self, title, **overrides):
+        autopilot_id = self._id("autopilot")
+        self.autopilots[autopilot_id] = {
+            "id": autopilot_id,
+            "title": title,
+            "description": "old",
+            "execution_mode": "run_only",
+            "project_id": "project-old",
+            "assignee_id": "agent-old",
+            "assignee_type": "agent",
+            "status": "active",
+            "triggers": [],
+            **overrides,
+        }
+        return autopilot_id
 
     def run(self, args, *, stdin_json=None):
         command, positionals, flags = self._parse(args)
@@ -325,6 +365,68 @@ class FakeRunner:
                 if "--execution-mode" in flags:
                     ref["execution_mode"] = flags["--execution-mode"]
             return copy.deepcopy(override if override is not None else self.projects[project_id]["resources"][resource_id])
+        if command == ("autopilot", "list"):
+            return self._response(
+                command,
+                {
+                    "autopilots": [
+                        self._autopilot_public(item) for item in self.autopilots.values()
+                    ],
+                    "total": len(self.autopilots),
+                },
+            )
+        if command == ("autopilot", "get"):
+            item = self.autopilots[positionals[0]]
+            return self._response(command, self._autopilot_detail(item))
+        if command == ("autopilot", "create"):
+            autopilot_id = self._id("autopilot")
+            self.autopilots[autopilot_id] = {
+                "id": autopilot_id,
+                "title": flags["--title"],
+                "description": flags["--description"],
+                "execution_mode": flags["--mode"],
+                "project_id": flags["--project"],
+                "assignee_id": flags["--agent"],
+                "assignee_type": "agent",
+                "status": "active",
+                "triggers": [],
+            }
+            return copy.deepcopy(override if override is not None else {"ok": True})
+        if command == ("autopilot", "update"):
+            item = self.autopilots[positionals[0]]
+            if "autopilot" not in self.freeze_updates:
+                mapping = {
+                    "--title": "title", "--description": "description",
+                    "--agent": "assignee_id", "--mode": "execution_mode",
+                    "--project": "project_id", "--status": "status",
+                }
+                item.update({target: flags[source] for source, target in mapping.items() if source in flags})
+            return copy.deepcopy(override if override is not None else {"ok": True})
+        if command == ("autopilot", "trigger-add"):
+            autopilot_id = positionals[0]
+            trigger_id = self._id("trigger")
+            self.autopilots[autopilot_id]["triggers"].append(
+                self._trigger(trigger_id, autopilot_id, flags)
+            )
+            return copy.deepcopy(override if override is not None else {"ok": True})
+        if command == ("autopilot", "trigger-update"):
+            autopilot_id, trigger_id = positionals
+            trigger = next(
+                item for item in self.autopilots[autopilot_id]["triggers"]
+                if item["id"] == trigger_id
+            )
+            if "trigger" not in self.freeze_updates:
+                if "--cron" in flags:
+                    trigger["cron_expression"] = f"TZ={flags.get('--timezone', trigger['timezone'])} {flags['--cron']}"
+                if "--timezone" in flags:
+                    cron = trigger["cron_expression"].split(" ", 1)[1]
+                    trigger["timezone"] = flags["--timezone"]
+                    trigger["cron_expression"] = f"TZ={trigger['timezone']} {cron}"
+                if "--label" in flags:
+                    trigger["label"] = flags["--label"]
+                if "--enabled" in flags:
+                    trigger["enabled"] = True
+            return copy.deepcopy(override if override is not None else {"ok": True})
         raise AssertionError(f"unimplemented fake command: {command}")
 
     def _parse(self, args):
@@ -365,6 +467,39 @@ class FakeRunner:
         value = {"id": agent_id}
         value.update({target: int(flags[source]) if source == "--max-concurrent-tasks" else flags[source] for source, target in mapping.items() if source in flags})
         return value
+
+    @staticmethod
+    def _autopilot_public(item):
+        return {key: copy.deepcopy(value) for key, value in item.items() if key != "triggers"}
+
+    @classmethod
+    def _autopilot_detail(cls, item):
+        return {
+            "autopilot": cls._autopilot_public(item),
+            "collaborators": [],
+            "triggers": copy.deepcopy(item["triggers"]),
+        }
+
+    @staticmethod
+    def _trigger(trigger_id, autopilot_id, flags):
+        timezone = flags["--timezone"]
+        return {
+            "id": trigger_id,
+            "autopilot_id": autopilot_id,
+            "kind": flags["--kind"],
+            "cron_expression": f"TZ={timezone} {flags['--cron']}",
+            "timezone": timezone,
+            "enabled": True,
+            "label": flags.get("--label"),
+            "has_signing_secret": False,
+            "has_webhook_token": False,
+            "provider": None,
+            "signing_secret_hint": None,
+            "webhook_path": None,
+            "webhook_token": None,
+            "webhook_token_hint": None,
+            "webhook_url": None,
+        }
 
     def _id(self, kind):
         value = f"{kind}-{self._next[kind]}"
@@ -593,6 +728,81 @@ class ProvisionerTests(unittest.TestCase):
         ]
         self.assertEqual(leader_mutations, [])
 
+    def test_fresh_apply_creates_one_run_only_watcher_and_schedule(self):
+        result = self.provisioner.reconcile(
+            self.config, apply=True, backend_env=self.backend_env
+        )
+        watcher = self.runner.autopilots[result.autopilot_id]
+        expected_description = (
+            self.config.watcher.description_file.read_text()
+            .replace("__FRONTEND_PROJECT_ID__", result.project_id)
+            .replace("__BACKEND_PROJECT_ID__", result.backend_project_id)
+        )
+        self.assertEqual(watcher["execution_mode"], "run_only")
+        self.assertEqual(watcher["project_id"], result.project_id)
+        self.assertEqual(watcher["assignee_id"], result.agent_ids["delivery_lead"])
+        self.assertEqual(watcher["description"], expected_description)
+        self.assertNotIn("__FRONTEND_PROJECT_ID__", watcher["description"])
+        self.assertEqual(len(watcher["triggers"]), 1)
+        self.assertEqual(watcher["triggers"][0]["timezone"], "Asia/Shanghai")
+        self.assertEqual(
+            watcher["triggers"][0]["cron_expression"],
+            "TZ=Asia/Shanghai */30 * * * *",
+        )
+
+    def test_existing_watcher_and_trigger_drift_are_updated_authoritatively(self):
+        result = self.provisioner.reconcile(
+            self.config, apply=True, backend_env=self.backend_env
+        )
+        watcher = self.runner.autopilots[result.autopilot_id]
+        watcher["description"] = "drift"
+        watcher["project_id"] = result.backend_project_id
+        watcher["triggers"][0]["cron_expression"] = "TZ=UTC 0 0 * * *"
+        watcher["triggers"][0]["timezone"] = "UTC"
+        watcher["triggers"][0]["enabled"] = False
+        before = self.runner.mutation_count
+
+        second = self.provisioner.reconcile(
+            self.config, apply=True, backend_env=None
+        )
+
+        self.assertEqual(second.autopilot_id, result.autopilot_id)
+        self.assertEqual(self.runner.mutation_count - before, 2)
+        self.assertEqual(watcher["project_id"], result.project_id)
+        self.assertTrue(watcher["triggers"][0]["enabled"])
+        self.assertEqual(watcher["triggers"][0]["timezone"], "Asia/Shanghai")
+
+    def test_watcher_reconciliation_preserves_unrelated_autopilot(self):
+        unrelated_id = self.runner.seed_autopilot(
+            "Unrelated Watcher",
+            description="keep-me",
+            project_id="project-unrelated",
+            assignee_id="agent-unrelated",
+        )
+        result = self.provisioner.reconcile(
+            self.config, apply=True, backend_env=self.backend_env
+        )
+        self.assertNotEqual(result.autopilot_id, unrelated_id)
+        self.assertEqual(self.runner.autopilots[unrelated_id]["description"], "keep-me")
+
+    def test_malformed_target_watcher_fails_before_any_mutation(self):
+        watcher_id = self.runner.seed_autopilot(self.config.watcher.title)
+        flags = {
+            "--kind": "schedule",
+            "--cron": self.config.watcher.cron,
+            "--timezone": self.config.watcher.timezone,
+            "--label": self.config.watcher.label,
+        }
+        self.runner.autopilots[watcher_id]["triggers"] = [
+            self.runner._trigger("trigger-1", watcher_id, flags),
+            self.runner._trigger("trigger-2", watcher_id, flags),
+        ]
+        with self.assertRaisesRegex(RuntimeError, "malformed autopilot detail"):
+            self.provisioner.reconcile(
+                self.config, apply=True, backend_env=self.backend_env
+            )
+        self.assertEqual(self.runner.mutation_count, 0)
+
     def test_invalid_server_managed_leader_fails_before_member_mutation(self):
         first = self.provisioner.reconcile(
             self.config, apply=True, backend_env=self.backend_env
@@ -747,7 +957,11 @@ class ProvisionerTests(unittest.TestCase):
         ]
         self.assertEqual(
             [call["command"] for call in mutations],
-            [("project", "create"), ("project", "resource", "add")],
+            [
+                ("project", "create"),
+                ("project", "resource", "add"),
+                ("autopilot", "update"),
+            ],
         )
         self.assertEqual(
             mutations[0]["flags"]["--title"], self.config.backend_project_title
@@ -758,6 +972,7 @@ class ProvisionerTests(unittest.TestCase):
         )
         self.assertEqual(recovered.project_id, first.project_id)
         self.assertNotEqual(recovered.backend_project_id, first.backend_project_id)
+        self.assertEqual(recovered.autopilot_id, first.autopilot_id)
 
     def test_rejects_duplicate_frontend_and_backend_project_titles_before_reads(self):
         config = replace(
@@ -837,7 +1052,8 @@ class ProvisionerTests(unittest.TestCase):
             set(output),
             {
                 "agent_ids", "skill_ids", "squad_id", "project_id",
-                "backend_project_id", "resource_ids", "mutation_count",
+                "backend_project_id", "resource_ids", "autopilot_id",
+                "mutation_count",
             },
         )
         self.assertEqual(output["mutation_count"], runner.mutation_count)
@@ -928,6 +1144,13 @@ class ProvisionerTests(unittest.TestCase):
         self.runner.projects[first.project_id]["resources"][resource_id]["resource_ref"][
             "execution_mode"
         ] = "in_place"
+        self.runner.autopilots[first.autopilot_id]["description"] = "stale watcher"
+        self.runner.autopilots[first.autopilot_id]["triggers"][0][
+            "timezone"
+        ] = "UTC"
+        self.runner.autopilots[first.autopilot_id]["triggers"][0][
+            "cron_expression"
+        ] = "TZ=UTC 0 0 * * *"
 
         second = self.provisioner.reconcile(
             self.config, apply=True, backend_env=self.backend_env
@@ -943,6 +1166,7 @@ class ProvisionerTests(unittest.TestCase):
         self.assertEqual(second.project_id, first.project_id)
         self.assertEqual(second.backend_project_id, first.backend_project_id)
         self.assertEqual(second.resource_ids, first.resource_ids)
+        self.assertEqual(second.autopilot_id, first.autopilot_id)
         self.assertGreater(first.mutation_count, 0)
         self.assertGreater(second.mutation_count, 0)
         self.assertEqual(all_mutations, FakeRunner.MUTATIONS)

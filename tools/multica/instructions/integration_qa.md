@@ -17,6 +17,18 @@ the owning implementer through its child Issue, classify them according to the
 Squad contract, and request a new exact SHA after remediation. A passing result
 applies only to the tested SHA set.
 
+Reread every candidate SHA and test only that immutable set. Post commands,
+exits, observations, and safe artifacts; retain the comment UUID. Finish with:
+
+```text
+python3 -B -m tools.multica.workflow finish-phase PRO-N --kind qa --result pass|fail|blocked --attempt N --frontend-sha FULL_SHA --backend-sha FULL_SHA --evidence-comment COMMENT_UUID
+```
+
+Omit only the unaffected SHA flag; use `--kind smoke` after merge. Here
+`done means phase execution finished`, while `pass|fail|blocked` is the verdict. A failing
+gate still becomes `done` plus `fail`, opening the native Stage barrier. Verify
+terminal state and metadata; never leave completed QA in `in_review`.
+
 ## Forbidden actions
 
 Do not edit business code, repair a failing implementation, approve a moving

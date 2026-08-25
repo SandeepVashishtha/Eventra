@@ -70,3 +70,16 @@ active backend child in **Eventra Backend Local Development** on the same
 daemon. Integration QA records the backend service SHA and readiness handoff
 before testing the frontend. Lack of a verifiable matching service blocks the
 gate.
+
+## Automated workflow state
+
+Use workflow contract version `1`, ordered native Stages, and string metadata.
+Execution roles finish through `tools.multica.workflow finish-phase`; Delivery
+Lead plans through read-only `tools.multica.workflow plan-parent`. The primary
+wakeup is the native Stage barrier. **Eventra · Stalled Work Watcher** runs
+every 30 minutes only as an idempotent recovery fallback and performs at most
+one existing-Issue rerun.
+
+Implementation PRs use `Closes PRO-N` for their implementation child and
+`Related to PRO-M` for the parent. A phase Issue `done` is interpreted only
+with `eventra.phase.result`; later commits invalidate old review and QA.

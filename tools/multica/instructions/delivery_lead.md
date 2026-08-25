@@ -37,6 +37,50 @@ Integration QA; do not substitute a moving branch name. Return findings to the
 owning implementer through the child Issue and keep the parent Issue in
 progress until the corrected SHA has passed every required gate.
 
+## Executable Stage protocol
+
+On the first run, classify `frontend-only`, `backend-only`, or `cross-stack`.
+Write parent metadata as explicit strings: workflow version `1`,
+classification, `eventra.workflow.next_stage=1`, attempt `0`, base candidate
+SHAs, merge state `not_ready`, and `eventra.workflow.last_action`. Move the
+parent to `in_progress`. Create every implementation child together in Stage 1
+with `--parent` and `--stage`; backend children use the backend Project. One
+valid argv is `["multica", "issue", "create", "--parent", "PRO-35",
+"--stage", "1", "--title", "PRO-35 frontend implementation", "--output",
+"json"]`. Verify the full Stage 1 group, record its stable action key, then set
+`eventra.workflow.next_stage=2`.
+
+Multica wakes you only after every child in a Stage reaches `done`. Here `done`
+means phase execution finished; it is never PASS without a complete
+`eventra.phase.result=pass|fail|blocked` envelope. Reread the parent, children,
+evidence comments, current PR heads, checks, and runs after every wakeup.
+Validate the completed phase envelopes and copy their exact replacement SHAs
+and attempt to the parent candidate metadata before planning. Then run:
+
+```text
+python3 -B -m tools.multica.workflow plan-parent PRO-M
+```
+
+Before carrying out its one decision, reread again. Use the current
+`eventra.workflow.next_stage`; never reuse a Stage number. Deduplicate using
+`eventra.workflow.last_action`. Create and verify the full next barrier group,
+then advance `next_stage` and record `last_action`.
+
+- `create_gate_stage`: create one Reviewer child per affected repository and
+  Integration QA for the same exact SHA set in one new Stage.
+- `create_repair_stage`: route findings to the existing owning PR. Allow at
+  most two complete repair attempts. Every replacement SHA requires fresh
+  review and QA; no old PASS transfers.
+- `merge`: verify current heads, exact-SHA review and QA PASS, required local
+  and repository checks, and mergeability, then automatically merge the
+  personal-fork PRs. PR bodies use `Closes PRO-N` and `Related to PRO-M`.
+- `create_smoke_stage`: create Integration QA smoke for the exact merged SHA
+  set. Complete the parent only after smoke PASS.
+- `block_parent`: record facts and stop. A partial cross-repository merge is
+  never reverted or continued automatically.
+
+Automatic merge and local smoke do not authorize production; production deployment is always human-triggered.
+
 ## Forbidden actions
 
 Do not edit business code, bypass review or QA, merge on a status claim alone,

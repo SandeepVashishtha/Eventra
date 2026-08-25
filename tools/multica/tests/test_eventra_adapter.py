@@ -2,6 +2,7 @@ import unittest
 from dataclasses import FrozenInstanceError, is_dataclass
 
 from tools.multica.eventra_adapter import (
+    AutopilotSpec,
     PUBLIC_SKILL_URLS,
     LocalResource,
     ProjectConfig,
@@ -114,6 +115,23 @@ class EventraAdapterTests(unittest.TestCase):
             self.assertTrue(is_dataclass(value))
             with self.assertRaises(FrozenInstanceError):
                 setattr(value, field, "unexpected")
+
+    def test_defines_one_run_only_stalled_work_watcher(self):
+        self.assertEqual(
+            self.config.watcher,
+            AutopilotSpec(
+                title="Eventra · Stalled Work Watcher",
+                description_file=self.config.watcher.description_file,
+                cron="*/30 * * * *",
+                timezone="Asia/Shanghai",
+                label="Eventra stalled-work recovery",
+            ),
+        )
+        self.assertTrue(self.config.watcher.description_file.is_file())
+        self.assertIn(
+            "python3 -B -m tools.multica.workflow watch",
+            self.config.watcher.description_file.read_text(),
+        )
 
 
 if __name__ == "__main__":

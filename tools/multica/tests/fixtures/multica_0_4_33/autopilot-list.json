@@ -1,0 +1,28 @@
+{
+  "autopilots": [
+    {
+      "assignee_id": "agent-synthetic",
+      "assignee_type": "agent",
+      "can_write": true,
+      "created_at": "2026-08-25T10:00:00Z",
+      "created_by_id": "member-synthetic",
+      "created_by_type": "member",
+      "description": "Synthetic stalled-work watcher",
+      "execution_mode": "run_only",
+      "id": "autopilot-synthetic",
+      "issue_title_template": null,
+      "last_run_at": null,
+      "last_run_status": null,
+      "next_run_at": "2026-08-25T10:30:00Z",
+      "pause_reason": null,
+      "project_id": "project-synthetic",
+      "status": "active",
+      "subscribers": [],
+      "title": "Eventra · Stalled Work Watcher",
+      "trigger_kinds": ["schedule"],
+      "updated_at": "2026-08-25T10:00:00Z",
+      "workspace_id": "workspace-synthetic"
+    }
+  ],
+  "total": 1
+}
