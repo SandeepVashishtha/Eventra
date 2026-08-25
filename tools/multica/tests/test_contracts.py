@@ -19,6 +19,8 @@ from tools.multica.contracts import (
     parse_squad_detail,
     parse_squad_list,
     parse_squad_members,
+    parse_autopilot_detail,
+    parse_autopilot_list,
 )
 
 
@@ -28,11 +30,103 @@ FIXTURE_PROVENANCE = (
     "first-create reads where preflight had no representative object."
 )
 FIXTURES = Path(__file__).parent / "fixtures" / "multica_0_4_31"
+FIXTURES_0_4_33 = Path(__file__).parent / "fixtures" / "multica_0_4_33"
 
 
 def fixture(name):
     with (FIXTURES / name).open(encoding="utf-8") as handle:
         return json.load(handle)
+
+
+def fixture_0_4_33(name):
+    with (FIXTURES_0_4_33 / name).open(encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+class MulticaAutopilotContractTests(unittest.TestCase):
+    def test_valid_list_and_detail_normalize_only_reconciliation_fields(self):
+        listing = fixture_0_4_33("autopilot-list.json")
+        detail = fixture_0_4_33("autopilot-get.json")
+        self.assertEqual(
+            parse_autopilot_list(listing)[0],
+            {
+                "id": "autopilot-synthetic",
+                "title": "Eventra · Stalled Work Watcher",
+                "description": "Synthetic stalled-work watcher",
+                "execution_mode": "run_only",
+                "project_id": "project-synthetic",
+                "assignee_id": "agent-synthetic",
+                "assignee_type": "agent",
+                "status": "active",
+            },
+        )
+        autopilot, triggers = parse_autopilot_detail(
+            detail, "autopilot-synthetic"
+        )
+        self.assertEqual(autopilot["id"], "autopilot-synthetic")
+        self.assertEqual(
+            triggers,
+            [
+                {
+                    "id": "trigger-synthetic",
+                    "autopilot_id": "autopilot-synthetic",
+                    "kind": "schedule",
+                    "cron_expression": "TZ=Asia/Shanghai */30 * * * *",
+                    "timezone": "Asia/Shanghai",
+                    "enabled": True,
+                    "label": "Eventra stalled-work recovery",
+                }
+            ],
+        )
+
+    def test_list_rejects_duplicate_ids_titles_and_malformed_records(self):
+        value = fixture_0_4_33("autopilot-list.json")
+        for malformed in (
+            value["autopilots"],
+            {**value, "total": 2},
+            {"autopilots": value["autopilots"] * 2, "total": 2},
+            {
+                "autopilots": [
+                    {**value["autopilots"][0], "id": "autopilot-other"},
+                    {**value["autopilots"][0], "id": "autopilot-third"},
+                ],
+                "total": 2,
+            },
+            {
+                "autopilots": [
+                    {**value["autopilots"][0], "assignee_type": "squad"}
+                ],
+                "total": 1,
+            },
+        ):
+            with self.subTest(shape=malformed):
+                with self.assertRaisesRegex(RuntimeError, "malformed autopilot list"):
+                    parse_autopilot_list(malformed)
+
+    def test_detail_rejects_wrong_target_webhook_multiple_or_secret_trigger(self):
+        value = fixture_0_4_33("autopilot-get.json")
+        webhook = copy.deepcopy(value)
+        webhook["triggers"][0]["kind"] = "webhook"
+        multiple = copy.deepcopy(value)
+        multiple["triggers"].append(copy.deepcopy(multiple["triggers"][0]))
+        secret = copy.deepcopy(value)
+        secret["triggers"][0]["webhook_token"] = "must-not-be-accepted"
+        for malformed, expected_id in (
+            (value, "autopilot-other"),
+            ({**value, "collaborators": [{}]}, "autopilot-synthetic"),
+            (webhook, "autopilot-synthetic"),
+            (multiple, "autopilot-synthetic"),
+            (secret, "autopilot-synthetic"),
+        ):
+            with self.subTest(expected_id=expected_id):
+                with self.assertRaisesRegex(RuntimeError, "malformed autopilot detail"):
+                    parse_autopilot_detail(malformed, expected_id)
+
+    def test_detail_allows_no_trigger_immediately_after_create(self):
+        value = fixture_0_4_33("autopilot-get.json")
+        value["triggers"] = []
+        _, triggers = parse_autopilot_detail(value, "autopilot-synthetic")
+        self.assertEqual(triggers, [])
 
 
 class MulticaReadContractTests(unittest.TestCase):

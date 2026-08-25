@@ -20,6 +20,8 @@ from .contracts import (
     parse_squad_detail,
     parse_squad_list,
     parse_squad_members,
+    parse_autopilot_detail,
+    parse_autopilot_list,
 )
 from .eventra_adapter import build_eventra_config
 from .provision import MulticaRunner
@@ -285,6 +287,25 @@ def collect_contract_audit(
     else:
         project_report["local_resource_contract_available"] = False
     report["projects"] = project_report
+
+    autopilot_list = _read(runner, ["autopilot", "list", "--output", "json"])
+    autopilot_records = parse_autopilot_list(autopilot_list)
+    autopilot_id = _exact_id(
+        autopilot_records, "title", config.watcher.title
+    )
+    autopilot_report: dict[str, Any] = {
+        "list": _shape(autopilot_list),
+        "detail": None,
+    }
+    if autopilot_id is not None:
+        detail = _read(
+            runner, ["autopilot", "get", autopilot_id, "--output", "json"]
+        )
+        parse_autopilot_detail(detail, autopilot_id)
+        autopilot_report["detail"] = _shape(
+            detail, target_id=autopilot_id, target_field="id"
+        )
+    report["autopilots"] = autopilot_report
     return report
 
 

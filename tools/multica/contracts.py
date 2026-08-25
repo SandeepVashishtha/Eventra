@@ -1,4 +1,4 @@
-"""Pure, strict parsers for the Multica CLI 0.4.31 read contracts."""
+"""Pure, strict parsers for observed Multica CLI read contracts."""
 
 from typing import Any
 
@@ -258,3 +258,125 @@ def parse_project_resources(value: Any, expected_project_id: str) -> list[dict[s
             }
         )
     return result
+
+
+def _normalize_autopilot(value: Any, contract: str) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        _error(contract)
+    record_id = value.get("id")
+    title = value.get("title")
+    description = value.get("description")
+    execution_mode = value.get("execution_mode")
+    project_id = value.get("project_id")
+    assignee_id = value.get("assignee_id")
+    assignee_type = value.get("assignee_type")
+    status = value.get("status")
+    if (
+        not _string(record_id)
+        or not _string(title)
+        or not isinstance(description, str)
+        or execution_mode not in {"create_issue", "run_only"}
+        or (project_id is not None and not _string(project_id))
+        or not _string(assignee_id)
+        or assignee_type != "agent"
+        or status not in {"active", "paused"}
+    ):
+        _error(contract)
+    return {
+        "id": record_id,
+        "title": title,
+        "description": description,
+        "execution_mode": execution_mode,
+        "project_id": project_id,
+        "assignee_id": assignee_id,
+        "assignee_type": assignee_type,
+        "status": status,
+    }
+
+
+def parse_autopilot_list(value: Any) -> list[dict[str, Any]]:
+    """Normalize the Multica 0.4.33 Autopilot list envelope."""
+
+    contract = "autopilot list"
+    if (
+        not isinstance(value, dict)
+        or set(value) != {"autopilots", "total"}
+        or not isinstance(value["autopilots"], list)
+        or not isinstance(value["total"], int)
+        or isinstance(value["total"], bool)
+        or value["total"] != len(value["autopilots"])
+    ):
+        _error(contract)
+    result = [_normalize_autopilot(item, contract) for item in value["autopilots"]]
+    if (
+        len({item["id"] for item in result}) != len(result)
+        or len({item["title"] for item in result}) != len(result)
+    ):
+        _error(contract)
+    return result
+
+
+def parse_autopilot_detail(
+    value: Any,
+    expected_id: str,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """Normalize one safe schedule-only Autopilot detail envelope."""
+
+    contract = "autopilot detail"
+    if (
+        not isinstance(value, dict)
+        or set(value) != {"autopilot", "collaborators", "triggers"}
+        or not _string(expected_id)
+        or value["collaborators"] != []
+        or not isinstance(value["triggers"], list)
+        or len(value["triggers"]) > 1
+    ):
+        _error(contract)
+    autopilot = _normalize_autopilot(value["autopilot"], contract)
+    if autopilot["id"] != expected_id:
+        _error(contract)
+    if not value["triggers"]:
+        return autopilot, []
+    trigger = value["triggers"][0]
+    if not isinstance(trigger, dict):
+        _error(contract)
+    trigger_id = trigger.get("id")
+    autopilot_id = trigger.get("autopilot_id")
+    cron_expression = trigger.get("cron_expression")
+    timezone = trigger.get("timezone")
+    enabled = trigger.get("enabled")
+    label = trigger.get("label")
+    sensitive_fields = (
+        "provider",
+        "signing_secret_hint",
+        "webhook_path",
+        "webhook_token",
+        "webhook_token_hint",
+        "webhook_url",
+    )
+    if (
+        not _string(trigger_id)
+        or autopilot_id != expected_id
+        or trigger.get("kind") != "schedule"
+        or not _string(cron_expression)
+        or not _string(timezone)
+        or not cron_expression.startswith(f"TZ={timezone} ")
+        or len(cron_expression.removeprefix(f"TZ={timezone} ").split()) != 5
+        or not isinstance(enabled, bool)
+        or (label is not None and not isinstance(label, str))
+        or trigger.get("has_signing_secret") is not False
+        or trigger.get("has_webhook_token") is not False
+        or any(trigger.get(field) is not None for field in sensitive_fields)
+    ):
+        _error(contract)
+    return autopilot, [
+        {
+            "id": trigger_id,
+            "autopilot_id": autopilot_id,
+            "kind": "schedule",
+            "cron_expression": cron_expression,
+            "timezone": timezone,
+            "enabled": enabled,
+            "label": label,
+        }
+    ]

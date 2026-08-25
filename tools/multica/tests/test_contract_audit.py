@@ -31,6 +31,8 @@ SENTINELS = {
     "resource_id": "RESOURCE_ID_SENTINEL",
     "resource_path": "/RESOURCE_PATH_SENTINEL",
     "backend_project_id": "BACKEND_PROJECT_ID_SENTINEL",
+    "autopilot_id": "AUTOPILOT_ID_SENTINEL",
+    "trigger_id": "TRIGGER_ID_SENTINEL",
 }
 
 
@@ -122,6 +124,53 @@ def audit_replies():
                 },
             }
         ],
+        ("autopilot", "list", "--output", "json"): {
+            "autopilots": [
+                {
+                    "id": s["autopilot_id"],
+                    "title": "Eventra · Stalled Work Watcher",
+                    "description": s["description"],
+                    "execution_mode": "run_only",
+                    "project_id": s["project_id"],
+                    "assignee_id": s["agent_id"],
+                    "assignee_type": "agent",
+                    "status": "active"
+                }
+            ],
+            "total": 1
+        },
+        ("autopilot", "get", s["autopilot_id"], "--output", "json"): {
+            "autopilot": {
+                "id": s["autopilot_id"],
+                "title": "Eventra · Stalled Work Watcher",
+                "description": s["description"],
+                "execution_mode": "run_only",
+                "project_id": s["project_id"],
+                "assignee_id": s["agent_id"],
+                "assignee_type": "agent",
+                "status": "active"
+            },
+            "collaborators": [],
+            "triggers": [
+                {
+                    "id": s["trigger_id"],
+                    "autopilot_id": s["autopilot_id"],
+                    "kind": "schedule",
+                    "cron_expression": "TZ=Asia/Shanghai */30 * * * *",
+                    "timezone": "Asia/Shanghai",
+                    "enabled": True,
+                    "label": "Eventra stalled-work recovery",
+                    "has_signing_secret": False,
+                    "has_webhook_token": False,
+                    "provider": None,
+                    "signing_secret_hint": None,
+                    "webhook_path": None,
+                    "webhook_token": None,
+                    "webhook_token_hint": None,
+                    "webhook_url": None
+                }
+            ]
+        }
     }
 
 
@@ -146,6 +195,15 @@ class ContractAuditTests(unittest.TestCase):
             report["agents"]["environments"][0]["fields"]["agent_id"][
                 "target_id_matches"
             ]
+        )
+        self.assertTrue(
+            report["autopilots"]["detail"]["fields"]["autopilot"]["fields"]["id"][
+                "target_id_matches"
+            ]
+        )
+        self.assertEqual(
+            report["autopilots"]["detail"]["fields"]["triggers"]["length"],
+            1,
         )
 
     def test_audit_commands_are_fixed_reads_with_no_mutation_prefix(self):
