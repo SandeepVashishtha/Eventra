@@ -6,6 +6,7 @@ import unittest
 from tools.multica.issue_contracts import (
     parse_issue_children,
     parse_issue_detail,
+    parse_issue_list,
     parse_issue_metadata,
     parse_issue_runs,
 )
@@ -147,6 +148,36 @@ class IssueContractTests(unittest.TestCase):
             with self.subTest(field_values=malformed):
                 with self.assertRaisesRegex(RuntimeError, "malformed issue detail"):
                     parse_issue_detail(malformed, "PRO-36")
+
+    def test_detail_allows_member_assignee_for_structured_human_wait_detection(self):
+        parsed = parse_issue_detail(
+            issue_detail(assignee_id=AGENT_ID, assignee_type="member"),
+            "PRO-36",
+        )
+        self.assertEqual(parsed["assignee_type"], "member")
+
+    def test_issue_list_requires_exact_project_pagination_and_unique_records(self):
+        envelope = {
+            "has_more": False,
+            "issues": [issue_detail()],
+            "limit": 50,
+            "offset": 0,
+            "total": 1,
+        }
+        self.assertEqual(
+            parse_issue_list(envelope, PROJECT_ID)["issues"][0]["identifier"],
+            "PRO-36",
+        )
+        for malformed in (
+            {**envelope, "has_more": True},
+            {**envelope, "total": 2},
+            {**envelope, "issues": [issue_detail(), issue_detail()], "total": 2},
+            {**envelope, "issues": [issue_detail(project_id="other-project")]},
+            {key: item for key, item in envelope.items() if key != "offset"},
+        ):
+            with self.subTest(shape=malformed):
+                with self.assertRaisesRegex(RuntimeError, "malformed issue list"):
+                    parse_issue_list(malformed, PROJECT_ID)
 
     def test_children_require_one_parent_unique_ids_and_consistent_stage_counts(self):
         value = issue_children()

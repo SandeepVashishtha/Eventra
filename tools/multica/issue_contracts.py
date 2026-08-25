@@ -71,7 +71,7 @@ def _normalize_issue(value: Any, contract: str) -> dict[str, Any]:
         )
         or status not in ISSUE_STATUSES
         or not _string(assignee_id)
-        or assignee_type not in {"agent", "squad"}
+        or assignee_type not in {"agent", "squad", "member"}
         or not _string(project_id)
         or not _timestamp(updated_at)
     ):
@@ -99,6 +99,49 @@ def parse_issue_detail(value: Any, expected_identifier: str) -> dict[str, Any]:
     if result["identifier"] != expected_identifier:
         _error(contract)
     return result
+
+
+def parse_issue_list(value: Any, expected_project_id: str) -> dict[str, Any]:
+    """Normalize one strict page returned by ``multica issue list``."""
+
+    contract = "issue list"
+    if (
+        not isinstance(value, dict)
+        or set(value) != {"has_more", "issues", "limit", "offset", "total"}
+        or not _string(expected_project_id)
+        or not isinstance(value["has_more"], bool)
+        or not isinstance(value["issues"], list)
+        or not all(isinstance(item, dict) for item in value["issues"])
+        or not isinstance(value["limit"], int)
+        or isinstance(value["limit"], bool)
+        or value["limit"] < 1
+        or not isinstance(value["offset"], int)
+        or isinstance(value["offset"], bool)
+        or value["offset"] < 0
+        or not isinstance(value["total"], int)
+        or isinstance(value["total"], bool)
+        or value["total"] < 0
+        or len(value["issues"]) > value["limit"]
+    ):
+        _error(contract)
+    issues = [_normalize_issue(item, contract) for item in value["issues"]]
+    if (
+        any(item["project_id"] != expected_project_id for item in issues)
+        or len({item["id"] for item in issues}) != len(issues)
+        or len({item["identifier"] for item in issues}) != len(issues)
+        or value["offset"] + len(issues) > value["total"]
+        or value["has_more"] != (
+            value["offset"] + len(issues) < value["total"]
+        )
+    ):
+        _error(contract)
+    return {
+        "issues": issues,
+        "has_more": value["has_more"],
+        "limit": value["limit"],
+        "offset": value["offset"],
+        "total": value["total"],
+    }
 
 
 def parse_issue_children(value: Any, expected_parent_id: str) -> list[dict[str, Any]]:
