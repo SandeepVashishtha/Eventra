@@ -425,13 +425,51 @@ class SmokeExecutor(Protocol):
 class ExactShaCommandRunner(Protocol):
     """Run one argv only after binding every named repository to its exact SHA."""
 
+    def verify(
+        self,
+        repository_key: str,
+        expected_sha: str,
+        cwd: Path,
+        *,
+        argv: tuple[str, ...],
+    ) -> ExactShaVerification: ...
+
     def run(
         self,
         repository_key: str,
         candidate_shas: Mapping[str, str],
         argv: tuple[str, ...],
         cwd: Path,
-    ) -> bool: ...
+    ) -> ExactShaCommandResult: ...
+
+
+@dataclass(frozen=True)
+class ExactShaVerification:
+    repository_key: str
+    expected_sha: str
+    observed_sha: str
+    argv: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        _stable(self.repository_key, "repository_key")
+        if not _valid_sha(self.expected_sha) or not _valid_sha(self.observed_sha):
+            raise WorkflowError("checkout verification SHA is malformed")
+        if self.argv != ("git", "rev-parse", "HEAD"):
+            raise WorkflowError("checkout verification argv is not closed")
+
+
+@dataclass(frozen=True)
+class ExactShaCommandResult:
+    passed: bool
+    verified_shas: Mapping[str, str]
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.passed, bool):
+            raise WorkflowError("exact-SHA command pass result must be boolean")
+        values = dict(self.verified_shas)
+        if any(not isinstance(key, str) or not key or not _valid_sha(sha) for key, sha in values.items()):
+            raise WorkflowError("exact-SHA command binding is malformed")
+        object.__setattr__(self, "verified_shas", MappingProxyType(dict(sorted(values.items()))))
 
 
 class OwnedSmokeExecutor:
@@ -494,59 +532,107 @@ class OwnedSmokeExecutor:
         started: list[OwnedProcess] = []
         repository_results = {repository: "blocked" for repository in selected}
         integration_results = {suite.key: "blocked" for suite in applicable_suites}
-        startup_failed = False
-        try:
-            for repository in service_order:
+        checkout_shas: dict[str, str] = {}
+        authoritative = False
+
+        def verify_checkouts() -> dict[str, str]:
+            observed: dict[str, str] = {}
+            for repository in ordered:
                 specification = self.manifest.repositories[repository]
-                run = ProcessRun(
-                    repository_key=repository,
-                    run_id=run_id,
-                    argv=specification.commands["start"],
-                    cwd=specification.local_path,
+                verification = self.command_runner.verify(
+                    repository,
+                    exact[repository],
+                    specification.local_path,
+                    argv=("git", "rev-parse", "HEAD"),
                 )
-                if specification.services:
-                    started.extend(
-                        self.process_manager.start_services(
-                            specification.services,
-                            run,
-                            candidate_sha=exact[repository],
-                        )
+                if (
+                    not isinstance(verification, ExactShaVerification)
+                    or verification.repository_key != repository
+                    or verification.expected_sha != exact[repository]
+                    or verification.argv != ("git", "rev-parse", "HEAD")
+                ):
+                    raise WorkflowError("checkout verification result is malformed")
+                observed[repository] = verification.observed_sha
+            return observed
+
+        try:
+            checkout_shas = verify_checkouts()
+        except Exception:
+            checkout_shas = {}
+        pre_start_bound = checkout_shas == exact
+        startup_failed = False
+        if pre_start_bound:
+            try:
+                for repository in service_order:
+                    specification = self.manifest.repositories[repository]
+                    run = ProcessRun(
+                        repository_key=repository,
+                        run_id=run_id,
+                        argv=specification.commands["start"],
+                        cwd=specification.local_path,
                     )
-        except (ProcessOwnershipError, OSError, RuntimeError, TypeError, ValueError):
+                    if specification.services:
+                        started.extend(
+                            self.process_manager.start_services(
+                                specification.services,
+                                run,
+                                candidate_sha=exact[repository],
+                            )
+                        )
+            except (ProcessOwnershipError, OSError, RuntimeError, TypeError, ValueError):
+                startup_failed = True
+        else:
             startup_failed = True
 
         if not startup_failed:
+            try:
+                checkout_shas = verify_checkouts()
+                authoritative = checkout_shas == exact
+            except Exception:
+                authoritative = False
+            if not authoritative:
+                startup_failed = True
+
+        if not startup_failed and authoritative:
             for repository in ordered:
                 specification = self.manifest.repositories[repository]
                 try:
-                    passed = self.command_runner.run(
+                    command_result = self.command_runner.run(
                         repository,
                         exact,
                         specification.commands["smoke"],
                         specification.local_path,
                     )
-                    if not isinstance(passed, bool):
+                    if (
+                        not isinstance(command_result, ExactShaCommandResult)
+                        or dict(command_result.verified_shas) != exact
+                    ):
                         raise WorkflowError("exact-SHA command result is malformed")
-                    repository_results[repository] = "pass" if passed else "fail"
+                    repository_results[repository] = "pass" if command_result.passed else "fail"
                 except Exception:
                     repository_results[repository] = "blocked"
+                    authoritative = False
             for suite in applicable_suites:
                 if any(repository_results[repository] != "pass" for repository in suite.repositories):
                     integration_results[suite.key] = "blocked"
                     continue
                 command_repository = self.manifest.repositories[suite.command_repository]
                 try:
-                    passed = self.command_runner.run(
+                    command_result = self.command_runner.run(
                         suite.command_repository,
                         exact,
                         suite.command,
                         command_repository.local_path,
                     )
-                    if not isinstance(passed, bool):
+                    if (
+                        not isinstance(command_result, ExactShaCommandResult)
+                        or dict(command_result.verified_shas) != exact
+                    ):
                         raise WorkflowError("exact-SHA command result is malformed")
-                    integration_results[suite.key] = "pass" if passed else "fail"
+                    integration_results[suite.key] = "pass" if command_result.passed else "fail"
                 except Exception:
                     integration_results[suite.key] = "blocked"
+                    authoritative = False
 
         cleanup_failed = False
         stopped_pids: set[int] = set()
@@ -566,12 +652,14 @@ class OwnedSmokeExecutor:
         if cleanup_failed:
             repository_results = {repository: "blocked" for repository in selected}
             integration_results = {suite.key: "blocked" for suite in applicable_suites}
+            authoritative = False
         return SmokeRead(
             observation_id=action_key,
             merged_shas=exact,
+            checkout_shas=checkout_shas,
             repository_results=repository_results,
             integration_results=integration_results,
-            authoritative=True,
+            authoritative=authoritative,
         )
 
 
@@ -947,7 +1035,7 @@ class GenericWorkflow:
             not isinstance(state, WorkflowState)
             or state.parent_identifier != parent_identifier
             or state.parent_status != "todo"
-            or state.project_key not in self.project_keys
+            or state.project_key != self.manifest.instance.control_project
         ):
             return WorkflowResult(
                 parent_identifier,
@@ -1053,6 +1141,16 @@ class GenericWorkflow:
             state = self.snapshot_reader.read(parent_identifier)
         except Exception:
             return WorkflowResult(parent_identifier, "blocked", "block", "parent could not be read")
+        if (
+            not isinstance(state, WorkflowState)
+            or state.project_key != self.manifest.instance.control_project
+        ):
+            return WorkflowResult(
+                parent_identifier,
+                state.parent_status if isinstance(state, WorkflowState) else "blocked",
+                "noop",
+                "parent intake is restricted to the control Project",
+            )
         if state.metadata is not None:
             existing = frozenset(state.metadata.affected_repositories)
             if authority_requirements:
@@ -1795,6 +1893,23 @@ class GenericWorkflow:
                     "replacement SHA did not authoritatively invalidate every gate",
                 )
                 return replace(blocked, completed_child_status="done")
+        unfinished_stage_siblings = tuple(
+            item
+            for item in done_state.children
+            if item.identifier != completed[0].identifier
+            and item.stage_ordinal == child.stage_ordinal
+            and item.attempt == child.attempt
+            and item.status not in {"done", "blocked", "cancelled"}
+        )
+        if unfinished_stage_siblings:
+            return self._result(
+                done_state,
+                "wait",
+                "current Stage still has non-terminal sibling work",
+                completed_child_status="done",
+                action_key=key,
+                mutation_count=1,
+            )
         resumed = self.resume_parent(parent_identifier)
         return replace(resumed, completed_child_status="done")
 
@@ -2136,6 +2251,7 @@ class GenericWorkflow:
         for repository in remaining:
             target = current.pull_requests[repository]
             expected_sha = current.snapshot.candidate_shas[repository]
+            result: MergeResult | None = None
             try:
                 assert self.github is not None
                 result = self.github.merge_pull_request(
@@ -2143,16 +2259,41 @@ class GenericWorkflow:
                     target.number,
                     expected_sha=expected_sha,
                 )
-                if (
-                    not isinstance(result, MergeResult)
-                    or result.repository != self.manifest.repositories[repository].github
-                    or result.number != target.number
-                    or result.merged is not True
-                    or result.head_sha != expected_sha
-                    or not _valid_sha(result.merged_sha)
-                ):
-                    raise WorkflowError("merge acknowledgement is malformed")
             except Exception:
+                # A write may have committed before its acknowledgement failed.
+                result = None
+            try:
+                assert self.github is not None
+                authoritative = self.github.get_pull_request(
+                    self.manifest.repositories[repository].github,
+                    target.number,
+                )
+            except Exception:
+                return self._uncertain(
+                    current,
+                    "merge mutation outcome is not yet authoritatively observable",
+                )
+            authoritative_merged = (
+                isinstance(authoritative, PullRequestInfo)
+                and authoritative.repository
+                == self.manifest.repositories[repository].github
+                and authoritative.number == target.number
+                and authoritative.state == "merged"
+                and authoritative.head_sha == expected_sha
+                and authoritative.merged_at is not None
+                and _valid_sha(authoritative.merge_commit_sha)
+            )
+            if authoritative_merged:
+                result = MergeResult(
+                    authoritative.repository,
+                    authoritative.number,
+                    True,
+                    expected_sha,
+                    authoritative.merge_commit_sha,
+                )
+            else:
+                result = None
+            if result is None:
                 failed_state = "partial" if merged else "blocked"
                 return self._persist_merge_failure(
                     current,
@@ -2161,6 +2302,7 @@ class GenericWorkflow:
                     merged_shas=merged,
                     merge_plan=order,
                 )
+            assert isinstance(result, MergeResult)
             merged[repository] = result.merged_sha
             progressed, uncertain = self._record_merge_transition(
                 current,
@@ -2204,6 +2346,12 @@ class GenericWorkflow:
             set(smoke_read.merged_shas) != affected
             or dict(smoke_read.merged_shas) != dict(state.snapshot.merged_shas)
             or any(not _valid_sha(sha) for sha in smoke_read.merged_shas.values())
+            or set(smoke_read.checkout_shas) != affected
+            or any(not _valid_sha(sha) for sha in smoke_read.checkout_shas.values())
+            or (
+                smoke_read.authoritative
+                and dict(smoke_read.checkout_shas) != dict(state.snapshot.merged_shas)
+            )
             or set(smoke_read.repository_results) != affected
             or set(smoke_read.integration_results) != expected_suites
             or any(value not in {"pending", "pass", "fail", "blocked"} for value in smoke_read.repository_results.values())
@@ -2510,10 +2658,41 @@ class GenericWorkflow:
             stalled=fresh.snapshot.stalled,
             stalled_repository=fresh.snapshot.stalled_repository,
         )
+        before_by_id = {child.identifier: child for child in before_children}
+        after_by_id = {child.identifier: child for child in observed.children}
+        before_target = before_by_id[target_identifier]
+        same_target = after_by_id.get(target_identifier)
+        target_reactivated = (
+            same_target is not None
+            and not before_target.active
+            and same_target.active
+        )
+        replacement_targets = tuple(
+            child
+            for child in observed.children
+            if child.identifier != target_identifier
+            and child.repository_key == before_target.repository_key
+            and child.phase == before_target.phase
+            and child.attempt == before_target.attempt
+            and child.active
+            and child_identity(child) != child_identity(before_target)
+        )
+        target_has_new_run = target_reactivated or len(replacement_targets) == 1
+        if target_reactivated:
+            allowed_after_identifiers = {frozenset(before_by_id)}
+        elif len(replacement_targets) == 1:
+            replacement_identifier = replacement_targets[0].identifier
+            allowed_after_identifiers = {
+                frozenset(before_by_id) | {replacement_identifier},
+                (frozenset(before_by_id) - {target_identifier})
+                | {replacement_identifier},
+            }
+        else:
+            allowed_after_identifiers = set()
         unchanged_other_children = all(
-            before == after
-            for before, after in zip(before_children, observed.children, strict=False)
-            if before.identifier != target_identifier
+            after_by_id.get(identifier) == before
+            for identifier, before in before_by_id.items()
+            if identifier != target_identifier
         )
         if (
             self._watch_scope_problem(observed, parent_identifier) is not None
@@ -2522,8 +2701,9 @@ class GenericWorkflow:
             or observed.project_key != fresh.project_key
             or observed.snapshot.recovery_count != fresh.snapshot.recovery_count + 1
             or normalized_observed_snapshot != fresh.snapshot
-            or tuple(map(child_identity, observed.children))
-            != tuple(map(child_identity, before_children))
+            or not target_has_new_run
+            or not observed.active_work
+            or frozenset(after_by_id) not in allowed_after_identifiers
             or not unchanged_other_children
             or observed.pull_requests != fresh.pull_requests
             or observed.metadata != metadata

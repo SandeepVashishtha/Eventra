@@ -14,6 +14,7 @@ from tools.multica_delivery.decisions import (
     decide_parent_action,
 )
 from tools.multica_delivery.manifest import load_manifest
+from tools.multica_delivery.model import PolicySpec
 
 
 FIXTURE = Path(__file__).parent / "fixtures" / "three-repository-delivery.yaml"
@@ -94,6 +95,7 @@ def passing_smoke_read(
     return SmokeRead(
         observation_id=observation_id,
         merged_shas=candidates,
+        checkout_shas=candidates,
         repository_results={repository: "pass" for repository in affected},
         integration_results=suites,
         authoritative=authoritative,
@@ -193,7 +195,11 @@ class ParentDecisionTests(unittest.TestCase):
     def test_production_never_returns_merge(self):
         production = replace(
             self.manifest,
-            policy=replace(self.manifest.policy, environment="production"),
+            policy=replace(
+                self.manifest.policy,
+                environment="production",
+                automatic_merge=False,
+            ),
         )
         self.assertEqual(
             decide_parent_action(production, passing_snapshot()).kind,
@@ -218,6 +224,20 @@ class ParentDecisionTests(unittest.TestCase):
         )
         self.assertEqual(decide_parent_action(expanded_repairs, passing_snapshot()).kind, DecisionKind.BLOCK)
         self.assertEqual(decide_parent_action(deploy_enabled, passing_snapshot()).kind, DecisionKind.BLOCK)
+
+    def test_direct_policy_construction_rejects_aliases_unknowns_and_unsafe_merge(self):
+        valid = dict(
+            deployment="forbidden",
+            max_repair_attempts=2,
+            watcher_cron="*/30 * * * *",
+            watcher_timezone="Asia/Shanghai",
+        )
+        for environment in ("prod", "dev", "staging", "Development"):
+            with self.subTest(environment=environment):
+                with self.assertRaisesRegex(ValueError, "environment"):
+                    PolicySpec(environment, False, **valid)
+        with self.assertRaisesRegex(ValueError, "automatic_merge"):
+            PolicySpec("production", True, **valid)
 
     def test_any_merged_subset_blocks_atomic_delivery(self):
         snapshot = passing_snapshot()
@@ -399,6 +419,31 @@ class ParentDecisionTests(unittest.TestCase):
         self.assertEqual(decision.kind, DecisionKind.DISPATCH)
         self.assertEqual(decision.dispatch_kind, DispatchKind.GATES)
         self.assertEqual(decision.repositories, ("api", "web"))
+
+    def test_merged_pull_requests_with_missing_premerge_gates_block_for_human(self):
+        snapshot = merged_snapshot()
+        snapshot = replace(snapshot, reviews={}, qa={}, integration_qa={})
+
+        decision = decide_parent_action(self.manifest, snapshot)
+
+        self.assertEqual(decision.kind, DecisionKind.BLOCK)
+        self.assertEqual(decision.repositories, ())
+        self.assertIn("pre-merge", decision.reason)
+
+    def test_merged_pull_requests_with_pending_premerge_gate_block_for_human(self):
+        snapshot = merged_snapshot()
+        snapshot = replace(
+            snapshot,
+            reviews={
+                **snapshot.reviews,
+                "web": gate_for("web", result="pending"),
+            },
+        )
+
+        decision = decide_parent_action(self.manifest, snapshot)
+
+        self.assertEqual(decision.kind, DecisionKind.BLOCK)
+        self.assertIn("pre-merge", decision.reason)
 
     def test_stale_integration_qa_sha_map_repairs(self):
         snapshot = passing_snapshot()

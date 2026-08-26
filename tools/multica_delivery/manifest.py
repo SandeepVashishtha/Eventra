@@ -217,11 +217,13 @@ def load_manifest_text(text: str) -> DeliveryManifest:
     policies = _mapping(top["policies"], "policies")
     _expect_keys(policies, "policies", {"environment", "automatic_merge", "deployment", "max_repair_attempts", "watcher_cron", "watcher_timezone"})
     environment = _string(policies["environment"], "policies.environment")
+    if environment not in {"development", "production"}:
+        raise ManifestError("policies.environment must be development or production")
     automatic_merge = policies["automatic_merge"]
     if not isinstance(automatic_merge, bool):
         raise ManifestError("policies.automatic_merge must be a boolean")
-    if environment == "production" and automatic_merge:
-        raise ManifestError("policies.automatic_merge is forbidden in production")
+    if environment != "development" and automatic_merge:
+        raise ManifestError("policies.automatic_merge is allowed only in development")
     if policies["deployment"] != "forbidden":
         raise ManifestError("policies.deployment must be forbidden")
     if policies["max_repair_attempts"] != 2:

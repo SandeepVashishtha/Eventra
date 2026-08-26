@@ -60,6 +60,16 @@ class ManifestTests(unittest.TestCase):
         with self.assertRaisesRegex(ManifestError, "automatic_merge"):
             load_manifest_text(text)
 
+    def test_rejects_unknown_and_alias_policy_environments(self):
+        for environment in ("prod", "dev", "staging", "Development"):
+            with self.subTest(environment=environment):
+                text = FIXTURE.read_text().replace(
+                    "environment: development",
+                    f"environment: {environment}",
+                )
+                with self.assertRaisesRegex(ManifestError, "environment"):
+                    load_manifest_text(text)
+
     def test_rejects_duplicate_yaml_keys(self):
         text = FIXTURE.read_text().replace(
             "schema_version: 1", "schema_version: 1\nschema_version: 1"

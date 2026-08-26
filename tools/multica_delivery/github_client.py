@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 import json
 import re
 from typing import Mapping
@@ -50,6 +51,50 @@ class PullRequestInfo:
     head_sha: str
     base_ref: str
     mergeable: bool | None
+    merged_at: str | None = None
+    merge_commit_sha: str | None = None
+
+    def __post_init__(self) -> None:
+        merged_time_valid = False
+        if isinstance(self.merged_at, str) and self.merged_at:
+            try:
+                merged_time_valid = datetime.fromisoformat(
+                    self.merged_at.replace("Z", "+00:00")
+                ).tzinfo is not None
+            except ValueError:
+                merged_time_valid = False
+        merged_commit_valid = (
+            isinstance(self.merge_commit_sha, str)
+            and re.fullmatch(r"[0-9a-f]{40}", self.merge_commit_sha) is not None
+        )
+        if self.state not in {"open", "closed", "merged"}:
+            raise ValueError("pull request state is malformed")
+        if (
+            not isinstance(self.repository, str)
+            or not self.repository
+            or not isinstance(self.number, int)
+            or isinstance(self.number, bool)
+            or self.number < 1
+            or not isinstance(self.head_sha, str)
+            or re.fullmatch(r"[0-9a-f]{40}", self.head_sha) is None
+            or not isinstance(self.base_ref, str)
+            or not self.base_ref
+            or self.base_ref.startswith("-")
+            or (self.mergeable is not None and not isinstance(self.mergeable, bool))
+        ):
+            raise ValueError("pull request identity is malformed")
+        if self.state == "merged" and not (merged_time_valid and merged_commit_valid):
+            raise ValueError("merged pull request identity is malformed")
+        if self.state in {"open", "closed"} and self.merged_at is not None:
+            raise ValueError("unmerged pull request has merged identity")
+        if self.state == "closed" and self.merge_commit_sha is not None:
+            raise ValueError("closed pull request has merged identity")
+        if (
+            self.state == "open"
+            and self.merge_commit_sha is not None
+            and not merged_commit_valid
+        ):
+            raise ValueError("open pull request merge commit identity is malformed")
 
 
 @dataclass(frozen=True)
@@ -240,6 +285,26 @@ class GitHubClient:
         base = raw.get("base")
         base_ref = base.get("ref") if isinstance(base, Mapping) else None
         mergeable = raw.get("mergeable")
+        if "merged_at" not in raw or "merge_commit_sha" not in raw:
+            raise GitHubBoundaryError("malformed pull request response")
+        merged_at = raw.get("merged_at")
+        merge_commit_sha = raw.get("merge_commit_sha")
+        merged_time_valid = False
+        if isinstance(merged_at, str) and merged_at:
+            try:
+                merged_time_valid = datetime.fromisoformat(
+                    merged_at.replace("Z", "+00:00")
+                ).tzinfo is not None
+            except ValueError:
+                merged_time_valid = False
+        merged_commit_valid = (
+            isinstance(merge_commit_sha, str)
+            and re.fullmatch(r"[0-9a-f]{40}", merge_commit_sha) is not None
+        )
+        if state == "closed" and merged_at is not None:
+            normalized_state = "merged"
+        else:
+            normalized_state = state
         if (
             not isinstance(number, int)
             or isinstance(number, bool)
@@ -251,10 +316,27 @@ class GitHubClient:
             or not isinstance(base_ref, str)
             or not base_ref
             or base_ref.startswith("-")
-            or mergeable not in {True, False, None}
+            or (mergeable is not None and not isinstance(mergeable, bool))
+            or (normalized_state == "merged" and not (merged_time_valid and merged_commit_valid))
+            or (normalized_state == "open" and merged_at is not None)
+            or (normalized_state == "closed" and (merged_at is not None or merge_commit_sha is not None))
+            or (
+                normalized_state == "open"
+                and merge_commit_sha is not None
+                and not merged_commit_valid
+            )
         ):
             raise GitHubBoundaryError("malformed pull request response")
-        return PullRequestInfo(repository, number, state, sha, base_ref, mergeable)
+        return PullRequestInfo(
+            repository,
+            number,
+            normalized_state,
+            sha,
+            base_ref,
+            mergeable,
+            merged_at,
+            merge_commit_sha,
+        )
 
     def required_status_checks(
         self,
@@ -438,16 +520,28 @@ class GitHubClient:
         )
         if not checks.passing:
             raise GitHubBoundaryError("required checks are not passing")
-        raw = self._mapping(
+        try:
             self._run(
                 ("gh", "api", "-X", "PUT", f"repos/{repository}/pulls/{number}/merge", "-f", "merge_method=merge", "-f", f"sha={expected_sha}"),
                 "pull request merge",
                 read_only=False,
-            ),
-            "pull request merge",
+            )
+        except Exception:
+            # The mutation may have committed before its acknowledgement failed.
+            pass
+        authoritative = self.get_pull_request(repository, number)
+        if (
+            authoritative.state != "merged"
+            or authoritative.head_sha != expected_sha
+            or authoritative.merged_at is None
+            or not isinstance(authoritative.merge_commit_sha, str)
+            or re.fullmatch(r"[0-9a-f]{40}", authoritative.merge_commit_sha) is None
+        ):
+            raise GitHubBoundaryError("pull request merge is not authoritatively observable")
+        return MergeResult(
+            repository,
+            number,
+            True,
+            expected_sha,
+            authoritative.merge_commit_sha,
         )
-        merged = raw.get("merged")
-        merged_sha = raw.get("sha")
-        if merged is not True or not isinstance(merged_sha, str) or re.fullmatch(r"[0-9a-f]{40}", merged_sha) is None:
-            raise GitHubBoundaryError("malformed pull request merge response")
-        return MergeResult(repository, number, True, expected_sha, merged_sha)

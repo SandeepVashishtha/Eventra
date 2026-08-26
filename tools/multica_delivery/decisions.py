@@ -65,6 +65,7 @@ class SmokeRead:
     repository_results: Mapping[str, str]
     integration_results: Mapping[str, str]
     authoritative: bool
+    checkout_shas: Mapping[str, str] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if (
@@ -75,6 +76,7 @@ class SmokeRead:
         object.__setattr__(self, "merged_shas", _frozen(self.merged_shas))
         object.__setattr__(self, "repository_results", _frozen(self.repository_results))
         object.__setattr__(self, "integration_results", _frozen(self.integration_results))
+        object.__setattr__(self, "checkout_shas", _frozen(self.checkout_shas))
 
 
 @dataclass(frozen=True)
@@ -279,6 +281,10 @@ def _snapshot_problem(manifest: DeliveryManifest, snapshot: ParentSnapshot) -> s
         observation_ids.add(read.observation_id)
         if any(not _valid_sha(sha) for sha in read.merged_shas.values()):
             return "smoke evidence is malformed"
+        if any(not _valid_sha(sha) for sha in read.checkout_shas.values()):
+            return "smoke checkout evidence is malformed"
+        if read.authoritative and dict(read.checkout_shas) != dict(read.merged_shas):
+            return "authoritative smoke checkout evidence is not exact-SHA bound"
         if any(result not in _RESULTS for result in (*read.repository_results.values(), *read.integration_results.values())):
             return "smoke evidence is malformed"
     return None
@@ -386,6 +392,11 @@ def _smoke_decision(
             DecisionKind.BLOCK,
             "post-merge smoke does not match authoritative merged SHAs; human action is required",
         )
+    if dict(latest.checkout_shas) != expected_shas:
+        return _decision(
+            DecisionKind.BLOCK,
+            "post-merge smoke checkout does not match authoritative merged SHAs; human action is required",
+        )
 
     repository_failures = {
         repository
@@ -428,6 +439,7 @@ def _smoke_decision(
         and dict(previous.repository_results) == dict(latest.repository_results)
         and dict(previous.integration_results) == dict(latest.integration_results)
         and previous.authoritative == latest.authoritative
+        and dict(previous.checkout_shas) == dict(latest.checkout_shas)
     )
     if not identical_result:
         return _decision(
@@ -574,6 +586,16 @@ def decide_parent_action(manifest: DeliveryManifest, snapshot: ParentSnapshot) -
                 if pending_reason is None:
                     pending_reason = f"{repository} merge preflight evidence is incomplete"
 
+    if all_merged and (
+        missing_gate_repositories
+        or missing_suites
+        or repair_repositories
+        or pending_reason is not None
+    ):
+        return _decision(
+            DecisionKind.BLOCK,
+            "merged work lacks complete pre-merge review, QA, or integration evidence; human action is required",
+        )
     if repair_repositories:
         return _repair(
             manifest,

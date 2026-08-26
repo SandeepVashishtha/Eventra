@@ -118,9 +118,16 @@ records structured exact-SHA results for them. It accepts the implementation
 phase verdict and evidence UUID that an Agent records for the candidate SHA;
 it does not infer command execution from that PASS. After merging,
 `OwnedSmokeExecutor` runs declared repository smoke and applicable integration
-commands against the authoritative merged SHA map; unverified owner-checked
-cleanup blocks every smoke result. It starts declared local services only
-through `ProcessManager`, which blocks unknown or mismatched process ownership.
+commands against the authoritative merged SHA map. Before starting any service,
+and again after startup, it binds every local checkout with the closed argv
+`git rev-parse HEAD`; stale or incomplete checkout evidence blocks command
+execution. Every command result must also carry the same structured exact-SHA
+map, so a runner returning only a boolean cannot create authoritative smoke
+evidence. Unverified owner-checked cleanup blocks every smoke result. It starts
+declared local services only through `ProcessManager`, which blocks unknown or
+mismatched process ownership. Merge write acknowledgements are never sufficient
+evidence: the workflow authoritatively rereads the pull request and records its
+merged timestamp and merge-commit SHA before advancing the ordered merge prefix.
 
 This framework never deploys; deployment is always a separate, manually
 triggered external action. The manifest requires `deployment: forbidden`.

@@ -5,6 +5,7 @@ import unittest
 from tools.multica_delivery.github_client import (
     GitHubBoundaryError,
     GitHubClient,
+    PullRequestInfo,
     RequiredCheckIdentity,
     RequiredStatusChecks,
 )
@@ -30,13 +31,23 @@ class GitHubClientTests(unittest.TestCase):
         self.client = GitHubClient(self.runner, frozenset({"codeExploreHub/api"}))
 
     @staticmethod
-    def pull(sha, *, base="main", mergeable=True):
+    def pull(
+        sha,
+        *,
+        base="main",
+        mergeable=True,
+        state="open",
+        merged_at=None,
+        merge_commit_sha=None,
+    ):
         return {
             "number": 4,
-            "state": "open",
+            "state": state,
             "head": {"sha": sha},
             "base": {"ref": base},
             "mergeable": mergeable,
+            "merged_at": merged_at,
+            "merge_commit_sha": merge_commit_sha,
         }
 
     def test_refuses_repository_outside_manifest_before_calling_runner(self):
@@ -135,18 +146,121 @@ class GitHubClientTests(unittest.TestCase):
                 ],
             },
             {"merged": True, "sha": "c" * 40},
+            self.pull(
+                sha,
+                state="closed",
+                merged_at="2026-08-27T10:00:00Z",
+                merge_commit_sha="c" * 40,
+            ),
         ]
 
         merged = self.client.merge_pull_request("codeExploreHub/api", 4, expected_sha=sha)
 
         self.assertTrue(merged.merged)
         self.assertEqual(merged.merged_sha, "c" * 40)
-        self.assertEqual(len(self.runner.calls), 5)
+        self.assertEqual(len(self.runner.calls), 6)
         self.assertIn("repos/codeExploreHub/api/branches/main/protection/required_status_checks", self.runner.calls[1][0])
         self.assertIn(f"repos/codeExploreHub/api/commits/{sha}/check-runs", self.runner.calls[2][0])
         self.assertIn(f"repos/codeExploreHub/api/commits/{sha}/status", self.runner.calls[3][0])
-        self.assertEqual(self.runner.calls[-1][0][:3], ("gh", "api", "-X"))
-        self.assertIn(f"sha={sha}", self.runner.calls[-1][0])
+        self.assertEqual(self.runner.calls[-2][0][:3], ("gh", "api", "-X"))
+        self.assertIn(f"sha={sha}", self.runner.calls[-2][0])
+
+    def test_merged_pull_request_read_exposes_strict_authoritative_merge_fields(self):
+        sha = "a" * 40
+        merged_sha = "c" * 40
+        self.runner.replies = [
+            self.pull(
+                sha,
+                state="closed",
+                merged_at="2026-08-27T10:00:00Z",
+                merge_commit_sha=merged_sha,
+            )
+        ]
+
+        pull_request = self.client.get_pull_request("codeExploreHub/api", 4)
+
+        self.assertEqual(pull_request.state, "merged")
+        self.assertEqual(pull_request.merged_at, "2026-08-27T10:00:00Z")
+        self.assertEqual(pull_request.merge_commit_sha, merged_sha)
+
+    def test_pull_request_rejects_incomplete_or_malformed_merged_identity(self):
+        sha = "a" * 40
+        cases = (
+            self.pull(sha, state="closed", merged_at="not-a-time", merge_commit_sha="c" * 40),
+            self.pull(sha, state="closed", merged_at="2026-08-27T10:00:00Z"),
+            self.pull(sha, state="open", merged_at="2026-08-27T10:00:00Z", merge_commit_sha="c" * 40),
+        )
+        for response in cases:
+            with self.subTest(response=response):
+                runner = FakeRunner(response)
+                with self.assertRaisesRegex(GitHubBoundaryError, "pull request"):
+                    GitHubClient(
+                        runner, frozenset({"codeExploreHub/api"})
+                    ).get_pull_request("codeExploreHub/api", 4)
+
+    def test_direct_pull_request_info_construction_is_strict(self):
+        sha = "a" * 40
+        with self.assertRaisesRegex(ValueError, "merged"):
+            PullRequestInfo(
+                "codeExploreHub/api",
+                4,
+                "merged",
+                sha,
+                "main",
+                True,
+                "2026-08-27T10:00:00Z",
+                None,
+            )
+        with self.assertRaisesRegex(ValueError, "state"):
+            PullRequestInfo(
+                "codeExploreHub/api", 4, "MERGED", sha, "main", True
+            )
+
+    def test_merge_commit_then_error_recovers_authoritative_merged_sha(self):
+        sha = "a" * 40
+        merged_sha = "c" * 40
+        self.runner.replies = [
+            self.pull(sha),
+            {"strict": True, "contexts": [], "checks": []},
+            {"check_runs": []},
+            {"sha": sha, "statuses": []},
+            TransientCommandError("commit acknowledgement lost"),
+            self.pull(
+                sha,
+                state="closed",
+                merged_at="2026-08-27T10:00:00Z",
+                merge_commit_sha=merged_sha,
+            ),
+        ]
+
+        result = self.client.merge_pull_request(
+            "codeExploreHub/api", 4, expected_sha=sha
+        )
+
+        self.assertEqual(result.merged_sha, merged_sha)
+
+    def test_malformed_merge_ack_uses_authoritative_merged_reread(self):
+        sha = "a" * 40
+        merged_sha = "d" * 40
+        self.runner.replies = [
+            self.pull(sha),
+            {"strict": True, "contexts": [], "checks": []},
+            {"check_runs": []},
+            {"sha": sha, "statuses": []},
+            {"merged": True, "sha": "malformed"},
+            self.pull(
+                sha,
+                state="closed",
+                merged_at="2026-08-27T10:00:00Z",
+                merge_commit_sha=merged_sha,
+            ),
+        ]
+
+        result = self.client.merge_pull_request(
+            "codeExploreHub/api", 4, expected_sha=sha
+        )
+
+        self.assertEqual(result.merged_sha, merged_sha)
 
     def test_merge_refuses_missing_or_failed_required_checks(self):
         sha = "a" * 40

@@ -121,7 +121,15 @@ class CoreDocumentationTests(unittest.TestCase):
         self.assertIn(
             "After merging, `OwnedSmokeExecutor` runs declared repository smoke "
             "and applicable integration commands against the authoritative merged "
-            "SHA map; unverified owner-checked cleanup blocks every smoke result.",
+            "SHA map. Before starting any service, and again after startup, it "
+            "binds every local checkout with the closed argv `git rev-parse HEAD`; "
+            "stale or incomplete checkout evidence blocks command execution.",
+            effects,
+        )
+        self.assertIn(
+            "Every command result must also carry the same structured exact-SHA "
+            "map, so a runner returning only a boolean cannot create authoritative "
+            "smoke evidence.",
             effects,
         )
         self.assertNotRegex(effects, r"exact-SHA tests(?:,| and) builds")

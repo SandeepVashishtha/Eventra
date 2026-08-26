@@ -74,6 +74,17 @@ class PolicySpec:
     watcher_cron: str
     watcher_timezone: str
 
+    def __post_init__(self) -> None:
+        if (
+            not isinstance(self.environment, str)
+            or self.environment not in {"development", "production"}
+        ):
+            raise ValueError("policy environment must be development or production")
+        if not isinstance(self.automatic_merge, bool):
+            raise ValueError("policy automatic_merge must be a boolean")
+        if self.environment != "development" and self.automatic_merge:
+            raise ValueError("policy automatic_merge is allowed only in development")
+
 
 @dataclass(frozen=True)
 class DeliveryManifest:
