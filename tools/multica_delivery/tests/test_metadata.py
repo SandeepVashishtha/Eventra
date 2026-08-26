@@ -25,7 +25,7 @@ class MetadataTests(unittest.TestCase):
                 affected_repositories=("api", "web"),
                 repository_dag={"api": (), "web": ("api",)},
                 attempt=1,
-                last_action="dispatch:stage-1",
+                last_action="dispatch",
                 merge_state="pending",
                 candidate_shas={"api": "a" * 40, "web": "b" * 40},
             )
@@ -110,6 +110,33 @@ class MetadataTests(unittest.TestCase):
         with self.assertRaisesRegex(MetadataError, "merge_state"):
             ParentMetadata(merge_state="arbitrary")
         with self.assertRaisesRegex(MetadataError, "last_action"):
-            ParentMetadata(last_action="dispatch")
+            ParentMetadata(last_action="arbitrary")
         with self.assertRaisesRegex(MetadataError, "phase_kind"):
             PhaseMetadata(phase_kind="arbitrary")
+
+    def test_last_action_allows_bare_kind_or_digest_and_rejects_payload_suffixes(self):
+        self.assertEqual(ParentMetadata(last_action="dispatch").last_action, "dispatch")
+        digest_key = "dispatch:" + "a" * 64
+        self.assertEqual(ParentMetadata(last_action=digest_key).last_action, digest_key)
+        with self.assertRaisesRegex(MetadataError, "last_action"):
+            ParentMetadata(last_action="dispatch:supersecrettoken")
+
+    def test_merge_states_require_full_dag_consistent_plan_and_candidate_coverage(self):
+        with self.assertRaisesRegex(MetadataError, "merge plan and candidate"):
+            ParentMetadata(affected_repositories=("api",), merge_state="merged")
+        with self.assertRaisesRegex(MetadataError, "merge_plan is inconsistent"):
+            ParentMetadata(
+                affected_repositories=("api", "web"),
+                repository_dag={"api": (), "web": ("api",)},
+                candidate_shas={"api": "a" * 40, "web": "b" * 40},
+                merge_plan=("web", "api"),
+                merge_state="ready",
+            )
+        metadata = ParentMetadata(
+            affected_repositories=("api", "web"),
+            repository_dag={"api": (), "web": ("api",)},
+            candidate_shas={"api": "a" * 40, "web": "b" * 40},
+            merge_plan=("api", "web"),
+            merge_state="merging",
+        )
+        self.assertEqual(metadata.merge_state, "merging")

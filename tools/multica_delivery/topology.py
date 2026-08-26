@@ -24,12 +24,15 @@ def _validate_satisfied_edges(
     selected: frozenset[str],
     satisfied_dependencies: frozenset[tuple[str, str]],
 ) -> None:
-    for edge in satisfied_dependencies:
+    normalized: list[tuple[str, str]] = []
+    for edge in sorted(satisfied_dependencies, key=lambda value: (type(value).__name__, repr(value))):
         if not isinstance(edge, tuple) or len(edge) != 2:
-            raise TopologyError("satisfied dependency edges must be (dependent, dependency) pairs")
+            raise TopologyError(f"satisfied dependency edge {edge!r} must be a (dependent, dependency) pair")
         dependent, dependency = edge
         if not isinstance(dependent, str) or not isinstance(dependency, str):
-            raise TopologyError("satisfied dependency edges must be (dependent, dependency) pairs")
+            raise TopologyError(f"satisfied dependency edge {edge!r} must be a (dependent, dependency) pair")
+        normalized.append((dependent, dependency))
+    for dependent, dependency in sorted(normalized):
         if dependent not in selected or dependency not in selected:
             raise TopologyError(f"satisfied dependency edge {dependent!r}, {dependency!r} is not selected")
         if dependency not in repositories[dependent].depends_on:

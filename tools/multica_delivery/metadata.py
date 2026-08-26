@@ -9,8 +9,9 @@ from typing import Any, Mapping, TypeVar
 
 _SHA = re.compile(r"[0-9a-f]{40}")
 _KEY = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/-]*")
-_ACTION_KEY = re.compile(r"(?:dispatch|stage|review|qa|merge|repair|smoke|resume|recovery):[A-Za-z0-9][A-Za-z0-9._/-]*")
-_MERGE_STATES = frozenset({"pending", "not_ready", "ready", "merged", "partial", "blocked"})
+_ACTION_KINDS = frozenset({"dispatch", "stage", "review", "qa", "merge", "repair", "smoke", "resume", "recovery"})
+_ACTION_KEY = re.compile(r"(?:dispatch|stage|review|qa|merge|repair|smoke|resume|recovery):[0-9a-f]{64}")
+_MERGE_STATES = frozenset({"pending", "not_ready", "ready", "merging", "merged", "partial", "blocked"})
 _PHASE_KINDS = frozenset({"implementation", "review", "qa", "integration_qa", "merge", "smoke", "repair"})
 _PHASE_RESULTS = frozenset({"pending", "pass", "fail", "blocked"})
 _RECOVERY_ACTIONS = frozenset({"noop", "rerun", "resume_parent", "block"})
@@ -94,6 +95,19 @@ def _frozen_dag(
     return MappingProxyType(dict(sorted(dag.items())))
 
 
+def _validate_merge_plan(
+    merge_plan: tuple[str, ...],
+    affected_repositories: tuple[str, ...],
+    repository_dag: Mapping[str, tuple[str, ...]],
+) -> None:
+    if set(merge_plan) != set(affected_repositories) or len(merge_plan) != len(affected_repositories):
+        raise MetadataError("merge_plan must be a permutation of affected_repositories")
+    positions = {repository: position for position, repository in enumerate(merge_plan)}
+    for dependent, dependencies in repository_dag.items():
+        if any(positions[dependency] > positions[dependent] for dependency in dependencies):
+            raise MetadataError("merge_plan is inconsistent with repository_dag")
+
+
 @dataclass(frozen=True)
 class ParentMetadata:
     workflow_version: int = 1
@@ -107,7 +121,7 @@ class ParentMetadata:
     merge_plan: tuple[str, ...] = ()
     merge_state: str = "pending"
     attempt: int = 0
-    last_action: str = "stage:initial"
+    last_action: str = "dispatch"
 
     def __post_init__(self) -> None:
         for name in ("workflow_version", "metadata_version", "stage_ordinal", "attempt"):
@@ -127,13 +141,20 @@ class ParentMetadata:
             raise MetadataError("candidate_shas must only contain affected repositories")
         if set(self.merge_plan) - affected:
             raise MetadataError("merge_plan must only contain affected repositories")
-        if self.merge_plan and set(self.candidate_shas) != affected:
-            raise MetadataError("candidate_shas must cover every affected repository when merge_plan is present")
+        if self.merge_plan:
+            _validate_merge_plan(self.merge_plan, self.affected_repositories, self.repository_dag)
+            if set(self.candidate_shas) != affected:
+                raise MetadataError("candidate_shas must cover every affected repository when merge_plan is present")
+        if self.merge_state in {"ready", "merging", "merged"}:
+            if not self.merge_plan or set(self.candidate_shas) != affected:
+                raise MetadataError("ready, merging, and merged states require a full merge plan and candidate SHA map")
         if self.attempt > 2:
             raise MetadataError("attempt must be between 0 and 2")
         object.__setattr__(self, "merge_state", _enum(self.merge_state, "merge_state", _MERGE_STATES))
-        if not isinstance(self.last_action, str) or not _ACTION_KEY.fullmatch(self.last_action):
-            raise MetadataError("last_action must be a structured stable action key")
+        if not isinstance(self.last_action, str) or (
+            self.last_action not in _ACTION_KINDS and not _ACTION_KEY.fullmatch(self.last_action)
+        ):
+            raise MetadataError("last_action must be an allowed action kind or a kind with a 64-hex digest")
 
 
 @dataclass(frozen=True)

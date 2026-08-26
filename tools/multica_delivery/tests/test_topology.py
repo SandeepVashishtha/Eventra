@@ -73,7 +73,7 @@ class TopologyTests(unittest.TestCase):
             topological_waves(repositories, frozenset(repositories))
 
     def test_malformed_satisfied_edge_is_rejected_as_a_topology_error(self):
-        with self.assertRaisesRegex(TopologyError, "satisfied dependency edges"):
+        with self.assertRaisesRegex(TopologyError, "satisfied dependency edge"):
             topological_waves(
                 self.repositories,
                 frozenset({"api", "web"}),
@@ -81,12 +81,24 @@ class TopologyTests(unittest.TestCase):
             )
 
     def test_mixed_malformed_satisfied_edges_never_leak_a_type_error(self):
-        with self.assertRaisesRegex(TopologyError, "satisfied dependency edges"):
+        with self.assertRaisesRegex(TopologyError, "satisfied dependency edge"):
             topological_waves(
                 self.repositories,
                 frozenset({"api", "web"}),
                 satisfied_dependencies=frozenset({("web", "api"), "not-an-edge"}),  # type: ignore[arg-type]
             )
+
+    def test_multiple_malformed_satisfied_edges_have_a_stable_error(self):
+        messages = []
+        for _ in range(3):
+            with self.assertRaises(TopologyError) as error:
+                topological_waves(
+                    self.repositories,
+                    frozenset({"api", "web"}),
+                    satisfied_dependencies=frozenset({1, ("web",)}),  # type: ignore[arg-type]
+                )
+            messages.append(str(error.exception))
+        self.assertEqual(messages, ["satisfied dependency edge 1 must be a (dependent, dependency) pair"] * 3)
 
     def test_merge_order_is_deterministic(self):
         self.assertEqual(
