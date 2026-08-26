@@ -1,0 +1,88 @@
+schema_version: 1
+instance:
+  key: sample-commerce
+  display_name: Sample Commerce
+  runtime_id: 11111111-1111-4111-8111-111111111111
+  daemon_id: 22222222-2222-4222-8222-222222222222
+  control_project: Sample Commerce Delivery Control
+control:
+  github: codeExploreHub/sample-commerce-delivery-control
+  local_path: /workspace/sample-commerce-delivery-control
+skill_registry:
+  using-superpowers:
+    url: https://github.com/openai/superpowers/tree/main/skills/using-superpowers
+    approved: true
+  test-driven-development:
+    url: https://github.com/openai/superpowers/tree/main/skills/test-driven-development
+    approved: true
+policies:
+  environment: development
+  automatic_merge: true
+  deployment: forbidden
+  max_repair_attempts: 2
+  watcher_cron: "*/30 * * * *"
+  watcher_timezone: Asia/Shanghai
+repositories:
+  web:
+    github: codeExploreHub/sample-commerce-web
+    local_path: /workspace/sample-commerce-web
+    default_branch: main
+    project: Sample Commerce Web
+    description: Owns the browser user interface.
+    depends_on: [api]
+    commands:
+      focused_test: npm run test:focused
+      test: npm test
+      build: npm run build
+      start: npm run dev
+      smoke: npm run smoke
+    services:
+      - name: web
+        port: 3000
+        health_url: http://localhost:3000/health
+    skills: [using-superpowers, test-driven-development]
+  api:
+    github: codeExploreHub/sample-commerce-api
+    local_path: /workspace/sample-commerce-api
+    default_branch: main
+    project: Sample Commerce API
+    description: Owns the HTTP API.
+    commands:
+      focused_test: ./scripts/test-focused.sh
+      test: ./scripts/test.sh
+      build: ./scripts/build.sh
+      start: ./scripts/start.sh
+      smoke: ./scripts/smoke.sh
+    services:
+      - name: api
+        port: 8080
+        health_url: http://localhost:8080/health
+    skills: [using-superpowers, test-driven-development]
+    secret_env:
+      DATABASE_URL:
+        recipients: [engineer, integration-qa]
+  notifications:
+    github: codeExploreHub/sample-commerce-notifications
+    local_path: /workspace/sample-commerce-notifications
+    default_branch: main
+    project: Sample Commerce Notifications
+    description: Owns customer notifications.
+    depends_on: [api]
+    commands:
+      focused_test: ./scripts/test-focused.sh
+      test: ./scripts/test.sh
+      build: ./scripts/build.sh
+      start: ./scripts/start.sh
+      smoke: ./scripts/smoke.sh
+    services:
+      - name: notifications
+        port: 8090
+        health_url: http://localhost:8090/health
+    skills: [using-superpowers]
+integration_suites:
+  web-api:
+    repositories: [api, web]
+    start_order: [api, web]
+    command_repository: web
+    command: npm run test:integration
+merge_order: [api, web, notifications]
