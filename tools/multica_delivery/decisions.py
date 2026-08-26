@@ -150,6 +150,14 @@ def _snapshot_problem(manifest: DeliveryManifest, snapshot: ParentSnapshot) -> s
         or not isinstance(manifest.policy.automatic_merge, bool)
     ):
         return "delivery policy exceeds the supported authority"
+    try:
+        merge_order(
+            manifest.repositories,
+            frozenset(manifest.repositories),
+            manifest.merge_order,
+        )
+    except (TopologyError, TypeError):
+        return "confirmed merge order is malformed or inconsistent with repository dependencies"
     affected_values = snapshot.affected_repositories
     if (
         not affected_values
@@ -179,8 +187,11 @@ def _snapshot_problem(manifest: DeliveryManifest, snapshot: ParentSnapshot) -> s
         or not isinstance(snapshot.stalled, bool)
     ):
         return "recovery evidence is malformed"
+    if snapshot.stalled and snapshot.stalled_repository is None:
+        return "stalled recovery lacks an existing affected child target"
     if snapshot.stalled_repository is not None and (
-        snapshot.stalled_repository not in affected
+        not snapshot.stalled
+        or snapshot.stalled_repository not in affected
         or snapshot.stalled_repository not in snapshot.children
     ):
         return "stalled repository is not an existing affected child"
@@ -274,8 +285,13 @@ def _wait_or_recover(
         return _decision(DecisionKind.WAIT, reason)
     if snapshot.recovery_count >= 1:
         return _decision(DecisionKind.BLOCK, "stalled recovery was already used")
-    repositories = () if snapshot.stalled_repository is None else (snapshot.stalled_repository,)
-    return _decision(DecisionKind.DISPATCH, "rerun the existing stalled assignment once", repositories)
+    if snapshot.stalled_repository is None:  # guarded by _snapshot_problem
+        return _decision(DecisionKind.BLOCK, "stalled recovery lacks an existing affected child target")
+    return _decision(
+        DecisionKind.DISPATCH,
+        "rerun the existing stalled assignment once",
+        (snapshot.stalled_repository,),
+    )
 
 
 def _applicable_suites(manifest: DeliveryManifest, affected: frozenset[str]) -> dict[str, frozenset[str]]:
@@ -390,25 +406,24 @@ def decide_parent_action(manifest: DeliveryManifest, snapshot: ParentSnapshot) -
     if manifest.policy.environment == "production":
         return _decision(DecisionKind.WAIT, "production automatic merge is forbidden")
 
-    child_failures = {
-        repository
-        for repository, evidence in snapshot.children.items()
-        if evidence.result in {"fail", "blocked"}
-    }
-    if child_failures:
-        return _repair(manifest, snapshot, "implementation evidence did not pass", child_failures)
-    stale_children = {
-        repository
-        for repository, evidence in snapshot.children.items()
-        if evidence.result == "pass" and evidence.candidate_sha != snapshot.candidate_shas.get(repository)
-    }
-    if stale_children:
-        repository = _ordered(manifest, stale_children)[0]
+    implementation_findings: list[str] = []
+    implementation_repairs: set[str] = set()
+    for repository in _ordered(manifest, set(snapshot.children)):
+        evidence = snapshot.children[repository]
+        if evidence.result in {"fail", "blocked"}:
+            implementation_findings.append(f"{repository} implementation evidence did not pass")
+            implementation_repairs.add(repository)
+        elif evidence.result == "pass" and evidence.candidate_sha != snapshot.candidate_shas.get(repository):
+            implementation_findings.append(
+                f"{repository} implementation evidence does not match candidate SHA"
+            )
+            implementation_repairs.add(repository)
+    if implementation_repairs:
         return _repair(
             manifest,
             snapshot,
-            f"{repository} implementation evidence does not match candidate SHA",
-            stale_children,
+            "; ".join(implementation_findings),
+            implementation_repairs,
         )
 
     satisfied = set(snapshot.satisfied_dependencies)
@@ -455,54 +470,39 @@ def decide_parent_action(manifest: DeliveryManifest, snapshot: ParentSnapshot) -
     }
     suites = _applicable_suites(manifest, affected)
     missing_suites = set(suites) - snapshot.integration_qa.keys()
-    if missing_gate_repositories or missing_suites:
-        dispatch = set(missing_gate_repositories)
-        for suite in missing_suites:
-            dispatch.update(suites[suite])
-        return _decision(
-            DecisionKind.DISPATCH,
-            "dispatch missing exact-SHA review and QA gates",
-            _ordered(manifest, dispatch),
-        )
-
+    repair_findings: list[str] = []
+    repair_repositories: set[str] = set()
+    pending_reason: str | None = None
     for label, values in (("review", snapshot.reviews), ("QA", snapshot.qa)):
         for repository in _ordered(manifest, affected):
-            evidence = values[repository]
+            evidence = values.get(repository)
+            if evidence is None:
+                continue
             if evidence.candidate_sha != snapshot.candidate_shas[repository]:
-                return _repair(
-                    manifest,
-                    snapshot,
-                    f"{repository} {label} evidence does not match candidate SHA",
-                    {repository},
+                repair_findings.append(
+                    f"{repository} {label} evidence does not match candidate SHA"
                 )
-            if evidence.result in {"fail", "blocked"}:
-                return _repair(
-                    manifest,
-                    snapshot,
-                    f"{repository} {label} evidence did not pass",
-                    {repository},
-                )
-            if evidence.result != "pass":
-                return _wait_or_recover(manifest, snapshot, f"{repository} {label} is still active")
+                repair_repositories.add(repository)
+            elif evidence.result in {"fail", "blocked"}:
+                repair_findings.append(f"{repository} {label} evidence did not pass")
+                repair_repositories.add(repository)
+            elif evidence.result != "pass" and pending_reason is None:
+                pending_reason = f"{repository} {label} is still active"
 
     for suite_key in sorted(suites):
-        evidence = snapshot.integration_qa[suite_key]
+        evidence = snapshot.integration_qa.get(suite_key)
+        if evidence is None:
+            continue
         if dict(evidence.candidate_shas) != dict(snapshot.candidate_shas):
-            return _repair(
-                manifest,
-                snapshot,
-                f"{suite_key} integration QA evidence does not match candidate SHA map",
-                suites[suite_key],
+            repair_findings.append(
+                f"{suite_key} integration QA evidence does not match candidate SHA map"
             )
-        if evidence.result in {"fail", "blocked"}:
-            return _repair(
-                manifest,
-                snapshot,
-                f"{suite_key} integration QA evidence did not pass",
-                suites[suite_key],
-            )
-        if evidence.result != "pass":
-            return _wait_or_recover(manifest, snapshot, f"{suite_key} integration QA is still active")
+            repair_repositories.update(suites[suite_key])
+        elif evidence.result in {"fail", "blocked"}:
+            repair_findings.append(f"{suite_key} integration QA evidence did not pass")
+            repair_repositories.update(suites[suite_key])
+        elif evidence.result != "pass" and pending_reason is None:
+            pending_reason = f"{suite_key} integration QA is still active"
 
     for repository in _ordered(manifest, affected):
         pull_request = snapshot.pull_requests[repository]
@@ -513,11 +513,37 @@ def decide_parent_action(manifest: DeliveryManifest, snapshot: ParentSnapshot) -
                 DecisionKind.BLOCK,
                 f"{repository} pull request head does not match candidate SHA",
             )
+        if pull_request.state == "merged" and pull_request.checks_pass is not True:
+            return _decision(
+                DecisionKind.BLOCK,
+                f"{repository} merged pull request lacks required-check PASS evidence",
+            )
         if pull_request.state == "open":
-            if pull_request.mergeable is None or pull_request.checks_pass is None:
-                return _wait_or_recover(manifest, snapshot, f"{repository} merge preflight evidence is incomplete")
-            if not pull_request.mergeable or not pull_request.checks_pass:
-                return _repair(manifest, snapshot, f"{repository} merge preflight did not pass", {repository})
+            if pull_request.mergeable is False or pull_request.checks_pass is False:
+                repair_findings.append(f"{repository} merge preflight did not pass")
+                repair_repositories.add(repository)
+            elif pull_request.mergeable is None or pull_request.checks_pass is None:
+                if pending_reason is None:
+                    pending_reason = f"{repository} merge preflight evidence is incomplete"
+
+    if repair_repositories:
+        return _repair(
+            manifest,
+            snapshot,
+            "; ".join(repair_findings),
+            repair_repositories,
+        )
+    if missing_gate_repositories or missing_suites:
+        dispatch = set(missing_gate_repositories)
+        for suite in missing_suites:
+            dispatch.update(suites[suite])
+        return _decision(
+            DecisionKind.DISPATCH,
+            "dispatch missing exact-SHA review and QA gates",
+            _ordered(manifest, dispatch),
+        )
+    if pending_reason is not None:
+        return _wait_or_recover(manifest, snapshot, pending_reason)
 
     if all_merged:
         return _smoke_decision(manifest, snapshot, affected, suites)

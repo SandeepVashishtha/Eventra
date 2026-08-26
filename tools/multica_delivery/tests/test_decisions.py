@@ -233,6 +233,27 @@ class ParentDecisionTests(unittest.TestCase):
         self.assertEqual(decision.kind, DecisionKind.DISPATCH)
         self.assertEqual(decision.repositories, ("api",))
 
+    def test_stalled_recovery_without_a_repository_blocks_instead_of_dispatching_empty(self):
+        pending = ParentSnapshot(
+            affected_repositories=("api",),
+            candidate_shas={},
+            children={"api": RepositoryEvidence("", "pending")},
+            stalled=True,
+        )
+        decision = decide_parent_action(self.manifest, pending)
+        self.assertEqual(decision.kind, DecisionKind.BLOCK)
+        self.assertEqual(decision.repositories, ())
+
+    def test_stalled_recovery_with_a_foreign_repository_blocks(self):
+        pending = ParentSnapshot(
+            affected_repositories=("api",),
+            candidate_shas={},
+            children={"api": RepositoryEvidence("", "pending")},
+            stalled=True,
+            stalled_repository="billing",
+        )
+        self.assertEqual(decide_parent_action(self.manifest, pending).kind, DecisionKind.BLOCK)
+
     def test_missing_children_dispatch_only_dependency_ready_wave(self):
         snapshot = ParentSnapshot(
             affected_repositories=("api", "notifications", "web"),
@@ -302,6 +323,38 @@ class ParentDecisionTests(unittest.TestCase):
         self.assertEqual(decision.kind, DecisionKind.BLOCK)
         self.assertEqual(decision.repositories, ())
 
+    def test_malformed_confirmed_merge_order_blocks_instead_of_raising(self):
+        malformed = replace(
+            self.manifest,
+            merge_order=("web", "api", "notifications"),
+        )
+        try:
+            decision = decide_parent_action(
+                malformed,
+                passing_snapshot(affected=("api", "notifications", "web"), shas=SHA),
+            )
+        except Exception as error:  # pragma: no cover - assertion reports escaped boundary failure
+            self.fail(f"decision boundary raised {type(error).__name__}: {error}")
+        self.assertEqual(decision.kind, DecisionKind.BLOCK)
+
+    def test_all_current_gate_and_preflight_failures_share_one_repair(self):
+        snapshot = passing_snapshot(affected=("api", "notifications", "web"), shas=SHA)
+        snapshot = replace(
+            snapshot,
+            qa={**snapshot.qa, "notifications": gate_for("notifications", sha="d" * 40)},
+            integration_qa={
+                "web-api": GateEvidence(candidate_shas=SHA, result="fail"),
+            },
+            pull_requests={
+                **snapshot.pull_requests,
+                "web": pr_for("web", mergeable=None, checks_pass=False),
+            },
+        )
+        decision = decide_parent_action(self.manifest, snapshot)
+        self.assertEqual(decision.kind, DecisionKind.REPAIR)
+        self.assertEqual(decision.repositories, ("api", "notifications", "web"))
+        self.assertEqual(decision.next_attempt, 1)
+
     def test_missing_review_and_qa_dispatches_exact_gate_work(self):
         snapshot = passing_snapshot()
         snapshot = replace(snapshot, reviews={}, qa={}, integration_qa={})
@@ -337,6 +390,23 @@ class ParentDecisionTests(unittest.TestCase):
         twice = merged_snapshot(smoke_reads=(passing_smoke_read(), passing_smoke_read()))
         self.assertEqual(decide_parent_action(self.manifest, once).kind, DecisionKind.SMOKE)
         self.assertEqual(decide_parent_action(self.manifest, twice).kind, DecisionKind.COMPLETE)
+
+    def test_merged_pr_without_passing_checks_never_completes_after_smoke(self):
+        read = passing_smoke_read()
+        snapshot = merged_snapshot(smoke_reads=(read, read))
+        snapshot = replace(
+            snapshot,
+            pull_requests={
+                **snapshot.pull_requests,
+                "web": pr_for(
+                    "web",
+                    state="merged",
+                    checks_pass=False,
+                    merged_sha=SHA["web"],
+                ),
+            },
+        )
+        self.assertEqual(decide_parent_action(self.manifest, snapshot).kind, DecisionKind.BLOCK)
 
     def test_non_authoritative_smoke_read_cannot_complete(self):
         read = passing_smoke_read(authoritative=False)
