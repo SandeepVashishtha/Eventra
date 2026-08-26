@@ -1,8 +1,10 @@
 # Eventra Multica adapter
 
-This adapter composes the reusable five-role delivery blueprint with Eventra's
-two authoritative local repositories. It is local-development automation only;
-production deployment is not implemented and remains a human action.
+This adapter composes a reusable five-role delivery blueprint with one
+independent operational Watcher Agent across Eventra's two authoritative local
+repositories. The five delivery roles form the `Eventra Local Delivery` Squad;
+the Watcher Agent is outside that Squad. This is local-development automation
+only; production deployment is not implemented and remains a human action.
 
 ## Inputs and safe execution
 
@@ -162,6 +164,35 @@ Provisioning reconciles one run-only **Eventra · Stalled Work Watcher** with a
 `python3 -B -m tools.multica.workflow watch` for only the two configured
 Projects. It performs at most one verified rerun and is a recovery fallback,
 not a second coordinator.
+
+The scheduled recovery is assigned to the independent **Eventra Workflow
+Watcher** Agent. It is not a member of `Eventra Local Delivery`, runs with
+concurrency 1 (`--max-concurrent-tasks 1`), and does not receive backend
+environment values; only Backend Engineer and Integration QA receive that
+custom environment. The Agent uses the Multica 0.4.34-compatible CSV-safe
+string filter for `eventra.workflow.version=1`: the JSON string is encoded as
+one quoted CSV field with doubled internal quotes before it is passed through
+argv. This preserves the server-side string comparison while retaining the
+two-Project scope and bounded recovery behavior.
+
+Provisioning migrates the existing scheduled Autopilot in place to this Agent:
+it preserves the existing Autopilot and trigger IDs, updates only the
+assignee and any desired drift, and leaves the existing schedule trigger
+(`*/30 * * * *` in `Asia/Shanghai`) authoritative. After applying, use these
+read-only checks with the IDs printed by the provisioner:
+
+```bash
+multica agent get WATCHER_AGENT_ID --output json
+multica squad member list SQUAD_ID --output json
+multica autopilot get AUTOPILOT_ID --output json
+```
+
+The Agent must appear in the first result, must not appear in the Squad member
+list, and must be the Autopilot's `assignee_id` in the third result. Confirm
+that the schedule trigger ID in that Autopilot response remains unchanged.
+Production remains outside this boundary: the Watcher never merges, deploys,
+waives a gate, or edits business code, and production deployment remains
+human-triggered.
 
 For the one-time existing PRO-35 recovery, first merge and apply these updated
 instructions and prove the second apply reports zero mutations. Reread PRO-35,
