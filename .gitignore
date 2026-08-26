@@ -13,6 +13,9 @@
 # testing
 /coverage
 
+# isolated implementation worktrees
+/.worktrees/
+
 # next.js
 /.next/
 /out/
