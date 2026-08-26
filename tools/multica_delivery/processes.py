@@ -6,6 +6,7 @@ from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 import fcntl
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -33,6 +34,7 @@ _OWNED_FIELDS = frozenset(
         "health_url",
         "run_id",
         "owner_token",
+        "start_identity",
     }
 )
 
@@ -80,12 +82,14 @@ class OwnedProcess:
     health_url: str
     run_id: str
     owner_token: str
+    start_identity: str
 
     def __post_init__(self) -> None:
         _stable(self.repository_key, "repository_key")
         _sha(self.candidate_sha)
         _stable(self.run_id, "run_id")
         _stable(self.owner_token, "owner_token")
+        _stable(self.start_identity, "start_identity")
         if not isinstance(self.pid, int) or isinstance(self.pid, bool) or self.pid < 1:
             raise ProcessOwnershipError("pid must be a positive integer")
         if (
@@ -129,6 +133,8 @@ class ProcessBackend(Protocol):
 
     def spawn(self, argv: tuple[str, ...], cwd: Path) -> int: ...
 
+    def start_identity(self, pid: int) -> str: ...
+
     def wait_healthy(self, health_url: str, pid: int) -> bool: ...
 
     def is_alive(self, pid: int) -> bool: ...
@@ -153,6 +159,7 @@ class LocalProcessBackend:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL,
                 check=False,
+                shell=False,
                 timeout=5,
                 text=True,
             )
@@ -182,6 +189,38 @@ class LocalProcessBackend:
             raise ProcessOwnershipError("owned process could not be started") from error
         self._children[process.pid] = process
         return process.pid
+
+    def start_identity(self, pid: int) -> str:
+        if not isinstance(pid, int) or isinstance(pid, bool) or pid < 1:
+            raise ProcessOwnershipError("process start identity could not be determined")
+        try:
+            completed = subprocess.run(
+                ("ps", "-o", "lstart=", "-p", str(pid)),
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                check=False,
+                shell=False,
+                timeout=5,
+                text=True,
+            )
+        except (OSError, subprocess.TimeoutExpired) as error:
+            raise ProcessOwnershipError(
+                "process start identity could not be determined"
+            ) from error
+        if not isinstance(completed.stdout, str):
+            raise ProcessOwnershipError(
+                "process start identity could not be determined"
+            )
+        started = tuple(
+            line.strip() for line in completed.stdout.splitlines() if line.strip()
+        )
+        if completed.returncode != 0 or len(started) != 1:
+            raise ProcessOwnershipError(
+                "process start identity could not be determined"
+            )
+        material = f"pid={pid}\nstarted={started[0]}".encode("utf-8")
+        return hashlib.sha256(material).hexdigest()
 
     def wait_healthy(self, health_url: str, pid: int) -> bool:
         deadline = time.monotonic() + self.health_timeout_seconds
@@ -240,7 +279,7 @@ class ProcessRegistry:
             raise ProcessOwnershipError("owned process registry is malformed")
         result = tuple(records)
         ports: set[int] = set()
-        pid_owners: dict[int, tuple[str, str, str, str]] = {}
+        pid_owners: dict[int, tuple[str, str, str, str, str]] = {}
         for record in result:
             if record.port in ports:
                 raise ProcessOwnershipError("duplicate owned process port")
@@ -249,6 +288,7 @@ class ProcessRegistry:
                 record.candidate_sha,
                 record.run_id,
                 record.owner_token,
+                record.start_identity,
             )
             existing_identity = pid_owners.get(record.pid)
             if existing_identity is not None and existing_identity != identity:
@@ -391,6 +431,26 @@ class ProcessManager:
             and record.owner_token == self.owner_token
         )
 
+    def _start_identity(self, pid: int) -> str:
+        try:
+            identity = self.backend.start_identity(pid)
+        except ProcessOwnershipError:
+            raise
+        except (OSError, RuntimeError, TypeError, ValueError) as error:
+            raise ProcessOwnershipError(
+                "process start identity could not be determined"
+            ) from error
+        try:
+            return _stable(identity, "start_identity")
+        except ProcessOwnershipError as error:
+            raise ProcessOwnershipError(
+                "process start identity could not be determined"
+            ) from error
+
+    def _verify_start_identity(self, pid: int, expected: str) -> None:
+        if self._start_identity(pid) != expected:
+            raise ProcessOwnershipError("process start identity mismatch")
+
     def start(
         self,
         service: ServiceSpec,
@@ -468,6 +528,10 @@ class ProcessManager:
                     ):
                         raise ProcessOwnershipError("owner mismatch")
                     reused.append(record)
+                identities = {record.start_identity for record in reused}
+                if len(identities) != 1:
+                    raise ProcessOwnershipError("process start identity mismatch")
+                self._verify_start_identity(pid, next(iter(identities)))
                 if not self.backend.is_alive(pid):
                     raise ProcessOwnershipError("PID ownership is unknown")
                 for record in reused:
@@ -479,7 +543,15 @@ class ProcessManager:
             if not isinstance(pid, int) or isinstance(pid, bool) or pid < 1:
                 raise ProcessOwnershipError("spawn returned an invalid PID")
 
+            start_identity = self._start_identity(pid)
+
             def cleanup(error: BaseException) -> None:
+                try:
+                    self._verify_start_identity(pid, start_identity)
+                except ProcessOwnershipError as cleanup_error:
+                    raise ProcessOwnershipError(
+                        "owned process start failed and process cleanup failed"
+                    ) from cleanup_error
                 try:
                     self.backend.stop(pid)
                 except (OSError, ProcessOwnershipError, RuntimeError, TypeError, ValueError):
@@ -510,6 +582,7 @@ class ProcessManager:
                     self.backend.port_owner(service.port) != pid for service in services
                 ):
                     raise ProcessOwnershipError("started PID ownership is unknown")
+                self._verify_start_identity(pid, start_identity)
                 owned = tuple(
                     OwnedProcess(
                         repository_key=run.repository_key,
@@ -519,6 +592,7 @@ class ProcessManager:
                         health_url=service.health_url,
                         run_id=run.run_id,
                         owner_token=self.owner_token,
+                        start_identity=start_identity,
                     )
                     for service in services
                 )
@@ -560,6 +634,10 @@ class ProcessManager:
                 for item in owned_pid_records
             ):
                 raise ProcessOwnershipError("owner mismatch")
+            identities = {item.start_identity for item in owned_pid_records}
+            if len(identities) != 1:
+                raise ProcessOwnershipError("process start identity mismatch")
+            self._verify_start_identity(record.pid, next(iter(identities)))
             if not self.backend.is_alive(record.pid) or any(
                 self.backend.port_owner(item.port) != record.pid
                 for item in owned_pid_records
