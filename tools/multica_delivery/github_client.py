@@ -53,13 +53,21 @@ class PullRequestInfo:
 
 
 @dataclass(frozen=True)
+class RequiredCheckIdentity:
+    context: str
+    app_id: int
+
+
+@dataclass(frozen=True)
 class RequiredStatusChecks:
     repository: str
     base_ref: str
     sha: str
     strict: bool
     required_contexts: tuple[str, ...]
+    required_checks: tuple[RequiredCheckIdentity, ...]
     successful_contexts: tuple[str, ...]
+    successful_checks: tuple[RequiredCheckIdentity, ...]
     passing: bool
 
 
@@ -283,7 +291,7 @@ class GitHubClient:
             or not isinstance(checks_config, list)
         ):
             raise GitHubBoundaryError("malformed required checks configuration response")
-        check_contexts = []
+        required_checks = []
         for check in checks_config:
             context = check.get("context") if isinstance(check, Mapping) else None
             app_id = check.get("app_id") if isinstance(check, Mapping) else None
@@ -292,12 +300,16 @@ class GitHubClient:
                 or not context
                 or not isinstance(app_id, int)
                 or isinstance(app_id, bool)
+                or app_id < 1
             ):
                 raise GitHubBoundaryError("malformed required checks configuration response")
-            check_contexts.append(context)
-        if len(set(check_contexts)) != len(check_contexts):
+            required_checks.append(RequiredCheckIdentity(context, app_id))
+        if len(set(required_checks)) != len(required_checks):
             raise GitHubBoundaryError("malformed required checks configuration response")
-        required = tuple(sorted(set(contexts) | set(check_contexts)))
+        required_contexts = tuple(sorted(contexts))
+        required_check_identities = tuple(
+            sorted(required_checks, key=lambda identity: (identity.context, identity.app_id))
+        )
 
         check_runs_response = self._run(
             ("gh", "api", f"repos/{repository}/commits/{expected_sha}/check-runs"),
@@ -309,16 +321,21 @@ class GitHubClient:
         response_sha = check_runs_response.get("sha")
         if response_sha is not None and response_sha != expected_sha:
             raise GitHubBoundaryError("malformed required checks response")
-        observations: dict[str, list[bool]] = {}
+        check_observations: dict[RequiredCheckIdentity, list[bool]] = {}
         for check in check_runs_response["check_runs"]:
             name = check.get("name") if isinstance(check, Mapping) else None
             head_sha = check.get("head_sha") if isinstance(check, Mapping) else None
             status = check.get("status") if isinstance(check, Mapping) else None
             conclusion = check.get("conclusion") if isinstance(check, Mapping) else None
+            app = check.get("app") if isinstance(check, Mapping) else None
+            app_id = app.get("id") if isinstance(app, Mapping) else None
             if (
                 not isinstance(name, str)
                 or not name
                 or head_sha != expected_sha
+                or not isinstance(app_id, int)
+                or isinstance(app_id, bool)
+                or app_id < 1
                 or status not in {"queued", "in_progress", "completed", "waiting", "pending", "requested"}
                 or (
                     conclusion is not None
@@ -337,7 +354,8 @@ class GitHubClient:
                 )
             ):
                 raise GitHubBoundaryError("malformed required checks response")
-            observations.setdefault(name, []).append(
+            identity = RequiredCheckIdentity(name, app_id)
+            check_observations.setdefault(identity, []).append(
                 status == "completed" and conclusion == "success"
             )
 
@@ -352,6 +370,7 @@ class GitHubClient:
             or not isinstance(statuses_response.get("statuses"), list)
         ):
             raise GitHubBoundaryError("malformed required commit statuses response")
+        status_observations: dict[str, list[bool]] = {}
         for status_item in statuses_response["statuses"]:
             status_sha = status_item.get("sha") if isinstance(status_item, Mapping) else None
             context = status_item.get("context") if isinstance(status_item, Mapping) else None
@@ -363,21 +382,29 @@ class GitHubClient:
                 or state not in {"pending", "success", "failure", "error"}
             ):
                 raise GitHubBoundaryError("malformed required commit statuses response")
-            observations.setdefault(context, []).append(state == "success")
+            status_observations.setdefault(context, []).append(state == "success")
 
-        successful = tuple(
+        successful_contexts = tuple(
             context
-            for context in required
-            if observations.get(context) and all(observations[context])
+            for context in required_contexts
+            if status_observations.get(context) and all(status_observations[context])
+        )
+        successful_checks = tuple(
+            identity
+            for identity in required_check_identities
+            if check_observations.get(identity) and all(check_observations[identity])
         )
         return RequiredStatusChecks(
             repository,
             base_ref,
             expected_sha,
             protection["strict"],
-            required,
-            successful,
-            successful == required,
+            required_contexts,
+            required_check_identities,
+            successful_contexts,
+            successful_checks,
+            successful_contexts == required_contexts
+            and successful_checks == required_check_identities,
         )
 
     def get_required_checks(

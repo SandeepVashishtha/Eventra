@@ -161,7 +161,9 @@ def audit_contracts(multica: object, github: object, manifest: DeliveryManifest)
             actual_sha = value.get("sha")
             strict = value.get("strict")
             required = value.get("required_contexts")
+            required_checks = value.get("required_checks")
             successful = value.get("successful_contexts")
+            successful_checks = value.get("successful_checks")
             passing = value.get("passing")
         else:
             repository = getattr(value, "repository", None)
@@ -169,8 +171,34 @@ def audit_contracts(multica: object, github: object, manifest: DeliveryManifest)
             actual_sha = getattr(value, "sha", None)
             strict = getattr(value, "strict", None)
             required = getattr(value, "required_contexts", None)
+            required_checks = getattr(value, "required_checks", None)
             successful = getattr(value, "successful_contexts", None)
+            successful_checks = getattr(value, "successful_checks", None)
             passing = getattr(value, "passing", None)
+
+        def check_identity(identity: object) -> tuple[str, int] | None:
+            context = field(identity, "context")
+            app_id = field(identity, "app_id")
+            if (
+                not isinstance(context, str)
+                or not context
+                or not isinstance(app_id, int)
+                or isinstance(app_id, bool)
+                or app_id < 1
+            ):
+                return None
+            return context, app_id
+
+        required_identities = (
+            tuple(check_identity(identity) for identity in required_checks)
+            if isinstance(required_checks, tuple)
+            else None
+        )
+        successful_identities = (
+            tuple(check_identity(identity) for identity in successful_checks)
+            if isinstance(successful_checks, tuple)
+            else None
+        )
         return (
             repository == expected
             and actual_base == base_ref
@@ -178,13 +206,24 @@ def audit_contracts(multica: object, github: object, manifest: DeliveryManifest)
             and isinstance(strict, bool)
             and isinstance(required, tuple)
             and isinstance(successful, tuple)
+            and required_identities is not None
+            and successful_identities is not None
+            and all(identity is not None for identity in required_identities)
+            and all(identity is not None for identity in successful_identities)
             and all(isinstance(context, str) and context for context in required)
             and all(isinstance(context, str) and context for context in successful)
             and len(set(required)) == len(required)
             and len(set(successful)) == len(successful)
+            and len(set(required_identities)) == len(required_identities)
+            and len(set(successful_identities)) == len(successful_identities)
             and set(successful) <= set(required)
+            and set(successful_identities) <= set(required_identities)
             and isinstance(passing, bool)
-            and passing is (successful == required)
+            and passing
+            is (
+                successful == required
+                and successful_identities == required_identities
+            )
         )
 
     probe("multica.version", multica.version, validate=lambda value: isinstance(value, str) and bool(value))
@@ -294,7 +333,7 @@ def audit_contracts(multica: object, github: object, manifest: DeliveryManifest)
                 pull_contract_failure = True
             else:
                 validated_pull_request = True
-    if validated_pull_request:
+    if validated_pull_request and not pull_contract_failure:
         pull_summary_status = "pass"
         pull_summary_detail = "sample contract available"
     elif sampled_pull_request or pull_contract_failure:

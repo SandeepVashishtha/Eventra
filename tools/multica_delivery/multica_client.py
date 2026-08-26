@@ -200,7 +200,11 @@ class MulticaClient:
         value = self._execute(argv, operation="Multica call", read_only=read_only)
         if not isinstance(value, Mapping):
             raise _contract("Multica call", value)
-        value = self._unwrap(value, "Multica call")
+        value = self._unwrap(
+            value,
+            "Multica call",
+            direct_status_control=mutation,
+        )
         if not isinstance(value, Mapping):
             raise _contract("Multica call", value)
         if _contains_key(value, "custom_env"):
@@ -214,19 +218,35 @@ class MulticaClient:
         return self._execute(argv, operation=operation, read_only=False, input_text=input_text)
 
     @staticmethod
-    def _unwrap(value: object, operation: str, *resource_keys: str) -> object:
+    def _unwrap(
+        value: object,
+        operation: str,
+        *resource_keys: str,
+        direct_status_control: bool = False,
+    ) -> object:
         current = value
         if isinstance(current, Mapping):
+            envelopes = [key for key in _ENVELOPES if key in current]
+            transport_markers = {
+                "success",
+                "error",
+                "errors",
+                "meta",
+            } & current.keys()
+            status_is_control = bool(envelopes or transport_markers or direct_status_control)
             if (
                 bool(_UNSUPPORTED_CONTROL_KEYS & current.keys())
                 or ("success" in current and current["success"] is not True)
-                or ("status" in current and current["status"] not in {"ok", "success"})
+                or (
+                    status_is_control
+                    and "status" in current
+                    and current["status"] not in {"ok", "success"}
+                )
                 or ("error" in current and current["error"] not in _EMPTY_ERROR_VALUES)
                 or ("errors" in current and current["errors"] not in _EMPTY_ERROR_VALUES)
                 or ("meta" in current and not isinstance(current["meta"], Mapping))
             ):
                 raise _contract(operation, current)
-            envelopes = [key for key in _ENVELOPES if key in current]
             if envelopes:
                 allowed = set(envelopes) | {"success", "status", "error", "errors", "meta"}
                 if (
@@ -369,6 +389,7 @@ class MulticaClient:
             ),
             "skill import",
             "skill",
+            direct_status_control=True,
         )
         return self._resource(raw, "skill import")
 
@@ -392,6 +413,7 @@ class MulticaClient:
             ),
             "agent environment update",
             "agent",
+            direct_status_control=True,
         )
         if not isinstance(raw, Mapping) or raw.get("id") != agent_id:
             raise _contract("agent environment update", raw)

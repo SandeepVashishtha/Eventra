@@ -164,7 +164,9 @@ class ContractAuditTests(unittest.TestCase):
             "sha": head_sha,
             "strict": "true",
             "required_contexts": ("ci",),
+            "required_checks": (),
             "successful_contexts": ("ci",),
+            "successful_checks": (),
             "passing": True,
         }
 
@@ -172,6 +174,51 @@ class ContractAuditTests(unittest.TestCase):
 
         statuses = {entry.subject: entry.status for entry in report.entries}
         self.assertTrue(all(statuses[f"github.required_status_checks.{slug}"] == "fail" for slug in ({self.manifest.control.github} | {repo.github for repo in self.manifest.repositories.values()})))
+        self.assertEqual(statuses["github.pull_request_shape"], "fail")
+
+    def test_one_valid_sample_cannot_hide_another_repository_detail_failure(self):
+        sha = "a" * 40
+        repositories = [self.manifest.control.github] + [
+            repository.github for repository in self.manifest.repositories.values()
+        ]
+        valid_repository, invalid_repository = repositories[:2]
+        github = RecordingGitHub()
+
+        def pull(repository, *, valid=True):
+            return {
+                "repository": repository,
+                "number": 4,
+                "state": "open" if valid else "unknown",
+                "head_sha": sha if valid else "main",
+                "base_ref": "main" if valid else "",
+                "mergeable": True if valid else "yes",
+            }
+
+        github.list_pull_requests = lambda repository: (
+            (pull(repository),)
+            if repository in {valid_repository, invalid_repository}
+            else ()
+        )
+        github.get_pull_request = lambda repository, number: pull(
+            repository, valid=repository == valid_repository
+        )
+        github.required_status_checks = lambda repository, base_ref, head_sha: {
+            "repository": repository,
+            "base_ref": base_ref,
+            "sha": head_sha,
+            "strict": True,
+            "required_contexts": (),
+            "required_checks": (),
+            "successful_contexts": (),
+            "successful_checks": (),
+            "passing": True,
+        }
+
+        report = audit_contracts(RecordingMultica(), github, self.manifest)
+
+        statuses = {entry.subject: entry.status for entry in report.entries}
+        self.assertEqual(statuses[f"github.required_status_checks.{valid_repository}"], "pass")
+        self.assertEqual(statuses[f"github.pull_request.{invalid_repository}"], "fail")
         self.assertEqual(statuses["github.pull_request_shape"], "fail")
 
 

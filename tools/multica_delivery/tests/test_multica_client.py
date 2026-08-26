@@ -156,6 +156,15 @@ class MulticaClientTests(unittest.TestCase):
                 "https://github.com/example/skills/tree/main/tdd"
             )
 
+    def test_direct_read_domain_status_is_not_a_transport_failure(self):
+        runner = FakeRunner({"id": "issue-1", "status": "open"})
+
+        result = MulticaClient(runner).call(
+            ("multica", "issue", "get", "issue-1", "--output", "json")
+        )
+
+        self.assertEqual(result["status"], "open")
+
     def test_malformed_environment_is_actionable_without_leaking_values(self):
         secret = "SECRET_VALUE_SENTINEL"
         runner = FakeRunner({"data": {"unexpected": [secret]}})
