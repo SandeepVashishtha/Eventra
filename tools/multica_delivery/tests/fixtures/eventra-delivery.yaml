@@ -1,0 +1,104 @@
+schema_version: 1
+instance:
+  key: eventra
+  display_name: Eventra
+  runtime_id: de500649-cada-4419-9d5d-279045e2eaae
+  daemon_id: 019fab98-bbad-7d17-b0b7-26e56dbe1b6f
+  control_project: Eventra Delivery Control
+control:
+  github: codeExploreHub/eventra-delivery-control
+  local_path: /Users/didi/Eventra-workspace/Eventra-Delivery-Control
+skill_registry:
+  using-superpowers:
+    url: https://github.com/obra/superpowers/tree/main/skills/using-superpowers
+    approved: true
+  test-driven-development:
+    url: https://github.com/obra/superpowers/tree/main/skills/test-driven-development
+    approved: true
+  systematic-debugging:
+    url: https://github.com/obra/superpowers/tree/main/skills/systematic-debugging
+    approved: true
+  verification-before-completion:
+    url: https://github.com/obra/superpowers/tree/main/skills/verification-before-completion
+    approved: true
+  vercel-react-best-practices:
+    url: https://github.com/vercel-labs/agent-skills/tree/main/skills/react-best-practices
+    approved: true
+  rest-api-conventions:
+    url: https://github.com/rrezartprebreza/spring-boot-skills/tree/main/skills/spring-boot-3/rest-api-conventions
+    approved: true
+  testing-pyramid:
+    url: https://github.com/rrezartprebreza/spring-boot-skills/tree/main/skills/spring-boot-3/testing-pyramid
+    approved: true
+  spring-security-jwt:
+    url: https://github.com/rrezartprebreza/spring-boot-skills/tree/main/skills/spring-boot-3/spring-security-jwt
+    approved: true
+policies:
+  environment: development
+  automatic_merge: true
+  deployment: forbidden
+  max_repair_attempts: 2
+  watcher_cron: "*/30 * * * *"
+  watcher_timezone: Asia/Shanghai
+repositories:
+  frontend:
+    github: codeExploreHub/Eventra
+    local_path: /Users/didi/Eventra-workspace/Eventra
+    default_branch: master
+    project: Eventra Local Development
+    description: Owns the browser user interface and local backend integration.
+    depends_on: [backend]
+    commands:
+      focused_test: npm run test:footer-meta
+      test: npm run test:local-contract
+      build: npm run build
+      start: npm run dev:local
+      smoke: npm run smoke:local
+    services:
+      - name: frontend
+        port: 3000
+        health_url: http://localhost:3000
+    skills:
+      - using-superpowers
+      - test-driven-development
+      - systematic-debugging
+      - verification-before-completion
+      - vercel-react-best-practices
+  backend:
+    github: codeExploreHub/Eventra-Backend
+    local_path: /Users/didi/Eventra-workspace/Eventra-Backend
+    default_branch: master
+    project: Eventra Backend Local Development
+    description: Owns the Spring Boot HTTP API and persistence behavior.
+    commands:
+      focused_test: scripts/test-local.sh -Dtest=MetaControllerTests
+      test: scripts/test-local.sh
+      build: ./mvnw -s .mvn/settings-public.xml -DskipTests package
+      start: scripts/run-local.sh
+      smoke: scripts/smoke-local.sh
+    services:
+      - name: backend
+        port: 8080
+        health_url: http://localhost:8080/actuator/health
+    skills:
+      - using-superpowers
+      - test-driven-development
+      - systematic-debugging
+      - verification-before-completion
+      - rest-api-conventions
+      - testing-pyramid
+      - spring-security-jwt
+    secret_env:
+      JWT_SECRET:
+        recipients: [engineer, integration-qa]
+      MAIL_USERNAME:
+        recipients: [engineer, integration-qa]
+      MAIL_PASSWORD:
+        recipients: [engineer, integration-qa]
+integration_suites:
+  frontend-backend:
+    repositories: [backend, frontend]
+    start_order: [backend, frontend]
+    command_repository: frontend
+    command: npm run smoke:local
+merge_order: [backend, frontend]

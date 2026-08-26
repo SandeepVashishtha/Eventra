@@ -1,3 +1,5 @@
+import json
+from pathlib import Path
 import unittest
 from dataclasses import FrozenInstanceError, is_dataclass
 
@@ -8,6 +10,13 @@ from tools.multica.eventra_adapter import (
     ProjectConfig,
     SkillSource,
     build_eventra_config,
+    eventra_manifest,
+    legacy_phase_contract,
+    render_phase_contract,
+)
+from tools.multica.workflow import (
+    PhaseCompletion as LegacyPhaseCompletion,
+    build_phase_metadata,
 )
 
 
@@ -144,6 +153,49 @@ class EventraAdapterTests(unittest.TestCase):
             self.config.watcher.description_file.read_text(),
         )
 
+    def test_generic_render_preserves_eventra_phase_contract(self):
+        legacy = legacy_phase_contract("frontend", "review", attempt=1)
+        generic = render_phase_contract(
+            eventra_manifest(Path("/Users/didi/Eventra-workspace")),
+            "frontend",
+            "review",
+            attempt=1,
+        )
+
+        expected = {
+            "eventra.workflow.version": "1",
+            "eventra.phase.kind": "review",
+            "eventra.phase.result": "{result}",
+            "eventra.phase.attempt": "1",
+            "eventra.phase.evidence_comment": "{evidence_comment_uuid}",
+            "eventra.phase.sha.frontend": "{candidate_sha}",
+        }
+        self.assertEqual(json.loads(legacy.metadata_json), expected)
+        self.assertEqual(json.loads(generic.metadata_json), expected)
+        self.assertEqual(generic.metadata_json, legacy.metadata_json)
+
+        rendered = json.loads(generic.metadata_json)
+        rendered.update(
+            {
+                "eventra.phase.result": "pass",
+                "eventra.phase.evidence_comment": (
+                    "00000000-0000-4000-8000-000000000001"
+                ),
+                "eventra.phase.sha.frontend": "a" * 40,
+            }
+        )
+        actual = build_phase_metadata(
+            LegacyPhaseCompletion(
+                kind="review",
+                result="pass",
+                attempt=1,
+                evidence_comment="00000000-0000-4000-8000-000000000001",
+                frontend_sha="a" * 40,
+                backend_sha=None,
+                pr_url=None,
+            )
+        )
+        self.assertEqual(rendered, actual)
 
 if __name__ == "__main__":
     unittest.main()
