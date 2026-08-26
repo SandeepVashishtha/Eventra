@@ -52,7 +52,7 @@ python3 -B -m unittest discover -s tools -p 'test_*.py' -v
 python3 -B -m compileall -q tools/multica tools/multica_delivery
 ```
 
-Importing modules and running tests never mutates Multica, GitHub, local
+Importing modules and running tests never mutate Multica, GitHub, local
 services, or secrets. Tests use in-memory fakes and temporary runtime state;
 they do not contact live services.
 
@@ -100,16 +100,27 @@ logs, exceptions, Issues, comments, pull requests, reports, or the lock file.
 
 Dry-run is the default onboarding posture: audit contracts, validate local
 inputs, and inspect `Provisioner.reconcile(..., apply=False, ...)` before any
-approved apply. `apply=True` authorizes only the planned Multica resource
-reconciliation. It does not authorize GitHub repository creation, commit,
-push, business-code changes, pull-request merge, or deployment.
+approved apply. Only `Provisioner.reconcile(..., apply=True, ...)` authorizes
+the planned Multica resource reconciliation. That approval does not authorize
+GitHub repository creation, commit, push, business-code changes, pull-request
+merge, or deployment.
 
 In a development instance, development/local quality gates may authorize
-automatic merge only after every affected repository has exact-SHA tests,
-builds, required GitHub checks, independent review, Integration QA, and
-mergeability evidence. Multi-repository gates pass before the first merge;
-merges then follow the confirmed dependency-compatible order. A partial merge
-blocks without rollback.
+automatic merge. Before merging, the current Core proves exact-SHA
+implementation PASS evidence, independent review and repository/integration QA
+evidence, required GitHub checks, and merge preflight. Multi-repository gates
+pass before the first merge; merges then follow the confirmed
+dependency-compatible order. A partial merge blocks without rollback.
+
+`focused_test`, `test`, and `build` are manifest and Agent contracts, and
+inputs for a future executor; the current Core neither executes them nor
+records structured exact-SHA results for them. It accepts the implementation
+phase verdict and evidence UUID that an Agent records for the candidate SHA;
+it does not infer command execution from that PASS. After merging,
+`OwnedSmokeExecutor` runs declared repository smoke and applicable integration
+commands against the authoritative merged SHA map; unverified owner-checked
+cleanup blocks every smoke result. It starts declared local services only
+through `ProcessManager`, which blocks unknown or mismatched process ownership.
 
 This framework never deploys; deployment is always a separate, manually
 triggered external action. The manifest requires `deployment: forbidden`.
