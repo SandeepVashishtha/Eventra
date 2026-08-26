@@ -7,7 +7,12 @@ import json
 import re
 from typing import Mapping
 
-from .multica_client import CommandFailure, CommandResult, CommandRunner
+from .multica_client import (
+    CommandFailure,
+    CommandResult,
+    CommandRunner,
+    TransientCommandError,
+)
 
 
 class GitHubBoundaryError(RuntimeError):
@@ -30,6 +35,10 @@ class RepositoryInfo:
 class ProjectInfo:
     id: str
     title: str
+    url: str
+    public: bool
+    closed: bool
+    linked_repositories: tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -74,21 +83,21 @@ class GitHubClient:
         attempts = 2 if read_only else 1
         for attempt in range(attempts):
             try:
-                value = self._runner.run(argv)
+                value = self._runner.run(argv, input_text=None)
                 if isinstance(value, CommandResult):
                     if value.returncode != 0:
-                        raise CommandFailure(transient=value.transient)
+                        raise CommandFailure()
                     try:
                         value = json.loads(value.stdout)
                     except (json.JSONDecodeError, TypeError):
                         raise GitHubBoundaryError(f"malformed {operation} JSON response") from None
                 return value
-            except CommandFailure as error:
-                if not (read_only and error.transient and attempt == 0):
-                    raise GitHubBoundaryError(f"{operation} failed") from None
-            except (OSError, TimeoutError):
-                if not (read_only and attempt == 0):
-                    raise GitHubBoundaryError(f"{operation} failed") from None
+            except TransientCommandError:
+                if read_only and attempt == 0:
+                    continue
+                raise GitHubBoundaryError(f"{operation} failed") from None
+            except (CommandFailure, OSError, TimeoutError):
+                raise GitHubBoundaryError(f"{operation} failed") from None
         raise AssertionError("unreachable")
 
     @staticmethod
@@ -120,28 +129,74 @@ class GitHubClient:
         full_name = raw.get("full_name", raw.get("nameWithOwner"))
         visibility = raw.get("visibility")
         default_branch = raw.get("default_branch", raw.get("defaultBranch"))
-        if (
-            full_name != repository
-            or (visibility is not None and not isinstance(visibility, str))
-            or (default_branch is not None and not isinstance(default_branch, str))
-        ):
+        if full_name != repository or visibility not in {"public", "private", "internal"} or not isinstance(default_branch, str) or not default_branch:
             raise GitHubBoundaryError("malformed repository response")
         return RepositoryInfo(repository, visibility, default_branch)
 
     def list_projects(self, repository: str) -> tuple[ProjectInfo, ...]:
         self._allow(repository)
-        raw = self._run(("gh", "api", f"repos/{repository}/projects"), "Projects read", read_only=True)
-        if isinstance(raw, Mapping):
-            raw = raw.get("projects")
-        if not isinstance(raw, list) or not all(isinstance(item, Mapping) for item in raw):
+        owner, name = repository.split("/", 1)
+        query = """query($owner:String!,$name:String!){repository(owner:$owner,name:$name){nameWithOwner owner{... on Organization{projectsV2(first:100){nodes{id title url public closed repositories(first:100){nodes{nameWithOwner}}}}} ... on User{projectsV2(first:100){nodes{id title url public closed repositories(first:100){nodes{nameWithOwner}}}}}}}}"""
+        raw = self._run(
+            (
+                "gh",
+                "api",
+                "graphql",
+                "-f",
+                f"query={query}",
+                "-F",
+                f"owner={owner}",
+                "-F",
+                f"name={name}",
+            ),
+            "Projects v2 read",
+            read_only=True,
+        )
+        if not isinstance(raw, Mapping) or raw.get("errors") not in (None, [], ()):
+            raise GitHubBoundaryError("malformed Projects response")
+        data = raw.get("data")
+        repository_node = data.get("repository") if isinstance(data, Mapping) else None
+        owner_node = repository_node.get("owner") if isinstance(repository_node, Mapping) else None
+        projects_connection = owner_node.get("projectsV2") if isinstance(owner_node, Mapping) else None
+        nodes = projects_connection.get("nodes") if isinstance(projects_connection, Mapping) else None
+        if (
+            not isinstance(repository_node, Mapping)
+            or repository_node.get("nameWithOwner") != repository
+            or not isinstance(nodes, list)
+        ):
             raise GitHubBoundaryError("malformed Projects response")
         projects = []
-        for item in raw:
-            project_id = item.get("id")
-            title = item.get("title", item.get("name"))
-            if not isinstance(project_id, (str, int)) or isinstance(project_id, bool) or not isinstance(title, str) or not title:
+        for item in nodes:
+            if not isinstance(item, Mapping):
                 raise GitHubBoundaryError("malformed Projects response")
-            projects.append(ProjectInfo(str(project_id), title))
+            project_id = item.get("id")
+            title = item.get("title")
+            url = item.get("url")
+            public = item.get("public")
+            closed = item.get("closed")
+            repositories = item.get("repositories")
+            repository_nodes = repositories.get("nodes") if isinstance(repositories, Mapping) else None
+            if (
+                not isinstance(project_id, str)
+                or not project_id
+                or not isinstance(title, str)
+                or not title
+                or not isinstance(url, str)
+                or not url.startswith("https://github.com/")
+                or not isinstance(public, bool)
+                or not isinstance(closed, bool)
+                or not isinstance(repository_nodes, list)
+            ):
+                raise GitHubBoundaryError("malformed Projects response")
+            linked = []
+            for linked_repository in repository_nodes:
+                linked_name = linked_repository.get("nameWithOwner") if isinstance(linked_repository, Mapping) else None
+                if not isinstance(linked_name, str) or not linked_name:
+                    raise GitHubBoundaryError("malformed Projects response")
+                linked.append(linked_name)
+            linked_tuple = tuple(sorted(linked))
+            if repository in linked_tuple:
+                projects.append(ProjectInfo(project_id, title, url, public, closed, linked_tuple))
         return tuple(projects)
 
     def list_pull_requests(self, repository: str) -> tuple[PullRequest, ...]:
@@ -178,32 +233,30 @@ class GitHubClient:
             raise GitHubBoundaryError("malformed pull request response")
         return PullRequest(repository, number, state, sha, mergeable)
 
-    def get_required_checks(self, repository: str, number: int, sha: str) -> CheckSummary:
+    def get_required_checks(self, repository: str, sha: str) -> CheckSummary:
         self._allow(repository)
         raw = self._run(
-            (
-                "gh",
-                "pr",
-                "checks",
-                str(number),
-                "--repo",
-                repository,
-                "--required",
-                "--json",
-                "name,state,bucket",
-            ),
+            ("gh", "api", f"repos/{repository}/commits/{sha}/check-runs"),
             "required checks read",
             read_only=True,
         )
-        if not isinstance(raw, list):
+        if not isinstance(raw, Mapping) or not isinstance(raw.get("check_runs"), list):
             raise GitHubBoundaryError("malformed required checks response")
+        response_sha = raw.get("sha")
+        if response_sha is not None and response_sha != sha:
+            raise GitHubBoundaryError("malformed required checks response")
+        checks = raw["check_runs"]
         valid = all(
             isinstance(check, Mapping)
             and isinstance(check.get("name"), str)
-            and check.get("bucket") == "pass"
-            for check in raw
+            and (check.get("head_sha") is None or check.get("head_sha") == sha)
+            and check.get("status") == "completed"
+            and check.get("conclusion") == "success"
+            for check in checks
         )
-        return CheckSummary(sha, len(raw), bool(raw) and valid)
+        if any(isinstance(check, Mapping) and check.get("head_sha") not in (None, sha) for check in checks):
+            raise GitHubBoundaryError("malformed required checks response")
+        return CheckSummary(sha, len(checks), bool(checks) and valid)
 
     def merge_pull_request(self, repository: str, number: int, *, expected_sha: str) -> MergeResult:
         """Authoritatively reread every gate immediately before one mutation."""
@@ -218,7 +271,7 @@ class GitHubClient:
             raise GitHubBoundaryError("pull request is not open")
         if pull_request.mergeable is not True:
             raise GitHubBoundaryError("pull request is not mergeable")
-        checks = self.get_required_checks(repository, number, expected_sha)
+        checks = self.get_required_checks(repository, expected_sha)
         if not checks.passing:
             raise GitHubBoundaryError("required checks are not passing")
         raw = self._mapping(

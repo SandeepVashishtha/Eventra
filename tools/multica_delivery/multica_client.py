@@ -10,11 +10,11 @@ from urllib.parse import urlparse
 
 
 class CommandFailure(RuntimeError):
-    """A runner failure classified without retaining command output."""
+    """A permanent runner failure without retained command output."""
 
-    def __init__(self, message: str = "command failed", *, transient: bool = False):
-        super().__init__(message)
-        self.transient = transient
+
+class TransientCommandError(CommandFailure):
+    """The only runner failure eligible for one read-only retry."""
 
 
 class MulticaContractError(RuntimeError):
@@ -27,13 +27,17 @@ class CommandResult:
 
     returncode: int
     stdout: str
-    transient: bool = False
 
 
 class CommandRunner(Protocol):
     """Execution is injected so this package never starts a subprocess."""
 
-    def run(self, argv: tuple[str, ...]) -> CommandResult: ...
+    def run(
+        self,
+        argv: tuple[str, ...],
+        *,
+        input_text: str | None = None,
+    ) -> CommandResult: ...
 
 
 @dataclass(frozen=True)
@@ -51,6 +55,19 @@ class AgentEnvironment:
 @dataclass(frozen=True)
 class MutationResult:
     resource_id: str
+
+
+@dataclass(frozen=True)
+class RuntimeInfo:
+    id: str
+    daemon_id: str
+    status: str
+    capabilities: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class SkillImportCapability:
+    dry_run: bool
 
 
 _ENVELOPES = frozenset({"data", "result"})
@@ -77,6 +94,25 @@ _READ_PREFIXES = (
     ("issue", "metadata", "list"),
     ("capability", "get"),
 )
+_MUTATION_PREFIXES = (
+    ("skill", "import"),
+    ("agent", "create"),
+    ("agent", "update"),
+    ("agent", "skills", "add"),
+    ("squad", "create"),
+    ("squad", "update"),
+    ("squad", "member", "add"),
+    ("squad", "member", "set-role"),
+    ("project", "create"),
+    ("project", "update"),
+    ("project", "resource", "add"),
+    ("project", "resource", "update"),
+    ("autopilot", "create"),
+    ("autopilot", "update"),
+    ("autopilot", "trigger-add"),
+    ("autopilot", "trigger-update"),
+)
+_EMPTY_ERROR_VALUES = (None, "", (), [], {})
 
 
 def _keys(value: object) -> str:
@@ -87,6 +123,22 @@ def _keys(value: object) -> str:
 
 def _contract(operation: str, value: object) -> MulticaContractError:
     return MulticaContractError(f"malformed {operation} response ({_keys(value)})")
+
+
+def _deep_freeze(value: object) -> object:
+    if isinstance(value, Mapping):
+        return MappingProxyType({str(key): _deep_freeze(item) for key, item in value.items()})
+    if isinstance(value, list | tuple):
+        return tuple(_deep_freeze(item) for item in value)
+    return value
+
+
+def _contains_key(value: object, forbidden: str) -> bool:
+    if isinstance(value, Mapping):
+        return forbidden in value or any(_contains_key(item, forbidden) for item in value.values())
+    if isinstance(value, list | tuple):
+        return any(_contains_key(item, forbidden) for item in value)
+    return False
 
 
 class MulticaClient:
@@ -115,40 +167,44 @@ class MulticaClient:
         attempts = 2 if read_only else 1
         for attempt in range(attempts):
             try:
-                if input_text is None:
-                    value = self._runner.run(argv)
-                else:
-                    value = self._runner.run(argv, input_text=input_text)  # type: ignore[call-arg]
+                value = self._runner.run(argv, input_text=input_text)
                 if isinstance(value, CommandResult):
                     if value.returncode != 0:
-                        raise CommandFailure(transient=value.transient)
+                        raise CommandFailure()
                     try:
                         value = json.loads(value.stdout)
                     except (json.JSONDecodeError, TypeError):
                         raise MulticaContractError(f"malformed {operation} JSON response") from None
                 return value
-            except CommandFailure as error:
-                if not (read_only and error.transient and attempt == 0):
-                    raise CommandFailure(f"{operation} command failed", transient=error.transient) from None
-            except (OSError, TimeoutError):
-                if not (read_only and attempt == 0):
-                    raise CommandFailure(f"{operation} command failed") from None
+            except TransientCommandError:
+                if read_only and attempt == 0:
+                    continue
+                raise CommandFailure(f"{operation} command failed") from None
+            except (CommandFailure, OSError, TimeoutError):
+                raise CommandFailure(f"{operation} command failed") from None
         raise AssertionError("unreachable")
 
     def call(self, argv: tuple[str, ...]) -> Mapping[str, object]:
         """Perform a JSON call while classifying retry and secret boundaries."""
 
-        command = argv[1:] if argv and argv[0] == "multica" else argv
+        if not isinstance(argv, tuple) or not argv or argv[0] != "multica":
+            raise MulticaContractError("unsupported Multica argv")
+        command = argv[1:]
         if command[:3] in {("agent", "env", "get"), ("agent", "env", "set")}:
             raise MulticaContractError("agent environment requires the typed environment boundary")
         read_only = any(command[: len(prefix)] == prefix for prefix in _READ_PREFIXES)
+        mutation = any(command[: len(prefix)] == prefix for prefix in _MUTATION_PREFIXES)
+        if not read_only and not mutation:
+            raise MulticaContractError("unsupported Multica argv")
         value = self._execute(argv, operation="Multica call", read_only=read_only)
         if not isinstance(value, Mapping):
             raise _contract("Multica call", value)
         value = self._unwrap(value, "Multica call")
         if not isinstance(value, Mapping):
             raise _contract("Multica call", value)
-        return MappingProxyType(dict(value))
+        if _contains_key(value, "custom_env"):
+            raise MulticaContractError("Multica call response requires the typed environment boundary")
+        return _deep_freeze(value)
 
     def _read(self, argv: tuple[str, ...], operation: str) -> object:
         return self._execute(argv, operation=operation, read_only=True)
@@ -161,10 +217,21 @@ class MulticaClient:
         current = value
         if isinstance(current, Mapping):
             envelopes = [key for key in _ENVELOPES if key in current]
-            if len(envelopes) > 1:
-                raise _contract(operation, current)
             if envelopes:
+                allowed = set(envelopes) | {"success", "status", "error", "errors", "meta"}
+                if (
+                    len(envelopes) != 1
+                    or set(current) - allowed
+                    or ("success" in current and current["success"] is not True)
+                    or ("status" in current and current["status"] not in {"ok", "success"})
+                    or ("error" in current and current["error"] not in _EMPTY_ERROR_VALUES)
+                    or ("errors" in current and current["errors"] not in _EMPTY_ERROR_VALUES)
+                    or ("meta" in current and not isinstance(current["meta"], Mapping))
+                ):
+                    raise _contract(operation, current)
                 current = current[envelopes[0]]
+            elif any(key in current for key in ("success", "error", "errors")):
+                raise _contract(operation, current)
         if isinstance(current, Mapping):
             for key in resource_keys:
                 if key in current:
@@ -199,7 +266,7 @@ class MulticaClient:
             raise _contract("Multica version", value)
         return value
 
-    def get_runtime(self, runtime_id: str | None = None, daemon_id: str | None = None) -> Mapping[str, object]:
+    def get_runtime(self, runtime_id: str | None = None, daemon_id: str | None = None) -> RuntimeInfo:
         target_runtime = runtime_id or self.runtime_id
         target_daemon = daemon_id or self.daemon_id
         raw = self._unwrap(
@@ -216,7 +283,11 @@ class MulticaClient:
             or matches[0].get("status") != "online"
         ):
             raise MulticaContractError("runtime/daemon is not reachable")
-        return MappingProxyType(dict(matches[0]))
+        metadata = matches[0].get("metadata")
+        capabilities = metadata.get("capabilities") if isinstance(metadata, Mapping) else None
+        if not isinstance(capabilities, list) or not all(isinstance(item, str) and item for item in capabilities):
+            raise _contract("runtime list", matches[0])
+        return RuntimeInfo(target_runtime, target_daemon, "online", tuple(capabilities))
 
     def list_projects(self) -> tuple[MulticaResource, ...]:
         raw = self._unwrap(
@@ -242,7 +313,7 @@ class MulticaClient:
         )
         return self._resources(raw, "skill list")
 
-    def inspect_skill_import(self) -> Mapping[str, object]:
+    def inspect_skill_import(self) -> SkillImportCapability:
         """Inspect declared capability metadata; never execute ``skill import``."""
 
         raw = self._unwrap(
@@ -253,9 +324,9 @@ class MulticaClient:
             "skill import capability",
             "capability",
         )
-        if not isinstance(raw, Mapping):
+        if not isinstance(raw, Mapping) or not isinstance(raw.get("dry_run"), bool):
             raise _contract("skill import capability", raw)
-        return MappingProxyType(dict(raw))
+        return SkillImportCapability(raw["dry_run"])
 
     def get_agent_environment(self, agent_id: str) -> AgentEnvironment:
         operation = "agent environment"

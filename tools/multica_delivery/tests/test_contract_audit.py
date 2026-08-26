@@ -15,7 +15,7 @@ class RecordingMultica:
         return value
 
     def version(self): return self._read("version", "0.4.33")
-    def get_runtime(self, runtime_id, daemon_id): return self._read("get_runtime", {"id": runtime_id, "daemon_id": daemon_id})
+    def get_runtime(self, runtime_id, daemon_id): return self._read("get_runtime", {"id": runtime_id, "daemon_id": daemon_id, "status": "online"})
     def list_projects(self): return self._read("list_projects", ())
     def list_agents(self): return self._read("list_agents", ())
     def list_skills(self): return self._read("list_skills", ())
@@ -33,8 +33,8 @@ class RecordingGitHub:
         self.calls.append(name)
         return value
 
-    def auth_status(self): return self._read("auth_status", {"authenticated": True})
-    def get_repository(self, repository): return self._read("get_repository", {"nameWithOwner": repository})
+    def auth_status(self): return self._read("auth_status", {"active": True, "login": "tester"})
+    def get_repository(self, repository): return self._read("get_repository", {"repository": repository, "visibility": "private"})
     def list_projects(self, repository): return self._read("list_projects", ())
     def list_pull_requests(self, repository): return self._read("list_pull_requests", ())
 
@@ -87,6 +87,32 @@ class ContractAuditTests(unittest.TestCase):
         self.assertNotIn(secret, repr(report))
         statuses = {entry.subject: entry.status for entry in report.entries}
         self.assertEqual(statuses["multica.version"], "fail")
+
+    def test_malformed_capability_and_repository_visibility_are_fail_entries(self):
+        multica = RecordingMultica()
+        github = RecordingGitHub()
+        multica.inspect_skill_import = lambda: {"dry_run": "false"}
+        github.get_repository = lambda repository: {"repository": repository}
+
+        report = audit_contracts(multica, github, self.manifest)
+
+        statuses = {entry.subject: entry.status for entry in report.entries}
+        self.assertEqual(statuses["multica.skill_import_capability"], "fail")
+        self.assertTrue(all(statuses[f"github.repository.{slug}"] == "fail" for slug in ({self.manifest.control.github} | {repo.github for repo in self.manifest.repositories.values()})))
+
+    def test_malformed_sample_shapes_become_fail_entries_instead_of_exceptions(self):
+        multica = RecordingMultica()
+        github = RecordingGitHub()
+        multica.list_agents = lambda: (object(),)
+        github.list_projects = lambda repository: (object(),)
+        github.list_pull_requests = lambda repository: (object(),)
+
+        report = audit_contracts(multica, github, self.manifest)
+
+        statuses = {entry.subject: entry.status for entry in report.entries}
+        self.assertEqual(statuses["multica.agents"], "fail")
+        self.assertTrue(all(statuses[f"github.projects.{slug}"] == "fail" for slug in ({self.manifest.control.github} | {repo.github for repo in self.manifest.repositories.values()})))
+        self.assertTrue(all(statuses[f"github.pull_requests.{slug}"] == "fail" for slug in ({self.manifest.control.github} | {repo.github for repo in self.manifest.repositories.values()})))
 
 
 if __name__ == "__main__":
