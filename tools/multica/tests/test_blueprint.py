@@ -21,6 +21,23 @@ class BlueprintTests(unittest.TestCase):
             ],
         )
 
+    def test_has_one_project_neutral_operational_watcher(self):
+        self.assertEqual(
+            [agent.role for agent in self.blueprint.operational_agents],
+            ["workflow_watcher"],
+        )
+        watcher = self.blueprint.operational_agents[0]
+        self.assertEqual(
+            watcher.skill_keys,
+            (
+                "using-superpowers",
+                "systematic-debugging",
+                "verification-before-completion",
+            ),
+        )
+        self.assertFalse(watcher.needs_backend_env)
+        self.assertTrue(watcher.instructions_file.is_file())
+
     def test_exposes_frozen_typed_blueprint_contract(self):
         self.assertTrue(is_dataclass(AgentSpec))
         self.assertTrue(is_dataclass(TeamBlueprint))
@@ -30,7 +47,9 @@ class BlueprintTests(unittest.TestCase):
         self.assertTrue(all(isinstance(agent.instructions_file, Path) for agent in self.blueprint.agents))
 
     def test_blueprint_has_no_project_or_technology_context(self):
-        serialized = repr(self.blueprint).lower()
+        serialized = repr(
+            (self.blueprint.agents, self.blueprint.operational_agents)
+        ).lower()
         for forbidden in ("eventra", "/users/didi", "spring", "react"):
             self.assertNotIn(forbidden, serialized)
 

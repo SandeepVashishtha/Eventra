@@ -105,6 +105,16 @@ class EventraAdapterTests(unittest.TestCase):
             ["backend_engineer", "integration_qa"],
         )
 
+    def test_exposes_five_delivery_agents_plus_one_operational_watcher(self):
+        self.assertEqual(len(self.config.blueprint.agents), 5)
+        self.assertEqual(len(self.config.blueprint.operational_agents), 1)
+        self.assertEqual(len(self.config.agents), 6)
+        self.assertEqual(self.config.agents[-1].role, "workflow_watcher")
+        self.assertFalse(self.config.agents[-1].needs_backend_env)
+
+    def test_watcher_targets_the_operational_role(self):
+        self.assertEqual(self.config.watcher.agent_role, "workflow_watcher")
+
     def test_exposes_frozen_dataclass_contracts(self):
         values = (
             (SkillSource("key", "https://github.com/example/repo"), "url"),
@@ -125,6 +135,7 @@ class EventraAdapterTests(unittest.TestCase):
                 cron="*/30 * * * *",
                 timezone="Asia/Shanghai",
                 label="Eventra stalled-work recovery",
+                agent_role="workflow_watcher",
             ),
         )
         self.assertTrue(self.config.watcher.description_file.is_file())
