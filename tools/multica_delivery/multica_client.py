@@ -113,6 +113,7 @@ _MUTATION_PREFIXES = (
     ("autopilot", "trigger-update"),
 )
 _EMPTY_ERROR_VALUES = (None, "", (), [], {})
+_UNSUPPORTED_CONTROL_KEYS = frozenset({"ok", "failed", "failure"})
 
 
 def _keys(value: object) -> str:
@@ -216,22 +217,24 @@ class MulticaClient:
     def _unwrap(value: object, operation: str, *resource_keys: str) -> object:
         current = value
         if isinstance(current, Mapping):
+            if (
+                bool(_UNSUPPORTED_CONTROL_KEYS & current.keys())
+                or ("success" in current and current["success"] is not True)
+                or ("status" in current and current["status"] not in {"ok", "success"})
+                or ("error" in current and current["error"] not in _EMPTY_ERROR_VALUES)
+                or ("errors" in current and current["errors"] not in _EMPTY_ERROR_VALUES)
+                or ("meta" in current and not isinstance(current["meta"], Mapping))
+            ):
+                raise _contract(operation, current)
             envelopes = [key for key in _ENVELOPES if key in current]
             if envelopes:
                 allowed = set(envelopes) | {"success", "status", "error", "errors", "meta"}
                 if (
                     len(envelopes) != 1
                     or set(current) - allowed
-                    or ("success" in current and current["success"] is not True)
-                    or ("status" in current and current["status"] not in {"ok", "success"})
-                    or ("error" in current and current["error"] not in _EMPTY_ERROR_VALUES)
-                    or ("errors" in current and current["errors"] not in _EMPTY_ERROR_VALUES)
-                    or ("meta" in current and not isinstance(current["meta"], Mapping))
                 ):
                     raise _contract(operation, current)
                 current = current[envelopes[0]]
-            elif any(key in current for key in ("success", "error", "errors")):
-                raise _contract(operation, current)
         if isinstance(current, Mapping):
             for key in resource_keys:
                 if key in current:

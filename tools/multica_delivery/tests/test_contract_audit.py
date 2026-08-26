@@ -114,6 +114,66 @@ class ContractAuditTests(unittest.TestCase):
         self.assertTrue(all(statuses[f"github.projects.{slug}"] == "fail" for slug in ({self.manifest.control.github} | {repo.github for repo in self.manifest.repositories.values()})))
         self.assertTrue(all(statuses[f"github.pull_requests.{slug}"] == "fail" for slug in ({self.manifest.control.github} | {repo.github for repo in self.manifest.repositories.values()})))
 
+    def test_malformed_pr_detail_fails_detail_and_overall_summary(self):
+        sha = "a" * 40
+        github = RecordingGitHub()
+        github.list_pull_requests = lambda repository: (
+            {
+                "repository": repository,
+                "number": 4,
+                "state": "open",
+                "head_sha": sha,
+                "base_ref": "main",
+                "mergeable": True,
+            },
+        )
+        github.get_pull_request = lambda repository, number: {
+            "repository": repository,
+            "number": number,
+            "state": "unknown",
+            "head_sha": "main",
+            "base_ref": "",
+            "mergeable": "yes",
+        }
+
+        report = audit_contracts(RecordingMultica(), github, self.manifest)
+
+        statuses = {entry.subject: entry.status for entry in report.entries}
+        self.assertTrue(all(statuses[f"github.pull_request.{slug}"] == "fail" for slug in ({self.manifest.control.github} | {repo.github for repo in self.manifest.repositories.values()})))
+        self.assertEqual(statuses["github.pull_request_shape"], "fail")
+
+    def test_malformed_required_check_detail_keeps_overall_summary_failed(self):
+        sha = "a" * 40
+        github = RecordingGitHub()
+
+        def pull(repository):
+            return {
+                "repository": repository,
+                "number": 4,
+                "state": "open",
+                "head_sha": sha,
+                "base_ref": "main",
+                "mergeable": True,
+            }
+
+        github.list_pull_requests = lambda repository: (pull(repository),)
+        github.get_pull_request = lambda repository, number: pull(repository)
+        github.required_status_checks = lambda repository, base_ref, head_sha: {
+            "repository": repository,
+            "base_ref": base_ref,
+            "sha": head_sha,
+            "strict": "true",
+            "required_contexts": ("ci",),
+            "successful_contexts": ("ci",),
+            "passing": True,
+        }
+
+        report = audit_contracts(RecordingMultica(), github, self.manifest)
+
+        statuses = {entry.subject: entry.status for entry in report.entries}
+        self.assertTrue(all(statuses[f"github.required_status_checks.{slug}"] == "fail" for slug in ({self.manifest.control.github} | {repo.github for repo in self.manifest.repositories.values()})))
+        self.assertEqual(statuses["github.pull_request_shape"], "fail")
+
 
 if __name__ == "__main__":
     unittest.main()

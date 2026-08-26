@@ -2,7 +2,11 @@
 
 import unittest
 
-from tools.multica_delivery.github_client import GitHubBoundaryError, GitHubClient
+from tools.multica_delivery.github_client import (
+    GitHubBoundaryError,
+    GitHubClient,
+    RequiredStatusChecks,
+)
 from tools.multica_delivery.multica_client import TransientCommandError
 
 
@@ -23,6 +27,16 @@ class GitHubClientTests(unittest.TestCase):
     def setUp(self):
         self.runner = FakeRunner()
         self.client = GitHubClient(self.runner, frozenset({"codeExploreHub/api"}))
+
+    @staticmethod
+    def pull(sha, *, base="main", mergeable=True):
+        return {
+            "number": 4,
+            "state": "open",
+            "head": {"sha": sha},
+            "base": {"ref": base},
+            "mergeable": mergeable,
+        }
 
     def test_refuses_repository_outside_manifest_before_calling_runner(self):
         with self.assertRaisesRegex(GitHubBoundaryError, "not managed"):
@@ -85,7 +99,7 @@ class GitHubClientTests(unittest.TestCase):
     def test_merge_requires_expected_head_sha_before_mutation(self):
         expected = "a" * 40
         actual = "b" * 40
-        self.runner.replies = [{"number": 4, "state": "open", "head": {"sha": actual}, "mergeable": True}]
+        self.runner.replies = [self.pull(actual)]
 
         with self.assertRaisesRegex(GitHubBoundaryError, "head SHA changed"):
             self.client.merge_pull_request("codeExploreHub/api", 4, expected_sha=expected)
@@ -95,7 +109,7 @@ class GitHubClientTests(unittest.TestCase):
 
     def test_pull_request_read_rejects_noncanonical_head_sha(self):
         self.runner.replies = [
-            {"number": 4, "state": "open", "head": {"sha": "main"}, "mergeable": True}
+            self.pull("main")
         ]
 
         with self.assertRaisesRegex(GitHubBoundaryError, "malformed pull request"):
@@ -104,8 +118,21 @@ class GitHubClientTests(unittest.TestCase):
     def test_merge_rereads_open_mergeable_pr_and_required_checks_immediately(self):
         sha = "a" * 40
         self.runner.replies = [
-            {"number": 4, "state": "open", "head": {"sha": sha}, "mergeable": True},
-            {"sha": sha, "check_runs": [{"name": "test", "head_sha": sha, "status": "completed", "conclusion": "success"}]},
+            self.pull(sha),
+            {"strict": True, "contexts": ["legacy-ci"], "checks": [{"context": "check-ci", "app_id": 7}]},
+            {
+                "check_runs": [
+                    {"name": "check-ci", "head_sha": sha, "status": "completed", "conclusion": "success"},
+                    {"name": "optional-lint", "head_sha": sha, "status": "completed", "conclusion": "failure"},
+                ]
+            },
+            {
+                "sha": sha,
+                "statuses": [
+                    {"sha": sha, "context": "legacy-ci", "state": "success"},
+                    {"sha": sha, "context": "optional-status", "state": "failure"},
+                ],
+            },
             {"merged": True, "sha": "c" * 40},
         ]
 
@@ -113,32 +140,131 @@ class GitHubClientTests(unittest.TestCase):
 
         self.assertTrue(merged.merged)
         self.assertEqual(merged.merged_sha, "c" * 40)
-        self.assertEqual(len(self.runner.calls), 3)
-        self.assertEqual(self.runner.calls[1][0][:2], ("gh", "api"))
-        self.assertIn(f"repos/codeExploreHub/api/commits/{sha}/check-runs", self.runner.calls[1][0])
+        self.assertEqual(len(self.runner.calls), 5)
+        self.assertIn("repos/codeExploreHub/api/branches/main/protection/required_status_checks", self.runner.calls[1][0])
+        self.assertIn(f"repos/codeExploreHub/api/commits/{sha}/check-runs", self.runner.calls[2][0])
+        self.assertIn(f"repos/codeExploreHub/api/commits/{sha}/status", self.runner.calls[3][0])
         self.assertEqual(self.runner.calls[-1][0][:3], ("gh", "api", "-X"))
         self.assertIn(f"sha={sha}", self.runner.calls[-1][0])
 
     def test_merge_refuses_missing_or_failed_required_checks(self):
         sha = "a" * 40
         self.runner.replies = [
-            {"number": 4, "state": "open", "head": {"sha": sha}, "mergeable": True},
-            {"sha": sha, "check_runs": [{"name": "test", "head_sha": sha, "status": "completed", "conclusion": "failure"}]},
+            self.pull(sha),
+            {"strict": True, "contexts": ["test"], "checks": []},
+            {"check_runs": [{"name": "optional", "head_sha": sha, "status": "completed", "conclusion": "success"}]},
+            {"sha": sha, "statuses": [{"sha": sha, "context": "test", "state": "failure"}]},
         ]
 
         with self.assertRaisesRegex(GitHubBoundaryError, "required checks"):
             self.client.merge_pull_request("codeExploreHub/api", 4, expected_sha=sha)
 
-        self.assertEqual(len(self.runner.calls), 2)
+        self.assertEqual(len(self.runner.calls), 4)
 
     def test_exact_sha_check_response_rejects_mismatched_sha(self):
         sha = "a" * 40
         self.runner.replies = [
-            {"sha": "b" * 40, "check_runs": [{"name": "test", "head_sha": "b" * 40, "status": "completed", "conclusion": "success"}]}
+            {"strict": True, "contexts": ["test"], "checks": []},
+            {"check_runs": [{"name": "test", "head_sha": "b" * 40, "status": "completed", "conclusion": "success"}]},
         ]
 
         with self.assertRaisesRegex(GitHubBoundaryError, "required checks"):
-            self.client.get_required_checks("codeExploreHub/api", sha)
+            self.client.required_status_checks("codeExploreHub/api", "main", sha)
+
+    def test_required_contexts_accept_status_or_check_and_ignore_optional_failures(self):
+        sha = "a" * 40
+        self.runner.replies = [
+            {"strict": True, "contexts": ["legacy"], "checks": [{"context": "modern", "app_id": 1}]},
+            {
+                "check_runs": [
+                    {"name": "modern", "head_sha": sha, "status": "completed", "conclusion": "success"},
+                    {"name": "optional", "head_sha": sha, "status": "completed", "conclusion": "failure"},
+                ]
+            },
+            {"sha": sha, "statuses": [{"sha": sha, "context": "legacy", "state": "success"}]},
+        ]
+
+        summary = self.client.required_status_checks("codeExploreHub/api", "release/v1", sha)
+
+        self.assertIsInstance(summary, RequiredStatusChecks)
+        self.assertEqual(summary.required_contexts, ("legacy", "modern"))
+        self.assertTrue(summary.passing)
+        self.assertIn("branches/release%2Fv1/protection", self.runner.calls[0][0][-1])
+
+    def test_required_contexts_allow_empty_authoritative_set(self):
+        sha = "a" * 40
+        self.runner.replies = [
+            {"strict": True, "contexts": [], "checks": []},
+            {"check_runs": [{"name": "optional", "head_sha": sha, "status": "completed", "conclusion": "failure"}]},
+            {"sha": sha, "statuses": [{"sha": sha, "context": "optional", "state": "failure"}]},
+        ]
+
+        summary = self.client.required_status_checks("codeExploreHub/api", "main", sha)
+
+        self.assertEqual(summary.required_contexts, ())
+        self.assertTrue(summary.passing)
+
+    def test_required_checks_reject_missing_run_head_sha_and_status_sha(self):
+        sha = "a" * 40
+        self.runner.replies = [
+            {"strict": True, "contexts": ["test"], "checks": []},
+            {"check_runs": [{"name": "test", "status": "completed", "conclusion": "success"}]},
+        ]
+
+        with self.assertRaisesRegex(GitHubBoundaryError, "required checks"):
+            self.client.required_status_checks("codeExploreHub/api", "main", sha)
+
+        self.assertEqual(len(self.runner.calls), 2)
+
+        status_runner = FakeRunner(
+            {"strict": True, "contexts": ["legacy"], "checks": []},
+            {"check_runs": []},
+            {"sha": sha, "statuses": [{"context": "legacy", "state": "success"}]},
+        )
+        with self.assertRaisesRegex(GitHubBoundaryError, "commit statuses"):
+            GitHubClient(
+                status_runner, frozenset({"codeExploreHub/api"})
+            ).required_status_checks("codeExploreHub/api", "main", sha)
+        self.assertEqual(len(status_runner.calls), 3)
+
+    def test_missing_and_pending_required_contexts_do_not_pass(self):
+        sha = "a" * 40
+        cases = (
+            ({"check_runs": []}, {"sha": sha, "statuses": []}),
+            (
+                {
+                    "check_runs": [
+                        {
+                            "name": "required",
+                            "head_sha": sha,
+                            "status": "queued",
+                            "conclusion": None,
+                        }
+                    ]
+                },
+                {"sha": sha, "statuses": []},
+            ),
+        )
+        for check_runs, statuses in cases:
+            with self.subTest(check_runs=check_runs):
+                runner = FakeRunner(
+                    {"strict": True, "contexts": ["required"], "checks": []},
+                    check_runs,
+                    statuses,
+                )
+                summary = GitHubClient(
+                    runner, frozenset({"codeExploreHub/api"})
+                ).required_status_checks("codeExploreHub/api", "main", sha)
+                self.assertFalse(summary.passing)
+
+    def test_pull_request_requires_base_ref(self):
+        sha = "a" * 40
+        response = self.pull(sha)
+        del response["base"]
+        self.runner.replies = [response]
+
+        with self.assertRaisesRegex(GitHubBoundaryError, "pull request"):
+            self.client.get_pull_request("codeExploreHub/api", 4)
 
     def test_only_explicit_transient_github_reads_are_retried(self):
         transient = FakeRunner(

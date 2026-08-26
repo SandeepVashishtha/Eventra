@@ -116,6 +116,46 @@ class MulticaClientTests(unittest.TestCase):
         self.assertEqual(created.id, "skill-1")
         self.assertEqual(len(runner.calls), 1)
 
+    def test_direct_failed_import_control_fields_cannot_produce_resource(self):
+        secret = "SECRET_VALUE_SENTINEL"
+        runner = FakeRunner(
+            {
+                "status": "failed",
+                "meta": {},
+                "skill": {"id": "skill-1", "name": secret},
+            }
+        )
+
+        with self.assertRaisesRegex(MulticaContractError, "skill import") as caught:
+            MulticaClient(runner).import_skill(
+                "https://github.com/obra/superpowers/tree/main/skills/test-driven-development"
+            )
+
+        self.assertNotIn(secret, str(caught.exception))
+
+    def test_direct_success_controls_require_mapping_meta(self):
+        good = FakeRunner(
+            {"status": "success", "success": True, "meta": {}, "skill": {"id": "skill-1"}}
+        )
+        bad = FakeRunner(
+            {"status": "success", "success": True, "meta": [], "skill": {"id": "skill-1"}}
+        )
+
+        self.assertEqual(
+            MulticaClient(good).import_skill("https://github.com/example/skills/tree/main/tdd").id,
+            "skill-1",
+        )
+        with self.assertRaises(MulticaContractError):
+            MulticaClient(bad).import_skill("https://github.com/example/skills/tree/main/tdd")
+
+    def test_direct_unknown_contradictory_control_marker_is_rejected(self):
+        runner = FakeRunner({"ok": False, "skill": {"id": "skill-1"}})
+
+        with self.assertRaisesRegex(MulticaContractError, "skill import"):
+            MulticaClient(runner).import_skill(
+                "https://github.com/example/skills/tree/main/tdd"
+            )
+
     def test_malformed_environment_is_actionable_without_leaking_values(self):
         secret = "SECRET_VALUE_SENTINEL"
         runner = FakeRunner({"data": {"unexpected": [secret]}})

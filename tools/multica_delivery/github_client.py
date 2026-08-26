@@ -6,6 +6,7 @@ from dataclasses import dataclass
 import json
 import re
 from typing import Mapping
+from urllib.parse import quote
 
 from .multica_client import (
     CommandFailure,
@@ -42,19 +43,28 @@ class ProjectInfo:
 
 
 @dataclass(frozen=True)
-class PullRequest:
+class PullRequestInfo:
     repository: str
     number: int
     state: str
     head_sha: str
+    base_ref: str
     mergeable: bool | None
 
 
 @dataclass(frozen=True)
-class CheckSummary:
+class RequiredStatusChecks:
+    repository: str
+    base_ref: str
     sha: str
-    required_count: int
+    strict: bool
+    required_contexts: tuple[str, ...]
+    successful_contexts: tuple[str, ...]
     passing: bool
+
+
+PullRequest = PullRequestInfo
+CheckSummary = RequiredStatusChecks
 
 
 @dataclass(frozen=True)
@@ -199,26 +209,28 @@ class GitHubClient:
                 projects.append(ProjectInfo(project_id, title, url, public, closed, linked_tuple))
         return tuple(projects)
 
-    def list_pull_requests(self, repository: str) -> tuple[PullRequest, ...]:
+    def list_pull_requests(self, repository: str) -> tuple[PullRequestInfo, ...]:
         self._allow(repository)
         raw = self._run(("gh", "api", f"repos/{repository}/pulls?state=all"), "pull request list", read_only=True)
         if not isinstance(raw, list):
             raise GitHubBoundaryError("malformed pull request list response")
         return tuple(self._decode_pull_request(repository, item) for item in raw)
 
-    def get_pull_request(self, repository: str, number: int) -> PullRequest:
+    def get_pull_request(self, repository: str, number: int) -> PullRequestInfo:
         self._allow(repository)
         raw = self._run(("gh", "api", f"repos/{repository}/pulls/{number}"), "pull request read", read_only=True)
         return self._decode_pull_request(repository, raw, expected_number=number)
 
     @staticmethod
-    def _decode_pull_request(repository: str, raw: object, expected_number: int | None = None) -> PullRequest:
+    def _decode_pull_request(repository: str, raw: object, expected_number: int | None = None) -> PullRequestInfo:
         if not isinstance(raw, Mapping):
             raise GitHubBoundaryError("malformed pull request response")
         number = raw.get("number")
         state = raw.get("state")
         head = raw.get("head")
         sha = head.get("sha") if isinstance(head, Mapping) else None
+        base = raw.get("base")
+        base_ref = base.get("ref") if isinstance(base, Mapping) else None
         mergeable = raw.get("mergeable")
         if (
             not isinstance(number, int)
@@ -228,35 +240,156 @@ class GitHubClient:
             or state not in {"open", "closed"}
             or not isinstance(sha, str)
             or re.fullmatch(r"[0-9a-f]{40}", sha) is None
+            or not isinstance(base_ref, str)
+            or not base_ref
+            or base_ref.startswith("-")
             or mergeable not in {True, False, None}
         ):
             raise GitHubBoundaryError("malformed pull request response")
-        return PullRequest(repository, number, state, sha, mergeable)
+        return PullRequestInfo(repository, number, state, sha, base_ref, mergeable)
 
-    def get_required_checks(self, repository: str, sha: str) -> CheckSummary:
+    def required_status_checks(
+        self,
+        repository: str,
+        base_ref: str,
+        expected_sha: str,
+    ) -> RequiredStatusChecks:
         self._allow(repository)
-        raw = self._run(
-            ("gh", "api", f"repos/{repository}/commits/{sha}/check-runs"),
+        if (
+            not isinstance(base_ref, str)
+            or not base_ref
+            or base_ref.startswith("-")
+            or re.fullmatch(r"[0-9a-f]{40}", expected_sha) is None
+        ):
+            raise GitHubBoundaryError("required checks target is malformed")
+        encoded_ref = quote(base_ref, safe="")
+        protection = self._run(
+            (
+                "gh",
+                "api",
+                f"repos/{repository}/branches/{encoded_ref}/protection/required_status_checks",
+            ),
+            "required checks configuration read",
+            read_only=True,
+        )
+        if not isinstance(protection, Mapping) or not isinstance(protection.get("strict"), bool):
+            raise GitHubBoundaryError("malformed required checks configuration response")
+        contexts = protection.get("contexts")
+        checks_config = protection.get("checks")
+        if (
+            not isinstance(contexts, list)
+            or not all(isinstance(context, str) and context for context in contexts)
+            or len(set(contexts)) != len(contexts)
+            or not isinstance(checks_config, list)
+        ):
+            raise GitHubBoundaryError("malformed required checks configuration response")
+        check_contexts = []
+        for check in checks_config:
+            context = check.get("context") if isinstance(check, Mapping) else None
+            app_id = check.get("app_id") if isinstance(check, Mapping) else None
+            if (
+                not isinstance(context, str)
+                or not context
+                or not isinstance(app_id, int)
+                or isinstance(app_id, bool)
+            ):
+                raise GitHubBoundaryError("malformed required checks configuration response")
+            check_contexts.append(context)
+        if len(set(check_contexts)) != len(check_contexts):
+            raise GitHubBoundaryError("malformed required checks configuration response")
+        required = tuple(sorted(set(contexts) | set(check_contexts)))
+
+        check_runs_response = self._run(
+            ("gh", "api", f"repos/{repository}/commits/{expected_sha}/check-runs"),
             "required checks read",
             read_only=True,
         )
-        if not isinstance(raw, Mapping) or not isinstance(raw.get("check_runs"), list):
+        if not isinstance(check_runs_response, Mapping) or not isinstance(check_runs_response.get("check_runs"), list):
             raise GitHubBoundaryError("malformed required checks response")
-        response_sha = raw.get("sha")
-        if response_sha is not None and response_sha != sha:
+        response_sha = check_runs_response.get("sha")
+        if response_sha is not None and response_sha != expected_sha:
             raise GitHubBoundaryError("malformed required checks response")
-        checks = raw["check_runs"]
-        valid = all(
-            isinstance(check, Mapping)
-            and isinstance(check.get("name"), str)
-            and (check.get("head_sha") is None or check.get("head_sha") == sha)
-            and check.get("status") == "completed"
-            and check.get("conclusion") == "success"
-            for check in checks
+        observations: dict[str, list[bool]] = {}
+        for check in check_runs_response["check_runs"]:
+            name = check.get("name") if isinstance(check, Mapping) else None
+            head_sha = check.get("head_sha") if isinstance(check, Mapping) else None
+            status = check.get("status") if isinstance(check, Mapping) else None
+            conclusion = check.get("conclusion") if isinstance(check, Mapping) else None
+            if (
+                not isinstance(name, str)
+                or not name
+                or head_sha != expected_sha
+                or status not in {"queued", "in_progress", "completed", "waiting", "pending", "requested"}
+                or (
+                    conclusion is not None
+                    and conclusion
+                    not in {
+                        "success",
+                        "failure",
+                        "neutral",
+                        "cancelled",
+                        "skipped",
+                        "timed_out",
+                        "action_required",
+                        "stale",
+                        "startup_failure",
+                    }
+                )
+            ):
+                raise GitHubBoundaryError("malformed required checks response")
+            observations.setdefault(name, []).append(
+                status == "completed" and conclusion == "success"
+            )
+
+        statuses_response = self._run(
+            ("gh", "api", f"repos/{repository}/commits/{expected_sha}/status"),
+            "required commit statuses read",
+            read_only=True,
         )
-        if any(isinstance(check, Mapping) and check.get("head_sha") not in (None, sha) for check in checks):
-            raise GitHubBoundaryError("malformed required checks response")
-        return CheckSummary(sha, len(checks), bool(checks) and valid)
+        if (
+            not isinstance(statuses_response, Mapping)
+            or statuses_response.get("sha") != expected_sha
+            or not isinstance(statuses_response.get("statuses"), list)
+        ):
+            raise GitHubBoundaryError("malformed required commit statuses response")
+        for status_item in statuses_response["statuses"]:
+            status_sha = status_item.get("sha") if isinstance(status_item, Mapping) else None
+            context = status_item.get("context") if isinstance(status_item, Mapping) else None
+            state = status_item.get("state") if isinstance(status_item, Mapping) else None
+            if (
+                status_sha != expected_sha
+                or not isinstance(context, str)
+                or not context
+                or state not in {"pending", "success", "failure", "error"}
+            ):
+                raise GitHubBoundaryError("malformed required commit statuses response")
+            observations.setdefault(context, []).append(state == "success")
+
+        successful = tuple(
+            context
+            for context in required
+            if observations.get(context) and all(observations[context])
+        )
+        return RequiredStatusChecks(
+            repository,
+            base_ref,
+            expected_sha,
+            protection["strict"],
+            required,
+            successful,
+            successful == required,
+        )
+
+    def get_required_checks(
+        self,
+        repository: str,
+        sha: str,
+        *,
+        base_ref: str | None = None,
+    ) -> RequiredStatusChecks:
+        if base_ref is None:
+            raise GitHubBoundaryError("required checks base ref is required")
+        return self.required_status_checks(repository, base_ref, sha)
 
     def merge_pull_request(self, repository: str, number: int, *, expected_sha: str) -> MergeResult:
         """Authoritatively reread every gate immediately before one mutation."""
@@ -271,7 +404,11 @@ class GitHubClient:
             raise GitHubBoundaryError("pull request is not open")
         if pull_request.mergeable is not True:
             raise GitHubBoundaryError("pull request is not mergeable")
-        checks = self.get_required_checks(repository, expected_sha)
+        checks = self.required_status_checks(
+            repository,
+            pull_request.base_ref,
+            expected_sha,
+        )
         if not checks.passing:
             raise GitHubBoundaryError("required checks are not passing")
         raw = self._mapping(

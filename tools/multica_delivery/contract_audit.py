@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 from typing import Callable, Mapping
 
 from .model import DeliveryManifest
@@ -117,11 +118,73 @@ def audit_contracts(multica: object, github: object, manifest: DeliveryManifest)
 
     def pull_shape(value: object, expected: str) -> bool:
         return isinstance(value, tuple | list) and all(
-            getattr(item, "repository", expected) == expected
-            and isinstance(getattr(item, "number", None), int)
-            and not isinstance(getattr(item, "number", None), bool)
-            and item.number > 0
-            for item in value
+            pull_detail_shape(item, expected) for item in value
+        )
+
+    def field(value: object, name: str) -> object:
+        return value.get(name) if isinstance(value, Mapping) else getattr(value, name, None)
+
+    def pull_detail_shape(value: object, expected: str, number: int | None = None) -> bool:
+        if isinstance(value, Mapping):
+            repository = value.get("repository")
+            actual_number = value.get("number")
+            state = value.get("state")
+            head_sha = value.get("head_sha")
+            base_ref = value.get("base_ref")
+            mergeable = value.get("mergeable")
+        else:
+            repository = getattr(value, "repository", None)
+            actual_number = getattr(value, "number", None)
+            state = getattr(value, "state", None)
+            head_sha = getattr(value, "head_sha", None)
+            base_ref = getattr(value, "base_ref", None)
+            mergeable = getattr(value, "mergeable", "malformed")
+        return (
+            repository == expected
+            and isinstance(actual_number, int)
+            and not isinstance(actual_number, bool)
+            and actual_number > 0
+            and (number is None or actual_number == number)
+            and state in {"open", "closed"}
+            and isinstance(head_sha, str)
+            and re.fullmatch(r"[0-9a-f]{40}", head_sha) is not None
+            and isinstance(base_ref, str)
+            and bool(base_ref)
+            and not base_ref.startswith("-")
+            and mergeable in {True, False, None}
+        )
+
+    def required_shape(value: object, expected: str, base_ref: str, sha: str) -> bool:
+        if isinstance(value, Mapping):
+            repository = value.get("repository")
+            actual_base = value.get("base_ref")
+            actual_sha = value.get("sha")
+            strict = value.get("strict")
+            required = value.get("required_contexts")
+            successful = value.get("successful_contexts")
+            passing = value.get("passing")
+        else:
+            repository = getattr(value, "repository", None)
+            actual_base = getattr(value, "base_ref", None)
+            actual_sha = getattr(value, "sha", None)
+            strict = getattr(value, "strict", None)
+            required = getattr(value, "required_contexts", None)
+            successful = getattr(value, "successful_contexts", None)
+            passing = getattr(value, "passing", None)
+        return (
+            repository == expected
+            and actual_base == base_ref
+            and actual_sha == sha
+            and isinstance(strict, bool)
+            and isinstance(required, tuple)
+            and isinstance(successful, tuple)
+            and all(isinstance(context, str) and context for context in required)
+            and all(isinstance(context, str) and context for context in successful)
+            and len(set(required)) == len(required)
+            and len(set(successful)) == len(successful)
+            and set(successful) <= set(required)
+            and isinstance(passing, bool)
+            and passing is (successful == required)
         )
 
     probe("multica.version", multica.version, validate=lambda value: isinstance(value, str) and bool(value))
@@ -176,7 +239,9 @@ def audit_contracts(multica: object, github: object, manifest: DeliveryManifest)
     repositories = (manifest.control.github,) + tuple(
         repository.github for repository in manifest.repositories.values()
     )
-    any_pull_request = False
+    sampled_pull_request = False
+    validated_pull_request = False
+    pull_contract_failure = False
     for repository in repositories:
         probe(
             f"github.repository.{repository}",
@@ -193,17 +258,56 @@ def audit_contracts(multica: object, github: object, manifest: DeliveryManifest)
             lambda repository=repository: github.list_pull_requests(repository),
             validate=lambda value, repository=repository: pull_shape(value, repository),
         )
+        if pulls is None:
+            pull_contract_failure = True
         if pulls:
-            any_pull_request = True
-            probe(
+            sampled_pull_request = True
+            pull = pulls[0]
+            pull_number = field(pull, "number")
+            detail = probe(
                 f"github.pull_request.{repository}",
-                lambda repository=repository, number=pulls[0].number: github.get_pull_request(repository, number),
+                lambda repository=repository, number=pull_number: github.get_pull_request(repository, number),
+                validate=lambda value, repository=repository, number=pull_number: pull_detail_shape(
+                    value, repository, number
+                ),
             )
+            if detail is None:
+                pull_contract_failure = True
+                continue
+            detail_base_ref = field(detail, "base_ref")
+            detail_head_sha = field(detail, "head_sha")
+            checks = probe(
+                f"github.required_status_checks.{repository}",
+                lambda repository=repository, base_ref=detail_base_ref, head_sha=detail_head_sha: github.required_status_checks(
+                    repository,
+                    base_ref,
+                    head_sha,
+                ),
+                validate=lambda value, repository=repository, base_ref=detail_base_ref, head_sha=detail_head_sha: required_shape(
+                    value,
+                    repository,
+                    base_ref,
+                    head_sha,
+                ),
+            )
+            if checks is None:
+                pull_contract_failure = True
+            else:
+                validated_pull_request = True
+    if validated_pull_request:
+        pull_summary_status = "pass"
+        pull_summary_detail = "sample contract available"
+    elif sampled_pull_request or pull_contract_failure:
+        pull_summary_status = "fail"
+        pull_summary_detail = "sample contract failed"
+    else:
+        pull_summary_status = "warn"
+        pull_summary_detail = "no existing pull request sample"
     entries.append(
         ContractAuditEntry(
             "github.pull_request_shape",
-            "pass" if any_pull_request else "warn",
-            "sample contract available" if any_pull_request else "no existing pull request sample",
+            pull_summary_status,
+            pull_summary_detail,
         )
     )
     return ContractAuditReport(tuple(entries))
