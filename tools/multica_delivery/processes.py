@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass
+import fcntl
 import json
 import os
 from pathlib import Path
@@ -238,17 +240,24 @@ class ProcessRegistry:
             raise ProcessOwnershipError("owned process registry is malformed")
         result = tuple(records)
         ports: set[int] = set()
-        pids: set[int] = set()
+        pid_owners: dict[int, tuple[str, str, str, str]] = {}
         for record in result:
             if record.port in ports:
                 raise ProcessOwnershipError("duplicate owned process port")
-            if record.pid in pids:
-                raise ProcessOwnershipError("duplicate owned process PID")
+            identity = (
+                record.repository_key,
+                record.candidate_sha,
+                record.run_id,
+                record.owner_token,
+            )
+            existing_identity = pid_owners.get(record.pid)
+            if existing_identity is not None and existing_identity != identity:
+                raise ProcessOwnershipError("duplicate owned process PID has conflicting ownership")
             ports.add(record.port)
-            pids.add(record.pid)
+            pid_owners[record.pid] = identity
         return tuple(sorted(result, key=lambda item: (item.port, item.repository_key, item.run_id)))
 
-    def read(self) -> tuple[OwnedProcess, ...]:
+    def _read_unlocked(self) -> tuple[OwnedProcess, ...]:
         if not self.path.exists():
             return ()
         try:
@@ -267,7 +276,7 @@ class ProcessRegistry:
             raise ProcessOwnershipError("owned process registry is malformed") from error
         return self._validated(records)
 
-    def write(self, records: Sequence[OwnedProcess]) -> None:
+    def _write_unlocked(self, records: Sequence[OwnedProcess]) -> None:
         validated = self._validated(records)
         payload = json.dumps(
             [asdict(record) for record in validated],
@@ -298,6 +307,48 @@ class ProcessRegistry:
                 raise
         except OSError as error:
             raise ProcessOwnershipError("owned process registry write failed") from error
+
+    @contextmanager
+    def transaction(self) -> Iterator["_RegistryTransaction"]:
+        """Hold one advisory interprocess lock across read/compare/write."""
+
+        try:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            lock_path = self.path.with_name(f".{self.path.name}.lock")
+            descriptor = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o600)
+        except OSError as error:
+            raise ProcessOwnershipError("owned process registry lock failed") from error
+        with os.fdopen(descriptor, "a+b") as stream:
+            try:
+                fcntl.flock(stream.fileno(), fcntl.LOCK_EX)
+            except OSError as error:
+                raise ProcessOwnershipError("owned process registry lock failed") from error
+            try:
+                yield _RegistryTransaction(self)
+            finally:
+                try:
+                    fcntl.flock(stream.fileno(), fcntl.LOCK_UN)
+                except OSError:
+                    pass
+
+    def read(self) -> tuple[OwnedProcess, ...]:
+        with self.transaction() as transaction:
+            return transaction.read()
+
+    def write(self, records: Sequence[OwnedProcess]) -> None:
+        with self.transaction() as transaction:
+            transaction.write(records)
+
+
+class _RegistryTransaction:
+    def __init__(self, registry: ProcessRegistry) -> None:
+        self._registry = registry
+
+    def read(self) -> tuple[OwnedProcess, ...]:
+        return self._registry._read_unlocked()
+
+    def write(self, records: Sequence[OwnedProcess]) -> None:
+        self._registry._write_unlocked(records)
 
 
 def default_registry_path(instance_key: str) -> Path:
@@ -347,68 +398,134 @@ class ProcessManager:
         *,
         candidate_sha: str,
     ) -> OwnedProcess:
-        if not isinstance(service, ServiceSpec) or not isinstance(run, ProcessRun):
-            raise TypeError("service and run must be typed process values")
+        return self.start_services((service,), run, candidate_sha=candidate_sha)[0]
+
+    def start_services(
+        self,
+        services: tuple[ServiceSpec, ...],
+        run: ProcessRun,
+        *,
+        candidate_sha: str,
+    ) -> tuple[OwnedProcess, ...]:
+        if (
+            not isinstance(services, tuple)
+            or not services
+            or any(not isinstance(service, ServiceSpec) for service in services)
+            or not isinstance(run, ProcessRun)
+        ):
+            raise TypeError("services and run must be typed process values")
         candidate_sha = _sha(candidate_sha)
-        if service.port != urlsplit(_local_health_url(service.health_url)).port:
-            raise ProcessOwnershipError("service health URL port does not match service port")
-        records = self.registry.read()
-        registered = next((record for record in records if record.port == service.port), None)
-        observed_pid = self.backend.port_owner(service.port)
+        if len({service.port for service in services}) != len(services):
+            raise ProcessOwnershipError("repository services contain a duplicate port")
+        for service in services:
+            if service.port != urlsplit(_local_health_url(service.health_url)).port:
+                raise ProcessOwnershipError("service health URL port does not match service port")
 
-        if observed_pid is not None:
-            if registered is None or registered.pid != observed_pid:
-                raise ProcessOwnershipError(f"port {service.port} is not framework-owned")
-            if not self._matching_record(registered, service, run, candidate_sha):
-                raise ProcessOwnershipError("owner mismatch")
-            if not self.backend.is_alive(registered.pid):
-                raise ProcessOwnershipError("PID ownership is unknown")
-            if not self.backend.wait_healthy(registered.health_url, registered.pid):
-                raise ProcessOwnershipError("owned process health is unknown")
-            return registered
+        with self.registry.transaction() as transaction:
+            records = transaction.read()
+            registered = {
+                service.port: next(
+                    (record for record in records if record.port == service.port),
+                    None,
+                )
+                for service in services
+            }
+            observed = {
+                service.port: self.backend.port_owner(service.port)
+                for service in services
+            }
+            for service in services:
+                if observed[service.port] is not None and registered[service.port] is None:
+                    raise ProcessOwnershipError(
+                        f"port {service.port} is not framework-owned"
+                    )
+                if observed[service.port] is None and registered[service.port] is not None:
+                    existing = registered[service.port]
+                    assert existing is not None
+                    if not self._matching_record(existing, service, run, candidate_sha):
+                        raise ProcessOwnershipError("owner mismatch")
+                    raise ProcessOwnershipError("PID ownership is unknown")
+            if any(pid is not None for pid in observed.values()) or any(
+                record is not None for record in registered.values()
+            ):
+                if any(pid is None for pid in observed.values()) or any(
+                    record is None for record in registered.values()
+                ):
+                    raise ProcessOwnershipError("repository service ownership is incomplete")
+                observed_pids = {pid for pid in observed.values() if pid is not None}
+                if len(observed_pids) != 1:
+                    raise ProcessOwnershipError("repository services are not owned by one PID")
+                pid = next(iter(observed_pids))
+                reused: list[OwnedProcess] = []
+                for service in services:
+                    record = registered[service.port]
+                    assert record is not None
+                    if record.pid != pid or not self._matching_record(
+                        record,
+                        service,
+                        run,
+                        candidate_sha,
+                    ):
+                        raise ProcessOwnershipError("owner mismatch")
+                    reused.append(record)
+                if not self.backend.is_alive(pid):
+                    raise ProcessOwnershipError("PID ownership is unknown")
+                for record in reused:
+                    if not self.backend.wait_healthy(record.health_url, pid):
+                        raise ProcessOwnershipError("owned process health is unknown")
+                return tuple(reused)
 
-        if registered is not None:
-            if not self._matching_record(registered, service, run, candidate_sha):
-                raise ProcessOwnershipError("owner mismatch")
-            raise ProcessOwnershipError("PID ownership is unknown")
+            pid = self.backend.spawn(run.argv, run.cwd)
+            if not isinstance(pid, int) or isinstance(pid, bool) or pid < 1:
+                raise ProcessOwnershipError("spawn returned an invalid PID")
 
-        pid = self.backend.spawn(run.argv, run.cwd)
-        if not isinstance(pid, int) or isinstance(pid, bool) or pid < 1:
-            raise ProcessOwnershipError("spawn returned an invalid PID")
-        if not self.backend.wait_healthy(service.health_url, pid):
-            if self.backend.is_alive(pid):
-                self.backend.stop(pid)
-            raise ProcessOwnershipError("owned process failed health check")
-        if self.backend.port_owner(service.port) != pid or not self.backend.is_alive(pid):
-            if self.backend.is_alive(pid):
-                self.backend.stop(pid)
-            raise ProcessOwnershipError("started PID ownership is unknown")
-        record = OwnedProcess(
-            repository_key=run.repository_key,
-            candidate_sha=candidate_sha,
-            pid=pid,
-            port=service.port,
-            health_url=service.health_url,
-            run_id=run.run_id,
-            owner_token=self.owner_token,
-        )
-        latest = self.registry.read()
-        if latest != records:
-            if self.backend.is_alive(pid):
-                self.backend.stop(pid)
-            raise ProcessOwnershipError("owned process registry changed during start")
-        try:
-            self.registry.write((*records, record))
-        except Exception as error:
-            try:
-                if self.backend.is_alive(pid):
+            def cleanup(error: BaseException) -> None:
+                try:
                     self.backend.stop(pid)
-            except (OSError, ProcessOwnershipError, RuntimeError, TypeError, ValueError):
-                raise ProcessOwnershipError(
-                    "owned process registry write and process cleanup failed"
-                ) from error
-            raise
-        return record
+                except (OSError, ProcessOwnershipError, RuntimeError, TypeError, ValueError):
+                    try:
+                        still_alive = self.backend.is_alive(pid)
+                    except (OSError, ProcessOwnershipError, RuntimeError, TypeError, ValueError) as cleanup_error:
+                        raise ProcessOwnershipError(
+                            "owned process start failed and process cleanup failed"
+                        ) from cleanup_error
+                    if still_alive:
+                        raise ProcessOwnershipError(
+                            "owned process start failed and process cleanup failed"
+                        ) from error
+                try:
+                    if self.backend.is_alive(pid):
+                        raise ProcessOwnershipError("owned process did not stop")
+                except (OSError, ProcessOwnershipError, RuntimeError, TypeError, ValueError) as cleanup_error:
+                    raise ProcessOwnershipError(
+                        "owned process start failed and process cleanup failed"
+                    ) from cleanup_error
+                raise error
+
+            try:
+                for service in services:
+                    if not self.backend.wait_healthy(service.health_url, pid):
+                        raise ProcessOwnershipError("owned process failed health check")
+                if not self.backend.is_alive(pid) or any(
+                    self.backend.port_owner(service.port) != pid for service in services
+                ):
+                    raise ProcessOwnershipError("started PID ownership is unknown")
+                owned = tuple(
+                    OwnedProcess(
+                        repository_key=run.repository_key,
+                        candidate_sha=candidate_sha,
+                        pid=pid,
+                        port=service.port,
+                        health_url=service.health_url,
+                        run_id=run.run_id,
+                        owner_token=self.owner_token,
+                    )
+                    for service in services
+                )
+                transaction.write((*records, *owned))
+            except Exception as error:
+                cleanup(error)
+            return owned
 
     def stop(
         self,
@@ -430,18 +547,27 @@ class ProcessManager:
             or record.owner_token != self.owner_token
         ):
             raise ProcessOwnershipError("owner mismatch")
-        records = self.registry.read()
-        if record not in records:
-            raise ProcessOwnershipError("owner mismatch")
-        if (
-            self.backend.port_owner(record.port) != record.pid
-            or not self.backend.is_alive(record.pid)
-        ):
-            raise ProcessOwnershipError("PID ownership is unknown")
-        self.backend.stop(record.pid)
-        if self.backend.is_alive(record.pid):
-            raise ProcessOwnershipError("owned process did not stop")
-        latest = self.registry.read()
-        if latest != records:
-            raise ProcessOwnershipError("owned process registry changed during stop")
-        self.registry.write(tuple(item for item in records if item != record))
+        with self.registry.transaction() as transaction:
+            records = transaction.read()
+            if record not in records:
+                raise ProcessOwnershipError("owner mismatch")
+            owned_pid_records = tuple(item for item in records if item.pid == record.pid)
+            if any(
+                item.run_id != run_id
+                or item.repository_key != repository_key
+                or item.candidate_sha != candidate_sha
+                or item.owner_token != self.owner_token
+                for item in owned_pid_records
+            ):
+                raise ProcessOwnershipError("owner mismatch")
+            if not self.backend.is_alive(record.pid) or any(
+                self.backend.port_owner(item.port) != record.pid
+                for item in owned_pid_records
+            ):
+                raise ProcessOwnershipError("PID ownership is unknown")
+            self.backend.stop(record.pid)
+            if self.backend.is_alive(record.pid):
+                raise ProcessOwnershipError("owned process did not stop")
+            transaction.write(
+                tuple(item for item in records if item.pid != record.pid)
+            )

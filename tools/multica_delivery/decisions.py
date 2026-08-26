@@ -116,12 +116,19 @@ class DecisionKind(str, Enum):
     BLOCK = "block"
 
 
+class DispatchKind(str, Enum):
+    IMPLEMENTATION = "implementation"
+    GATES = "gates"
+    RECOVERY = "recovery"
+
+
 @dataclass(frozen=True)
 class ParentDecision:
     kind: DecisionKind
     reason: str
     repositories: tuple[str, ...] = ()
     next_attempt: int | None = None
+    dispatch_kind: DispatchKind | None = None
 
 
 def _decision(
@@ -129,8 +136,9 @@ def _decision(
     reason: str,
     repositories: tuple[str, ...] = (),
     next_attempt: int | None = None,
+    dispatch_kind: DispatchKind | None = None,
 ) -> ParentDecision:
-    return ParentDecision(kind, reason, repositories, next_attempt)
+    return ParentDecision(kind, reason, repositories, next_attempt, dispatch_kind)
 
 
 def _ordered(manifest: DeliveryManifest, repositories: set[str] | frozenset[str]) -> tuple[str, ...]:
@@ -266,6 +274,11 @@ def _repair(
     reason: str,
     repositories: set[str] | frozenset[str],
 ) -> ParentDecision:
+    if snapshot.merge_state in {"merging", "merged", "partial"} or snapshot.merged_shas:
+        return _decision(
+            DecisionKind.BLOCK,
+            f"{reason}; merged work requires human action and cannot be repaired automatically",
+        )
     if snapshot.attempt >= manifest.policy.max_repair_attempts:
         return _decision(DecisionKind.BLOCK, f"{reason}; automatic repair attempt limit exhausted")
     return _decision(
@@ -291,6 +304,7 @@ def _wait_or_recover(
         DecisionKind.DISPATCH,
         "rerun the existing stalled assignment once",
         (snapshot.stalled_repository,),
+        dispatch_kind=DispatchKind.RECOVERY,
     )
 
 
@@ -328,9 +342,10 @@ def _merged_problem(snapshot: ParentSnapshot, affected: frozenset[str]) -> tuple
         if (
             pull_request is None
             or pull_request.merged_sha != merged_sha
-            or merged_sha != snapshot.candidate_shas.get(repository)
+            or not isinstance(merged_sha, str)
+            or _SHA.fullmatch(merged_sha) is None
         ):
-            return f"{repository} merged SHA evidence does not match candidate SHA", False
+            return f"{repository} authoritative merged SHA evidence is malformed", False
     return None, all_merged
 
 
@@ -351,7 +366,10 @@ def _smoke_decision(
     expected_shas = dict(snapshot.merged_shas)
     expected_suites = set(suites)
     if dict(latest.merged_shas) != expected_shas:
-        return _repair(manifest, snapshot, "smoke evidence does not match merged SHAs", affected)
+        return _decision(
+            DecisionKind.BLOCK,
+            "post-merge smoke does not match authoritative merged SHAs; human action is required",
+        )
 
     repository_failures = {
         repository
@@ -364,10 +382,10 @@ def _smoke_decision(
         if suite in expected_suites and result in {"fail", "blocked"}
     }
     if repository_failures or suite_failures:
-        failed_repositories = set(repository_failures)
-        for suite in suite_failures:
-            failed_repositories.update(suites[suite])
-        return _repair(manifest, snapshot, "exact-merged-SHA smoke did not pass", failed_repositories)
+        return _decision(
+            DecisionKind.BLOCK,
+            "exact-merged-SHA smoke did not pass; human action is required",
+        )
 
     exact_pass = (
         latest.authoritative
@@ -453,6 +471,7 @@ def decide_parent_action(manifest: DeliveryManifest, snapshot: ParentSnapshot) -
                 DecisionKind.DISPATCH,
                 "dispatch the next dependency-ready implementation wave",
                 _ordered(manifest, missing),
+                dispatch_kind=DispatchKind.IMPLEMENTATION,
             )
         return _wait_or_recover(manifest, snapshot, "dependency-ready implementation is still active")
 
@@ -541,6 +560,7 @@ def decide_parent_action(manifest: DeliveryManifest, snapshot: ParentSnapshot) -
             DecisionKind.DISPATCH,
             "dispatch missing exact-SHA review and QA gates",
             _ordered(manifest, dispatch),
+            dispatch_kind=DispatchKind.GATES,
         )
     if pending_reason is not None:
         return _wait_or_recover(manifest, snapshot, pending_reason)

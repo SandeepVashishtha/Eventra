@@ -4,9 +4,13 @@ from pathlib import Path
 from types import MappingProxyType
 import unittest
 import uuid
+from unittest.mock import patch
 
 from tools.multica_delivery.decisions import (
+    DecisionKind,
+    DispatchKind,
     GateEvidence,
+    ParentDecision,
     ParentSnapshot,
     PullRequestEvidence,
     RepositoryEvidence,
@@ -20,6 +24,7 @@ from tools.multica_delivery.github_client import (
 )
 from tools.multica_delivery.manifest import load_manifest
 from tools.multica_delivery.metadata import ParentMetadata
+from tools.multica_delivery.model import ServiceSpec
 from tools.multica_delivery.processes import OwnedProcess
 from tools.multica_delivery.workflow import (
     ChildRequest,
@@ -28,6 +33,7 @@ from tools.multica_delivery.workflow import (
     PhaseCompletion,
     PullRequestTarget,
     ScopeResolution,
+    StatusTransition,
     WorkflowChild,
     WorkflowError,
     WorkflowState,
@@ -185,16 +191,79 @@ class FakeWorkflowStore:
         self.change_on_recovery_reread = False
         self.activate_on_rerun = False
         self.mutate_gate_on_rerun = False
+        self.fail_reads_after_first_merge_progress = 0
+        self.failed_merge_progress_read = False
+        self.inject_merge_progress_read_failure = False
+        self.read_parent_identifier_override: str | None = None
+        self.override_parent_after_rerun = False
+        self.parent_read_failures_remaining = 0
+        self.fail_reads_after_create = False
+        self.fail_reads_after_done = False
+        self.fail_reads_after_rerun = False
+        self.fail_smoke_reads_after_write = False
+        self.smoke_read_failures_remaining = 0
         self.read_counts: dict[str, int] = {}
         self.list_arguments: tuple[object, ...] | None = None
+        self.intake_transitions: dict[str, StatusTransition] = {}
 
-    def add_blank(self, identifier: str, *, status: str = "todo") -> None:
+    def add_blank(
+        self,
+        identifier: str,
+        *,
+        status: str = "todo",
+        authorized: bool = True,
+    ) -> None:
         self.states[identifier] = WorkflowState(
             parent_identifier=identifier,
             parent_status=status,
             project_key=self.manifest.instance.control_project,
             metadata=None,
             snapshot=ParentSnapshot(affected_repositories=()),
+        )
+        if authorized:
+            key = coordinator_action_key(
+                workflow_version=1,
+                instance_key=self.manifest.instance.key,
+                parent_identifier=identifier,
+                stage_kind="intake-transition",
+                stage_ordinal=0,
+                attempt=0,
+                affected_repositories=frozenset(),
+                candidate_shas={},
+                contract_hashes={},
+            )
+            self.intake_transitions[identifier] = StatusTransition(
+                identifier,
+                "backlog",
+                "todo",
+                key,
+            )
+
+    def read_intake_transition(self, parent_identifier: str) -> StatusTransition | None:
+        self.events.append(("read-intake-transition", parent_identifier))
+        return self.intake_transitions.get(parent_identifier)
+
+    def record_intake_transition(
+        self,
+        parent_identifier: str,
+        old_status: str,
+        new_status: str,
+        *,
+        action_key: str,
+    ) -> None:
+        self.events.append(
+            ("record-intake-transition", parent_identifier, old_status, new_status, action_key)
+        )
+        self.intake_transitions[parent_identifier] = StatusTransition(
+            parent_identifier,
+            old_status,
+            new_status,
+            action_key,
+        )
+        state = self.states[parent_identifier]
+        self.states[parent_identifier] = replace(
+            state,
+            applied_action_keys=state.applied_action_keys | {action_key},
         )
 
     def add_state(
@@ -227,12 +296,23 @@ class FakeWorkflowStore:
 
     def read(self, parent_identifier: str) -> WorkflowState:
         self.events.append(("read-parent", parent_identifier))
+        if self.parent_read_failures_remaining:
+            self.parent_read_failures_remaining -= 1
+            raise RuntimeError("authoritative parent read temporarily unavailable")
+        if self.fail_reads_after_first_merge_progress:
+            self.fail_reads_after_first_merge_progress -= 1
+            raise RuntimeError("authoritative read temporarily unavailable")
         count = self.read_counts.get(parent_identifier, 0) + 1
         self.read_counts[parent_identifier] = count
         state = self.states[parent_identifier]
         if self.change_on_recovery_reread and count == 2:
             state = replace(state, active_work=True)
             self.states[parent_identifier] = state
+        if self.read_parent_identifier_override is not None:
+            state = replace(
+                state,
+                parent_identifier=self.read_parent_identifier_override,
+            )
         return state
 
     def list_active_parents(
@@ -350,6 +430,9 @@ class FakeWorkflowStore:
             children=tuple(workflow_children),
             applied_action_keys=state.applied_action_keys | {action_key},
         )
+        if self.fail_reads_after_create:
+            self.fail_reads_after_create = False
+            self.parent_read_failures_remaining = 2
 
     def write_phase_completion(
         self,
@@ -484,6 +567,9 @@ class FakeWorkflowStore:
             pull_requests=targets,
             applied_action_keys=state.applied_action_keys | {action_key},
         )
+        if self.fail_reads_after_done:
+            self.fail_reads_after_done = False
+            self.parent_read_failures_remaining = 2
 
     def set_parent_status(
         self,
@@ -512,7 +598,15 @@ class FakeWorkflowStore:
         *,
         action_key: str,
     ) -> None:
-        self.events.append(("merge-state", merge_state, dict(merged_shas), action_key))
+        self.events.append(
+            (
+                "merge-state",
+                merge_state,
+                dict(merged_shas),
+                action_key,
+                metadata.stage_ordinal,
+            )
+        )
         state = self.states[parent_identifier]
         pull_requests = dict(state.snapshot.pull_requests)
         for repository, sha in merged_shas.items():
@@ -529,6 +623,14 @@ class FakeWorkflowStore:
             ),
             applied_action_keys=state.applied_action_keys | {action_key},
         )
+        if (
+            merge_state == "merging"
+            and len(merged_shas) == 1
+            and self.inject_merge_progress_read_failure
+            and not self.failed_merge_progress_read
+        ):
+            self.failed_merge_progress_read = True
+            self.fail_reads_after_first_merge_progress = 2
 
     def write_smoke_read(
         self,
@@ -549,9 +651,15 @@ class FakeWorkflowStore:
             ),
             applied_action_keys=state.applied_action_keys | {action_key},
         )
+        if self.fail_smoke_reads_after_write:
+            self.fail_smoke_reads_after_write = False
+            self.smoke_read_failures_remaining = 2
 
     def read_smoke_reads(self, parent_identifier: str) -> tuple[SmokeRead, ...]:
         self.events.append(("read-smoke", parent_identifier))
+        if self.smoke_read_failures_remaining:
+            self.smoke_read_failures_remaining -= 1
+            raise RuntimeError("authoritative smoke read temporarily unavailable")
         return self.states[parent_identifier].snapshot.smoke_reads
 
     def rerun_child(
@@ -586,6 +694,11 @@ class FakeWorkflowStore:
             active_work=self.activate_on_rerun,
             applied_action_keys=state.applied_action_keys | {action_key},
         )
+        if self.fail_reads_after_rerun:
+            self.fail_reads_after_rerun = False
+            self.parent_read_failures_remaining = 2
+        if self.override_parent_after_rerun:
+            self.read_parent_identifier_override = "PRO-999"
 
 
 class FakeGitHub:
@@ -594,6 +707,7 @@ class FakeGitHub:
         self.mergeable = {"api": True, "web": True}
         self.checks = {"api": True, "web": True}
         self.merged: list[tuple[str, int]] = []
+        self.merged_shas = {"api": SHA["api"], "web": SHA["web"]}
         self.fail_on: str | None = None
         self.event_log = event_log
 
@@ -650,7 +764,7 @@ class FakeGitHub:
         if self.fail_on == key:
             raise GitHubBoundaryError("merge failed")
         self.merged.append((repository, number))
-        return MergeResult(repository, number, True, expected_sha, expected_sha)
+        return MergeResult(repository, number, True, expected_sha, self.merged_shas[key])
 
 
 class FakeSmokeExecutor:
@@ -688,16 +802,20 @@ class FakeOwnedProcessManager:
         self.started: list[tuple[object, object, str]] = []
         self.stopped: list[tuple[OwnedProcess, str, str, str]] = []
 
-    def start(self, service, run, *, candidate_sha: str) -> OwnedProcess:
-        self.started.append((service, run, candidate_sha))
-        return OwnedProcess(
-            repository_key=run.repository_key,
-            candidate_sha=candidate_sha,
-            pid=5000 + len(self.started),
-            port=service.port,
-            health_url=service.health_url,
-            run_id=run.run_id,
-            owner_token=self.owner_token,
+    def start_services(self, services, run, *, candidate_sha: str) -> tuple[OwnedProcess, ...]:
+        self.started.append((services, run, candidate_sha))
+        pid = 5000 + len(self.started)
+        return tuple(
+            OwnedProcess(
+                repository_key=run.repository_key,
+                candidate_sha=candidate_sha,
+                pid=pid,
+                port=service.port,
+                health_url=service.health_url,
+                run_id=run.run_id,
+                owner_token=self.owner_token,
+            )
+            for service in services
         )
 
     def stop(
@@ -751,6 +869,53 @@ class GenericWorkflowTests(unittest.TestCase):
         self.assertEqual(result.parent_status, "in_progress")
         created = [event for event in self.store.events if event[0] == "create"]
         self.assertEqual(created[0][2][0].stage_ordinal, 1)
+
+    def test_successful_child_creation_with_unobservable_reread_is_not_overwritten(self):
+        self.store.fail_reads_after_create = True
+
+        result = self.workflow.handle_parent_event(
+            "PRO-101",
+            affected=frozenset({"api"}),
+        )
+
+        state = self.store.states["PRO-101"]
+        self.assertEqual(result.next_action, "uncertain")
+        self.assertEqual(state.metadata.stage_ordinal, 1)
+        self.assertEqual(len(state.children), 1)
+        self.assertFalse(any(event[0] == "status" for event in self.store.events))
+
+    def test_direct_parent_event_cannot_bootstrap_without_authoritative_transition(self):
+        self.store.add_blank("PRO-104", authorized=False)
+
+        result = self.workflow.handle_parent_event(
+            "PRO-104",
+            affected=frozenset({"api"}),
+        )
+
+        self.assertEqual(result.next_action, "noop")
+        self.assertFalse(
+            any(event[0] == "initialize" and event[1] == "PRO-104" for event in self.store.events)
+        )
+
+    def test_status_handler_records_authoritative_transition_before_intake(self):
+        self.store.add_blank("PRO-104", authorized=False)
+        resolver = FakeScopeResolver(ScopeResolution(affected=frozenset({"api"})))
+        workflow = GenericWorkflow(
+            self.manifest,
+            self.store,
+            self.store,
+            github=self.github,
+            scope_resolver=resolver,
+        )
+
+        result = workflow.handle_status_change("PRO-104", "backlog", "todo")
+
+        event_kinds = [event[0] for event in self.store.events]
+        self.assertLess(
+            event_kinds.index("record-intake-transition"),
+            event_kinds.index("initialize"),
+        )
+        self.assertEqual(result.created_children, (("api", "implementation"),))
 
     def test_only_backlog_to_todo_starts_intake(self):
         dispatch = self.workflow.handle_status_change("PRO-101", "backlog", "todo")
@@ -919,6 +1084,29 @@ class GenericWorkflowTests(unittest.TestCase):
                 ("web-api", "integration_qa"),
             ),
         )
+
+    def test_gate_dispatch_uses_typed_phase_not_decision_reason_wording(self):
+        snapshot = replace(passing_snapshot(), reviews={}, qa={}, integration_qa={})
+        self.store.add_state(
+            "PRO-101",
+            snapshot,
+            pull_requests=pull_request_targets(),
+        )
+        typed_decision = ParentDecision(
+            DecisionKind.DISPATCH,
+            "wording deliberately contains no phase hint",
+            ("api", "web"),
+            dispatch_kind=DispatchKind.GATES,
+        )
+
+        with patch(
+            "tools.multica_delivery.workflow.decide_parent_action",
+            return_value=typed_decision,
+        ):
+            result = self.workflow.resume_parent("PRO-101")
+
+        self.assertEqual(result.created_children[0], ("api", "review"))
+        self.assertNotIn(("api", "implementation"), result.created_children)
 
     def test_independent_gate_completions_have_distinct_action_keys(self):
         self.workflow.handle_parent_event("PRO-101", affected=frozenset({"api", "web"}))
@@ -1089,7 +1277,7 @@ class GenericWorkflowTests(unittest.TestCase):
         self.assertEqual(result.next_action, "repair")
         self.assertEqual(self.github.merged, [])
 
-    def test_stale_integration_qa_is_done_then_repairs_exact_affected_repositories(self):
+    def test_stale_integration_qa_is_rejected_before_child_completion(self):
         snapshot = passing_snapshot()
         snapshot = replace(
             snapshot,
@@ -1126,12 +1314,47 @@ class GenericWorkflowTests(unittest.TestCase):
             )
         )
 
-        self.assertEqual(result.completed_child_status, "done")
-        self.assertEqual(result.next_action, "repair")
-        self.assertEqual(
-            {target for target, phase in result.created_children if phase == "repair"},
-            {"api", "web"},
+        self.assertIsNone(result.completed_child_status)
+        self.assertEqual(result.next_action, "block")
+        self.assertNotIn("done", [event[0] for event in self.store.events])
+
+    def test_integration_qa_completion_must_name_suite_command_repository(self):
+        snapshot = replace(
+            passing_snapshot(),
+            integration_qa={
+                "web-api": GateEvidence(passing_snapshot().candidate_shas, "pending")
+            },
         )
+        integration_child = WorkflowChild(
+            "PRO-101-INTEGRATION",
+            "web-api",
+            "web",
+            "web-api",
+            "integration_qa",
+            6,
+            0,
+            "in_progress",
+            "qa:" + "8" * 64,
+            True,
+        )
+        self.store.add_state(
+            "PRO-101",
+            snapshot,
+            children=(integration_child,),
+            pull_requests=pull_request_targets(),
+        )
+
+        result = self.workflow.record_phase_completion(
+            completion_for(
+                "api",
+                phase="integration_qa",
+                suite_key="web-api",
+                candidate_shas=dict(snapshot.candidate_shas),
+            )
+        )
+
+        self.assertEqual(result.parent_status, "blocked")
+        self.assertNotIn("done", [event[0] for event in self.store.events])
 
     def test_completion_reread_mismatch_blocks_before_child_done(self):
         self.workflow.handle_parent_event("PRO-101", affected=frozenset({"api"}))
@@ -1142,6 +1365,18 @@ class GenericWorkflowTests(unittest.TestCase):
         self.assertEqual(result.parent_status, "blocked")
         self.assertIsNone(result.completed_child_status)
         self.assertNotIn("done", [event[0] for event in self.store.events])
+
+    def test_successful_child_done_with_unobservable_parent_read_is_not_overwritten(self):
+        self.workflow.handle_parent_event("PRO-101", affected=frozenset({"api"}))
+        self.store.events.clear()
+        self.store.fail_reads_after_done = True
+
+        result = self.workflow.record_phase_completion(completion_for("api"))
+
+        state = self.store.states["PRO-101"]
+        self.assertEqual(result.next_action, "uncertain")
+        self.assertEqual(state.children[0].status, "done")
+        self.assertFalse(any(event[0] == "status" for event in self.store.events))
 
     def test_completion_rereads_unchanged_parent_metadata_before_child_done(self):
         self.workflow.handle_parent_event("PRO-101", affected=frozenset({"api"}))
@@ -1244,6 +1479,68 @@ class GenericWorkflowTests(unittest.TestCase):
             {"api": SHA["api"], "web": SHA["web"]},
         )
 
+    def test_merge_persists_authoritative_merge_shas_for_default_branch_smoke(self):
+        self.store.add_state(
+            "PRO-101",
+            passing_snapshot(),
+            pull_requests=pull_request_targets(),
+        )
+        merged = {"api": "1" * 40, "web": "2" * 40}
+        self.github.merged_shas = merged
+        smoke = FakeSmokeExecutor(passing_smoke(shas=merged))
+        workflow = GenericWorkflow(
+            self.manifest,
+            self.store,
+            self.store,
+            github=self.github,
+            smoke_executor=smoke,
+        )
+
+        result = workflow.execute_merge_plan("PRO-101")
+
+        self.assertEqual(result.merge_state, "merged")
+        self.assertEqual(dict(self.store.states["PRO-101"].snapshot.merged_shas), merged)
+        self.assertEqual(smoke.calls[0][2], merged)
+
+    def test_merge_transitions_use_unique_monotonic_keys_and_ordinals(self):
+        self.store.add_state(
+            "PRO-101",
+            passing_snapshot(),
+            pull_requests=pull_request_targets(),
+        )
+
+        self.workflow.execute_merge_plan("PRO-101")
+
+        writes = [event for event in self.store.events if event[0] == "merge-state"]
+        self.assertEqual([event[4] for event in writes], [6, 7, 8, 9])
+        self.assertEqual(len({event[3] for event in writes}), 4)
+
+    def test_merge_replay_converges_after_progress_write_read_failure(self):
+        self.store.add_state(
+            "PRO-101",
+            passing_snapshot(),
+            pull_requests=pull_request_targets(),
+        )
+        self.store.inject_merge_progress_read_failure = True
+
+        first = self.workflow.execute_merge_plan("PRO-101")
+        ordinal_after_uncertain_write = self.store.states["PRO-101"].metadata.stage_ordinal
+        second = self.workflow.execute_merge_plan("PRO-101")
+
+        self.assertEqual(first.next_action, "uncertain")
+        self.assertEqual(ordinal_after_uncertain_write, 7)
+        self.assertEqual(second.merge_state, "merged")
+        self.assertEqual(
+            self.github.merged,
+            [
+                ("codeExploreHub/sample-commerce-api", 12),
+                ("codeExploreHub/sample-commerce-web", 14),
+            ],
+        )
+        writes = [event for event in self.store.events if event[0] == "merge-state"]
+        ordinals = [event[4] for event in writes]
+        self.assertEqual(ordinals, sorted(set(ordinals)))
+
     def test_all_merges_start_owned_smoke_when_executor_is_configured(self):
         self.store.add_state(
             "PRO-101",
@@ -1317,6 +1614,56 @@ class GenericWorkflowTests(unittest.TestCase):
         self.assertEqual(result.parent_status, "blocked")
         self.assertFalse(any(event[0] == "write-smoke" for event in self.store.events))
 
+    def test_failed_post_merge_smoke_blocks_without_creating_repair_work(self):
+        snapshot = passing_snapshot()
+        snapshot = replace(
+            snapshot,
+            merge_state="merged",
+            merged_shas=snapshot.candidate_shas,
+            pull_requests={
+                repository: PullRequestEvidence(sha, "merged", True, True, sha)
+                for repository, sha in snapshot.candidate_shas.items()
+            },
+        )
+        self.store.add_state(
+            "PRO-101",
+            snapshot,
+            pull_requests=pull_request_targets(),
+        )
+        failed = replace(
+            passing_smoke(),
+            repository_results={"api": "pass", "web": "fail"},
+        )
+        self.store.events.clear()
+
+        result = self.workflow.record_smoke_read("PRO-101", failed)
+
+        self.assertEqual(result.parent_status, "blocked")
+        self.assertEqual(result.next_action, "block")
+        self.assertFalse(any(event[0] == "create" for event in self.store.events))
+
+    def test_successful_smoke_write_with_unobservable_reread_is_not_overwritten(self):
+        snapshot = passing_snapshot()
+        snapshot = replace(
+            snapshot,
+            merge_state="merged",
+            merged_shas=snapshot.candidate_shas,
+            pull_requests={
+                repository: PullRequestEvidence(sha, "merged", True, True, sha)
+                for repository, sha in snapshot.candidate_shas.items()
+            },
+        )
+        self.store.add_state("PRO-101", snapshot, pull_requests=pull_request_targets())
+        self.store.fail_smoke_reads_after_write = True
+        self.store.events.clear()
+
+        result = self.workflow.record_smoke_read("PRO-101", passing_smoke())
+
+        state = self.store.states["PRO-101"]
+        self.assertEqual(result.next_action, "uncertain")
+        self.assertEqual(len(state.snapshot.smoke_reads), 1)
+        self.assertFalse(any(event[0] == "status" for event in self.store.events))
+
     def test_smoke_execution_receives_exact_merged_sha_map(self):
         snapshot = passing_snapshot()
         snapshot = replace(
@@ -1382,6 +1729,30 @@ class GenericWorkflowTests(unittest.TestCase):
         self.assertEqual(dict(result.integration_results), {"web-api": "pass"})
         self.assertTrue(result.authoritative)
 
+    def test_owned_smoke_starts_multiple_repository_services_with_one_manager_call(self):
+        repositories = dict(self.manifest.repositories)
+        repositories["api"] = replace(
+            repositories["api"],
+            services=(
+                *repositories["api"].services,
+                ServiceSpec("api-admin", 8081, "http://localhost:8081/health"),
+            ),
+        )
+        manifest = replace(self.manifest, repositories=MappingProxyType(repositories))
+        manager = FakeOwnedProcessManager()
+        executor = OwnedSmokeExecutor(manifest, manager, FakeExactShaCommandRunner())
+
+        executor.execute(
+            "PRO-101",
+            ("api",),
+            {"api": SHA["api"]},
+            action_key="smoke:" + "7" * 64,
+        )
+
+        self.assertEqual(len(manager.started), 1)
+        self.assertEqual(len(manager.started[0][0]), 2)
+        self.assertEqual(len(manager.stopped), 1)
+
     def test_watcher_recovers_once_then_blocks_a_still_stalled_parent(self):
         child = WorkflowChild(
             "PRO-101-API",
@@ -1413,6 +1784,89 @@ class GenericWorkflowTests(unittest.TestCase):
         rerun_key = [event for event in self.store.events if event[0] == "rerun"][0][-1]
         blocked_key = [event for event in self.store.events if event[0] == "status"][-1][-1]
         self.assertNotEqual(rerun_key, blocked_key)
+
+    def test_watcher_rejects_authoritative_read_for_a_different_parent(self):
+        child = WorkflowChild(
+            "PRO-101-API",
+            "api",
+            "api",
+            "",
+            "implementation",
+            1,
+            0,
+            "in_progress",
+            "dispatch:" + "3" * 64,
+            False,
+        )
+        snapshot = ParentSnapshot(
+            affected_repositories=("api",),
+            children={"api": RepositoryEvidence("", "pending")},
+            stalled=True,
+            stalled_repository="api",
+        )
+        self.store.add_state("PRO-101", snapshot, children=(child,))
+        self.store.read_parent_identifier_override = "PRO-999"
+
+        result = self.workflow.recover_stalled_parent("PRO-101")
+
+        self.assertEqual(result.next_action, "noop")
+        self.assertFalse(any(event[0] == "rerun" for event in self.store.events))
+
+    def test_successful_recovery_with_unobservable_reread_is_not_overwritten(self):
+        child = WorkflowChild(
+            "PRO-101-API",
+            "api",
+            "api",
+            "",
+            "implementation",
+            1,
+            0,
+            "in_progress",
+            "dispatch:" + "3" * 64,
+            False,
+        )
+        snapshot = ParentSnapshot(
+            affected_repositories=("api",),
+            children={"api": RepositoryEvidence("", "pending")},
+            stalled=True,
+            stalled_repository="api",
+        )
+        self.store.add_state("PRO-101", snapshot, children=(child,))
+        self.store.fail_reads_after_rerun = True
+
+        result = self.workflow.recover_stalled_parent("PRO-101")
+
+        self.assertEqual(result.next_action, "uncertain")
+        self.assertEqual(self.store.states["PRO-101"].snapshot.recovery_count, 1)
+        self.assertFalse(any(event[0] == "status" for event in self.store.events))
+
+    def test_watcher_post_effect_read_must_still_name_requested_parent(self):
+        child = WorkflowChild(
+            "PRO-101-API",
+            "api",
+            "api",
+            "",
+            "implementation",
+            1,
+            0,
+            "in_progress",
+            "dispatch:" + "3" * 64,
+            False,
+        )
+        snapshot = ParentSnapshot(
+            affected_repositories=("api",),
+            children={"api": RepositoryEvidence("", "pending")},
+            stalled=True,
+            stalled_repository="api",
+        )
+        self.store.add_state("PRO-101", snapshot, children=(child,))
+        self.store.override_parent_after_rerun = True
+
+        result = self.workflow.recover_stalled_parent("PRO-101")
+
+        self.assertEqual(result.next_action, "uncertain")
+        self.assertEqual(len([event for event in self.store.events if event[0] == "rerun"]), 1)
+        self.assertFalse(any(event[0] == "status" for event in self.store.events))
 
     def test_watcher_ignores_healthy_human_wait_and_unsupported_work(self):
         pending = ParentSnapshot(

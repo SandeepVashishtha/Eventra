@@ -1,5 +1,6 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import threading
 import unittest
 from urllib.parse import urlsplit
 
@@ -107,7 +108,7 @@ class ProcessManagerTests(unittest.TestCase):
 
     def test_registry_write_failure_stops_the_newly_spawned_process(self):
         class FailingWriteRegistry(ProcessRegistry):
-            def write(self, records) -> None:
+            def _write_unlocked(self, records) -> None:
                 raise ProcessOwnershipError("owned process registry write failed")
 
         manager = ProcessManager(
@@ -240,6 +241,62 @@ class ProcessManagerTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ProcessOwnershipError, "duplicate owned process port"):
             self.registry.write((first, second))
+
+    def test_one_spawn_owns_all_repository_services_and_stop_removes_the_pid_group(self):
+        second = ServiceSpec("admin", 8081, "http://localhost:8081/health")
+        self.backend.healthy_urls.update(
+            {self.service.health_url, second.health_url}
+        )
+
+        records = self.manager.start_services(
+            (self.service, second),
+            self.run,
+            candidate_sha=SHA,
+        )
+
+        self.assertEqual(len(self.backend.spawned), 1)
+        self.assertEqual({record.pid for record in records}, {4100})
+        self.assertEqual({record.port for record in records}, {8080, 8081})
+        self.assertEqual(self.registry.read(), records)
+
+        self.manager.stop(
+            records[0],
+            run_id="run-1",
+            repository_key="api",
+            candidate_sha=SHA,
+        )
+
+        self.assertEqual(self.backend.stopped, [4100])
+        self.assertEqual(self.registry.read(), ())
+
+    def test_registry_transaction_serializes_competing_writers(self):
+        competing = ProcessRegistry(self.registry.path)
+        first_entered = threading.Event()
+        release_first = threading.Event()
+        second_entered = threading.Event()
+
+        def hold_first_lock() -> None:
+            with self.registry.transaction():
+                first_entered.set()
+                release_first.wait(timeout=2)
+
+        def acquire_second_lock() -> None:
+            first_entered.wait(timeout=2)
+            with competing.transaction():
+                second_entered.set()
+
+        first = threading.Thread(target=hold_first_lock)
+        second = threading.Thread(target=acquire_second_lock)
+        first.start()
+        self.assertTrue(first_entered.wait(timeout=1))
+        second.start()
+        self.assertFalse(second_entered.wait(timeout=0.05))
+        release_first.set()
+        self.assertTrue(second_entered.wait(timeout=1))
+        first.join(timeout=1)
+        second.join(timeout=1)
+        self.assertFalse(first.is_alive())
+        self.assertFalse(second.is_alive())
 
 
 if __name__ == "__main__":

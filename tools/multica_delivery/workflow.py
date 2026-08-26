@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field, replace
 from datetime import datetime
 import hashlib
@@ -15,6 +15,7 @@ import uuid
 
 from .decisions import (
     DecisionKind,
+    DispatchKind,
     ParentDecision,
     ParentSnapshot,
     SmokeRead,
@@ -251,12 +252,38 @@ class ScopeResolution:
             raise WorkflowError("authority requirements are malformed")
 
 
+@dataclass(frozen=True)
+class StatusTransition:
+    """Authoritative intake authorization persisted by the issue-store boundary."""
+
+    parent_identifier: str
+    old_status: str
+    new_status: str
+    action_key: str
+
+    def __post_init__(self) -> None:
+        if (
+            not isinstance(self.parent_identifier, str)
+            or _ISSUE_IDENTIFIER.fullmatch(self.parent_identifier) is None
+        ):
+            raise WorkflowError("status transition parent is malformed")
+        if self.old_status != "backlog" or self.new_status != "todo":
+            raise WorkflowError("status transition is not an intake transition")
+        if not isinstance(self.action_key, str) or _ACTION_KEY.fullmatch(self.action_key) is None:
+            raise WorkflowError("status transition action key is malformed")
+
+
 class ScopeResolver(Protocol):
     def resolve(self, parent_identifier: str) -> ScopeResolution: ...
 
 
 class WorkflowSnapshotReader(Protocol):
     def read(self, parent_identifier: str) -> WorkflowState: ...
+
+    def read_intake_transition(
+        self,
+        parent_identifier: str,
+    ) -> StatusTransition | None: ...
 
     def read_phase_completion(
         self,
@@ -276,6 +303,15 @@ class WorkflowSnapshotReader(Protocol):
 
 
 class WorkflowExecutor(Protocol):
+    def record_intake_transition(
+        self,
+        parent_identifier: str,
+        old_status: str,
+        new_status: str,
+        *,
+        action_key: str,
+    ) -> None: ...
+
     def initialize_parent(
         self,
         parent_identifier: str,
@@ -470,10 +506,10 @@ class OwnedSmokeExecutor:
                     argv=specification.commands["start"],
                     cwd=specification.local_path,
                 )
-                for service in specification.services:
-                    started.append(
-                        self.process_manager.start(
-                            service,
+                if specification.services:
+                    started.extend(
+                        self.process_manager.start_services(
+                            specification.services,
                             run,
                             candidate_sha=exact[repository],
                         )
@@ -515,7 +551,11 @@ class OwnedSmokeExecutor:
                     integration_results[suite.key] = "blocked"
 
         cleanup_failed = False
+        stopped_pids: set[int] = set()
         for record in reversed(started):
+            if record.pid in stopped_pids:
+                continue
+            stopped_pids.add(record.pid)
             try:
                 self.process_manager.stop(
                     record,
@@ -675,6 +715,38 @@ class GenericWorkflow:
             action_key=action_key,
             mutation_count=mutation_count,
         )
+
+    def _uncertain(
+        self,
+        state: WorkflowState,
+        reason: str,
+        *,
+        action_key: str | None = None,
+        mutation_count: int = 0,
+    ) -> WorkflowResult:
+        """Report an unobservable effect without issuing a compensating mutation."""
+
+        return self._result(
+            state,
+            "uncertain",
+            reason,
+            action_key=action_key,
+            mutation_count=mutation_count,
+        )
+
+    def _reconcile_parent(
+        self,
+        parent_identifier: str,
+        expected: Callable[[WorkflowState], bool],
+    ) -> WorkflowState | None:
+        for _ in range(2):
+            try:
+                observed = self.snapshot_reader.read(parent_identifier)
+            except Exception:
+                continue
+            if expected(observed):
+                return observed
+        return None
 
     def _action_key(
         self,
@@ -868,6 +940,69 @@ class GenericWorkflow:
     ) -> WorkflowResult:
         if old_status != "backlog" or new_status != "todo":
             return WorkflowResult(parent_identifier, new_status, "noop", "status transition does not start intake")
+        try:
+            state = self.snapshot_reader.read(parent_identifier)
+        except Exception:
+            return WorkflowResult(parent_identifier, "blocked", "block", "parent could not be read")
+        if (
+            not isinstance(state, WorkflowState)
+            or state.parent_identifier != parent_identifier
+            or state.parent_status != "todo"
+            or state.project_key not in self.project_keys
+        ):
+            return WorkflowResult(
+                parent_identifier,
+                state.parent_status if isinstance(state, WorkflowState) else "blocked",
+                "noop",
+                "authoritative parent state does not confirm the intake transition",
+            )
+        key = self._action_key(
+            state,
+            "intake-transition",
+            0,
+            affected=frozenset(),
+            candidate_shas={},
+            contract_hashes={},
+        )
+        expected = StatusTransition(parent_identifier, old_status, new_status, key)
+        try:
+            observed = self.snapshot_reader.read_intake_transition(parent_identifier)
+            if observed is None:
+                self.executor.record_intake_transition(
+                    parent_identifier,
+                    old_status,
+                    new_status,
+                    action_key=key,
+                )
+                observed = self.snapshot_reader.read_intake_transition(parent_identifier)
+            authoritative = self.snapshot_reader.read(parent_identifier)
+        except Exception:
+            return WorkflowResult(
+                parent_identifier,
+                state.parent_status,
+                "uncertain",
+                "intake transition could not be authoritatively reconciled",
+                action_key=key,
+            )
+        normalized_authoritative = replace(
+            authoritative,
+            applied_action_keys=state.applied_action_keys,
+        )
+        if (
+            observed != expected
+            or normalized_authoritative != state
+            or authoritative.applied_action_keys
+            not in {
+                state.applied_action_keys,
+                state.applied_action_keys | {key},
+            }
+        ):
+            return self._result(
+                authoritative,
+                "noop",
+                "authoritative intake transition did not match or parent changed",
+                action_key=key,
+            )
         if self.scope_resolver is not None:
             try:
                 resolution = self.scope_resolver.resolve(parent_identifier)
@@ -970,6 +1105,33 @@ class GenericWorkflow:
             ):
                 return self._result(state, "noop", "an intended successor is already active")
             return self.resume_parent(parent_identifier)
+
+        try:
+            intake_key = self._action_key(
+                state,
+                "intake-transition",
+                0,
+                affected=frozenset(),
+                candidate_shas={},
+                contract_hashes={},
+            )
+            transition = self.snapshot_reader.read_intake_transition(parent_identifier)
+        except Exception:
+            return self._result(
+                state,
+                "noop",
+                "authoritative intake transition is unavailable",
+            )
+        if (
+            state.parent_status != "todo"
+            or transition
+            != StatusTransition(parent_identifier, "backlog", "todo", intake_key)
+        ):
+            return self._result(
+                state,
+                "noop",
+                "metadata-free parent lacks an authoritative Backlog to Todo transition",
+            )
 
         if authority_requirements:
             return self._human_clarification(state, "new authority requirements need human approval")
@@ -1151,13 +1313,18 @@ class GenericWorkflow:
             attempt = decision.next_attempt
             next_action = "repair"
         else:
-            gate_dispatch = "review and QA" in decision.reason
-            requests = (
-                self._gate_requests(state, ordinal)
-                if gate_dispatch
-                else self._implementation_requests(state, decision.repositories, ordinal)
-            )
-            stage_kind = "gates" if gate_dispatch else "implementation"
+            if decision.dispatch_kind is DispatchKind.GATES:
+                requests = self._gate_requests(state, ordinal)
+                stage_kind = "gates"
+            elif decision.dispatch_kind is DispatchKind.IMPLEMENTATION:
+                requests = self._implementation_requests(
+                    state,
+                    decision.repositories,
+                    ordinal,
+                )
+                stage_kind = "implementation"
+            else:
+                return self._block(state, "dispatch decision has no supported typed phase")
             attempt = state.snapshot.attempt
             next_action = "dispatch"
         if not requests:
@@ -1185,9 +1352,51 @@ class GenericWorkflow:
                 metadata,
                 action_key=key,
             )
-            state = self.snapshot_reader.read(state.parent_identifier)
         except Exception:
-            return self._block(state, "successor creation failed", stage_kind=stage_kind)
+            # Reconcile because the effect may have committed before failing.
+            pass
+        wanted = {
+            (
+                request.target_key,
+                request.repository_key,
+                request.suite_key,
+                request.phase,
+                request.stage_ordinal,
+                request.attempt,
+                key,
+            )
+            for request in requests
+        }
+        observed = self._reconcile_parent(
+            state.parent_identifier,
+            lambda current: (
+                isinstance(current, WorkflowState)
+                and current.parent_identifier == state.parent_identifier
+                and current.metadata == metadata
+                and key in current.applied_action_keys
+                and wanted
+                <= {
+                    (
+                        child.target_key,
+                        child.repository_key,
+                        child.suite_key,
+                        child.phase,
+                        child.stage_ordinal,
+                        child.attempt,
+                        child.action_key,
+                    )
+                    for child in current.children
+                }
+            ),
+        )
+        if observed is None:
+            return self._uncertain(
+                state,
+                "successor creation is not yet authoritatively observable",
+                action_key=key,
+                mutation_count=1,
+            )
+        state = observed
         return self._result(
             state,
             next_action,
@@ -1316,13 +1525,15 @@ class GenericWorkflow:
             }
             if completion.suite_key not in suites:
                 return "integration QA suite is not applicable", None
+            suite = suites[completion.suite_key]
             completion_shas = dict(completion.candidate_shas)
             if (
-                set(completion_shas) != set(state.snapshot.affected_repositories)
+                completion.repository_key != suite.command_repository
+                or completion_shas != dict(state.snapshot.candidate_shas)
                 or any(not _valid_sha(sha) for sha in completion_shas.values())
-                or completion_shas.get(completion.repository_key) != completion.candidate_sha
+                or completion_shas.get(suite.command_repository) != completion.candidate_sha
             ):
-                return "integration QA completion SHA map is malformed", None
+                return "integration QA completion target or exact SHA map is malformed", None
         elif completion.suite_key or completion.candidate_shas:
             return "repository phase completion contains integration-only fields", None
 
@@ -1334,7 +1545,11 @@ class GenericWorkflow:
             and (
                 child.repository_key == completion.repository_key
                 if completion.phase != "integration_qa"
-                else child.suite_key == completion.suite_key
+                else (
+                    child.target_key == completion.suite_key
+                    and child.suite_key == completion.suite_key
+                    and child.repository_key == completion.repository_key
+                )
             )
         )
         if len(matching) != 1:
@@ -1397,22 +1612,65 @@ class GenericWorkflow:
         )
         try:
             self.executor.write_phase_completion(completion, action_key=key)
-            observed = self.snapshot_reader.read_phase_completion(
-                parent_identifier,
-                completion.evidence_comment_uuid,
+        except Exception:
+            # Reconcile because the effect may have committed before failing.
+            pass
+        observed: PhaseCompletion | None = None
+        evidence_read_succeeded = False
+        for _ in range(2):
+            try:
+                candidate = self.snapshot_reader.read_phase_completion(
+                    parent_identifier,
+                    completion.evidence_comment_uuid,
+                )
+            except Exception:
+                continue
+            evidence_read_succeeded = True
+            if candidate == completion:
+                observed = candidate
+                break
+        if observed is None:
+            if evidence_read_succeeded:
+                return WorkflowResult(
+                    parent_identifier,
+                    "blocked",
+                    "block",
+                    "phase completion evidence reread did not match",
+                    action_key=key,
+                    mutation_count=1,
+                )
+            return self._uncertain(
+                state,
+                "phase completion evidence is not yet authoritatively observable",
+                action_key=key,
+                mutation_count=1,
             )
-        except Exception:
-            return self._block(state, "phase completion evidence write failed")
-        if observed != completion:
-            return self._block(state, "phase completion evidence reread did not match")
-        try:
-            verified_state = self.snapshot_reader.read(parent_identifier)
-        except Exception:
-            return self._block(state, "parent metadata reread failed before phase completion")
+        verified_state: WorkflowState | None = None
+        parent_read_succeeded = False
+        for _ in range(2):
+            try:
+                candidate_state = self.snapshot_reader.read(parent_identifier)
+            except Exception:
+                continue
+            parent_read_succeeded = True
+            verified_state = candidate_state
+            if candidate_state == state:
+                break
+        if not parent_read_succeeded:
+            return self._uncertain(
+                state,
+                "parent metadata is not yet authoritatively observable before child completion",
+                action_key=key,
+                mutation_count=1,
+            )
         if verified_state != state:
-            return self._block(
-                verified_state,
+            return WorkflowResult(
+                parent_identifier,
+                "blocked",
+                "block",
                 "parent metadata changed before phase child completion",
+                action_key=key,
+                mutation_count=1,
             )
         try:
             self.executor.mark_child_done(
@@ -1421,9 +1679,34 @@ class GenericWorkflow:
                 metadata,
                 action_key=key,
             )
-            done_state = self.snapshot_reader.read(parent_identifier)
         except Exception:
-            return self._block(state, "phase child could not be marked done")
+            # Reconcile because the effect may have committed before failing.
+            pass
+        done_state = self._reconcile_parent(
+            parent_identifier,
+            lambda current: (
+                isinstance(current, WorkflowState)
+                and current.parent_identifier == parent_identifier
+                and current.metadata == metadata
+                and key in current.applied_action_keys
+                and len(
+                    tuple(
+                        item
+                        for item in current.children
+                        if item.evidence_comment_uuid == completion.evidence_comment_uuid
+                        and item.status == "done"
+                    )
+                )
+                == 1
+            ),
+        )
+        if done_state is None:
+            return self._uncertain(
+                state,
+                "phase child completion is not yet authoritatively observable",
+                action_key=key,
+                mutation_count=1,
+            )
         completed = tuple(
             item
             for item in done_state.children
@@ -1470,7 +1753,10 @@ class GenericWorkflow:
     ) -> str | None:
         if self.github is None:
             return "GitHub merge boundary is unavailable"
-        if set(state.pull_requests) != set(order):
+        if (
+            set(state.pull_requests) != set(state.snapshot.affected_repositories)
+            or not set(order) <= state.pull_requests.keys()
+        ):
             return "merge plan lacks exact pull request targets"
         problems: list[str] = []
         for repository in order:
@@ -1505,6 +1791,131 @@ class GenericWorkflow:
                 problems.append(f"{repository} merge preflight failed")
         return "; ".join(problems) or None
 
+    def _record_merge_transition(
+        self,
+        state: WorkflowState,
+        *,
+        merge_state: str,
+        merged_shas: Mapping[str, str],
+        merge_plan: tuple[str, ...],
+        stage_kind: str,
+    ) -> tuple[WorkflowState | None, WorkflowResult | None]:
+        assert state.metadata is not None
+        ordinal = state.metadata.stage_ordinal + 1
+        key = self._action_key(state, stage_kind, ordinal)
+        metadata = self._metadata(
+            state,
+            action_key=key,
+            stage_ordinal=ordinal,
+            merge_plan=merge_plan,
+            merge_state=merge_state,
+        )
+        values = dict(merged_shas)
+        attempted = key not in state.applied_action_keys
+        if attempted:
+            try:
+                self.executor.record_merge_state(
+                    state.parent_identifier,
+                    merge_state,
+                    values,
+                    metadata,
+                    action_key=key,
+                )
+            except Exception:
+                # The boundary may have committed before its acknowledgement failed.
+                pass
+        observed = self._reconcile_parent(
+            state.parent_identifier,
+            lambda current: (
+                isinstance(current, WorkflowState)
+                and current.parent_identifier == state.parent_identifier
+                and current.metadata is not None
+                and current.metadata.stage_ordinal == ordinal
+                and current.metadata.last_action == key
+                and current.metadata.merge_plan == merge_plan
+                and current.metadata.merge_state == merge_state
+                and current.snapshot.merge_state == merge_state
+                and dict(current.snapshot.merged_shas) == values
+                and key in current.applied_action_keys
+            ),
+        )
+        if observed is None:
+            return None, self._uncertain(
+                state,
+                f"{stage_kind} write is not yet authoritatively observable",
+                action_key=key,
+                mutation_count=int(attempted),
+            )
+        return observed, None
+
+    def _persist_merge_failure(
+        self,
+        state: WorkflowState,
+        reason: str,
+        *,
+        merge_state: str,
+        merged_shas: Mapping[str, str],
+        merge_plan: tuple[str, ...],
+    ) -> WorkflowResult:
+        transitioned, uncertain = self._record_merge_transition(
+            state,
+            merge_state=merge_state,
+            merged_shas=merged_shas,
+            merge_plan=merge_plan,
+            stage_kind=f"merge:{merge_state}",
+        )
+        if uncertain is not None:
+            return uncertain
+        assert transitioned is not None and transitioned.metadata is not None
+        ordinal = transitioned.metadata.stage_ordinal + 1
+        key = self._action_key(transitioned, "merge:block-status", ordinal)
+        metadata = self._metadata(
+            transitioned,
+            action_key=key,
+            stage_ordinal=ordinal,
+        )
+        attempted = key not in transitioned.applied_action_keys
+        if attempted:
+            try:
+                self.executor.set_parent_status(
+                    transitioned.parent_identifier,
+                    "blocked",
+                    reason,
+                    metadata,
+                    action_key=key,
+                )
+            except Exception:
+                pass
+        observed = self._reconcile_parent(
+            transitioned.parent_identifier,
+            lambda current: (
+                isinstance(current, WorkflowState)
+                and current.parent_identifier == transitioned.parent_identifier
+                and current.parent_status == "blocked"
+                and current.metadata is not None
+                and current.metadata.stage_ordinal == ordinal
+                and current.metadata.last_action == key
+                and current.snapshot.merge_state == merge_state
+                and dict(current.snapshot.merged_shas) == dict(merged_shas)
+                and key in current.applied_action_keys
+            ),
+        )
+        if observed is None:
+            return self._uncertain(
+                transitioned,
+                "merge failure status is not yet authoritatively observable",
+                action_key=key,
+                mutation_count=int(attempted),
+            )
+        return self._result(
+            observed,
+            "block",
+            reason,
+            action_key=key,
+            mutation_count=1 + int(attempted),
+            merge_state=merge_state,
+        )
+
     def execute_merge_plan(self, parent_identifier: str) -> WorkflowResult:
         try:
             state = self.snapshot_reader.read(parent_identifier)
@@ -1514,69 +1925,95 @@ class GenericWorkflow:
         if problem is not None:
             return self._block(state, problem, stage_kind="merge")
         affected = frozenset(state.snapshot.affected_repositories)
-        observed_merged = set(state.snapshot.merged_shas) | {
-            repository
-            for repository, evidence in state.snapshot.pull_requests.items()
-            if evidence.state == "merged"
-        }
-        if observed_merged and observed_merged != affected:
-            return self._block(
-                state,
-                "cross-repository merge is already partial; rollback is forbidden",
-                stage_kind="merge",
-                merge_state="partial",
-                merged_shas=state.snapshot.merged_shas,
-            )
-        decision = decide_parent_action(self.manifest, state.snapshot)
-        if decision.kind is DecisionKind.BLOCK:
-            return self._block(state, decision.reason, stage_kind="merge")
-        if decision.kind is not DecisionKind.MERGE:
-            if decision.kind in {DecisionKind.SMOKE, DecisionKind.COMPLETE}:
-                return self.resume_parent(parent_identifier)
-            return self._result(state, "noop", "parent is not merge-authorized")
         try:
             confirmed = tuple(repository for repository in self.manifest.merge_order if repository in affected)
             order = merge_order(self.manifest.repositories, affected, confirmed)
         except TopologyError:
             return self._block(state, "merge order is not dependency-safe", stage_kind="merge")
 
-        preflight_problem = self._preflight(state, order)
+        merged = dict(state.snapshot.merged_shas)
+        merged_prs = {
+            repository
+            for repository, evidence in state.snapshot.pull_requests.items()
+            if evidence.state == "merged"
+        }
+        if state.snapshot.merge_state == "merged" and set(merged) == affected:
+            return self.resume_parent(parent_identifier)
+
+        resuming = state.snapshot.merge_state == "merging"
+        if resuming:
+            prefix = order[: len(merged)]
+            assert state.metadata is not None
+            replay_problem = (
+                tuple(state.metadata.merge_plan) != order
+                or set(merged) != set(prefix)
+                or merged_prs != set(prefix)
+                or state.metadata.last_action not in state.applied_action_keys
+                or any(
+                    not _valid_sha(merged[repository])
+                    or state.snapshot.pull_requests[repository].merged_sha
+                    != merged[repository]
+                    for repository in prefix
+                )
+            )
+            if replay_problem:
+                return self._persist_merge_failure(
+                    state,
+                    "merge progress is not an authoritative replayable prefix; rollback is forbidden",
+                    merge_state="partial",
+                    merged_shas=merged,
+                    merge_plan=order,
+                )
+            remaining = order[len(prefix) :]
+        else:
+            observed_merged = set(merged) | merged_prs
+            if observed_merged:
+                return self._persist_merge_failure(
+                    state,
+                    "cross-repository merge is already partial; rollback is forbidden",
+                    merge_state="partial",
+                    merged_shas=merged,
+                    merge_plan=order,
+                )
+            decision = decide_parent_action(self.manifest, state.snapshot)
+            if decision.kind is DecisionKind.BLOCK:
+                return self._block(state, decision.reason, stage_kind="merge")
+            if decision.kind is not DecisionKind.MERGE:
+                if decision.kind in {DecisionKind.SMOKE, DecisionKind.COMPLETE}:
+                    return self.resume_parent(parent_identifier)
+                return self._result(state, "noop", "parent is not merge-authorized")
+            remaining = order
+
+        preflight_problem = self._preflight(state, remaining)
         if preflight_problem is not None:
-            return self._block(
+            return self._persist_merge_failure(
                 state,
                 preflight_problem,
-                stage_kind="merge",
                 merge_state="blocked",
-                merged_shas={},
+                merged_shas=merged,
+                merge_plan=order,
             )
-        fresh = self.snapshot_reader.read(parent_identifier)
-        if fresh != state or decide_parent_action(self.manifest, fresh.snapshot) != decision:
-            return self._result(fresh, "noop", "parent changed during all-PR preflight")
-        assert fresh.metadata is not None
-        ordinal = fresh.metadata.stage_ordinal + 1
-        key = self._action_key(fresh, "merge", ordinal)
-        metadata = self._metadata(
-            fresh,
-            action_key=key,
-            stage_ordinal=ordinal,
-            merge_plan=order,
-            merge_state="merging",
-        )
-        try:
-            self.executor.record_merge_state(
-                parent_identifier,
-                "merging",
-                {},
-                metadata,
-                action_key=key,
-            )
-        except Exception:
-            return self._block(fresh, "merge state could not be reserved", stage_kind="merge")
+        fresh = self._reconcile_parent(parent_identifier, lambda current: current == state)
+        if fresh is None:
+            return self._uncertain(state, "parent changed or became unreadable during all-PR preflight")
 
-        merged: dict[str, str] = {}
-        for repository in order:
-            target = fresh.pull_requests[repository]
-            expected_sha = fresh.snapshot.candidate_shas[repository]
+        if not resuming:
+            reserved, uncertain = self._record_merge_transition(
+                fresh,
+                merge_state="merging",
+                merged_shas={},
+                merge_plan=order,
+                stage_kind="merge:reserve",
+            )
+            if uncertain is not None:
+                return uncertain
+            assert reserved is not None
+            fresh = reserved
+
+        current = fresh
+        for repository in remaining:
+            target = current.pull_requests[repository]
+            expected_sha = current.snapshot.candidate_shas[repository]
             try:
                 assert self.github is not None
                 result = self.github.merge_pull_request(
@@ -1593,59 +2030,38 @@ class GenericWorkflow:
                     or not _valid_sha(result.merged_sha)
                 ):
                     raise WorkflowError("merge acknowledgement is malformed")
-                merged[repository] = expected_sha
-                current = self.snapshot_reader.read(parent_identifier)
-                progress_metadata = self._metadata(
-                    current,
-                    action_key=key,
-                    stage_ordinal=ordinal,
-                    merge_plan=order,
-                    merge_state="merging",
-                )
-                self.executor.record_merge_state(
-                    parent_identifier,
-                    "merging",
-                    merged,
-                    progress_metadata,
-                    action_key=key,
-                )
             except Exception:
-                current = self.snapshot_reader.read(parent_identifier)
                 failed_state = "partial" if merged else "blocked"
-                return self._block(
+                return self._persist_merge_failure(
                     current,
                     "merge sequence failed; rollback and deployment are forbidden",
-                    stage_kind="merge",
                     merge_state=failed_state,
                     merged_shas=merged,
-                    action_key=key,
+                    merge_plan=order,
                 )
-
-        current = self.snapshot_reader.read(parent_identifier)
-        merged_metadata = self._metadata(
-            current,
-            action_key=key,
-            stage_ordinal=ordinal,
-            merge_plan=order,
-            merge_state="merged",
-        )
-        try:
-            self.executor.record_merge_state(
-                parent_identifier,
-                "merged",
-                merged,
-                merged_metadata,
-                action_key=key,
-            )
-        except Exception:
-            return self._block(
+            merged[repository] = result.merged_sha
+            progressed, uncertain = self._record_merge_transition(
                 current,
-                "complete merge evidence could not be recorded",
-                stage_kind="merge",
-                merge_state="partial",
+                merge_state="merging",
                 merged_shas=merged,
-                action_key=key,
+                merge_plan=order,
+                stage_kind=f"merge:progress:{repository}",
             )
+            if uncertain is not None:
+                return uncertain
+            assert progressed is not None
+            current = progressed
+
+        completed, uncertain = self._record_merge_transition(
+            current,
+            merge_state="merged",
+            merged_shas=merged,
+            merge_plan=order,
+            stage_kind="merge:final",
+        )
+        if uncertain is not None:
+            return uncertain
+        assert completed is not None
         resumed = (
             self.execute_smoke(parent_identifier)
             if self.smoke_executor is not None
@@ -1699,11 +2115,25 @@ class GenericWorkflow:
                 metadata,
                 action_key=key,
             )
-            observed = self.snapshot_reader.read_smoke_reads(parent_identifier)
         except Exception:
-            return self._block(state, "smoke evidence write failed", stage_kind="smoke")
-        if observed != before + (smoke_read,):
-            return self._block(state, "smoke evidence reread did not match", stage_kind="smoke")
+            # Reconcile because the effect may have committed before failing.
+            pass
+        observed: tuple[SmokeRead, ...] | None = None
+        for _ in range(2):
+            try:
+                candidate = self.snapshot_reader.read_smoke_reads(parent_identifier)
+            except Exception:
+                continue
+            if candidate == before + (smoke_read,):
+                observed = candidate
+                break
+        if observed is None:
+            return self._uncertain(
+                state,
+                "smoke evidence write is not yet authoritatively observable",
+                action_key=key,
+                mutation_count=1,
+            )
         return self.resume_parent(parent_identifier)
 
     def execute_smoke(self, parent_identifier: str) -> WorkflowResult:
@@ -1733,7 +2163,14 @@ class GenericWorkflow:
             return self._block(state, "owned exact-SHA smoke execution failed", stage_kind="smoke")
         return self.record_smoke_read(parent_identifier, smoke_read)
 
-    def _watch_scope_problem(self, state: WorkflowState) -> str | None:
+    def _watch_scope_problem(
+        self,
+        state: WorkflowState,
+        parent_identifier: str,
+    ) -> str | None:
+        state_problem = self._state_problem(state, parent_identifier)
+        if state_problem is not None:
+            return state_problem
         if state.parent_status not in _ACTIVE_PARENT_STATUSES:
             return "parent is not active"
         if state.project_key not in self.project_keys:
@@ -1758,13 +2195,17 @@ class GenericWorkflow:
             initial = self.snapshot_reader.read(parent_identifier)
         except Exception:
             return WorkflowResult(parent_identifier, "blocked", "block", "parent could not be read")
-        scope_problem = self._watch_scope_problem(initial)
+        scope_problem = self._watch_scope_problem(initial, parent_identifier)
         if scope_problem is not None or initial.human_wait or initial.active_work or not initial.snapshot.stalled:
             return self._result(initial, "noop", scope_problem or "work is healthy or waiting for a human")
         decision = decide_parent_action(self.manifest, initial.snapshot)
         if decision.kind is DecisionKind.BLOCK and initial.snapshot.recovery_count >= 1:
             return self._block(initial, decision.reason, stage_kind="recovery-block")
-        if decision.kind is not DecisionKind.DISPATCH or len(decision.repositories) != 1:
+        if (
+            decision.kind is not DecisionKind.DISPATCH
+            or decision.dispatch_kind is not DispatchKind.RECOVERY
+            or len(decision.repositories) != 1
+        ):
             return self._result(initial, "noop", "watcher has no bounded rerun action")
         repository = decision.repositories[0]
         candidates = tuple(
@@ -1778,40 +2219,34 @@ class GenericWorkflow:
         if len(candidates) != 1:
             return self._result(initial, "noop", "watcher cannot identify one existing stalled child")
 
-        fresh = self.snapshot_reader.read(parent_identifier)
+        try:
+            fresh = self.snapshot_reader.read(parent_identifier)
+        except Exception:
+            return self._result(initial, "noop", "parent became unreadable before recovery")
         if (
             fresh != initial
-            or self._watch_scope_problem(fresh) is not None
+            or self._watch_scope_problem(fresh, parent_identifier) is not None
             or fresh.human_wait
             or fresh.active_work
             or decide_parent_action(self.manifest, fresh.snapshot) != decision
         ):
             return self._result(fresh, "noop", "workflow changed before recovery")
         assert fresh.metadata is not None
+        ordinal = fresh.metadata.stage_ordinal + 1
         key = self._action_key(
             fresh,
             "recovery",
-            fresh.metadata.stage_ordinal,
+            ordinal,
         )
         if key in fresh.applied_action_keys:
             return self._result(fresh, "noop", "recovery action already exists", action_key=key)
-        metadata = self._metadata(fresh, action_key=key)
+        metadata = self._metadata(
+            fresh,
+            action_key=key,
+            stage_ordinal=ordinal,
+        )
         before_children = fresh.children
         target_identifier = candidates[0].identifier
-        try:
-            self.executor.rerun_child(
-                parent_identifier,
-                target_identifier,
-                metadata,
-                action_key=key,
-            )
-            observed = self.snapshot_reader.read(parent_identifier)
-        except Exception:
-            return self._block(
-                fresh,
-                "bounded recovery mutation failed",
-                stage_kind="recovery-block",
-            )
 
         def child_identity(child: WorkflowChild) -> tuple[object, ...]:
             return (
@@ -1826,6 +2261,36 @@ class GenericWorkflow:
                 child.evidence_comment_uuid,
             )
 
+        try:
+            self.executor.rerun_child(
+                parent_identifier,
+                target_identifier,
+                metadata,
+                action_key=key,
+            )
+        except Exception:
+            # Reconcile because the effect may have committed before failing.
+            pass
+
+        observed = self._reconcile_parent(
+            parent_identifier,
+            lambda current: (
+                isinstance(current, WorkflowState)
+                and current.parent_identifier == parent_identifier
+                and current.metadata == metadata
+                and current.snapshot.recovery_count
+                == fresh.snapshot.recovery_count + 1
+                and key in current.applied_action_keys
+            ),
+        )
+        if observed is None:
+            return self._uncertain(
+                fresh,
+                "bounded recovery is not yet authoritatively observable",
+                action_key=key,
+                mutation_count=1,
+            )
+
         normalized_observed_snapshot = replace(
             observed.snapshot,
             recovery_count=fresh.snapshot.recovery_count,
@@ -1838,7 +2303,8 @@ class GenericWorkflow:
             if before.identifier != target_identifier
         )
         if (
-            observed.parent_identifier != fresh.parent_identifier
+            self._watch_scope_problem(observed, parent_identifier) is not None
+            or observed.parent_identifier != fresh.parent_identifier
             or observed.parent_status != fresh.parent_status
             or observed.project_key != fresh.project_key
             or observed.snapshot.recovery_count != fresh.snapshot.recovery_count + 1
@@ -1851,10 +2317,13 @@ class GenericWorkflow:
             or observed.human_wait != fresh.human_wait
             or observed.applied_action_keys != fresh.applied_action_keys | {key}
         ):
-            return self._block(
-                observed,
-                "bounded recovery verification failed",
-                stage_kind="recovery-block",
+            return WorkflowResult(
+                parent_identifier,
+                "blocked",
+                "block",
+                "bounded recovery verification failed without a follow-up mutation",
+                action_key=key,
+                mutation_count=1,
             )
         return self._result(
             observed,

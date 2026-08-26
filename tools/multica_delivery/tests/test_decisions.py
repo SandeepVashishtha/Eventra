@@ -5,6 +5,7 @@ import unittest
 
 from tools.multica_delivery.decisions import (
     DecisionKind,
+    DispatchKind,
     GateEvidence,
     ParentSnapshot,
     PullRequestEvidence,
@@ -231,6 +232,7 @@ class ParentDecisionTests(unittest.TestCase):
         )
         decision = decide_parent_action(self.manifest, pending)
         self.assertEqual(decision.kind, DecisionKind.DISPATCH)
+        self.assertEqual(decision.dispatch_kind, DispatchKind.RECOVERY)
         self.assertEqual(decision.repositories, ("api",))
 
     def test_stalled_recovery_without_a_repository_blocks_instead_of_dispatching_empty(self):
@@ -261,6 +263,7 @@ class ParentDecisionTests(unittest.TestCase):
         )
         decision = decide_parent_action(self.manifest, snapshot)
         self.assertEqual(decision.kind, DecisionKind.DISPATCH)
+        self.assertEqual(decision.dispatch_kind, DispatchKind.IMPLEMENTATION)
         self.assertEqual(decision.repositories, ("api",))
 
     def test_dependent_children_wait_for_exact_dependency_implementation(self):
@@ -360,6 +363,7 @@ class ParentDecisionTests(unittest.TestCase):
         snapshot = replace(snapshot, reviews={}, qa={}, integration_qa={})
         decision = decide_parent_action(self.manifest, snapshot)
         self.assertEqual(decision.kind, DecisionKind.DISPATCH)
+        self.assertEqual(decision.dispatch_kind, DispatchKind.GATES)
         self.assertEqual(decision.repositories, ("api", "web"))
 
     def test_stale_integration_qa_sha_map_repairs(self):
@@ -391,6 +395,28 @@ class ParentDecisionTests(unittest.TestCase):
         self.assertEqual(decide_parent_action(self.manifest, once).kind, DecisionKind.SMOKE)
         self.assertEqual(decide_parent_action(self.manifest, twice).kind, DecisionKind.COMPLETE)
 
+    def test_authoritative_merge_commit_shas_may_differ_from_reviewed_heads(self):
+        base = passing_snapshot()
+        merged = {"api": "1" * 40, "web": "2" * 40}
+        snapshot = replace(
+            base,
+            merge_state="merged",
+            merged_shas=merged,
+            pull_requests={
+                repository: replace(
+                    evidence,
+                    state="merged",
+                    merged_sha=merged[repository],
+                )
+                for repository, evidence in base.pull_requests.items()
+            },
+        )
+
+        decision = decide_parent_action(self.manifest, snapshot)
+
+        self.assertEqual(decision.kind, DecisionKind.SMOKE)
+        self.assertEqual(decision.repositories, ("api", "web"))
+
     def test_merged_pr_without_passing_checks_never_completes_after_smoke(self):
         read = passing_smoke_read()
         snapshot = merged_snapshot(smoke_reads=(read, read))
@@ -413,7 +439,7 @@ class ParentDecisionTests(unittest.TestCase):
         decision = decide_parent_action(self.manifest, merged_snapshot(smoke_reads=(read, read)))
         self.assertEqual(decision.kind, DecisionKind.SMOKE)
 
-    def test_replacement_sha_invalidates_prior_smoke_passes(self):
+    def test_stale_post_merge_smoke_blocks_for_human_without_repair(self):
         stale = passing_smoke_read()
         replacement = merged_snapshot()
         replacement = replace(
@@ -434,17 +460,24 @@ class ParentDecisionTests(unittest.TestCase):
             },
             smoke_reads=(stale, stale),
         )
-        self.assertEqual(decide_parent_action(self.manifest, replacement).kind, DecisionKind.REPAIR)
+        decision = decide_parent_action(self.manifest, replacement)
+        self.assertEqual(decision.kind, DecisionKind.BLOCK)
+        self.assertEqual(decision.repositories, ())
 
-    def test_failed_smoke_repairs_until_budget_is_exhausted(self):
+    def test_failed_post_merge_smoke_blocks_for_human_without_repair(self):
         failed = replace(
             passing_smoke_read(),
             repository_results={"api": "pass", "web": "fail"},
         )
-        first = decide_parent_action(self.manifest, merged_snapshot(smoke_reads=(failed,), attempt=1))
-        final = decide_parent_action(self.manifest, merged_snapshot(smoke_reads=(failed,), attempt=2))
-        self.assertEqual((first.kind, first.next_attempt), (DecisionKind.REPAIR, 2))
-        self.assertEqual(final.kind, DecisionKind.BLOCK)
+        decision = decide_parent_action(
+            self.manifest,
+            merged_snapshot(smoke_reads=(failed,), attempt=0),
+        )
+
+        self.assertEqual(decision.kind, DecisionKind.BLOCK)
+        self.assertIsNone(decision.next_attempt)
+        self.assertEqual(decision.repositories, ())
+        self.assertIn("human", decision.reason)
 
     def test_snapshot_copies_input_mappings_to_preserve_immutability(self):
         candidates = {"api": SHA["api"]}
