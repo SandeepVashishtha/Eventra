@@ -250,15 +250,40 @@ class MulticaClientTests(unittest.TestCase):
                 self.assertNotIn(secret, str(caught.exception))
                 self.assertEqual(runner.calls, [])
 
-    def test_public_call_does_not_retry_mutation(self):
-        runner = FakeRunner(TransientCommandError("temporary"), {"data": {"skill": {"id": "x"}}})
+    def test_public_call_rejects_generic_mutations_before_execution(self):
+        runner = FakeRunner({"data": {"agent": {"id": "agent-1"}}})
 
-        with self.assertRaises(CommandFailure):
+        with self.assertRaisesRegex(MulticaContractError, "unsupported Multica argv"):
             MulticaClient(runner).call(
-                ("multica", "skill", "import", "--url", "https://github.com/example/skill")
+                (
+                    "multica",
+                    "agent",
+                    "create",
+                    "--unsupported-secret",
+                    "SENTINEL",
+                )
             )
 
-        self.assertEqual(len(runner.calls), 1)
+        self.assertEqual(runner.calls, [])
+
+    def test_public_call_rejects_extra_read_arguments_before_execution(self):
+        runner = FakeRunner({"data": {"issue": {"id": "issue-1"}}})
+
+        with self.assertRaisesRegex(MulticaContractError, "unsupported Multica argv"):
+            MulticaClient(runner).call(
+                (
+                    "multica",
+                    "issue",
+                    "get",
+                    "issue-1",
+                    "--output",
+                    "json",
+                    "--unsupported-secret",
+                    "SENTINEL",
+                )
+            )
+
+        self.assertEqual(runner.calls, [])
 
     def test_public_call_recursively_freezes_safe_nested_results(self):
         source = {"data": {"outer": {"items": [{"safe": "value"}]}}}

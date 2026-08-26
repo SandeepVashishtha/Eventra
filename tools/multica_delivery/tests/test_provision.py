@@ -78,6 +78,9 @@ class StatefulMultica:
         self.squad_create_leader_issue: str | None = None
         self.secret_sets: list[tuple[str, dict[str, str]]] = []
         self._next: dict[str, int] = {}
+        self.identity_swap_after_snapshot: tuple[str, str] | None = None
+        self.identity_swap_skip = 0
+        self._snapshot_completed = False
 
     @property
     def was_mutated(self) -> bool:
@@ -92,6 +95,66 @@ class StatefulMultica:
         self.mutations.append(kind)
         return kind not in self.freeze_mutations
 
+    def arm_identity_swap(self, category: str, key: str, *, skip: int = 0) -> None:
+        self.identity_swap_after_snapshot = (category, key)
+        self.identity_swap_skip = skip
+        self._snapshot_completed = False
+
+    def _maybe_swap(self, category: str) -> None:
+        target = self.identity_swap_after_snapshot
+        if not self._snapshot_completed or target is None or target[0] != category:
+            return
+        if self.identity_swap_skip:
+            self.identity_swap_skip -= 1
+            return
+        key = target[1]
+        self.identity_swap_after_snapshot = None
+        resource_category = {
+            "binding-skill": "skill",
+            "binding-agent": "agent",
+            "environment-agent": "agent",
+            "autopilot-project": "project",
+            "autopilot-agent": "agent",
+        }.get(category, category)
+        if resource_category == "skill":
+            record = self.skills.pop(key)
+            replacement = f"foreign-{key}"
+            self.skills[replacement] = replace(record, id=replacement)
+        elif resource_category == "project":
+            record = self.projects.pop(key)
+            replacement = f"foreign-{key}"
+            self.projects[replacement] = replace(record, id=replacement)
+        elif resource_category == "worktree":
+            for resources in self.resources.values():
+                if key in resources:
+                    record = resources.pop(key)
+                    replacement = f"foreign-{key}"
+                    resources[replacement] = replace(record, id=replacement)
+                    break
+        elif resource_category == "agent":
+            record = self.agents.pop(key)
+            replacement = f"foreign-{key}"
+            self.agents[replacement] = replace(record, id=replacement)
+            self.bindings[replacement] = self.bindings.pop(key)
+            self.environments[replacement] = self.environments.pop(key)
+        elif resource_category == "squad":
+            record = self.squads.pop(key)
+            replacement = f"foreign-{key}"
+            self.squads[replacement] = replace(record, id=replacement)
+        elif resource_category == "autopilot":
+            record = self.autopilots.pop(key)
+            replacement = f"foreign-{key}"
+            self.autopilots[replacement] = replace(record, id=replacement)
+        elif resource_category == "trigger":
+            for triggers in self.triggers.values():
+                if key in triggers:
+                    record = triggers.pop(key)
+                    replacement = f"foreign-{key}"
+                    triggers[replacement] = replace(record, id=replacement)
+                    break
+        else:
+            raise AssertionError(f"unknown identity swap category {category}")
+
     def version(self) -> str:
         return "0.4.33"
 
@@ -99,6 +162,7 @@ class StatefulMultica:
         return self.runtime
 
     def list_skills(self) -> tuple[SkillState, ...]:
+        self._maybe_swap("skill")
         return tuple(self.skills.values())
 
     def import_skill(self, url: str) -> MutationResult:
@@ -109,6 +173,7 @@ class StatefulMultica:
         return MutationResult("ignored-acknowledgement")
 
     def list_projects(self) -> tuple[ProjectState, ...]:
+        self._maybe_swap("project")
         return tuple(self.projects.values())
 
     def create_project(self, *, title: str, description: str) -> MutationResult:
@@ -124,6 +189,7 @@ class StatefulMultica:
         return MutationResult("ignored-acknowledgement")
 
     def list_project_resources(self, project_id: str) -> tuple[ProjectResourceState, ...]:
+        self._maybe_swap("worktree")
         return tuple(self.resources[project_id].values())
 
     def add_project_worktree(
@@ -166,6 +232,7 @@ class StatefulMultica:
         return MutationResult("ignored-acknowledgement")
 
     def list_agents(self) -> tuple[AgentState, ...]:
+        self._maybe_swap("agent")
         return tuple(self.agents.values())
 
     def create_agent(
@@ -217,6 +284,8 @@ class StatefulMultica:
         return MutationResult("ignored-acknowledgement")
 
     def list_agent_skill_ids(self, agent_id: str) -> tuple[str, ...]:
+        self._maybe_swap("binding-skill")
+        self._maybe_swap("binding-agent")
         return tuple(sorted(self.bindings[agent_id]))
 
     def add_agent_skill(self, agent_id: str, skill_id: str) -> MutationResult:
@@ -225,6 +294,7 @@ class StatefulMultica:
         return MutationResult("ignored-acknowledgement")
 
     def get_agent_environment(self, agent_id: str) -> AgentEnvironment:
+        self._maybe_swap("environment-agent")
         return AgentEnvironment(agent_id, tuple(sorted(self.environments[agent_id])))
 
     def set_agent_environment(self, agent_id: str, values) -> MutationResult:
@@ -237,6 +307,7 @@ class StatefulMultica:
         return MutationResult("ignored-acknowledgement")
 
     def list_squads(self) -> tuple[SquadState, ...]:
+        self._maybe_swap("squad")
         return tuple(self.squads.values())
 
     def create_squad(
@@ -293,6 +364,9 @@ class StatefulMultica:
         return MutationResult("ignored-acknowledgement")
 
     def list_autopilots(self) -> tuple[AutopilotState, ...]:
+        self._maybe_swap("autopilot-project")
+        self._maybe_swap("autopilot-agent")
+        self._maybe_swap("autopilot")
         return tuple(self.autopilots.values())
 
     def create_autopilot(
@@ -345,7 +419,10 @@ class StatefulMultica:
         return MutationResult("ignored-acknowledgement")
 
     def list_autopilot_triggers(self, autopilot_id: str) -> tuple[TriggerState, ...]:
-        return tuple(self.triggers[autopilot_id].values())
+        self._maybe_swap("trigger")
+        result = tuple(self.triggers[autopilot_id].values())
+        self._snapshot_completed = True
+        return result
 
     def add_autopilot_trigger(
         self,
@@ -664,7 +741,7 @@ class ProvisionerTests(unittest.TestCase):
 
                 with self.assertRaisesRegex(
                     ProvisionError,
-                    "Squad leader creation verification",
+                    "Squad leader",
                 ):
                     provisioner.reconcile(
                         self.manifest,
@@ -827,7 +904,7 @@ class ProvisionerTests(unittest.TestCase):
         )
         self.multica.replace_worktree_on_update = True
 
-        with self.assertRaisesRegex(ProvisionError, "worktree identity"):
+        with self.assertRaisesRegex(ProvisionError, "worktree"):
             self.apply(first.lock)
 
         self.assertEqual(first.lock.resource_ids["worktree"]["api"], worktree_id)
@@ -842,7 +919,7 @@ class ProvisionerTests(unittest.TestCase):
         )
         self.multica.replace_trigger_on_update = True
 
-        with self.assertRaisesRegex(ProvisionError, "trigger identity"):
+        with self.assertRaisesRegex(ProvisionError, "trigger"):
             self.apply(first.lock)
 
         self.assertEqual(
@@ -880,18 +957,16 @@ class ProvisionerTests(unittest.TestCase):
         self.assertEqual(len(self.multica.mutations), mutations_before)
 
     def test_lock_preserves_unknown_ids_and_records_versions_hash_and_all_targets(self):
-        lock = FrameworkLock(
-            "old",
-            "old",
-            1,
-            1,
-            "old",
-            "old",
-            MappingProxyType(
-                {"external": MappingProxyType({"keep": "external-id"})}
-            ),
-        )
+        initial = self.apply()
+        categories = {
+            key: MappingProxyType(dict(values))
+            for key, values in initial.lock.resource_ids.items()
+        }
+        categories["external"] = MappingProxyType({"keep": "external-id"})
+        lock = replace(initial.lock, resource_ids=MappingProxyType(categories))
+
         result = self.apply(lock)
+
         self.assertEqual(result.lock.skill_version, "1.0.0")
         self.assertEqual(result.lock.engine_version, "1.0.0")
         self.assertEqual(result.lock.supported_multica_cli, ">=0.4,<0.5")
@@ -911,13 +986,173 @@ class ProvisionerTests(unittest.TestCase):
             },
         )
 
+    def test_initialized_lock_version_changes_fail_closed_without_mutation(self):
+        initial = self.apply()
+        cases = {
+            "skill upgrade": {"skill_version": "1.1.0"},
+            "skill downgrade": {"skill_version": "0.9.0"},
+            "engine upgrade": {"engine_version": "1.1.0"},
+            "engine downgrade": {"engine_version": "0.9.0"},
+            "schema upgrade": {"manifest_schema_version": 2},
+            "schema downgrade": {"manifest_schema_version": 0},
+            "metadata upgrade": {"workflow_metadata_version": 2},
+            "metadata downgrade": {"workflow_metadata_version": 0},
+            "CLI upgrade": {"supported_multica_cli": ">=0.5,<0.6"},
+            "CLI downgrade": {"supported_multica_cli": ">=0.3,<0.4"},
+        }
+        for label, changes in cases.items():
+            with self.subTest(label=label):
+                mutations_before = len(self.multica.mutations)
+                with self.assertRaisesRegex(ProvisionError, "lock version mismatch"):
+                    self.apply(replace(initial.lock, **changes))
+                self.assertEqual(len(self.multica.mutations), mutations_before)
+
+    def test_locked_identity_swaps_after_planning_fail_before_any_mutation(self):
+        cases = (
+            ("skill", "using-superpowers", "project"),
+            ("project", "api", "project"),
+            ("worktree", "api", "worktree"),
+            ("agent", "api-engineer", "agent"),
+            ("squad", "delivery", "squad"),
+            ("autopilot", "workflow-watcher", "autopilot"),
+            ("trigger", "workflow-watcher", "trigger"),
+        )
+        for category, key, drift in cases:
+            with self.subTest(category=category):
+                multica = StatefulMultica(self.manifest)
+                provisioner = Provisioner(multica, FakeGitHub(self.manifest))
+                initial = provisioner.reconcile(
+                    self.manifest,
+                    FrameworkLock.empty(),
+                    apply=True,
+                    secret_lookup=self.secrets,
+                )
+                if drift == "project":
+                    identifier = initial.lock.resource_ids["project"]["api"]
+                    multica.projects[identifier] = replace(
+                        multica.projects[identifier], description="stale"
+                    )
+                elif drift == "worktree":
+                    identifier = initial.lock.resource_ids["worktree"]["api"]
+                    project_id = initial.lock.resource_ids["project"]["api"]
+                    multica.resources[project_id][identifier] = replace(
+                        multica.resources[project_id][identifier],
+                        execution_mode="in_place",
+                    )
+                elif drift == "agent":
+                    identifier = initial.lock.resource_ids["agent"]["api-engineer"]
+                    multica.agents[identifier] = replace(
+                        multica.agents[identifier], description="stale"
+                    )
+                elif drift == "squad":
+                    identifier = initial.lock.resource_ids["squad"]["delivery"]
+                    multica.squads[identifier] = replace(
+                        multica.squads[identifier], description="stale"
+                    )
+                elif drift == "autopilot":
+                    identifier = initial.lock.resource_ids["autopilot"]["workflow-watcher"]
+                    multica.autopilots[identifier] = replace(
+                        multica.autopilots[identifier], description="stale"
+                    )
+                elif drift == "trigger":
+                    autopilot_id = initial.lock.resource_ids["autopilot"]["workflow-watcher"]
+                    identifier = initial.lock.resource_ids["trigger"]["workflow-watcher"]
+                    multica.triggers[autopilot_id][identifier] = replace(
+                        multica.triggers[autopilot_id][identifier],
+                        cron_expression="0 * * * *",
+                    )
+                else:
+                    raise AssertionError(drift)
+
+                locked_id = initial.lock.resource_ids[category][key]
+                multica.arm_identity_swap(category, locked_id)
+                mutations_before = len(multica.mutations)
+
+                with self.assertRaisesRegex(ProvisionError, "foreign lock identity"):
+                    provisioner.reconcile(
+                        self.manifest,
+                        initial.lock,
+                        apply=True,
+                        secret_lookup=self.secrets,
+                    )
+
+                self.assertEqual(len(multica.mutations), mutations_before)
+
+    def test_locked_dependency_swaps_fail_before_binding_environment_or_autopilot_mutation(self):
+        for event in (
+            "binding-skill",
+            "binding-agent",
+            "environment-agent",
+            "autopilot-project",
+            "autopilot-agent",
+        ):
+            with self.subTest(event=event):
+                multica = StatefulMultica(self.manifest)
+                provisioner = Provisioner(multica, FakeGitHub(self.manifest))
+                initial = provisioner.reconcile(
+                    self.manifest,
+                    FrameworkLock.empty(),
+                    apply=True,
+                    secret_lookup=self.secrets,
+                )
+                api_agent = initial.lock.resource_ids["agent"]["api-engineer"]
+                if event == "binding-skill":
+                    skill_id = next(iter(multica.bindings[api_agent]))
+                    multica.bindings[api_agent].remove(skill_id)
+                    swap_id = skill_id
+                elif event == "binding-agent":
+                    skill_id = next(iter(multica.bindings[api_agent]))
+                    multica.bindings[api_agent].remove(skill_id)
+                    swap_id = api_agent
+                elif event == "environment-agent":
+                    multica.environments[api_agent] = {}
+                    swap_id = api_agent
+                else:
+                    autopilot_id = initial.lock.resource_ids["autopilot"]["workflow-watcher"]
+                    multica.autopilots[autopilot_id] = replace(
+                        multica.autopilots[autopilot_id], description="stale"
+                    )
+                    swap_id = initial.lock.resource_ids[
+                        "project" if event == "autopilot-project" else "agent"
+                    ]["control" if event == "autopilot-project" else "workflow-watcher"]
+
+                multica.arm_identity_swap(event, swap_id)
+                mutations_before = len(multica.mutations)
+
+                with self.assertRaises(ProvisionError):
+                    provisioner.reconcile(
+                        self.manifest,
+                        initial.lock,
+                        apply=True,
+                        secret_lookup=self.secrets,
+                    )
+
+                self.assertEqual(len(multica.mutations), mutations_before)
+
+    def test_identity_swap_during_pre_mutation_snapshot_is_detected_before_mutation(self):
+        initial = self.apply()
+        autopilot_id = initial.lock.resource_ids["autopilot"]["workflow-watcher"]
+        control_id = initial.lock.resource_ids["project"]["control"]
+        self.multica.autopilots[autopilot_id] = replace(
+            self.multica.autopilots[autopilot_id], description="stale"
+        )
+        # Two skill phase snapshots and the Autopilot apply preamble read first.
+        # The fourth read occurs late in the mutation guard, after its Project read.
+        self.multica.arm_identity_swap("autopilot-project", control_id, skip=3)
+        mutations_before = len(self.multica.mutations)
+
+        with self.assertRaises(ProvisionError):
+            self.apply(initial.lock)
+
+        self.assertEqual(len(self.multica.mutations), mutations_before)
+
     def test_lock_id_pointing_at_a_different_target_is_fatal_before_mutation(self):
         lock = FrameworkLock(
-            "",
-            "",
+            "1.0.0",
+            "1.0.0",
             1,
             1,
-            "",
+            ">=0.4,<0.5",
             "",
             MappingProxyType(
                 {"project": MappingProxyType({"control": "project-foreign"})}

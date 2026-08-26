@@ -145,46 +145,34 @@ class TriggerState:
 
 
 _ENVELOPES = frozenset({"data", "result"})
-_READ_PREFIXES = (
-    ("version",),
-    ("runtime", "list"),
-    ("project", "list"),
-    ("project", "get"),
-    ("project", "resource", "list"),
-    ("agent", "list"),
-    ("agent", "get"),
-    ("agent", "skills", "list"),
-    ("skill", "list"),
-    ("skill", "get"),
-    ("squad", "list"),
-    ("squad", "get"),
-    ("squad", "member", "list"),
-    ("autopilot", "list"),
-    ("autopilot", "get"),
-    ("issue", "list"),
-    ("issue", "get"),
-    ("issue", "children"),
-    ("issue", "runs"),
-    ("issue", "metadata", "list"),
-    ("capability", "get"),
+_PUBLIC_READ_NO_ID = frozenset(
+    {
+        ("version",),
+        ("runtime", "list"),
+        ("project", "list"),
+        ("agent", "list"),
+        ("skill", "list"),
+        ("squad", "list"),
+        ("autopilot", "list"),
+        ("issue", "list"),
+    }
 )
-_MUTATION_PREFIXES = (
-    ("skill", "import"),
-    ("agent", "create"),
-    ("agent", "update"),
-    ("agent", "skills", "add"),
-    ("squad", "create"),
-    ("squad", "update"),
-    ("squad", "member", "add"),
-    ("squad", "member", "set-role"),
-    ("project", "create"),
-    ("project", "update"),
-    ("project", "resource", "add"),
-    ("project", "resource", "update"),
-    ("autopilot", "create"),
-    ("autopilot", "update"),
-    ("autopilot", "trigger-add"),
-    ("autopilot", "trigger-update"),
+_PUBLIC_READ_ONE_ID = frozenset(
+    {
+        ("project", "get"),
+        ("project", "resource", "list"),
+        ("agent", "get"),
+        ("agent", "skills", "list"),
+        ("skill", "get"),
+        ("squad", "get"),
+        ("squad", "member", "list"),
+        ("autopilot", "get"),
+        ("issue", "get"),
+        ("issue", "children"),
+        ("issue", "runs"),
+        ("issue", "metadata", "list"),
+        ("capability", "get"),
+    }
 )
 _EMPTY_ERROR_VALUES = (None, "", (), [], {})
 _UNSUPPORTED_CONTROL_KEYS = frozenset({"ok", "failed", "failure"})
@@ -213,6 +201,25 @@ def _contains_key(value: object, forbidden: str) -> bool:
         return forbidden in value or any(_contains_key(item, forbidden) for item in value.values())
     if isinstance(value, list | tuple):
         return any(_contains_key(item, forbidden) for item in value)
+    return False
+
+
+def _is_public_read(command: tuple[str, ...]) -> bool:
+    """Accept only complete, closed public read command shapes."""
+
+    suffixes = ((), ("--output", "json"))
+    for prefix in _PUBLIC_READ_NO_ID:
+        if command in tuple(prefix + suffix for suffix in suffixes):
+            return True
+    for prefix in _PUBLIC_READ_ONE_ID:
+        for suffix in suffixes:
+            if (
+                len(command) == len(prefix) + 1 + len(suffix)
+                and command[: len(prefix)] == prefix
+                and bool(command[len(prefix)])
+                and command[len(prefix) + 1 :] == suffix
+            ):
+                return True
     return False
 
 
@@ -260,24 +267,21 @@ class MulticaClient:
         raise AssertionError("unreachable")
 
     def call(self, argv: tuple[str, ...]) -> Mapping[str, object]:
-        """Perform a JSON call while classifying retry and secret boundaries."""
+        """Perform one closed-shape read call; mutations use typed methods only."""
 
         if not isinstance(argv, tuple) or not argv or argv[0] != "multica":
             raise MulticaContractError("unsupported Multica argv")
         command = argv[1:]
         if command[:3] in {("agent", "env", "get"), ("agent", "env", "set")}:
             raise MulticaContractError("agent environment requires the typed environment boundary")
-        read_only = any(command[: len(prefix)] == prefix for prefix in _READ_PREFIXES)
-        mutation = any(command[: len(prefix)] == prefix for prefix in _MUTATION_PREFIXES)
-        if not read_only and not mutation:
+        if not _is_public_read(command):
             raise MulticaContractError("unsupported Multica argv")
-        value = self._execute(argv, operation="Multica call", read_only=read_only)
+        value = self._execute(argv, operation="Multica call", read_only=True)
         if not isinstance(value, Mapping):
             raise _contract("Multica call", value)
         value = self._unwrap(
             value,
             "Multica call",
-            direct_status_control=mutation,
         )
         if not isinstance(value, Mapping):
             raise _contract("Multica call", value)
