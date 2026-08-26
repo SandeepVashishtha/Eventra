@@ -6,6 +6,13 @@ repositories. The five delivery roles form the `Eventra Local Delivery` Squad;
 the Watcher Agent is outside that Squad. This is local-development automation
 only; production deployment is not implemented and remains a human action.
 
+The project-neutral Plan 1 library is documented in
+[Generic Multica multi-repository delivery core](../../docs/multica-delivery-core.md).
+It does not replace these Eventra entry points or provide the future generic
+CLI. Eventra remains on this operational adapter while
+`eventra_manifest(workspace)` supplies an immutable generic compatibility
+fixture; live migration waits for compatibility pilots and separate approval.
+
 ## Inputs and safe execution
 
 The provisioner requires a Multica `runtime_id` and `daemon_id`:
