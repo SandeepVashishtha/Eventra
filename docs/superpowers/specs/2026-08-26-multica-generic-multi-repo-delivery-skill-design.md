@@ -1,7 +1,7 @@
 # Generic Multica Multi-Repository Delivery Skill Design
 
 Date: 2026-08-26
-Status: approved in chat; pending written-spec review
+Status: approved
 
 ## Purpose
 
