@@ -42,6 +42,25 @@ async function fetchAPI(endpoint, options = {}) {
   }
 }
 
+export async function getBackendBuildVersion(fetchImpl = fetch) {
+  try {
+    const response = await fetchImpl(`${API_BASE_URL}/api/meta`);
+    if (!response?.ok) return null;
+
+    const metadata = await response.json();
+    if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+      return null;
+    }
+
+    const buildVersion = metadata.buildVersion;
+    return typeof buildVersion === "string" && buildVersion.trim()
+      ? buildVersion.trim()
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function loginUser(credentials) {
   try {
     const payload = {
