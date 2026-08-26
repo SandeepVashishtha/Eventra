@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import argparse
+import csv
+import io
 import json
 import re
 import subprocess
@@ -983,11 +985,22 @@ def load_workflow_snapshot(
     )
 
 
+def _string_metadata_filter(key: str, value: str) -> str:
+    if not isinstance(key, str) or not key or not isinstance(value, str):
+        raise ValueError("metadata string filter is invalid")
+    buffer = io.StringIO(newline="")
+    csv.writer(buffer, lineterminator="").writerow(
+        [f"{key}={json.dumps(value)}"]
+    )
+    return buffer.getvalue()
+
+
 def _list_workflow_parents(
     runner: MulticaRunner,
     project_ids: Sequence[str],
 ) -> list[str]:
     records: dict[str, dict[str, object]] = {}
+    version_filter = _string_metadata_filter("eventra.workflow.version", "1")
     for project_id in project_ids:
         if not isinstance(project_id, str) or not project_id:
             raise ValueError("invalid watcher project identifier")
@@ -1004,7 +1017,7 @@ def _list_workflow_parents(
                             "--status",
                             status,
                             "--metadata",
-                            'eventra.workflow.version="1"',
+                            version_filter,
                             "--limit",
                             "50",
                             "--offset",

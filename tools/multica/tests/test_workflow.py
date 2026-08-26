@@ -15,6 +15,7 @@ from tools.multica.workflow import (
     RecoveryDecision,
     WorkflowSnapshot,
     WatchResult,
+    _string_metadata_filter,
     build_phase_metadata,
     build_workflow_parser,
     decide_parent_action,
@@ -1031,7 +1032,7 @@ class FakeWatchRunner:
 
     def _assert_list_flags(self, flags):
         expected = {
-            "--metadata": 'eventra.workflow.version="1"',
+            "--metadata": '"eventra.workflow.version=""1"""',
             "--limit": "50",
             "--offset": "0",
             "--output": "json",
@@ -1046,6 +1047,12 @@ class FakeWatchRunner:
 
 
 class WatchWorkflowTests(unittest.TestCase):
+    def test_string_metadata_filter_is_json_string_inside_one_csv_field(self):
+        self.assertEqual(
+            _string_metadata_filter("eventra.workflow.version", "1"),
+            '"eventra.workflow.version=""1"""',
+        )
+
     def test_watch_dry_run_detects_but_does_not_mutate_stalled_pro_35(self):
         runner = FakeWatchRunner()
         result = watch_projects(runner, runner.PROJECTS, apply=False)
