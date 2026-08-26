@@ -18,6 +18,7 @@ from tools.multica.workflow import (
     PhaseCompletion as LegacyPhaseCompletion,
     build_phase_metadata,
 )
+from tools.multica_delivery.metadata import canonical_json
 
 
 class EventraAdapterTests(unittest.TestCase):
@@ -153,49 +154,135 @@ class EventraAdapterTests(unittest.TestCase):
             self.config.watcher.description_file.read_text(),
         )
 
-    def test_generic_render_preserves_eventra_phase_contract(self):
-        legacy = legacy_phase_contract("frontend", "review", attempt=1)
-        generic = render_phase_contract(
-            eventra_manifest(Path("/Users/didi/Eventra-workspace")),
-            "frontend",
-            "review",
-            attempt=1,
-        )
-
-        expected = {
-            "eventra.workflow.version": "1",
-            "eventra.phase.kind": "review",
-            "eventra.phase.result": "{result}",
-            "eventra.phase.attempt": "1",
-            "eventra.phase.evidence_comment": "{evidence_comment_uuid}",
-            "eventra.phase.sha.frontend": "{candidate_sha}",
-        }
-        self.assertEqual(json.loads(legacy.metadata_json), expected)
-        self.assertEqual(json.loads(generic.metadata_json), expected)
-        self.assertEqual(generic.metadata_json, legacy.metadata_json)
-
-        rendered = json.loads(generic.metadata_json)
-        rendered.update(
-            {
-                "eventra.phase.result": "pass",
-                "eventra.phase.evidence_comment": (
-                    "00000000-0000-4000-8000-000000000001"
+    def test_generic_render_preserves_every_current_eventra_phase_scope(self):
+        manifest = eventra_manifest(Path("/Users/didi/Eventra-workspace"))
+        cases = (
+            (
+                "frontend implementation with PR",
+                LegacyPhaseCompletion(
+                    "implementation",
+                    "pass",
+                    0,
+                    "00000000-0000-4000-8000-000000000001",
+                    "a" * 40,
+                    None,
+                    "https://github.com/codeExploreHub/Eventra/pull/1",
                 ),
-                "eventra.phase.sha.frontend": "a" * 40,
-            }
+            ),
+            (
+                "backend repair with PR",
+                LegacyPhaseCompletion(
+                    "repair",
+                    "pass",
+                    1,
+                    "00000000-0000-4000-8000-000000000002",
+                    None,
+                    "b" * 40,
+                    "https://github.com/codeExploreHub/Eventra-Backend/pull/2",
+                ),
+            ),
+            (
+                "frontend-only review",
+                LegacyPhaseCompletion(
+                    "review",
+                    "pass",
+                    1,
+                    "00000000-0000-4000-8000-000000000003",
+                    "c" * 40,
+                    None,
+                    None,
+                ),
+            ),
+            (
+                "backend-only QA",
+                LegacyPhaseCompletion(
+                    "qa",
+                    "fail",
+                    1,
+                    "00000000-0000-4000-8000-000000000004",
+                    None,
+                    "d" * 40,
+                    None,
+                ),
+            ),
+            (
+                "cross-stack integration QA",
+                LegacyPhaseCompletion(
+                    "qa",
+                    "pass",
+                    2,
+                    "00000000-0000-4000-8000-000000000005",
+                    "e" * 40,
+                    "f" * 40,
+                    None,
+                ),
+            ),
+            (
+                "cross-stack smoke",
+                LegacyPhaseCompletion(
+                    "smoke",
+                    "blocked",
+                    2,
+                    "00000000-0000-4000-8000-000000000006",
+                    "1" * 40,
+                    "2" * 40,
+                    None,
+                ),
+            ),
         )
-        actual = build_phase_metadata(
-            LegacyPhaseCompletion(
-                kind="review",
-                result="pass",
-                attempt=1,
-                evidence_comment="00000000-0000-4000-8000-000000000001",
-                frontend_sha="a" * 40,
-                backend_sha=None,
-                pr_url=None,
+
+        for label, completion in cases:
+            with self.subTest(label=label):
+                candidate_shas = {
+                    key: sha
+                    for key, sha in (
+                        ("frontend", completion.frontend_sha),
+                        ("backend", completion.backend_sha),
+                    )
+                    if sha is not None
+                }
+                arguments = {
+                    "result": completion.result,
+                    "attempt": completion.attempt,
+                    "evidence_comment": completion.evidence_comment,
+                    "pr_url": completion.pr_url,
+                }
+                expected = canonical_json(build_phase_metadata(completion))
+                legacy = legacy_phase_contract(
+                    candidate_shas,
+                    completion.kind,
+                    **arguments,
+                )
+                generic = render_phase_contract(
+                    manifest,
+                    candidate_shas,
+                    completion.kind,
+                    **arguments,
+                )
+                self.assertEqual(legacy.metadata_json, expected)
+                self.assertEqual(generic.metadata_json, expected)
+                self.assertEqual(json.loads(generic.metadata_json), json.loads(expected))
+
+    def test_compatibility_renderer_rejects_generic_only_phase_names(self):
+        manifest = eventra_manifest(Path("/Users/didi/Eventra-workspace"))
+        arguments = {
+            "result": "pass",
+            "attempt": 1,
+            "evidence_comment": "00000000-0000-4000-8000-000000000007",
+        }
+        with self.assertRaisesRegex(ValueError, "phase contract"):
+            legacy_phase_contract(
+                {"frontend": "a" * 40},
+                "integration_qa",
+                **arguments,
             )
-        )
-        self.assertEqual(rendered, actual)
+        with self.assertRaisesRegex(ValueError, "phase contract"):
+            render_phase_contract(
+                manifest,
+                {"frontend": "a" * 40},
+                "integration_qa",
+                **arguments,
+            )
 
 if __name__ == "__main__":
     unittest.main()

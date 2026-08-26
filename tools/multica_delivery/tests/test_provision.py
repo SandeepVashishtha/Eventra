@@ -25,6 +25,7 @@ from tools.multica_delivery.provision import (
     SquadMemberState,
     SquadState,
     TriggerState,
+    effective_skill_bindings,
 )
 
 
@@ -690,6 +691,55 @@ class ProvisionerTests(unittest.TestCase):
         self.assertEqual(keys_for("notifications-engineer"), {"using-superpowers"})
         self.assertEqual(keys_for("workflow-watcher"), {"using-superpowers"})
         self.assertEqual(keys_for("integration-qa"), {"using-superpowers"})
+
+    def test_explicit_fixed_role_skills_are_the_effective_desired_bindings(self):
+        role_skills = MappingProxyType(
+            {
+                "delivery-lead": ("using-superpowers", "test-driven-development"),
+                "independent-reviewer": ("test-driven-development",),
+                "integration-qa": (
+                    "using-superpowers",
+                    "test-driven-development",
+                ),
+                "workflow-watcher": ("using-superpowers",),
+            }
+        )
+        manifest = replace(self.manifest, role_skills=role_skills)
+
+        self.assertEqual(
+            effective_skill_bindings(manifest),
+            {
+                **role_skills,
+                "api-engineer": (
+                    "using-superpowers",
+                    "test-driven-development",
+                ),
+                "notifications-engineer": ("using-superpowers",),
+                "web-engineer": (
+                    "using-superpowers",
+                    "test-driven-development",
+                ),
+            },
+        )
+
+        multica = StatefulMultica(manifest)
+        result = Provisioner(multica, FakeGitHub(manifest)).reconcile(
+            manifest,
+            FrameworkLock.empty(),
+            apply=True,
+            secret_lookup=lambda _name: self.secret,
+        )
+        skill_ids = result.lock.resource_ids["skill"]
+        agent_ids = result.lock.resource_ids["agent"]
+        bound = multica.bindings[agent_ids["integration-qa"]]
+        self.assertEqual(
+            {
+                key
+                for key, identifier in skill_ids.items()
+                if identifier in bound
+            },
+            {"using-superpowers", "test-driven-development"},
+        )
 
     def test_secret_is_routed_only_to_manifest_approved_recipients(self):
         result = self.apply()

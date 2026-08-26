@@ -49,6 +49,9 @@ _UniqueKeyLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
 _GITHUB_SLUG = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9_.-]{0,38})/[A-Za-z0-9][A-Za-z0-9_.-]{0,99}$")
 _REQUIRED_COMMANDS = frozenset({"focused_test", "test", "build", "start", "smoke"})
 _SECRET_RECIPIENTS = frozenset({"engineer", "delivery-lead", "independent-reviewer", "integration-qa", "workflow-watcher"})
+_FIXED_ROLE_KEYS = frozenset(
+    {"delivery-lead", "independent-reviewer", "integration-qa", "workflow-watcher"}
+)
 
 
 def _frozen(mapping: Mapping[str, Any]) -> Mapping[str, Any]:
@@ -154,7 +157,21 @@ def load_manifest_text(text: str) -> DeliveryManifest:
     except (yaml.YAMLError, ManifestError) as error:
         raise ManifestError(str(error)) from error
     top = _mapping(document, "manifest")
-    _expect_keys(top, "manifest", {"schema_version", "instance", "control", "skill_registry", "policies", "repositories", "integration_suites", "merge_order"})
+    _expect_keys(
+        top,
+        "manifest",
+        {
+            "schema_version",
+            "instance",
+            "control",
+            "skill_registry",
+            "policies",
+            "repositories",
+            "integration_suites",
+            "merge_order",
+        },
+        {"role_skills"},
+    )
     if _integer(top["schema_version"], "schema_version") != 1:
         raise ManifestError("schema_version must be 1")
 
@@ -176,6 +193,26 @@ def load_manifest_text(text: str) -> DeliveryManifest:
         skill_sources[name] = SkillSource(name, _public_skill_url(source_data["url"], f"skill_registry.{name}.url"), True)
     if not skill_sources:
         raise ManifestError("skill_registry must not be empty")
+
+    role_skills: dict[str, tuple[str, ...]] = {}
+    if "role_skills" in top:
+        role_data = _mapping(top["role_skills"], "role_skills")
+        if set(role_data) != _FIXED_ROLE_KEYS:
+            raise ManifestError("role_skills must declare every fixed role exactly once")
+        for role, raw_skills in role_data.items():
+            values = tuple(
+                _string(value, f"role_skills.{role}")
+                for value in _sequence(raw_skills, f"role_skills.{role}")
+            )
+            if not values or len(set(values)) != len(values):
+                raise ManifestError(f"role_skills.{role} must be non-empty and unique")
+            undeclared = set(values) - skill_sources.keys()
+            if undeclared:
+                raise ManifestError(
+                    f"role_skills.{role} uses undeclared skill key(s): "
+                    f"{', '.join(sorted(undeclared))}"
+                )
+            role_skills[role] = values
 
     policies = _mapping(top["policies"], "policies")
     _expect_keys(policies, "policies", {"environment", "automatic_merge", "deployment", "max_repair_attempts", "watcher_cron", "watcher_timezone"})
@@ -285,7 +322,17 @@ def load_manifest_text(text: str) -> DeliveryManifest:
 
     merge_order = tuple(_string(value, "merge_order") for value in _sequence(top["merge_order"], "merge_order"))
     _validate_dependency_order(merge_order, frozen_repositories, "merge_order")
-    return DeliveryManifest(1, instance, control, _frozen(skill_sources), frozen_repositories, tuple(suites), policy, merge_order)
+    return DeliveryManifest(
+        1,
+        instance,
+        control,
+        _frozen(skill_sources),
+        frozen_repositories,
+        tuple(suites),
+        policy,
+        merge_order,
+        _frozen(role_skills),
+    )
 
 
 def _canonical(value: Any) -> Any:

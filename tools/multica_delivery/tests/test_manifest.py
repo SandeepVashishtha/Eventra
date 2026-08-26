@@ -16,6 +16,19 @@ FIXTURE = Path(__file__).parent / "fixtures" / "three-repository-delivery.yaml"
 
 
 class ManifestTests(unittest.TestCase):
+    @staticmethod
+    def _with_role_skills(text: str) -> str:
+        return text.replace(
+            "policies:\n",
+            "role_skills:\n"
+            "  delivery-lead: [using-superpowers]\n"
+            "  independent-reviewer: [using-superpowers, test-driven-development]\n"
+            "  integration-qa: [using-superpowers]\n"
+            "  workflow-watcher: [using-superpowers]\n"
+            "policies:\n",
+            1,
+        )
+
     def test_loads_n_repository_manifest(self):
         manifest = load_manifest(FIXTURE)
         self.assertEqual(manifest.instance.key, "sample-commerce")
@@ -127,3 +140,57 @@ resource_ids: {}
                     path.write_text(invalid, encoding="utf-8")
                     with self.assertRaisesRegex(ManifestError, field):
                         load_lock(path)
+
+    def test_loads_complete_explicit_fixed_role_skill_bindings(self):
+        manifest = load_manifest_text(
+            self._with_role_skills(FIXTURE.read_text(encoding="utf-8"))
+        )
+
+        self.assertEqual(
+            manifest.role_skills,
+            {
+                "delivery-lead": ("using-superpowers",),
+                "independent-reviewer": (
+                    "using-superpowers",
+                    "test-driven-development",
+                ),
+                "integration-qa": ("using-superpowers",),
+                "workflow-watcher": ("using-superpowers",),
+            },
+        )
+        self.assertIsInstance(manifest.role_skills, MappingProxyType)
+        with self.assertRaises(TypeError):
+            manifest.role_skills["delivery-lead"] = ()
+
+    def test_rejects_incomplete_duplicate_or_undeclared_role_skills(self):
+        text = self._with_role_skills(FIXTURE.read_text(encoding="utf-8"))
+        cases = (
+            (
+                text.replace(
+                    "  workflow-watcher: [using-superpowers]\n",
+                    "",
+                    1,
+                ),
+                "every fixed role",
+            ),
+            (
+                text.replace(
+                    "  integration-qa: [using-superpowers]\n",
+                    "  integration-qa: [using-superpowers, using-superpowers]\n",
+                    1,
+                ),
+                "non-empty and unique",
+            ),
+            (
+                text.replace(
+                    "  delivery-lead: [using-superpowers]\n",
+                    "  delivery-lead: [unknown-skill]\n",
+                    1,
+                ),
+                "undeclared skill",
+            ),
+        )
+        for malformed, error in cases:
+            with self.subTest(error=error):
+                with self.assertRaisesRegex(ManifestError, error):
+                    load_manifest_text(malformed)

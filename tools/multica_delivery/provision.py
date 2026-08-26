@@ -50,6 +50,66 @@ class ProvisionError(RuntimeError):
     """A sanitized desired-state, conflict, or reconciliation failure."""
 
 
+def effective_skill_bindings(
+    manifest: DeliveryManifest,
+) -> Mapping[str, tuple[str, ...]]:
+    """Resolve explicit fixed-role and repository Engineer skill bindings."""
+
+    available = set(manifest.skill_registry)
+    if manifest.role_skills:
+        if set(manifest.role_skills) != set(_FIXED_AGENT_KEYS):
+            raise ProvisionError("explicit role skills must cover every fixed role")
+        fixed = {
+            role: tuple(skills)
+            for role, skills in manifest.role_skills.items()
+        }
+        if any(
+            not skills
+            or len(skills) != len(set(skills))
+            or set(skills) - available
+            for skills in fixed.values()
+        ):
+            raise ProvisionError("explicit role skills are malformed")
+        if set(fixed["workflow-watcher"]) - _WATCHER_SKILLS:
+            raise ProvisionError("Workflow Watcher skills exceed the recovery allowlist")
+    else:
+        integration_repositories = {
+            repository
+            for suite in manifest.integration_suites
+            for repository in suite.repositories
+        }
+        integration_skills = {
+            skill
+            for repository_key in integration_repositories
+            for skill in manifest.repositories[repository_key].skills
+        }
+        all_repository_skills = {
+            skill
+            for repository in manifest.repositories.values()
+            for skill in repository.skills
+        }
+        fixed = {
+            "delivery-lead": tuple(
+                key for key in ("using-superpowers",) if key in available
+            ),
+            "independent-reviewer": tuple(
+                sorted(all_repository_skills & _VERIFICATION_SKILLS)
+            ),
+            "integration-qa": tuple(
+                sorted(integration_skills & _VERIFICATION_SKILLS)
+            ),
+            "workflow-watcher": tuple(sorted(available & _WATCHER_SKILLS)),
+        }
+    bindings = {role: fixed[role] for role in _FIXED_AGENT_KEYS}
+    bindings.update(
+        {
+            f"{key}-engineer": tuple(repository.skills)
+            for key, repository in sorted(manifest.repositories.items())
+        }
+    )
+    return MappingProxyType(bindings)
+
+
 @dataclass(frozen=True)
 class ReconcileAction:
     """One redacted semantic action in deterministic execution order."""
@@ -193,6 +253,7 @@ class Provisioner:
         manifest: DeliveryManifest,
         lock: FrameworkLock,
     ) -> None:
+        effective_skill_bindings(manifest)
         for repository_key, repository in manifest.repositories.items():
             if len(repository.skills) != len(set(repository.skills)):
                 raise ProvisionError(
@@ -268,26 +329,7 @@ class Provisioner:
             for key, repository in sorted(manifest.repositories.items())
         )
 
-        integration_repositories = {
-            repository
-            for suite in manifest.integration_suites
-            for repository in suite.repositories
-        }
-        integration_skills = {
-            skill
-            for repository_key in integration_repositories
-            for skill in manifest.repositories[repository_key].skills
-        }
-        all_repository_skills = {
-            skill
-            for repository in manifest.repositories.values()
-            for skill in repository.skills
-        }
-        available = set(manifest.skill_registry)
-        base = tuple(key for key in ("using-superpowers",) if key in available)
-        reviewer = tuple(sorted(all_repository_skills & _VERIFICATION_SKILLS))
-        integration = tuple(sorted(integration_skills & _VERIFICATION_SKILLS))
-        watcher = tuple(sorted(available & _WATCHER_SKILLS))
+        bindings = effective_skill_bindings(manifest)
         environment = self._environment_recipients(manifest)
         fixed = (
             _DesiredAgent(
@@ -295,7 +337,7 @@ class Provisioner:
                 f"{display} Delivery Lead",
                 f"Coordinates manifest-scoped delivery for {display}.",
                 "Coordinate parent delivery work across only the manifest Projects and repositories.",
-                base,
+                bindings["delivery-lead"],
                 environment["delivery-lead"],
             ),
             _DesiredAgent(
@@ -303,7 +345,7 @@ class Provisioner:
                 f"{display} Independent Reviewer",
                 f"Reviews exact candidate commits for {display}.",
                 "Independently review exact candidate SHAs and record evidence without implementation authority.",
-                reviewer,
+                bindings["independent-reviewer"],
                 environment["independent-reviewer"],
             ),
             _DesiredAgent(
@@ -311,7 +353,7 @@ class Provisioner:
                 f"{display} Integration QA",
                 f"Verifies declared integration suites for {display}.",
                 "Run only manifest-declared repository and integration verification against exact candidate SHAs.",
-                integration,
+                bindings["integration-qa"],
                 environment["integration-qa"],
             ),
             _DesiredAgent(
@@ -322,7 +364,7 @@ class Provisioner:
                     "Reread workflow state and perform at most one approved recovery "
                     "action; never implement, merge, or deploy."
                 ),
-                watcher,
+                bindings["workflow-watcher"],
                 environment["workflow-watcher"],
             ),
         )
@@ -335,7 +377,7 @@ class Provisioner:
                     f"Implement only repository {repository.github} in Project "
                     f"{repository.project_title} at {repository.local_path}."
                 ),
-                tuple(repository.skills),
+                bindings[f"{key}-engineer"],
                 environment[f"{key}-engineer"],
             )
             for key, repository in sorted(manifest.repositories.items())

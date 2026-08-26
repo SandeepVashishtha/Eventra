@@ -85,6 +85,7 @@ class DeliveryManifest:
     integration_suites: tuple[IntegrationSuiteSpec, ...]
     policy: PolicySpec
     merge_order: tuple[str, ...]
+    role_skills: Mapping[str, tuple[str, ...]] = MappingProxyType({})
 
 
 @dataclass(frozen=True)

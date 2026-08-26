@@ -12,11 +12,26 @@ skill_registry:
   using-superpowers:
     url: https://github.com/obra/superpowers/tree/main/skills/using-superpowers
     approved: true
+  brainstorming:
+    url: https://github.com/obra/superpowers/tree/main/skills/brainstorming
+    approved: true
+  writing-plans:
+    url: https://github.com/obra/superpowers/tree/main/skills/writing-plans
+    approved: true
+  executing-plans:
+    url: https://github.com/obra/superpowers/tree/main/skills/executing-plans
+    approved: true
   test-driven-development:
     url: https://github.com/obra/superpowers/tree/main/skills/test-driven-development
     approved: true
   systematic-debugging:
     url: https://github.com/obra/superpowers/tree/main/skills/systematic-debugging
+    approved: true
+  requesting-code-review:
+    url: https://github.com/obra/superpowers/tree/main/skills/requesting-code-review
+    approved: true
+  receiving-code-review:
+    url: https://github.com/obra/superpowers/tree/main/skills/receiving-code-review
     approved: true
   verification-before-completion:
     url: https://github.com/obra/superpowers/tree/main/skills/verification-before-completion
@@ -33,6 +48,28 @@ skill_registry:
   spring-security-jwt:
     url: https://github.com/rrezartprebreza/spring-boot-skills/tree/main/skills/spring-boot-3/spring-security-jwt
     approved: true
+  playwright-cli:
+    url: https://github.com/microsoft/playwright-cli/tree/main/skills/playwright-cli
+    approved: true
+role_skills:
+  delivery-lead:
+    - using-superpowers
+    - brainstorming
+    - writing-plans
+    - verification-before-completion
+  independent-reviewer:
+    - using-superpowers
+    - systematic-debugging
+    - verification-before-completion
+  integration-qa:
+    - using-superpowers
+    - systematic-debugging
+    - verification-before-completion
+    - playwright-cli
+  workflow-watcher:
+    - using-superpowers
+    - systematic-debugging
+    - verification-before-completion
 policies:
   environment: development
   automatic_merge: true
@@ -60,8 +97,11 @@ repositories:
         health_url: http://localhost:3000
     skills:
       - using-superpowers
+      - executing-plans
       - test-driven-development
       - systematic-debugging
+      - requesting-code-review
+      - receiving-code-review
       - verification-before-completion
       - vercel-react-best-practices
   backend:
@@ -82,8 +122,11 @@ repositories:
         health_url: http://localhost:8080/actuator/health
     skills:
       - using-superpowers
+      - executing-plans
       - test-driven-development
       - systematic-debugging
+      - requesting-code-review
+      - receiving-code-review
       - verification-before-completion
       - rest-api-conventions
       - testing-pyramid

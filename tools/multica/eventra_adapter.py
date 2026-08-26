@@ -2,8 +2,10 @@
 
 from dataclasses import dataclass, replace
 from pathlib import Path
+import re
 from types import MappingProxyType
 from typing import Mapping
+import uuid
 
 from .blueprint import AgentSpec, TeamBlueprint, build_multi_repo_blueprint
 from tools.multica_delivery.model import (
@@ -69,65 +71,109 @@ class PhaseContract:
 _COMPATIBILITY_PHASES = frozenset(
     {"implementation", "review", "qa", "repair", "smoke"}
 )
-
-
-def _phase_contract_values(
-    namespace: str,
-    repository: str,
-    phase: str,
-    attempt: int,
-) -> dict[str, str]:
-    if (
-        not namespace
-        or repository not in {"frontend", "backend"}
-        or phase not in _COMPATIBILITY_PHASES
-        or not isinstance(attempt, int)
-        or isinstance(attempt, bool)
-        or not 0 <= attempt <= 2
-    ):
-        raise ValueError("invalid Eventra phase contract")
-    values = {
-        f"{namespace}.workflow.version": "1",
-        f"{namespace}.phase.kind": phase,
-        f"{namespace}.phase.result": "{result}",
-        f"{namespace}.phase.attempt": str(attempt),
-        f"{namespace}.phase.evidence_comment": "{evidence_comment_uuid}",
-        f"{namespace}.phase.sha.{repository}": "{candidate_sha}",
-    }
-    if phase in {"implementation", "repair"}:
-        values[f"{namespace}.phase.pr"] = "{pull_request_url}"
-    return values
+_COMPATIBILITY_RESULTS = frozenset({"pass", "fail", "blocked"})
+_COMMIT_SHA = re.compile(r"[0-9a-f]{40}\Z")
 
 
 def legacy_phase_contract(
-    repository: str,
+    candidate_shas: Mapping[str, str],
     phase: str,
     *,
+    result: str,
     attempt: int,
+    evidence_comment: str,
+    pr_url: str | None = None,
 ) -> PhaseContract:
-    """Render the existing Eventra flat-metadata template."""
+    """Use the real legacy builder as the independent compatibility oracle."""
 
-    values = _phase_contract_values("eventra", repository, phase, attempt)
+    from .workflow import PhaseCompletion, build_phase_metadata
+
+    if (
+        not isinstance(candidate_shas, Mapping)
+        or not candidate_shas
+        or set(candidate_shas) - {"frontend", "backend"}
+    ):
+        raise ValueError("invalid Eventra phase contract")
+    try:
+        values = build_phase_metadata(
+            PhaseCompletion(
+                kind=phase,
+                result=result,
+                attempt=attempt,
+                evidence_comment=evidence_comment,
+                frontend_sha=candidate_shas.get("frontend"),
+                backend_sha=candidate_shas.get("backend"),
+                pr_url=pr_url,
+            )
+        )
+    except (TypeError, ValueError):
+        raise ValueError("invalid Eventra phase contract") from None
     return PhaseContract(canonical_json(values))
 
 
 def render_phase_contract(
     manifest: DeliveryManifest,
-    repository: str,
+    candidate_shas: Mapping[str, str],
     phase: str,
     *,
+    result: str,
     attempt: int,
+    evidence_comment: str,
+    pr_url: str | None = None,
 ) -> PhaseContract:
-    """Render a manifest-namespaced phase template for compatibility checks."""
+    """Independently render one legacy-compatible manifest phase payload."""
 
-    if not isinstance(manifest, DeliveryManifest) or repository not in manifest.repositories:
+    if (
+        not isinstance(manifest, DeliveryManifest)
+        or not isinstance(candidate_shas, Mapping)
+        or not candidate_shas
+        or set(candidate_shas) - set(manifest.repositories)
+        or any(
+            not isinstance(sha, str) or _COMMIT_SHA.fullmatch(sha) is None
+            for sha in candidate_shas.values()
+        )
+        or phase not in _COMPATIBILITY_PHASES
+        or result not in _COMPATIBILITY_RESULTS
+        or not isinstance(attempt, int)
+        or isinstance(attempt, bool)
+        or not 0 <= attempt <= manifest.policy.max_repair_attempts
+    ):
         raise ValueError("invalid delivery phase contract")
-    values = _phase_contract_values(
-        manifest.instance.key,
-        repository,
-        phase,
-        attempt,
-    )
+    try:
+        uuid.UUID(evidence_comment)
+    except (AttributeError, TypeError, ValueError):
+        raise ValueError("invalid delivery phase contract") from None
+    if phase in {"implementation", "repair"} and (
+        len(candidate_shas) != 1 or pr_url is None
+    ):
+        raise ValueError("invalid delivery phase contract")
+    if pr_url is not None:
+        matching = tuple(
+            key
+            for key, repository in manifest.repositories.items()
+            if re.fullmatch(
+                rf"https://github\.com/{re.escape(repository.github)}/pull/[1-9][0-9]*",
+                pr_url,
+            )
+        )
+        if len(matching) != 1 or (
+            phase in {"implementation", "repair"}
+            and matching[0] not in candidate_shas
+        ):
+            raise ValueError("invalid delivery phase contract")
+
+    namespace = manifest.instance.key
+    values = {
+        f"{namespace}.workflow.version": "1",
+        f"{namespace}.phase.kind": phase,
+        f"{namespace}.phase.result": result,
+        f"{namespace}.phase.attempt": str(attempt),
+        f"{namespace}.phase.evidence_comment": evidence_comment,
+    }
+    for repository, sha in candidate_shas.items():
+        values[f"{namespace}.phase.sha.{repository}"] = sha
+    if pr_url is not None:
+        values[f"{namespace}.phase.pr"] = pr_url
     return PhaseContract(canonical_json(values))
 
 
@@ -135,27 +181,16 @@ def eventra_manifest(workspace: Path) -> DeliveryManifest:
     """Translate Eventra's current local topology into the generic model."""
 
     root = Path(workspace)
-    skill_keys = (
-        "using-superpowers",
-        "test-driven-development",
-        "systematic-debugging",
-        "verification-before-completion",
-        "vercel-react-best-practices",
-        "rest-api-conventions",
-        "testing-pyramid",
-        "spring-security-jwt",
+    current = build_eventra_config(
+        "de500649-cada-4419-9d5d-279045e2eaae",
+        "019fab98-bbad-7d17-b0b7-26e56dbe1b6f",
     )
+    current_agents = {agent.role: agent for agent in current.agents}
     skills = MappingProxyType(
         {
-            key: DeliverySkillSource(key, PUBLIC_SKILL_URLS[key], True)
-            for key in skill_keys
+            key: DeliverySkillSource(key, source.url, True)
+            for key, source in current.skills.items()
         }
-    )
-    common_skills = (
-        "using-superpowers",
-        "test-driven-development",
-        "systematic-debugging",
-        "verification-before-completion",
     )
     repositories = MappingProxyType(
         {
@@ -175,7 +210,7 @@ def eventra_manifest(workspace: Path) -> DeliveryManifest:
                         "smoke": ("npm", "run", "smoke:local"),
                     }
                 ),
-                skills=common_skills + ("vercel-react-best-practices",),
+                skills=current_agents["frontend_engineer"].skill_keys,
                 description=(
                     "Owns the browser user interface and local backend integration."
                 ),
@@ -208,12 +243,7 @@ def eventra_manifest(workspace: Path) -> DeliveryManifest:
                         "smoke": ("scripts/smoke-local.sh",),
                     }
                 ),
-                skills=common_skills
-                + (
-                    "rest-api-conventions",
-                    "testing-pyramid",
-                    "spring-security-jwt",
-                ),
+                skills=current_agents["backend_engineer"].skill_keys,
                 description=(
                     "Owns the Spring Boot HTTP API and persistence behavior."
                 ),
@@ -270,6 +300,16 @@ def eventra_manifest(workspace: Path) -> DeliveryManifest:
             watcher_timezone="Asia/Shanghai",
         ),
         merge_order=("backend", "frontend"),
+        role_skills=MappingProxyType(
+            {
+                "delivery-lead": current_agents["delivery_lead"].skill_keys,
+                "independent-reviewer": current_agents[
+                    "independent_reviewer"
+                ].skill_keys,
+                "integration-qa": current_agents["integration_qa"].skill_keys,
+                "workflow-watcher": current_agents["workflow_watcher"].skill_keys,
+            }
+        ),
     )
 
 

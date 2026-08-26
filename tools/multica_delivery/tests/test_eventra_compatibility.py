@@ -3,10 +3,13 @@ from types import MappingProxyType
 import unittest
 
 from tools.multica.eventra_adapter import (
-    eventra_manifest,
     EVENTRA_COMPATIBILITY_LOCK_IDS,
+    PUBLIC_SKILL_URLS,
+    build_eventra_config,
+    eventra_manifest,
 )
 from tools.multica_delivery.manifest import load_manifest
+from tools.multica_delivery.provision import effective_skill_bindings
 
 
 FIXTURE = Path(__file__).parent / "fixtures" / "eventra-delivery.yaml"
@@ -107,6 +110,38 @@ class EventraCompatibilityTests(unittest.TestCase):
         self.assertEqual(
             manifest.integration_suites[0].start_order,
             ("backend", "frontend"),
+        )
+
+    def test_generic_effective_skills_equal_the_current_eventra_team(self):
+        manifest = eventra_manifest(self.workspace)
+        legacy = build_eventra_config(
+            manifest.instance.runtime_id,
+            manifest.instance.daemon_id,
+        )
+        legacy_by_role = {
+            agent.role: agent.skill_keys
+            for agent in legacy.agents
+        }
+        generic = effective_skill_bindings(manifest)
+        generic_to_legacy = {
+            "delivery-lead": "delivery_lead",
+            "frontend-engineer": "frontend_engineer",
+            "backend-engineer": "backend_engineer",
+            "integration-qa": "integration_qa",
+            "independent-reviewer": "independent_reviewer",
+            "workflow-watcher": "workflow_watcher",
+        }
+
+        self.assertEqual(set(manifest.skill_registry), set(PUBLIC_SKILL_URLS))
+        self.assertEqual(
+            {
+                generic_role: generic[generic_role]
+                for generic_role in generic_to_legacy
+            },
+            {
+                generic_role: legacy_by_role[legacy_role]
+                for generic_role, legacy_role in generic_to_legacy.items()
+            },
         )
 
 
