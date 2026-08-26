@@ -67,6 +67,12 @@ def _string(value: Any, field: str) -> str:
     return value
 
 
+def _integer(value: Any, field: str) -> int:
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise ManifestError(f"{field} must be an integer")
+    return value
+
+
 def _sequence(value: Any, field: str) -> list[Any]:
     if not isinstance(value, list):
         raise ManifestError(f"{field} must be a list")
@@ -149,7 +155,7 @@ def load_manifest_text(text: str) -> DeliveryManifest:
         raise ManifestError(str(error)) from error
     top = _mapping(document, "manifest")
     _expect_keys(top, "manifest", {"schema_version", "instance", "control", "skill_registry", "policies", "repositories", "integration_suites", "merge_order"})
-    if top["schema_version"] != 1:
+    if _integer(top["schema_version"], "schema_version") != 1:
         raise ManifestError("schema_version must be 1")
 
     instance_data = _mapping(top["instance"], "instance")
@@ -186,13 +192,19 @@ def load_manifest_text(text: str) -> DeliveryManifest:
     policy = PolicySpec(environment, automatic_merge, "forbidden", 2, _string(policies["watcher_cron"], "policies.watcher_cron"), _string(policies["watcher_timezone"], "policies.watcher_timezone"))
 
     repositories: dict[str, RepositorySpec] = {}
-    projects: set[str] = set()
+    projects: set[str] = {instance.control_project}
+    github_slugs: set[str] = {control.github.casefold()}
     paths: set[Path] = {control.local_path}
     ports: set[int] = set()
     for key, item in _mapping(top["repositories"], "repositories").items():
         name = _string(key, "repository key")
         data = _mapping(item, f"repositories.{name}")
         _expect_keys(data, f"repositories.{name}", {"github", "local_path", "default_branch", "project", "commands", "services", "skills"}, {"description", "depends_on", "secret_env"})
+        github = _github_slug(data["github"], f"repositories.{name}.github")
+        normalized_github = github.casefold()
+        if normalized_github in github_slugs:
+            raise ManifestError(f"duplicate GitHub repository: {github}")
+        github_slugs.add(normalized_github)
         project = _string(data["project"], f"repositories.{name}.project")
         if project in projects:
             raise ManifestError(f"duplicate Project: {project}")
@@ -234,7 +246,7 @@ def load_manifest_text(text: str) -> DeliveryManifest:
             if invalid_recipients:
                 raise ManifestError(f"undeclared secret recipient(s): {', '.join(sorted(invalid_recipients))}")
             secrets[secret_key] = SecretEnvSpec(secret_key, recipients)
-        repositories[name] = RepositorySpec(name, _github_slug(data["github"], f"repositories.{name}.github"), project, local_path, _string(data["default_branch"], f"repositories.{name}.default_branch"), depends_on, commands, skills, _string(data.get("description", ""), f"repositories.{name}.description") if data.get("description", "") else "", tuple(services), _frozen(secrets))
+        repositories[name] = RepositorySpec(name, github, project, local_path, _string(data["default_branch"], f"repositories.{name}.default_branch"), depends_on, commands, skills, _string(data.get("description", ""), f"repositories.{name}.description") if data.get("description", "") else "", tuple(services), _frozen(secrets))
     if not repositories:
         raise ManifestError("repositories must not be empty")
     for key, repository in repositories.items():
@@ -253,6 +265,12 @@ def load_manifest_text(text: str) -> DeliveryManifest:
         start_order = tuple(_string(value, f"integration_suites.{name}.start_order") for value in _sequence(data["start_order"], f"integration_suites.{name}.start_order"))
         if not members or len(set(members)) != len(members) or set(members) - repositories.keys():
             raise ManifestError(f"integration_suites.{name} has unknown or duplicate repositories")
+        for repository in members:
+            missing_dependencies = set(repositories[repository].depends_on) - set(members)
+            if missing_dependencies:
+                raise ManifestError(
+                    f"integration_suites.{name} must include the dependency closure of {repository}"
+                )
         if len(start_order) != len(members) or set(start_order) != set(members):
             raise ManifestError(f"integration_suites.{name}.start_order must list suite repositories exactly once")
         positions = {repository: position for position, repository in enumerate(start_order)}
@@ -308,8 +326,8 @@ def load_lock(path: Path) -> FrameworkLock:
     return FrameworkLock(
         _string(lock["skill_version"], "framework.lock.skill_version"),
         _string(lock["engine_version"], "framework.lock.engine_version"),
-        lock["manifest_schema_version"],
-        lock["workflow_metadata_version"],
+        _integer(lock["manifest_schema_version"], "framework.lock.manifest_schema_version"),
+        _integer(lock["workflow_metadata_version"], "framework.lock.workflow_metadata_version"),
         _string(lock["supported_multica_cli"], "framework.lock.supported_multica_cli"),
         _string(lock["manifest_digest"], "framework.lock.manifest_digest"),
         _frozen(resource_ids),
