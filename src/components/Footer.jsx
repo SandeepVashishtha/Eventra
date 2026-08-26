@@ -67,7 +67,21 @@ function recordSessionVisit() {
   }
 }
 
-export function FooterBuildVersion({ buildVersion }) {
+export function FooterBuildVersion() {
+  const [buildVersion, setBuildVersion] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+
+    getBackendBuildVersion().then((version) => {
+      if (active) setBuildVersion(version);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
     <span aria-live="polite" aria-atomic="true">
       Backend build:{" "}
@@ -82,7 +96,6 @@ export default function Footer() {
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [buildVersion, setBuildVersion] = useState(null);
 
   const [timeState, setTimeState] = useState({
     formattedTime: "",
@@ -98,18 +111,6 @@ export default function Footer() {
 
   useEffect(() => {
     recordSessionVisit();
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-
-    getBackendBuildVersion().then((version) => {
-      if (active) setBuildVersion(version);
-    });
-
-    return () => {
-      active = false;
-    };
   }, []);
 
   // Update live clock
@@ -508,7 +509,7 @@ export default function Footer() {
             <span>•</span>
             <span>Privacy Focused</span>
             <span>•</span>
-            <FooterBuildVersion buildVersion={buildVersion} />
+            <FooterBuildVersion />
           </div>
 
           <div className="flex items-center space-x-3 divide-x divide-zinc-200">

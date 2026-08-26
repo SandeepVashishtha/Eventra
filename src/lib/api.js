@@ -51,6 +51,12 @@ export async function getBackendBuildVersion(fetchImpl = fetch) {
     if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
       return null;
     }
+    if (
+      metadata.service !== "eventra-backend" ||
+      metadata.apiVersion !== "v1"
+    ) {
+      return null;
+    }
 
     const buildVersion = metadata.buildVersion;
     return typeof buildVersion === "string" && buildVersion.trim()
