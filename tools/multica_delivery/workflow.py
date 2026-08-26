@@ -2278,6 +2278,17 @@ class GenericWorkflow:
                 "smoke observation is already authoritative",
                 action_key=key,
             )
+        if state.parent_status not in _ACTIVE_PARENT_STATUSES:
+            return self._result(state, "noop", "parent is not active")
+        if state.human_wait:
+            return self._result(state, "noop", "parent is waiting for a human")
+        decision = decide_parent_action(self.manifest, state.snapshot)
+        if decision.kind is not DecisionKind.SMOKE:
+            return self._result(
+                state,
+                "block" if decision.kind is DecisionKind.BLOCK else "noop",
+                decision.reason,
+            )
         ordinal = state.metadata.stage_ordinal + 1
         key = self._action_key(
             state,

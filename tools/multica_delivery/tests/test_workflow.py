@@ -51,6 +51,7 @@ REPLACEMENT_SHA = "d" * 40
 SMOKE_OBSERVATION = {
     "first": "smoke:" + "1" * 64,
     "second": "smoke:" + "2" * 64,
+    "third": "smoke:" + "3" * 64,
 }
 
 
@@ -1862,6 +1863,149 @@ class GenericWorkflowTests(unittest.TestCase):
         self.assertEqual(
             len([event for event in self.store.events if event[0] == "write-smoke"]),
             2,
+        )
+
+    def test_new_smoke_identity_after_done_is_noop_while_history_still_replays(self):
+        snapshot = passing_snapshot()
+        snapshot = replace(
+            snapshot,
+            merge_state="merged",
+            merged_shas=snapshot.candidate_shas,
+            pull_requests={
+                repository: PullRequestEvidence(sha, "merged", True, True, sha)
+                for repository, sha in snapshot.candidate_shas.items()
+            },
+        )
+        self.store.add_state("PRO-101", snapshot, pull_requests=pull_request_targets())
+        first_observation = passing_smoke(
+            observation_id=SMOKE_OBSERVATION["first"]
+        )
+        second_observation = passing_smoke(
+            observation_id=SMOKE_OBSERVATION["second"]
+        )
+        new_observation = passing_smoke(
+            observation_id=SMOKE_OBSERVATION["third"]
+        )
+        self.workflow.record_smoke_read("PRO-101", first_observation)
+        self.workflow.record_smoke_read("PRO-101", second_observation)
+        completed = self.store.states["PRO-101"]
+        second_action_key = [
+            event[2] for event in self.store.events if event[0] == "write-smoke"
+        ][-1]
+        self.store.events.clear()
+
+        replay = self.workflow.record_smoke_read("PRO-101", second_observation)
+        after_replay = self.store.states["PRO-101"]
+        rejected = self.workflow.record_smoke_read("PRO-101", new_observation)
+
+        self.assertEqual(replay.next_action, "noop")
+        self.assertEqual(replay.action_key, second_action_key)
+        self.assertEqual(after_replay, completed)
+        self.assertEqual(rejected.parent_status, "done")
+        self.assertEqual(rejected.next_action, "noop")
+        self.assertEqual(self.store.states["PRO-101"], completed)
+        self.assertFalse(
+            any(event[0] in {"write-smoke", "status"} for event in self.store.events)
+        )
+
+    def test_new_smoke_identity_while_blocked_is_noop_without_mutation(self):
+        snapshot = passing_snapshot()
+        snapshot = replace(
+            snapshot,
+            merge_state="merged",
+            merged_shas=snapshot.candidate_shas,
+            pull_requests={
+                repository: PullRequestEvidence(sha, "merged", True, True, sha)
+                for repository, sha in snapshot.candidate_shas.items()
+            },
+        )
+        self.store.add_state(
+            "PRO-101",
+            snapshot,
+            status="blocked",
+            pull_requests=pull_request_targets(),
+        )
+        before = self.store.states["PRO-101"]
+        self.store.events.clear()
+
+        result = self.workflow.record_smoke_read(
+            "PRO-101",
+            passing_smoke(observation_id=SMOKE_OBSERVATION["first"]),
+        )
+
+        self.assertEqual(result.parent_status, "blocked")
+        self.assertEqual(result.next_action, "noop")
+        self.assertEqual(self.store.states["PRO-101"], before)
+        self.assertFalse(
+            any(event[0] in {"write-smoke", "status"} for event in self.store.events)
+        )
+
+    def test_new_smoke_identity_during_human_wait_is_noop_without_mutation(self):
+        snapshot = passing_snapshot()
+        snapshot = replace(
+            snapshot,
+            merge_state="merged",
+            merged_shas=snapshot.candidate_shas,
+            pull_requests={
+                repository: PullRequestEvidence(sha, "merged", True, True, sha)
+                for repository, sha in snapshot.candidate_shas.items()
+            },
+        )
+        self.store.add_state(
+            "PRO-101",
+            snapshot,
+            human_wait=True,
+            pull_requests=pull_request_targets(),
+        )
+        before = self.store.states["PRO-101"]
+        self.store.events.clear()
+
+        result = self.workflow.record_smoke_read(
+            "PRO-101",
+            passing_smoke(observation_id=SMOKE_OBSERVATION["first"]),
+        )
+
+        self.assertEqual(result.parent_status, "in_progress")
+        self.assertEqual(result.next_action, "noop")
+        self.assertEqual(self.store.states["PRO-101"], before)
+        self.assertFalse(
+            any(event[0] in {"write-smoke", "status"} for event in self.store.events)
+        )
+
+    def test_new_smoke_identity_requires_the_current_pure_smoke_decision(self):
+        snapshot = passing_snapshot()
+        snapshot = replace(
+            snapshot,
+            merge_state="merged",
+            merged_shas=snapshot.candidate_shas,
+            pull_requests={
+                repository: PullRequestEvidence(sha, "merged", True, True, sha)
+                for repository, sha in snapshot.candidate_shas.items()
+            },
+        )
+        self.store.add_state("PRO-101", snapshot, pull_requests=pull_request_targets())
+        failed = replace(
+            passing_smoke(observation_id=SMOKE_OBSERVATION["first"]),
+            repository_results={"api": "pass", "web": "fail"},
+        )
+        self.workflow.record_smoke_read("PRO-101", failed)
+        self.store.states["PRO-101"] = replace(
+            self.store.states["PRO-101"],
+            parent_status="in_progress",
+        )
+        before = self.store.states["PRO-101"]
+        self.store.events.clear()
+
+        result = self.workflow.record_smoke_read(
+            "PRO-101",
+            passing_smoke(observation_id=SMOKE_OBSERVATION["second"]),
+        )
+
+        self.assertEqual(result.parent_status, "in_progress")
+        self.assertEqual(result.next_action, "block")
+        self.assertEqual(self.store.states["PRO-101"], before)
+        self.assertFalse(
+            any(event[0] in {"write-smoke", "status"} for event in self.store.events)
         )
 
     def test_conflicting_smoke_payload_for_existing_identity_blocks_before_write(self):
