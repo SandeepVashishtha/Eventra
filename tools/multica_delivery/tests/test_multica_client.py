@@ -3,13 +3,21 @@
 import unittest
 
 from tools.multica_delivery.multica_client import (
+    AgentState,
+    AutopilotState,
     CommandFailure,
     CommandResult,
     MulticaClient,
     MulticaContractError,
+    ProjectResourceState,
+    ProjectState,
     RuntimeInfo,
+    SkillState,
     SkillImportCapability,
+    SquadMemberState,
+    SquadState,
     TransientCommandError,
+    TriggerState,
 )
 
 
@@ -27,6 +35,175 @@ class FakeRunner:
 
 
 class MulticaClientTests(unittest.TestCase):
+    def test_provisioning_reads_decode_exact_immutable_state(self):
+        autopilot = {
+            "id": "autopilot-1",
+            "title": "Watcher",
+            "description": "bounded recovery",
+            "execution_mode": "run_only",
+            "project_id": "project-1",
+            "assignee_id": "agent-1",
+            "assignee_type": "agent",
+            "status": "active",
+        }
+        trigger = {
+            "id": "trigger-1",
+            "autopilot_id": "autopilot-1",
+            "kind": "schedule",
+            "cron_expression": "*/30 * * * *",
+            "timezone": "Asia/Shanghai",
+            "enabled": True,
+            "label": "stalled-work recovery",
+            "provider": None,
+            "signing_secret_hint": None,
+            "webhook_path": None,
+            "webhook_token": None,
+            "webhook_token_hint": None,
+            "webhook_url": None,
+            "has_signing_secret": False,
+            "has_webhook_token": False,
+        }
+        runner = FakeRunner(
+            {"data": {"skills": [{"id": "skill-1", "name": "using-superpowers"}]}},
+            {"data": {"skill": {"id": "skill-1", "name": "using-superpowers", "config": {"origin": {"source_url": "https://github.com/example/skills/tree/main/using-superpowers"}}}}},
+            {"data": {"projects": [{"id": "project-1", "title": "Control"}]}},
+            {"data": {"project": {"id": "project-1", "title": "Control", "description": "control project"}}},
+            {"data": {"resources": [{"id": "worktree-1", "project_id": "project-1", "resource_type": "local_directory", "resource_ref": {"local_path": "/tmp/repository", "daemon_id": "daemon-1", "execution_mode": "worktree"}}]}},
+            {"data": {"agents": [{"id": "agent-1", "name": "Lead"}]}},
+            {"data": {"agent": {"id": "agent-1", "name": "Lead", "description": "coordinates", "instructions": "coordinate", "runtime_id": "runtime-1", "visibility": "workspace", "max_concurrent_tasks": 1}}},
+            {"data": {"skills": [{"id": "skill-1"}]}},
+            {"data": {"squads": [{"id": "squad-1", "name": "Delivery"}]}},
+            {"data": {"squad": {"id": "squad-1", "name": "Delivery", "description": "team", "instructions": "deliver", "leader_id": "agent-1"}}},
+            {"data": {"members": [{"id": "member-1", "squad_id": "squad-1", "member_id": "agent-1", "member_type": "agent", "role": "leader"}]}},
+            {"data": {"autopilots": [autopilot], "total": 1}},
+            {"data": {"autopilot": autopilot, "collaborators": [], "triggers": [trigger]}},
+        )
+        client = MulticaClient(runner)
+
+        self.assertEqual(client.list_skills(), (SkillState("skill-1", "using-superpowers", "https://github.com/example/skills/tree/main/using-superpowers"),))
+        projects = client.list_projects()
+        self.assertEqual(projects, (ProjectState("project-1", "Control", "control project"),))
+        self.assertEqual(client.list_project_resources("project-1"), (ProjectResourceState("worktree-1", "project-1", "local_directory", "/tmp/repository", "daemon-1", "worktree"),))
+        self.assertEqual(client.list_agents(), (AgentState("agent-1", "Lead", "coordinates", "coordinate", "runtime-1", "workspace", 1),))
+        self.assertEqual(client.list_agent_skill_ids("agent-1"), ("skill-1",))
+        self.assertEqual(client.list_squads(), (SquadState("squad-1", "Delivery", "team", "deliver", "agent-1"),))
+        self.assertEqual(client.list_squad_members("squad-1"), (SquadMemberState("agent-1", "agent", "leader"),))
+        self.assertEqual(client.list_autopilots(), (AutopilotState("autopilot-1", "Watcher", "bounded recovery", "run_only", "project-1", "agent-1", "agent", "active"),))
+        self.assertEqual(client.list_autopilot_triggers("autopilot-1"), (TriggerState("trigger-1", "autopilot-1", "schedule", "*/30 * * * *", "Asia/Shanghai", True, "stalled-work recovery"),))
+        with self.assertRaises(AttributeError):
+            projects[0].title = "changed"
+
+    def test_provisioning_mutations_use_closed_argv_and_typed_acknowledgements(self):
+        runner = FakeRunner(
+            {"data": {"project": {"id": "project-1"}}},
+            {"data": {"project": {"id": "project-1"}}},
+            {"data": {"resource": {"id": "worktree-1", "project_id": "project-1"}}},
+            {"data": {"resource": {"id": "worktree-1", "project_id": "project-1"}}},
+            {"data": {"agent": {"id": "agent-1"}}},
+            {"data": {"agent": {"id": "agent-1"}}},
+            {"data": {"agent": {"id": "agent-1"}}},
+            {"data": {"squad": {"id": "squad-1"}}},
+            {"data": {"squad": {"id": "squad-1"}}},
+            {"data": {"member": {"member_id": "agent-2", "member_type": "agent"}}},
+            {"data": {"member": {"member_id": "agent-2", "member_type": "agent"}}},
+            {"data": {"autopilot": {"id": "autopilot-1"}}},
+            {"data": {"autopilot": {"id": "autopilot-1"}}},
+            {"data": {"trigger": {"id": "trigger-1", "autopilot_id": "autopilot-1"}}},
+            {"data": {"trigger": {"id": "trigger-1", "autopilot_id": "autopilot-1"}}},
+        )
+        client = MulticaClient(runner)
+
+        results = (
+            client.create_project(title="Control", description="control"),
+            client.update_project("project-1", title="Control", description="updated"),
+            client.add_project_worktree("project-1", local_path="/tmp/repository", daemon_id="daemon-1", execution_mode="worktree"),
+            client.update_project_worktree("project-1", "worktree-1", daemon_id="daemon-1", execution_mode="worktree"),
+            client.create_agent(name="Lead", description="coordinates", instructions="coordinate", runtime_id="runtime-1", visibility="workspace", max_concurrent_tasks=1),
+            client.update_agent("agent-1", name="Lead", description="coordinates", instructions="coordinate", runtime_id="runtime-1", visibility="workspace", max_concurrent_tasks=1),
+            client.add_agent_skill("agent-1", "skill-1"),
+            client.create_squad(name="Delivery", description="team", leader_id="agent-1"),
+            client.update_squad("squad-1", name="Delivery", description="team", instructions="deliver", leader_id="agent-1"),
+            client.add_squad_member("squad-1", "agent-2", role="independent-reviewer"),
+            client.update_squad_member("squad-1", "agent-2", role="independent-reviewer"),
+            client.create_autopilot(title="Watcher", description="bounded", execution_mode="run_only", project_id="project-1", assignee_id="agent-1", status="active"),
+            client.update_autopilot("autopilot-1", title="Watcher", description="bounded", execution_mode="run_only", project_id="project-1", assignee_id="agent-1", status="active"),
+            client.add_autopilot_trigger("autopilot-1", cron_expression="*/30 * * * *", timezone="Asia/Shanghai", label="stalled-work recovery"),
+            client.update_autopilot_trigger("autopilot-1", "trigger-1", cron_expression="*/30 * * * *", timezone="Asia/Shanghai", enabled=True, label="stalled-work recovery"),
+        )
+
+        self.assertEqual(
+            tuple(result.resource_id for result in results),
+            ("project-1", "project-1", "worktree-1", "worktree-1", "agent-1", "agent-1", "agent-1", "squad-1", "squad-1", "agent-2", "agent-2", "autopilot-1", "autopilot-1", "trigger-1", "trigger-1"),
+        )
+        self.assertTrue(all(isinstance(argv, tuple) and input_text is None for argv, input_text in runner.calls))
+        self.assertEqual(
+            runner.calls[-1][0],
+            (
+                "multica", "autopilot", "trigger-update", "autopilot-1", "trigger-1",
+                "--cron", "*/30 * * * *", "--timezone", "Asia/Shanghai",
+                "--enabled", "--label", "stalled-work recovery", "--output", "json",
+            ),
+        )
+        self.assertEqual(
+            runner.calls[7][0],
+            (
+                "multica", "squad", "create", "--name", "Delivery",
+                "--description", "team", "--leader", "agent-1", "--output", "json",
+            ),
+        )
+        self.assertIn("--type", runner.calls[9][0])
+        self.assertNotIn("--member-type", runner.calls[9][0])
+
+    def test_non_authoritative_ok_acknowledgements_are_typed_then_discarded(self):
+        runner = FakeRunner({"ok": True}, {"ok": True}, {"ok": True})
+        client = MulticaClient(runner)
+
+        binding = client.add_agent_skill("agent-1", "skill-1")
+        autopilot = client.create_autopilot(
+            title="Watcher",
+            description="bounded",
+            execution_mode="run_only",
+            project_id="project-1",
+            assignee_id="agent-1",
+            status="active",
+        )
+        trigger = client.add_autopilot_trigger(
+            "autopilot-1",
+            cron_expression="*/30 * * * *",
+            timezone="Asia/Shanghai",
+            label="stalled-work recovery",
+        )
+
+        self.assertEqual(binding.resource_id, "agent-1")
+        self.assertIsNone(autopilot.resource_id)
+        self.assertIsNone(trigger.resource_id)
+
+    def test_actual_created_skill_acknowledgement_is_strictly_decoded(self):
+        runner = FakeRunner(
+            {
+                "skill": {"id": "skill-1", "name": "using-superpowers"},
+                "status": "created",
+            }
+        )
+
+        result = MulticaClient(runner).import_skill(
+            "https://github.com/example/skills/tree/main/using-superpowers"
+        )
+
+        self.assertEqual(result.id, "skill-1")
+        self.assertIn("--on-conflict", runner.calls[0][0])
+
+    def test_provisioning_reads_preserve_empty_mutable_text_for_drift_repair(self):
+        runner = FakeRunner(
+            {"data": {"projects": [{"id": "project-1", "title": "Control"}]}},
+            {"data": {"project": {"id": "project-1", "title": "Control", "description": ""}}},
+        )
+
+        self.assertEqual(
+            MulticaClient(runner).list_projects(),
+            (ProjectState("project-1", "Control", ""),),
+        )
+
     def test_command_runner_contract_decodes_json_without_optional_keywords(self):
         class ArgvOnlyRunner:
             def __init__(self):
@@ -239,6 +416,18 @@ class MulticaClientTests(unittest.TestCase):
         argv, input_text = runner.calls[0]
         self.assertNotIn(secret, repr(argv))
         self.assertIn(secret, input_text)
+        self.assertNotIn(secret, repr(result))
+
+    def test_environment_echo_acknowledgement_is_discarded_without_leaking(self):
+        secret = "SECRET_VALUE_SENTINEL"
+        runner = FakeRunner({"TOKEN": secret})
+
+        result = MulticaClient(runner).set_agent_environment(
+            "agent-1",
+            {"TOKEN": secret},
+        )
+
+        self.assertEqual(result.resource_id, "agent-1")
         self.assertNotIn(secret, repr(result))
 
 

@@ -10,7 +10,17 @@ from urllib.parse import urlparse
 from .github_client import RepositoryInfo
 from .manifest import manifest_digest
 from .model import DeliveryManifest, FrameworkLock, RepositorySpec
-from .multica_client import AgentEnvironment, MutationResult, RuntimeInfo
+from .multica_client import (
+    AgentState,
+    AutopilotState,
+    MulticaClient,
+    ProjectResourceState,
+    ProjectState,
+    SkillState,
+    SquadMemberState,
+    SquadState,
+    TriggerState,
+)
 
 
 SKILL_VERSION = "1.0.0"
@@ -60,254 +70,6 @@ class ReconcileResult:
         """Count planned/applied external mutations, excluding lock emission."""
 
         return sum(action.kind != "lock.update" for action in self.actions)
-
-
-@dataclass(frozen=True)
-class SkillState:
-    id: str
-    name: str
-    source_url: str
-
-
-@dataclass(frozen=True)
-class ProjectState:
-    id: str
-    title: str
-    description: str
-
-
-@dataclass(frozen=True)
-class ProjectResourceState:
-    id: str
-    project_id: str
-    resource_type: str
-    local_path: str
-    daemon_id: str
-    execution_mode: str
-
-
-@dataclass(frozen=True)
-class AgentState:
-    id: str
-    name: str
-    description: str
-    instructions: str
-    runtime_id: str
-    visibility: str
-    max_concurrent_tasks: int
-
-
-@dataclass(frozen=True)
-class SquadState:
-    id: str
-    name: str
-    description: str
-    instructions: str
-    leader_id: str
-
-
-@dataclass(frozen=True)
-class SquadMemberState:
-    member_id: str
-    member_type: str
-    role: str
-
-
-@dataclass(frozen=True)
-class AutopilotState:
-    id: str
-    title: str
-    description: str
-    execution_mode: str
-    project_id: str
-    assignee_id: str
-    assignee_type: str
-    status: str
-
-
-@dataclass(frozen=True)
-class TriggerState:
-    id: str
-    autopilot_id: str
-    kind: str
-    cron_expression: str
-    timezone: str
-    enabled: bool
-    label: str
-
-
-class ProvisioningClient(Protocol):
-    """Narrow typed surface required from a future Multica provisioning adapter."""
-
-    def version(self) -> str: ...
-
-    def get_runtime(
-        self,
-        runtime_id: str | None = None,
-        daemon_id: str | None = None,
-    ) -> RuntimeInfo: ...
-
-    def list_skills(self) -> tuple[SkillState, ...]: ...
-
-    def import_skill(self, url: str) -> MutationResult: ...
-
-    def list_projects(self) -> tuple[ProjectState, ...]: ...
-
-    def create_project(self, *, title: str, description: str) -> MutationResult: ...
-
-    def update_project(
-        self,
-        project_id: str,
-        *,
-        title: str,
-        description: str,
-    ) -> MutationResult: ...
-
-    def list_project_resources(
-        self,
-        project_id: str,
-    ) -> tuple[ProjectResourceState, ...]: ...
-
-    def add_project_worktree(
-        self,
-        project_id: str,
-        *,
-        local_path: str,
-        daemon_id: str,
-        execution_mode: str,
-    ) -> MutationResult: ...
-
-    def update_project_worktree(
-        self,
-        project_id: str,
-        resource_id: str,
-        *,
-        daemon_id: str,
-        execution_mode: str,
-    ) -> MutationResult: ...
-
-    def list_agents(self) -> tuple[AgentState, ...]: ...
-
-    def create_agent(
-        self,
-        *,
-        name: str,
-        description: str,
-        instructions: str,
-        runtime_id: str,
-        visibility: str,
-        max_concurrent_tasks: int,
-    ) -> MutationResult: ...
-
-    def update_agent(
-        self,
-        agent_id: str,
-        *,
-        name: str,
-        description: str,
-        instructions: str,
-        runtime_id: str,
-        visibility: str,
-        max_concurrent_tasks: int,
-    ) -> MutationResult: ...
-
-    def list_agent_skill_ids(self, agent_id: str) -> tuple[str, ...]: ...
-
-    def add_agent_skill(self, agent_id: str, skill_id: str) -> MutationResult: ...
-
-    def get_agent_environment(self, agent_id: str) -> AgentEnvironment: ...
-
-    def set_agent_environment(
-        self,
-        agent_id: str,
-        values: Mapping[str, str],
-    ) -> MutationResult: ...
-
-    def list_squads(self) -> tuple[SquadState, ...]: ...
-
-    def create_squad(
-        self,
-        *,
-        name: str,
-        description: str,
-        instructions: str,
-        leader_id: str,
-    ) -> MutationResult: ...
-
-    def update_squad(
-        self,
-        squad_id: str,
-        *,
-        name: str,
-        description: str,
-        instructions: str,
-        leader_id: str,
-    ) -> MutationResult: ...
-
-    def list_squad_members(self, squad_id: str) -> tuple[SquadMemberState, ...]: ...
-
-    def add_squad_member(
-        self,
-        squad_id: str,
-        agent_id: str,
-        *,
-        role: str,
-    ) -> MutationResult: ...
-
-    def update_squad_member(
-        self,
-        squad_id: str,
-        agent_id: str,
-        *,
-        role: str,
-    ) -> MutationResult: ...
-
-    def list_autopilots(self) -> tuple[AutopilotState, ...]: ...
-
-    def create_autopilot(
-        self,
-        *,
-        title: str,
-        description: str,
-        execution_mode: str,
-        project_id: str,
-        assignee_id: str,
-        status: str,
-    ) -> MutationResult: ...
-
-    def update_autopilot(
-        self,
-        autopilot_id: str,
-        *,
-        title: str,
-        description: str,
-        execution_mode: str,
-        project_id: str,
-        assignee_id: str,
-        status: str,
-    ) -> MutationResult: ...
-
-    def list_autopilot_triggers(self, autopilot_id: str) -> tuple[TriggerState, ...]: ...
-
-    def add_autopilot_trigger(
-        self,
-        autopilot_id: str,
-        *,
-        cron_expression: str,
-        timezone: str,
-        label: str,
-    ) -> MutationResult: ...
-
-    def update_autopilot_trigger(
-        self,
-        autopilot_id: str,
-        trigger_id: str,
-        *,
-        cron_expression: str,
-        timezone: str,
-        enabled: bool,
-        label: str,
-    ) -> MutationResult: ...
 
 
 class GitHubProvisioningClient(Protocol):
@@ -377,7 +139,7 @@ class Provisioner:
 
     def __init__(
         self,
-        multica: ProvisioningClient,
+        multica: MulticaClient,
         github: GitHubProvisioningClient,
     ) -> None:
         self.multica = multica
@@ -391,6 +153,7 @@ class Provisioner:
         apply: bool,
         secret_lookup: Callable[[str], str],
     ) -> ReconcileResult:
+        self._validate_local_inputs(manifest, lock)
         desired = self._desired_state(manifest)
         self._validate_external_scope(manifest)
         snapshot = self._snapshot(manifest, desired, lock)
@@ -418,12 +181,27 @@ class Provisioner:
         except Exception:
             raise ProvisionError("provisioning mutation failed") from None
 
-        final_snapshot = self._snapshot(manifest, desired, lock, validate_lock=False)
+        final_snapshot = self._snapshot(manifest, desired, lock)
         updated_lock = self._build_lock(manifest, lock, final_snapshot)
         remaining = self._plan(manifest, updated_lock, desired, final_snapshot)
         if remaining:
             raise ProvisionError("authoritative post-write state did not converge")
         return ReconcileResult(actions, agent_keys, updated_lock)
+
+    @staticmethod
+    def _validate_local_inputs(
+        manifest: DeliveryManifest,
+        lock: FrameworkLock,
+    ) -> None:
+        for repository_key, repository in manifest.repositories.items():
+            if len(repository.skills) != len(set(repository.skills)):
+                raise ProvisionError(
+                    f"duplicate repository skill for {repository_key}"
+                )
+        for category, identities in lock.resource_ids.items():
+            values = tuple(identities.values())
+            if len(values) != len(set(values)):
+                raise ProvisionError(f"duplicate lock identity in {category}")
 
     def _validate_external_scope(self, manifest: DeliveryManifest) -> None:
         try:
@@ -749,6 +527,20 @@ class Provisioner:
             }
             if set(member_ids) - desired_existing_ids:
                 raise ProvisionError("foreign target Squad member state")
+            lead = agents.get("delivery-lead")
+            lead_member = (
+                None if lead is None else next(
+                    (member for member in members if member.member_id == lead.id),
+                    None,
+                )
+            )
+            if (
+                lead is None
+                or squad.leader_id != lead.id
+                or lead_member is None
+                or lead_member.role != "leader"
+            ):
+                raise ProvisionError("Squad leader state is invalid")
 
         autopilot = self._locked_target(
             autopilot_records,
@@ -1110,6 +902,7 @@ class Provisioner:
                 value=project.title,
                 label="Project",
             )
+            updated_id = None
             if observed is None:
                 self.multica.create_project(
                     title=project.title,
@@ -1124,12 +917,14 @@ class Provisioner:
                     title=project.title,
                     description=project.description,
                 )
+                updated_id = observed.id
             records = self.multica.list_projects()
             final = _unique_target(records, "title", project.title, "Project")
             if (
                 final is None
                 or final.title != project.title
                 or final.description != project.description
+                or (updated_id is not None and final.id != updated_id)
             ):
                 raise ProvisionError(f"Project reconciliation failed for {project.key}")
 
@@ -1151,6 +946,7 @@ class Provisioner:
                 raise ProvisionError(f"Project reconciliation failed for {key}")
             records = self.multica.list_project_resources(project.id)
             observed = self._exact_worktree(records, project.id, str(repository.local_path), key)
+            updated_id = None
             if observed is None:
                 self.multica.add_project_worktree(
                     project.id,
@@ -1168,6 +964,7 @@ class Provisioner:
                     daemon_id=manifest.instance.daemon_id,
                     execution_mode="worktree",
                 )
+                updated_id = observed.id
             final = self._exact_worktree(
                 self.multica.list_project_resources(project.id),
                 project.id,
@@ -1180,6 +977,8 @@ class Provisioner:
                 or final.execution_mode != "worktree"
             ):
                 raise ProvisionError(f"worktree reconciliation failed for {key}")
+            if updated_id is not None and final.id != updated_id:
+                raise ProvisionError(f"worktree identity changed for {key}")
 
     @staticmethod
     def _exact_worktree(records, project_id: str, local_path: str, key: str):
@@ -1215,10 +1014,12 @@ class Provisioner:
                 value=agent.name,
                 label="agent",
             )
+            updated_id = None
             if observed is None:
                 self.multica.create_agent(**fields)
             elif any(getattr(observed, key) != value for key, value in fields.items()):
                 self.multica.update_agent(observed.id, **fields)
+                updated_id = observed.id
             final = _unique_target(
                 self.multica.list_agents(),
                 "name",
@@ -1229,6 +1030,8 @@ class Provisioner:
                 getattr(final, key) != value for key, value in fields.items()
             ):
                 raise ProvisionError(f"agent reconciliation failed for {agent.key}")
+            if updated_id is not None and final.id != updated_id:
+                raise ProvisionError(f"agent identity changed for {agent.key}")
 
     def _apply_bindings_and_environment(
         self,
@@ -1323,13 +1126,45 @@ class Provisioner:
             value=desired.squad_name,
             label="Squad",
         )
+        updated_squad_id = None
         if squad is None:
             self.multica.create_squad(
                 name=desired.squad_name,
                 description=desired.squad_description,
-                instructions=desired.squad_instructions,
                 leader_id=lead_id,
             )
+            squad = _unique_target(
+                self.multica.list_squads(),
+                "name",
+                desired.squad_name,
+                "Squad",
+            )
+            if (
+                squad is None
+                or squad.name != desired.squad_name
+                or squad.description != desired.squad_description
+                or squad.leader_id != lead_id
+            ):
+                raise ProvisionError("Squad creation verification failed")
+            created_members = tuple(
+                self.multica.list_squad_members(squad.id)
+            )
+            if (
+                len(created_members) != 1
+                or created_members[0].member_id != lead_id
+                or created_members[0].member_type != "agent"
+                or created_members[0].role != "leader"
+            ):
+                raise ProvisionError("Squad leader creation verification failed")
+            if squad.instructions != desired.squad_instructions:
+                self.multica.update_squad(
+                    squad.id,
+                    name=desired.squad_name,
+                    description=desired.squad_description,
+                    instructions=desired.squad_instructions,
+                    leader_id=lead_id,
+                )
+                updated_squad_id = squad.id
         elif not self._squad_matches(squad, desired, lead_id):
             self.multica.update_squad(
                 squad.id,
@@ -1338,6 +1173,7 @@ class Provisioner:
                 instructions=desired.squad_instructions,
                 leader_id=lead_id,
             )
+            updated_squad_id = squad.id
         squad = _unique_target(
             self.multica.list_squads(),
             "name",
@@ -1346,6 +1182,8 @@ class Provisioner:
         )
         if squad is None or not self._squad_matches(squad, desired, lead_id):
             raise ProvisionError("Squad reconciliation failed")
+        if updated_squad_id is not None and squad.id != updated_squad_id:
+            raise ProvisionError("Squad identity changed during update")
 
         expected = {lead_id: "leader"}
         expected.update(
@@ -1420,6 +1258,7 @@ class Provisioner:
             "assignee_id": watcher.id,
             "status": "active",
         }
+        updated_autopilot_id = None
         if autopilot is None:
             self.multica.create_autopilot(**fields)
         elif not self._autopilot_matches(
@@ -1429,6 +1268,7 @@ class Provisioner:
             watcher.id,
         ):
             self.multica.update_autopilot(autopilot.id, **fields)
+            updated_autopilot_id = autopilot.id
         autopilot = _unique_target(
             self.multica.list_autopilots(),
             "title",
@@ -1442,11 +1282,17 @@ class Provisioner:
             watcher.id,
         ):
             raise ProvisionError("Autopilot reconciliation failed")
+        if (
+            updated_autopilot_id is not None
+            and autopilot.id != updated_autopilot_id
+        ):
+            raise ProvisionError("Autopilot identity changed during update")
 
         triggers = tuple(self.multica.list_autopilot_triggers(autopilot.id))
         if len(triggers) > 1:
             raise ProvisionError("duplicate/foreign target trigger state")
         trigger = triggers[0] if triggers else None
+        updated_trigger_id = None
         if trigger is None:
             self.multica.add_autopilot_trigger(
                 autopilot.id,
@@ -1463,11 +1309,17 @@ class Provisioner:
                 enabled=True,
                 label=desired.trigger_label,
             )
+            updated_trigger_id = trigger.id
         final_triggers = tuple(self.multica.list_autopilot_triggers(autopilot.id))
         if len(final_triggers) != 1 or not self._trigger_matches(
             final_triggers[0], manifest, desired
         ):
             raise ProvisionError("Autopilot trigger reconciliation failed")
+        if (
+            updated_trigger_id is not None
+            and final_triggers[0].id != updated_trigger_id
+        ):
+            raise ProvisionError("Autopilot trigger identity changed during update")
 
     def _build_lock_or_none(
         self,
@@ -1523,7 +1375,12 @@ class Provisioner:
         if any(not values for values in desired.values()):
             raise ProvisionError("cannot emit lock before reconciliation succeeds")
         for kind, values in desired.items():
-            categories.setdefault(kind, {}).update(values)
+            category = categories.setdefault(kind, {})
+            for key, identifier in values.items():
+                locked_id = category.get(key)
+                if locked_id is not None and locked_id != identifier:
+                    raise ProvisionError(f"foreign lock identity for {kind}.{key}")
+                category[key] = identifier
         frozen_categories = MappingProxyType(
             {
                 kind: MappingProxyType(dict(sorted(values.items())))

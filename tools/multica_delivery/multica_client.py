@@ -54,7 +54,7 @@ class AgentEnvironment:
 
 @dataclass(frozen=True)
 class MutationResult:
-    resource_id: str
+    resource_id: str | None
 
 
 @dataclass(frozen=True)
@@ -68,6 +68,80 @@ class RuntimeInfo:
 @dataclass(frozen=True)
 class SkillImportCapability:
     dry_run: bool
+
+
+@dataclass(frozen=True)
+class SkillState:
+    id: str
+    name: str
+    source_url: str
+
+
+@dataclass(frozen=True)
+class ProjectState:
+    id: str
+    title: str
+    description: str
+
+
+@dataclass(frozen=True)
+class ProjectResourceState:
+    id: str
+    project_id: str
+    resource_type: str
+    local_path: str
+    daemon_id: str
+    execution_mode: str
+
+
+@dataclass(frozen=True)
+class AgentState:
+    id: str
+    name: str
+    description: str
+    instructions: str
+    runtime_id: str
+    visibility: str
+    max_concurrent_tasks: int
+
+
+@dataclass(frozen=True)
+class SquadState:
+    id: str
+    name: str
+    description: str
+    instructions: str
+    leader_id: str
+
+
+@dataclass(frozen=True)
+class SquadMemberState:
+    member_id: str
+    member_type: str
+    role: str
+
+
+@dataclass(frozen=True)
+class AutopilotState:
+    id: str
+    title: str
+    description: str
+    execution_mode: str
+    project_id: str | None
+    assignee_id: str
+    assignee_type: str
+    status: str
+
+
+@dataclass(frozen=True)
+class TriggerState:
+    id: str
+    autopilot_id: str
+    kind: str
+    cron_expression: str
+    timezone: str
+    enabled: bool
+    label: str | None
 
 
 _ENVELOPES = frozenset({"data", "result"})
@@ -312,29 +386,709 @@ class MulticaClient:
             raise _contract("runtime list", matches[0])
         return RuntimeInfo(target_runtime, target_daemon, "online", tuple(capabilities))
 
-    def list_projects(self) -> tuple[MulticaResource, ...]:
+    @staticmethod
+    def _string_field(value: Mapping[str, object], field: str, operation: str) -> str:
+        result = value.get(field)
+        if not isinstance(result, str) or not result:
+            raise _contract(operation, value)
+        return result
+
+    @staticmethod
+    def _text_field(value: Mapping[str, object], field: str, operation: str) -> str:
+        result = value.get(field)
+        if not isinstance(result, str):
+            raise _contract(operation, value)
+        return result
+
+    def list_projects(self) -> tuple[ProjectState, ...]:
+        operation = "project list"
         raw = self._unwrap(
-            self._read(("multica", "project", "list", "--output", "json"), "project list"),
-            "project list",
+            self._read(("multica", "project", "list", "--output", "json"), operation),
+            operation,
             "projects",
         )
-        return self._resources(raw, "project list")
+        summaries = self._resources(raw, operation)
+        projects = []
+        for summary in summaries:
+            detail_operation = "project get"
+            detail = self._unwrap(
+                self._read(
+                    ("multica", "project", "get", summary.id, "--output", "json"),
+                    detail_operation,
+                ),
+                detail_operation,
+                "project",
+            )
+            if not isinstance(detail, Mapping) or detail.get("id") != summary.id:
+                raise _contract(detail_operation, detail)
+            projects.append(
+                ProjectState(
+                    summary.id,
+                    self._string_field(detail, "title", detail_operation),
+                    self._text_field(detail, "description", detail_operation),
+                )
+            )
+        return tuple(projects)
 
-    def list_agents(self) -> tuple[MulticaResource, ...]:
+    def list_project_resources(
+        self,
+        project_id: str,
+    ) -> tuple[ProjectResourceState, ...]:
+        operation = "project resource list"
         raw = self._unwrap(
-            self._read(("multica", "agent", "list", "--output", "json"), "agent list"),
-            "agent list",
+            self._read(
+                (
+                    "multica",
+                    "project",
+                    "resource",
+                    "list",
+                    project_id,
+                    "--output",
+                    "json",
+                ),
+                operation,
+            ),
+            operation,
+            "resources",
+        )
+        if not isinstance(raw, list):
+            raise _contract(operation, raw)
+        result = []
+        for item in raw:
+            if not isinstance(item, Mapping) or item.get("project_id") != project_id:
+                raise _contract(operation, item)
+            reference = item.get("resource_ref")
+            if not isinstance(reference, Mapping):
+                raise _contract(operation, item)
+            execution_mode = reference.get("execution_mode", "in_place")
+            if not isinstance(execution_mode, str) or not execution_mode:
+                raise _contract(operation, item)
+            result.append(
+                ProjectResourceState(
+                    self._string_field(item, "id", operation),
+                    project_id,
+                    self._string_field(item, "resource_type", operation),
+                    self._string_field(reference, "local_path", operation),
+                    self._string_field(reference, "daemon_id", operation),
+                    execution_mode,
+                )
+            )
+        return tuple(result)
+
+    def list_agents(self) -> tuple[AgentState, ...]:
+        operation = "agent list"
+        raw = self._unwrap(
+            self._read(("multica", "agent", "list", "--output", "json"), operation),
+            operation,
             "agents",
         )
-        return self._resources(raw, "agent list")
+        summaries = self._resources(raw, operation)
+        agents = []
+        for summary in summaries:
+            detail_operation = "agent get"
+            detail = self._unwrap(
+                self._read(
+                    ("multica", "agent", "get", summary.id, "--output", "json"),
+                    detail_operation,
+                ),
+                detail_operation,
+                "agent",
+            )
+            if not isinstance(detail, Mapping) or detail.get("id") != summary.id:
+                raise _contract(detail_operation, detail)
+            concurrency = detail.get("max_concurrent_tasks")
+            if not isinstance(concurrency, int) or isinstance(concurrency, bool):
+                raise _contract(detail_operation, detail)
+            agents.append(
+                AgentState(
+                    summary.id,
+                    self._string_field(detail, "name", detail_operation),
+                    self._text_field(detail, "description", detail_operation),
+                    self._text_field(detail, "instructions", detail_operation),
+                    self._string_field(detail, "runtime_id", detail_operation),
+                    self._string_field(detail, "visibility", detail_operation),
+                    concurrency,
+                )
+            )
+        return tuple(agents)
 
-    def list_skills(self) -> tuple[MulticaResource, ...]:
+    def list_agent_skill_ids(self, agent_id: str) -> tuple[str, ...]:
+        operation = "agent skill list"
         raw = self._unwrap(
-            self._read(("multica", "skill", "list", "--output", "json"), "skill list"),
-            "skill list",
+            self._read(
+                ("multica", "agent", "skills", "list", agent_id, "--output", "json"),
+                operation,
+            ),
+            operation,
             "skills",
         )
-        return self._resources(raw, "skill list")
+        resources = self._resources(raw, operation)
+        return tuple(resource.id for resource in resources)
+
+    def list_skills(self) -> tuple[SkillState, ...]:
+        operation = "skill list"
+        raw = self._unwrap(
+            self._read(("multica", "skill", "list", "--output", "json"), operation),
+            operation,
+            "skills",
+        )
+        summaries = self._resources(raw, operation)
+        skills = []
+        for summary in summaries:
+            detail_operation = "skill get"
+            detail = self._unwrap(
+                self._read(
+                    ("multica", "skill", "get", summary.id, "--output", "json"),
+                    detail_operation,
+                ),
+                detail_operation,
+                "skill",
+            )
+            if not isinstance(detail, Mapping) or detail.get("id") != summary.id:
+                raise _contract(detail_operation, detail)
+            config = detail.get("config")
+            origin = config.get("origin") if isinstance(config, Mapping) else None
+            if not isinstance(origin, Mapping):
+                raise _contract(detail_operation, detail)
+            skills.append(
+                SkillState(
+                    summary.id,
+                    self._string_field(detail, "name", detail_operation),
+                    self._string_field(origin, "source_url", detail_operation),
+                )
+            )
+        return tuple(skills)
+
+    def list_squads(self) -> tuple[SquadState, ...]:
+        operation = "squad list"
+        raw = self._unwrap(
+            self._read(("multica", "squad", "list", "--output", "json"), operation),
+            operation,
+            "squads",
+        )
+        summaries = self._resources(raw, operation)
+        squads = []
+        for summary in summaries:
+            detail_operation = "squad get"
+            detail = self._unwrap(
+                self._read(
+                    ("multica", "squad", "get", summary.id, "--output", "json"),
+                    detail_operation,
+                ),
+                detail_operation,
+                "squad",
+            )
+            if not isinstance(detail, Mapping) or detail.get("id") != summary.id:
+                raise _contract(detail_operation, detail)
+            squads.append(
+                SquadState(
+                    summary.id,
+                    self._string_field(detail, "name", detail_operation),
+                    self._text_field(detail, "description", detail_operation),
+                    self._text_field(detail, "instructions", detail_operation),
+                    self._string_field(detail, "leader_id", detail_operation),
+                )
+            )
+        return tuple(squads)
+
+    def list_squad_members(self, squad_id: str) -> tuple[SquadMemberState, ...]:
+        operation = "squad member list"
+        raw = self._unwrap(
+            self._read(
+                ("multica", "squad", "member", "list", squad_id, "--output", "json"),
+                operation,
+            ),
+            operation,
+            "members",
+        )
+        if not isinstance(raw, list):
+            raise _contract(operation, raw)
+        members = []
+        record_ids = set()
+        member_ids = set()
+        for item in raw:
+            if not isinstance(item, Mapping) or item.get("squad_id") != squad_id:
+                raise _contract(operation, item)
+            record_id = self._string_field(item, "id", operation)
+            member_id = self._string_field(item, "member_id", operation)
+            if record_id in record_ids or member_id in member_ids:
+                raise _contract(operation, item)
+            record_ids.add(record_id)
+            member_ids.add(member_id)
+            members.append(
+                SquadMemberState(
+                    member_id,
+                    self._string_field(item, "member_type", operation),
+                    self._string_field(item, "role", operation),
+                )
+            )
+        return tuple(members)
+
+    @classmethod
+    def _autopilot_state(cls, value: object, operation: str) -> AutopilotState:
+        if not isinstance(value, Mapping):
+            raise _contract(operation, value)
+        project_id = value.get("project_id")
+        if project_id is not None and (
+            not isinstance(project_id, str) or not project_id
+        ):
+            raise _contract(operation, value)
+        execution_mode = value.get("execution_mode")
+        assignee_type = value.get("assignee_type")
+        status = value.get("status")
+        if (
+            execution_mode not in {"create_issue", "run_only"}
+            or assignee_type != "agent"
+            or status not in {"active", "paused"}
+        ):
+            raise _contract(operation, value)
+        return AutopilotState(
+            cls._string_field(value, "id", operation),
+            cls._string_field(value, "title", operation),
+            cls._text_field(value, "description", operation),
+            execution_mode,
+            project_id,
+            cls._string_field(value, "assignee_id", operation),
+            assignee_type,
+            status,
+        )
+
+    def list_autopilots(self) -> tuple[AutopilotState, ...]:
+        operation = "autopilot list"
+        raw = self._unwrap(
+            self._read(("multica", "autopilot", "list", "--output", "json"), operation),
+            operation,
+        )
+        if (
+            not isinstance(raw, Mapping)
+            or set(raw) != {"autopilots", "total"}
+            or not isinstance(raw.get("autopilots"), list)
+        ):
+            raise _contract(operation, raw)
+        total = raw.get("total")
+        items = raw["autopilots"]
+        if not isinstance(total, int) or isinstance(total, bool) or total != len(items):
+            raise _contract(operation, raw)
+        return tuple(self._autopilot_state(item, operation) for item in items)
+
+    def list_autopilot_triggers(self, autopilot_id: str) -> tuple[TriggerState, ...]:
+        operation = "autopilot trigger list"
+        raw = self._unwrap(
+            self._read(
+                ("multica", "autopilot", "get", autopilot_id, "--output", "json"),
+                operation,
+            ),
+            operation,
+        )
+        if not isinstance(raw, Mapping):
+            raise _contract(operation, raw)
+        autopilot = self._autopilot_state(raw.get("autopilot"), operation)
+        triggers = raw.get("triggers")
+        collaborators = raw.get("collaborators")
+        if (
+            set(raw) != {"autopilot", "collaborators", "triggers"}
+            or autopilot.id != autopilot_id
+            or not isinstance(triggers, list)
+            or collaborators != []
+        ):
+            raise _contract(operation, raw)
+        result = []
+        for item in triggers:
+            if not isinstance(item, Mapping) or item.get("autopilot_id") != autopilot_id:
+                raise _contract(operation, item)
+            for key in (
+                "provider",
+                "signing_secret_hint",
+                "webhook_path",
+                "webhook_token",
+                "webhook_token_hint",
+                "webhook_url",
+            ):
+                if item.get(key) is not None:
+                    raise _contract(operation, item)
+            for key in ("has_signing_secret", "has_webhook_token"):
+                if item.get(key) is not False:
+                    raise _contract(operation, item)
+            enabled = item.get("enabled")
+            label = item.get("label")
+            cron_expression = item.get("cron_expression")
+            if (
+                item.get("kind") != "schedule"
+                or not isinstance(enabled, bool)
+                or (label is not None and not isinstance(label, str))
+                or not isinstance(cron_expression, str)
+                or len(cron_expression.split()) != 5
+            ):
+                raise _contract(operation, item)
+            result.append(
+                TriggerState(
+                    self._string_field(item, "id", operation),
+                    autopilot_id,
+                    "schedule",
+                    cron_expression,
+                    self._string_field(item, "timezone", operation),
+                    enabled,
+                    label,
+                )
+            )
+        return tuple(result)
+
+    def _mutation_result(
+        self,
+        argv: tuple[str, ...],
+        operation: str,
+        resource_key: str,
+        *,
+        id_field: str = "id",
+        expected_id: str | None = None,
+        association: tuple[str, str] | None = None,
+    ) -> MutationResult:
+        response = self._mutate(argv, operation)
+        if isinstance(response, Mapping) and dict(response) == {"ok": True}:
+            return MutationResult(expected_id)
+        raw = self._unwrap(
+            response,
+            operation,
+            resource_key,
+            direct_status_control=True,
+        )
+        if not isinstance(raw, Mapping):
+            raise _contract(operation, raw)
+        resource_id = raw.get(id_field)
+        if (
+            not isinstance(resource_id, str)
+            or not resource_id
+            or (expected_id is not None and resource_id != expected_id)
+            or (
+                association is not None
+                and raw.get(association[0]) != association[1]
+            )
+        ):
+            raise _contract(operation, raw)
+        return MutationResult(resource_id)
+
+    def create_project(self, *, title: str, description: str) -> MutationResult:
+        return self._mutation_result(
+            (
+                "multica", "project", "create", "--title", title,
+                "--description", description, "--output", "json",
+            ),
+            "project create",
+            "project",
+        )
+
+    def update_project(
+        self,
+        project_id: str,
+        *,
+        title: str,
+        description: str,
+    ) -> MutationResult:
+        return self._mutation_result(
+            (
+                "multica", "project", "update", project_id, "--title", title,
+                "--description", description, "--output", "json",
+            ),
+            "project update",
+            "project",
+            expected_id=project_id,
+        )
+
+    def add_project_worktree(
+        self,
+        project_id: str,
+        *,
+        local_path: str,
+        daemon_id: str,
+        execution_mode: str,
+    ) -> MutationResult:
+        return self._mutation_result(
+            (
+                "multica", "project", "resource", "add", project_id,
+                "--type", "local_directory", "--local-path", local_path,
+                "--daemon-id", daemon_id, "--execution-mode", execution_mode,
+                "--output", "json",
+            ),
+            "project worktree add",
+            "resource",
+            association=("project_id", project_id),
+        )
+
+    def update_project_worktree(
+        self,
+        project_id: str,
+        resource_id: str,
+        *,
+        daemon_id: str,
+        execution_mode: str,
+    ) -> MutationResult:
+        return self._mutation_result(
+            (
+                "multica", "project", "resource", "update", project_id,
+                resource_id, "--daemon-id", daemon_id, "--execution-mode",
+                execution_mode, "--output", "json",
+            ),
+            "project worktree update",
+            "resource",
+            expected_id=resource_id,
+            association=("project_id", project_id),
+        )
+
+    def create_agent(
+        self,
+        *,
+        name: str,
+        description: str,
+        instructions: str,
+        runtime_id: str,
+        visibility: str,
+        max_concurrent_tasks: int,
+    ) -> MutationResult:
+        return self._mutation_result(
+            self._agent_mutation_argv(
+                "create",
+                None,
+                name=name,
+                description=description,
+                instructions=instructions,
+                runtime_id=runtime_id,
+                visibility=visibility,
+                max_concurrent_tasks=max_concurrent_tasks,
+            ),
+            "agent create",
+            "agent",
+        )
+
+    def update_agent(
+        self,
+        agent_id: str,
+        *,
+        name: str,
+        description: str,
+        instructions: str,
+        runtime_id: str,
+        visibility: str,
+        max_concurrent_tasks: int,
+    ) -> MutationResult:
+        return self._mutation_result(
+            self._agent_mutation_argv(
+                "update",
+                agent_id,
+                name=name,
+                description=description,
+                instructions=instructions,
+                runtime_id=runtime_id,
+                visibility=visibility,
+                max_concurrent_tasks=max_concurrent_tasks,
+            ),
+            "agent update",
+            "agent",
+            expected_id=agent_id,
+        )
+
+    @staticmethod
+    def _agent_mutation_argv(
+        verb: str,
+        agent_id: str | None,
+        *,
+        name: str,
+        description: str,
+        instructions: str,
+        runtime_id: str,
+        visibility: str,
+        max_concurrent_tasks: int,
+    ) -> tuple[str, ...]:
+        if (
+            not isinstance(max_concurrent_tasks, int)
+            or isinstance(max_concurrent_tasks, bool)
+            or max_concurrent_tasks < 1
+        ):
+            raise TypeError("max_concurrent_tasks must be a positive integer")
+        prefix = ("multica", "agent", verb) + (() if agent_id is None else (agent_id,))
+        return prefix + (
+            "--name", name, "--description", description,
+            "--instructions", instructions, "--runtime-id", runtime_id,
+            "--visibility", visibility, "--max-concurrent-tasks",
+            str(max_concurrent_tasks), "--output", "json",
+        )
+
+    def add_agent_skill(self, agent_id: str, skill_id: str) -> MutationResult:
+        return self._mutation_result(
+            (
+                "multica", "agent", "skills", "add", agent_id,
+                "--skill-ids", skill_id, "--output", "json",
+            ),
+            "agent skill add",
+            "agent",
+            expected_id=agent_id,
+        )
+
+    def create_squad(
+        self,
+        *,
+        name: str,
+        description: str,
+        leader_id: str,
+    ) -> MutationResult:
+        return self._mutation_result(
+            (
+                "multica", "squad", "create", "--name", name,
+                "--description", description, "--leader", leader_id,
+                "--output", "json",
+            ),
+            "squad create",
+            "squad",
+        )
+
+    def update_squad(
+        self,
+        squad_id: str,
+        *,
+        name: str,
+        description: str,
+        instructions: str,
+        leader_id: str,
+    ) -> MutationResult:
+        return self._mutation_result(
+            (
+                "multica", "squad", "update", squad_id, "--name", name,
+                "--description", description, "--instructions", instructions,
+                "--leader", leader_id, "--output", "json",
+            ),
+            "squad update",
+            "squad",
+            expected_id=squad_id,
+        )
+
+    def add_squad_member(
+        self,
+        squad_id: str,
+        agent_id: str,
+        *,
+        role: str,
+    ) -> MutationResult:
+        return self._mutation_result(
+            (
+                "multica", "squad", "member", "add", squad_id,
+                "--member-id", agent_id, "--type", "agent",
+                "--role", role, "--output", "json",
+            ),
+            "squad member add",
+            "member",
+            id_field="member_id",
+            expected_id=agent_id,
+        )
+
+    def update_squad_member(
+        self,
+        squad_id: str,
+        agent_id: str,
+        *,
+        role: str,
+    ) -> MutationResult:
+        return self._mutation_result(
+            (
+                "multica", "squad", "member", "set-role", squad_id,
+                "--member-id", agent_id, "--member-type", "agent",
+                "--role", role, "--output", "json",
+            ),
+            "squad member update",
+            "member",
+            id_field="member_id",
+            expected_id=agent_id,
+        )
+
+    def create_autopilot(
+        self,
+        *,
+        title: str,
+        description: str,
+        execution_mode: str,
+        project_id: str,
+        assignee_id: str,
+        status: str,
+    ) -> MutationResult:
+        if status != "active":
+            raise MulticaContractError("new Autopilot must be active")
+        return self._mutation_result(
+            (
+                "multica", "autopilot", "create", "--title", title,
+                "--description", description, "--agent", assignee_id,
+                "--mode", execution_mode, "--project", project_id,
+                "--output", "json",
+            ),
+            "autopilot create",
+            "autopilot",
+        )
+
+    def update_autopilot(
+        self,
+        autopilot_id: str,
+        *,
+        title: str,
+        description: str,
+        execution_mode: str,
+        project_id: str,
+        assignee_id: str,
+        status: str,
+    ) -> MutationResult:
+        return self._mutation_result(
+            (
+                "multica", "autopilot", "update", autopilot_id,
+                "--title", title, "--description", description,
+                "--agent", assignee_id, "--mode", execution_mode,
+                "--project", project_id, "--status", status,
+                "--output", "json",
+            ),
+            "autopilot update",
+            "autopilot",
+            expected_id=autopilot_id,
+        )
+
+    def add_autopilot_trigger(
+        self,
+        autopilot_id: str,
+        *,
+        cron_expression: str,
+        timezone: str,
+        label: str,
+    ) -> MutationResult:
+        return self._mutation_result(
+            (
+                "multica", "autopilot", "trigger-add", autopilot_id,
+                "--kind", "schedule", "--cron", cron_expression,
+                "--timezone", timezone, "--label", label,
+                "--output", "json",
+            ),
+            "autopilot trigger add",
+            "trigger",
+            association=("autopilot_id", autopilot_id),
+        )
+
+    def update_autopilot_trigger(
+        self,
+        autopilot_id: str,
+        trigger_id: str,
+        *,
+        cron_expression: str,
+        timezone: str,
+        enabled: bool,
+        label: str,
+    ) -> MutationResult:
+        if enabled is not True:
+            raise MulticaContractError("Autopilot trigger update requires enabled state")
+        return self._mutation_result(
+            (
+                "multica", "autopilot", "trigger-update", autopilot_id,
+                trigger_id, "--cron", cron_expression, "--timezone", timezone,
+                "--enabled", "--label", label,
+                "--output", "json",
+            ),
+            "autopilot trigger update",
+            "trigger",
+            expected_id=trigger_id,
+            association=("autopilot_id", autopilot_id),
+        )
 
     def inspect_skill_import(self) -> SkillImportCapability:
         """Inspect declared capability metadata; never execute ``skill import``."""
@@ -382,35 +1136,51 @@ class MulticaClient:
             or parsed.fragment
         ):
             raise MulticaContractError("skill import requires a public GitHub URL")
-        raw = self._unwrap(
-            self._mutate(
-                ("multica", "skill", "import", "--url", url, "--output", "json"),
-                "skill import",
+        response = self._mutate(
+            (
+                "multica", "skill", "import", "--url", url,
+                "--on-conflict", "fail", "--output", "json",
             ),
             "skill import",
-            "skill",
-            direct_status_control=True,
         )
+        if (
+            isinstance(response, Mapping)
+            and set(response) == {"skill", "status"}
+            and response.get("status") == "created"
+        ):
+            raw = response["skill"]
+        else:
+            raw = self._unwrap(
+                response,
+                "skill import",
+                "skill",
+                direct_status_control=True,
+            )
         return self._resource(raw, "skill import")
 
     def set_agent_environment(self, agent_id: str, values: Mapping[str, str]) -> MutationResult:
         if not all(isinstance(key, str) and key and isinstance(value, str) for key, value in values.items()):
             raise TypeError("environment must map non-empty names to string values")
-        raw = self._unwrap(
-            self._mutate(
-                (
-                    "multica",
-                    "agent",
-                    "env",
-                    "set",
-                    agent_id,
-                    "--custom-env-stdin",
-                    "--output",
-                    "json",
-                ),
-                "agent environment update",
-                input_text=json.dumps(dict(values), sort_keys=True),
+        response = self._mutate(
+            (
+                "multica",
+                "agent",
+                "env",
+                "set",
+                agent_id,
+                "--custom-env-stdin",
+                "--output",
+                "json",
             ),
+            "agent environment update",
+            input_text=json.dumps(dict(values), sort_keys=True),
+        )
+        if isinstance(response, Mapping) and (
+            dict(response) == dict(values) or dict(response) == {"ok": True}
+        ):
+            return MutationResult(agent_id)
+        raw = self._unwrap(
+            response,
             "agent environment update",
             "agent",
             direct_status_control=True,

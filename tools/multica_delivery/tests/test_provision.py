@@ -8,7 +8,12 @@ import unittest
 from tools.multica_delivery.github_client import RepositoryInfo
 from tools.multica_delivery.manifest import load_manifest
 from tools.multica_delivery.model import FrameworkLock
-from tools.multica_delivery.multica_client import AgentEnvironment, MutationResult, RuntimeInfo
+from tools.multica_delivery.multica_client import (
+    AgentEnvironment,
+    MulticaClient,
+    MutationResult,
+    RuntimeInfo,
+)
 from tools.multica_delivery.provision import (
     AgentState,
     AutopilotState,
@@ -67,6 +72,9 @@ class StatefulMultica:
         self.mutations: list[str] = []
         self.freeze_mutations: set[str] = set()
         self.environment_failure: str | None = None
+        self.replace_worktree_on_update = False
+        self.replace_trigger_on_update = False
+        self.squad_create_leader_issue: str | None = None
         self.secret_sets: list[tuple[str, dict[str, str]]] = []
         self._next: dict[str, int] = {}
 
@@ -146,9 +154,11 @@ class StatefulMultica:
         execution_mode: str,
     ) -> MutationResult:
         if self._mutate("worktree.update"):
-            resource = self.resources[project_id][resource_id]
-            self.resources[project_id][resource_id] = replace(
+            resource = self.resources[project_id].pop(resource_id)
+            final_id = self._id("worktree") if self.replace_worktree_on_update else resource_id
+            self.resources[project_id][final_id] = replace(
                 resource,
+                id=final_id,
                 daemon_id=daemon_id,
                 execution_mode=execution_mode,
             )
@@ -233,17 +243,24 @@ class StatefulMultica:
         *,
         name: str,
         description: str,
-        instructions: str,
         leader_id: str,
     ) -> MutationResult:
         if self._mutate("squad.create"):
             identifier = self._id("squad")
             self.squads[identifier] = SquadState(
-                identifier, name, description, instructions, leader_id
+                identifier, name, description, "", leader_id
             )
             self.members[identifier] = {
                 leader_id: SquadMemberState(leader_id, "agent", "leader")
             }
+            if self.squad_create_leader_issue == "missing":
+                self.members[identifier] = {}
+            elif self.squad_create_leader_issue == "wrong-role":
+                self.members[identifier][leader_id] = SquadMemberState(
+                    leader_id,
+                    "agent",
+                    "member",
+                )
         return MutationResult("ignored-acknowledgement")
 
     def update_squad(
@@ -361,8 +378,10 @@ class StatefulMultica:
         label: str,
     ) -> MutationResult:
         if self._mutate("trigger.update"):
-            self.triggers[autopilot_id][trigger_id] = TriggerState(
-                trigger_id,
+            self.triggers[autopilot_id].pop(trigger_id)
+            final_id = self._id("trigger") if self.replace_trigger_on_update else trigger_id
+            self.triggers[autopilot_id][final_id] = TriggerState(
+                final_id,
                 autopilot_id,
                 "schedule",
                 cron_expression,
@@ -412,6 +431,89 @@ class ProvisionerTests(unittest.TestCase):
             self.manifest, FrameworkLock.empty(), apply=False, secret_lookup=no_secrets
         )
         self.assertEqual(first.actions, second.actions)
+        self.assertFalse(self.multica.was_mutated)
+
+    def test_actual_multica_client_can_execute_fixture_backed_dry_run(self):
+        class FixtureRunner:
+            def __init__(self, manifest):
+                runtime = manifest.instance.runtime_id
+                daemon = manifest.instance.daemon_id
+                self.responses = {
+                    ("multica", "version", "--output", "json"): {"data": {"version": "0.4.33"}},
+                    ("multica", "runtime", "list", "--output", "json"): {"data": {"runtimes": [{"id": runtime, "daemon_id": daemon, "status": "online", "metadata": {"capabilities": ["local-worktree-v1"]}}]}},
+                    ("multica", "skill", "list", "--output", "json"): {"data": {"skills": []}},
+                    ("multica", "project", "list", "--output", "json"): {"data": {"projects": []}},
+                    ("multica", "agent", "list", "--output", "json"): {"data": {"agents": []}},
+                    ("multica", "squad", "list", "--output", "json"): {"data": {"squads": []}},
+                    ("multica", "autopilot", "list", "--output", "json"): {"data": {"autopilots": [], "total": 0}},
+                }
+                self.calls = []
+
+            def run(self, argv, *, input_text=None):
+                self.calls.append((argv, input_text))
+                return self.responses[argv]
+
+        runner = FixtureRunner(self.manifest)
+        provisioner = Provisioner(MulticaClient(runner), self.github)
+
+        result = provisioner.reconcile(
+            self.manifest,
+            FrameworkLock.empty(),
+            apply=False,
+            secret_lookup=no_secrets,
+        )
+
+        self.assertTrue(result.actions)
+        self.assertTrue(all(input_text is None for _, input_text in runner.calls))
+        self.assertFalse(any(argv[1] in {"create", "update"} for argv, _ in runner.calls))
+
+    def test_duplicate_repository_skill_key_is_rejected_before_any_read(self):
+        repositories = dict(self.manifest.repositories)
+        repository = repositories["api"]
+        repositories["api"] = replace(
+            repository,
+            skills=repository.skills + (repository.skills[0],),
+        )
+        manifest = replace(
+            self.manifest,
+            repositories=MappingProxyType(repositories),
+        )
+
+        with self.assertRaisesRegex(ProvisionError, "duplicate repository skill"):
+            self.provisioner.reconcile(
+                manifest,
+                FrameworkLock.empty(),
+                apply=False,
+                secret_lookup=no_secrets,
+            )
+
+        self.assertEqual(self.github.calls, [])
+        self.assertFalse(self.multica.was_mutated)
+
+    def test_duplicate_lock_ids_in_any_category_are_rejected_before_reads(self):
+        categories = (
+            "skill", "project", "worktree", "agent", "squad", "autopilot", "trigger"
+        )
+        for category in categories:
+            with self.subTest(category=category):
+                lock = FrameworkLock(
+                    "", "", 1, 1, "", "",
+                    MappingProxyType(
+                        {
+                            category: MappingProxyType(
+                                {"first": "shared-id", "second": "shared-id"}
+                            )
+                        }
+                    ),
+                )
+                with self.assertRaisesRegex(ProvisionError, "duplicate lock identity"):
+                    self.provisioner.reconcile(
+                        self.manifest,
+                        lock,
+                        apply=False,
+                        secret_lookup=no_secrets,
+                    )
+        self.assertEqual(self.github.calls, [])
         self.assertFalse(self.multica.was_mutated)
 
     def test_creates_fixed_control_roles_and_one_engineer_per_repo(self):
@@ -552,6 +654,26 @@ class ProvisionerTests(unittest.TestCase):
         self.assertEqual(trigger.cron_expression, "*/30 * * * *")
         self.assertEqual(trigger.timezone, "Asia/Shanghai")
 
+    def test_squad_create_authoritatively_verifies_server_managed_leader(self):
+        for issue in ("missing", "wrong-role"):
+            with self.subTest(issue=issue):
+                multica = StatefulMultica(self.manifest)
+                multica.squad_create_leader_issue = issue
+                provisioner = Provisioner(multica, FakeGitHub(self.manifest))
+
+                with self.assertRaisesRegex(
+                    ProvisionError,
+                    "Squad leader creation verification",
+                ):
+                    provisioner.reconcile(
+                        self.manifest,
+                        FrameworkLock.empty(),
+                        apply=True,
+                        secret_lookup=self.secrets,
+                    )
+
+                self.assertNotIn("squad.update", multica.mutations)
+
     def test_role_skill_scope_is_minimal_and_engineers_are_repository_scoped(self):
         result = self.apply()
         skill_ids = result.lock.resource_ids["skill"]
@@ -616,6 +738,67 @@ class ProvisionerTests(unittest.TestCase):
         self.assertEqual(second.actions, ())
         self.assertEqual(second.mutation_count, 0)
         self.assertEqual(len(self.multica.mutations), mutations_after_first)
+
+    def test_existing_squad_missing_delivery_lead_is_never_reported_converged(self):
+        first = self.apply()
+        squad_id = first.lock.resource_ids["squad"]["delivery"]
+        lead_id = first.lock.resource_ids["agent"]["delivery-lead"]
+        del self.multica.members[squad_id][lead_id]
+        mutations_before = len(self.multica.mutations)
+
+        with self.assertRaisesRegex(ProvisionError, "Squad leader"):
+            self.apply(first.lock)
+
+        self.assertEqual(len(self.multica.mutations), mutations_before)
+
+    def test_existing_squad_wrong_delivery_lead_role_is_never_reported_converged(self):
+        first = self.apply()
+        squad_id = first.lock.resource_ids["squad"]["delivery"]
+        lead_id = first.lock.resource_ids["agent"]["delivery-lead"]
+        self.multica.members[squad_id][lead_id] = SquadMemberState(
+            lead_id,
+            "agent",
+            "delivery-lead",
+        )
+        mutations_before = len(self.multica.mutations)
+
+        with self.assertRaisesRegex(ProvisionError, "Squad leader"):
+            self.apply(first.lock)
+
+        self.assertEqual(len(self.multica.mutations), mutations_before)
+
+    def test_worktree_update_cannot_replace_locked_identity(self):
+        first = self.apply()
+        project_id = first.lock.resource_ids["project"]["api"]
+        worktree_id = first.lock.resource_ids["worktree"]["api"]
+        self.multica.resources[project_id][worktree_id] = replace(
+            self.multica.resources[project_id][worktree_id],
+            daemon_id="stale-daemon",
+        )
+        self.multica.replace_worktree_on_update = True
+
+        with self.assertRaisesRegex(ProvisionError, "worktree identity"):
+            self.apply(first.lock)
+
+        self.assertEqual(first.lock.resource_ids["worktree"]["api"], worktree_id)
+
+    def test_trigger_update_cannot_replace_locked_identity(self):
+        first = self.apply()
+        autopilot_id = first.lock.resource_ids["autopilot"]["workflow-watcher"]
+        trigger_id = first.lock.resource_ids["trigger"]["workflow-watcher"]
+        self.multica.triggers[autopilot_id][trigger_id] = replace(
+            self.multica.triggers[autopilot_id][trigger_id],
+            timezone="UTC",
+        )
+        self.multica.replace_trigger_on_update = True
+
+        with self.assertRaisesRegex(ProvisionError, "trigger identity"):
+            self.apply(first.lock)
+
+        self.assertEqual(
+            first.lock.resource_ids["trigger"]["workflow-watcher"],
+            trigger_id,
+        )
 
     def test_unrelated_resources_and_engineer_bindings_are_preserved(self):
         first = self.apply()
