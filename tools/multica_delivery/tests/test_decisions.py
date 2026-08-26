@@ -22,6 +22,10 @@ SHA = {
     "notifications": "b" * 40,
     "web": "c" * 40,
 }
+SMOKE_OBSERVATION = {
+    "first": "smoke:" + "1" * 64,
+    "second": "smoke:" + "2" * 64,
+}
 
 
 def implementation_for(repository: str, *, sha: str | None = None, result: str = "pass") -> RepositoryEvidence:
@@ -79,14 +83,16 @@ def passing_snapshot(
 
 
 def passing_smoke_read(
-    affected: tuple[str, ...] = ("api", "web"),
     *,
+    observation_id: str,
+    affected: tuple[str, ...] = ("api", "web"),
     shas: dict[str, str] | None = None,
     authoritative: bool = True,
 ) -> SmokeRead:
     candidates = dict(shas or {repository: SHA[repository] for repository in affected})
     suites = {"web-api": "pass"} if {"api", "web"} <= set(affected) else {}
     return SmokeRead(
+        observation_id=observation_id,
         merged_shas=candidates,
         repository_results={repository: "pass" for repository in affected},
         integration_results=suites,
@@ -121,6 +127,34 @@ class ParentDecisionTests(unittest.TestCase):
     def setUp(self) -> None:
         loaded = load_manifest(FIXTURE)
         self.manifest = replace(loaded, merge_order=("api", "notifications", "web"))
+
+    def test_smoke_observation_identity_is_required(self):
+        with self.assertRaises(TypeError):
+            SmokeRead(
+                merged_shas={"api": SHA["api"]},
+                repository_results={"api": "pass"},
+                integration_results={},
+                authoritative=True,
+            )
+
+    def test_smoke_observation_identity_is_strict(self):
+        invalid_identities = (
+            "",
+            "smoke:" + "1" * 63,
+            "resume:" + "1" * 64,
+            "smoke:" + "g" * 64,
+            7,
+        )
+        for observation_id in invalid_identities:
+            with self.subTest(observation_id=observation_id):
+                with self.assertRaisesRegex(ValueError, "observation identity is malformed"):
+                    SmokeRead(
+                        observation_id=observation_id,
+                        merged_shas={"api": SHA["api"]},
+                        repository_results={"api": "pass"},
+                        integration_results={},
+                        authoritative=True,
+                    )
 
     def test_merge_only_after_all_exact_sha_gates_pass(self):
         decision = decide_parent_action(
@@ -390,10 +424,22 @@ class ParentDecisionTests(unittest.TestCase):
         self.assertEqual(decide_parent_action(self.manifest, snapshot).kind, DecisionKind.BLOCK)
 
     def test_merged_exact_shas_require_two_stable_smoke_reads(self):
-        once = merged_snapshot(smoke_reads=(passing_smoke_read(),))
-        twice = merged_snapshot(smoke_reads=(passing_smoke_read(), passing_smoke_read()))
+        first = passing_smoke_read(observation_id=SMOKE_OBSERVATION["first"])
+        second = passing_smoke_read(observation_id=SMOKE_OBSERVATION["second"])
+        once = merged_snapshot(smoke_reads=(first,))
+        twice = merged_snapshot(smoke_reads=(first, second))
         self.assertEqual(decide_parent_action(self.manifest, once).kind, DecisionKind.SMOKE)
         self.assertEqual(decide_parent_action(self.manifest, twice).kind, DecisionKind.COMPLETE)
+
+    def test_duplicate_smoke_observation_identity_is_fail_closed(self):
+        observation = passing_smoke_read(observation_id=SMOKE_OBSERVATION["first"])
+
+        decision = decide_parent_action(
+            self.manifest,
+            merged_snapshot(smoke_reads=(observation, observation)),
+        )
+
+        self.assertEqual(decision.kind, DecisionKind.BLOCK)
 
     def test_authoritative_merge_commit_shas_may_differ_from_reviewed_heads(self):
         base = passing_snapshot()
@@ -418,8 +464,9 @@ class ParentDecisionTests(unittest.TestCase):
         self.assertEqual(decision.repositories, ("api", "web"))
 
     def test_merged_pr_without_passing_checks_never_completes_after_smoke(self):
-        read = passing_smoke_read()
-        snapshot = merged_snapshot(smoke_reads=(read, read))
+        first = passing_smoke_read(observation_id=SMOKE_OBSERVATION["first"])
+        second = passing_smoke_read(observation_id=SMOKE_OBSERVATION["second"])
+        snapshot = merged_snapshot(smoke_reads=(first, second))
         snapshot = replace(
             snapshot,
             pull_requests={
@@ -435,12 +482,23 @@ class ParentDecisionTests(unittest.TestCase):
         self.assertEqual(decide_parent_action(self.manifest, snapshot).kind, DecisionKind.BLOCK)
 
     def test_non_authoritative_smoke_read_cannot_complete(self):
-        read = passing_smoke_read(authoritative=False)
-        decision = decide_parent_action(self.manifest, merged_snapshot(smoke_reads=(read, read)))
+        first = passing_smoke_read(
+            observation_id=SMOKE_OBSERVATION["first"],
+            authoritative=False,
+        )
+        second = passing_smoke_read(
+            observation_id=SMOKE_OBSERVATION["second"],
+            authoritative=False,
+        )
+        decision = decide_parent_action(
+            self.manifest,
+            merged_snapshot(smoke_reads=(first, second)),
+        )
         self.assertEqual(decision.kind, DecisionKind.SMOKE)
 
     def test_stale_post_merge_smoke_blocks_for_human_without_repair(self):
-        stale = passing_smoke_read()
+        stale = passing_smoke_read(observation_id=SMOKE_OBSERVATION["first"])
+        repeated = replace(stale, observation_id=SMOKE_OBSERVATION["second"])
         replacement = merged_snapshot()
         replacement = replace(
             replacement,
@@ -458,7 +516,7 @@ class ParentDecisionTests(unittest.TestCase):
                     result="pass",
                 )
             },
-            smoke_reads=(stale, stale),
+            smoke_reads=(stale, repeated),
         )
         decision = decide_parent_action(self.manifest, replacement)
         self.assertEqual(decision.kind, DecisionKind.BLOCK)
@@ -466,7 +524,7 @@ class ParentDecisionTests(unittest.TestCase):
 
     def test_failed_post_merge_smoke_blocks_for_human_without_repair(self):
         failed = replace(
-            passing_smoke_read(),
+            passing_smoke_read(observation_id=SMOKE_OBSERVATION["first"]),
             repository_results={"api": "pass", "web": "fail"},
         )
         decision = decide_parent_action(

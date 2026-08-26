@@ -14,6 +14,7 @@ from .topology import TopologyError, merge_order, topological_waves
 
 
 _SHA = re.compile(r"[0-9a-f]{40}\Z")
+_SMOKE_OBSERVATION_ID = re.compile(r"smoke:[0-9a-f]{64}\Z")
 _RESULTS = frozenset({"pending", "pass", "fail", "blocked"})
 _MERGE_STATES = frozenset({"pending", "not_ready", "ready", "merging", "merged", "partial", "blocked"})
 _PR_STATES = frozenset({"open", "closed", "merged"})
@@ -59,12 +60,18 @@ class GateEvidence:
 class SmokeRead:
     """One authoritative read of repository and integration smoke results."""
 
+    observation_id: str
     merged_shas: Mapping[str, str]
     repository_results: Mapping[str, str]
     integration_results: Mapping[str, str]
     authoritative: bool
 
     def __post_init__(self) -> None:
+        if (
+            not isinstance(self.observation_id, str)
+            or _SMOKE_OBSERVATION_ID.fullmatch(self.observation_id) is None
+        ):
+            raise ValueError("smoke observation identity is malformed")
         object.__setattr__(self, "merged_shas", _frozen(self.merged_shas))
         object.__setattr__(self, "repository_results", _frozen(self.repository_results))
         object.__setattr__(self, "integration_results", _frozen(self.integration_results))
@@ -258,9 +265,18 @@ def _snapshot_problem(manifest: DeliveryManifest, snapshot: ParentSnapshot) -> s
             or any(not _valid_sha(sha) for sha in evidence.candidate_shas.values())
         ):
             return "integration QA evidence is malformed"
+    observation_ids: set[str] = set()
     for read in snapshot.smoke_reads:
-        if not isinstance(read, SmokeRead) or not isinstance(read.authoritative, bool):
+        if (
+            not isinstance(read, SmokeRead)
+            or not isinstance(read.observation_id, str)
+            or _SMOKE_OBSERVATION_ID.fullmatch(read.observation_id) is None
+            or not isinstance(read.authoritative, bool)
+        ):
             return "smoke evidence is malformed"
+        if read.observation_id in observation_ids:
+            return "smoke evidence repeats an observation identity"
+        observation_ids.add(read.observation_id)
         if any(not _valid_sha(sha) for sha in read.merged_shas.values()):
             return "smoke evidence is malformed"
         if any(result not in _RESULTS for result in (*read.repository_results.values(), *read.integration_results.values())):
@@ -400,7 +416,20 @@ def _smoke_decision(
             "awaiting a complete authoritative exact-SHA smoke PASS",
             _ordered(manifest, affected),
         )
-    if len(snapshot.smoke_reads) < 2 or snapshot.smoke_reads[-2] != latest:
+    if len(snapshot.smoke_reads) < 2:
+        return _decision(
+            DecisionKind.SMOKE,
+            "one more identical authoritative exact-SHA smoke read is required",
+            _ordered(manifest, affected),
+        )
+    previous = snapshot.smoke_reads[-2]
+    identical_result = (
+        dict(previous.merged_shas) == dict(latest.merged_shas)
+        and dict(previous.repository_results) == dict(latest.repository_results)
+        and dict(previous.integration_results) == dict(latest.integration_results)
+        and previous.authoritative == latest.authoritative
+    )
+    if not identical_result:
         return _decision(
             DecisionKind.SMOKE,
             "one more identical authoritative exact-SHA smoke read is required",

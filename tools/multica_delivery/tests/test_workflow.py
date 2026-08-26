@@ -48,6 +48,10 @@ SHA = {
     "web": "c" * 40,
 }
 REPLACEMENT_SHA = "d" * 40
+SMOKE_OBSERVATION = {
+    "first": "smoke:" + "1" * 64,
+    "second": "smoke:" + "2" * 64,
+}
 
 
 def evidence_uuid(label: str) -> str:
@@ -94,11 +98,13 @@ def completion_for(
 
 def passing_smoke(
     *,
+    observation_id: str,
     shas: dict[str, str] | None = None,
     authoritative: bool = True,
 ) -> SmokeRead:
     exact = dict(shas or {"api": SHA["api"], "web": SHA["web"]})
     return SmokeRead(
+        observation_id=observation_id,
         merged_shas=exact,
         repository_results={repository: "pass" for repository in exact},
         integration_results={"web-api": "pass"} if set(exact) == {"api", "web"} else {},
@@ -777,8 +783,14 @@ class FakeGitHub:
 
 
 class FakeSmokeExecutor:
-    def __init__(self, result: SmokeRead) -> None:
+    def __init__(
+        self,
+        result: SmokeRead,
+        *,
+        bind_observation_id: bool = True,
+    ) -> None:
         self.result = result
+        self.bind_observation_id = bind_observation_id
         self.calls: list[tuple[str, tuple[str, ...], dict[str, str], str]] = []
 
     def execute(
@@ -792,6 +804,8 @@ class FakeSmokeExecutor:
         self.calls.append(
             (parent_identifier, repositories, dict(merged_shas), action_key)
         )
+        if self.bind_observation_id:
+            return replace(self.result, observation_id=action_key)
         return self.result
 
 
@@ -1496,7 +1510,12 @@ class GenericWorkflowTests(unittest.TestCase):
         )
         merged = {"api": "1" * 40, "web": "2" * 40}
         self.github.merged_shas = merged
-        smoke = FakeSmokeExecutor(passing_smoke(shas=merged))
+        smoke = FakeSmokeExecutor(
+            passing_smoke(
+                observation_id=SMOKE_OBSERVATION["first"],
+                shas=merged,
+            )
+        )
         workflow = GenericWorkflow(
             self.manifest,
             self.store,
@@ -1595,7 +1614,9 @@ class GenericWorkflowTests(unittest.TestCase):
             passing_snapshot(),
             pull_requests=pull_request_targets(),
         )
-        smoke = FakeSmokeExecutor(passing_smoke())
+        smoke = FakeSmokeExecutor(
+            passing_smoke(observation_id=SMOKE_OBSERVATION["first"])
+        )
         workflow = GenericWorkflow(
             self.manifest,
             self.store,
@@ -1628,8 +1649,14 @@ class GenericWorkflowTests(unittest.TestCase):
         )
 
         first = self.workflow.resume_parent("PRO-101")
-        after_one = self.workflow.record_smoke_read("PRO-101", passing_smoke())
-        after_two = self.workflow.record_smoke_read("PRO-101", passing_smoke())
+        after_one = self.workflow.record_smoke_read(
+            "PRO-101",
+            passing_smoke(observation_id=SMOKE_OBSERVATION["first"]),
+        )
+        after_two = self.workflow.record_smoke_read(
+            "PRO-101",
+            passing_smoke(observation_id=SMOKE_OBSERVATION["second"]),
+        )
 
         self.assertEqual(first.next_action, "smoke")
         self.assertEqual(after_one.parent_status, "in_progress")
@@ -1638,7 +1665,8 @@ class GenericWorkflowTests(unittest.TestCase):
 
     def test_parent_done_write_read_failure_is_uncertain_without_stale_block(self):
         snapshot = passing_snapshot()
-        smoke = passing_smoke()
+        first_smoke = passing_smoke(observation_id=SMOKE_OBSERVATION["first"])
+        second_smoke = passing_smoke(observation_id=SMOKE_OBSERVATION["second"])
         snapshot = replace(
             snapshot,
             merge_state="merged",
@@ -1647,7 +1675,7 @@ class GenericWorkflowTests(unittest.TestCase):
                 repository: PullRequestEvidence(sha, "merged", True, True, sha)
                 for repository, sha in snapshot.candidate_shas.items()
             },
-            smoke_reads=(smoke, smoke),
+            smoke_reads=(first_smoke, second_smoke),
         )
         self.store.add_state("PRO-101", snapshot, pull_requests=pull_request_targets())
         self.store.fail_parent_reads_after_parent_done = True
@@ -1666,7 +1694,8 @@ class GenericWorkflowTests(unittest.TestCase):
 
     def test_incomplete_parent_done_transition_stays_uncertain_without_rewrite(self):
         snapshot = passing_snapshot()
-        smoke = passing_smoke()
+        first_smoke = passing_smoke(observation_id=SMOKE_OBSERVATION["first"])
+        second_smoke = passing_smoke(observation_id=SMOKE_OBSERVATION["second"])
         snapshot = replace(
             snapshot,
             merge_state="merged",
@@ -1675,7 +1704,7 @@ class GenericWorkflowTests(unittest.TestCase):
                 repository: PullRequestEvidence(sha, "merged", True, True, sha)
                 for repository, sha in snapshot.candidate_shas.items()
             },
-            smoke_reads=(smoke, smoke),
+            smoke_reads=(first_smoke, second_smoke),
         )
         self.store.add_state("PRO-101", snapshot, pull_requests=pull_request_targets())
         metadata_before = self.store.states["PRO-101"].metadata
@@ -1714,7 +1743,10 @@ class GenericWorkflowTests(unittest.TestCase):
 
         result = self.workflow.record_smoke_read(
             "PRO-101",
-            passing_smoke(shas={"api": "f" * 40, "web": SHA["web"]}),
+            passing_smoke(
+                observation_id=SMOKE_OBSERVATION["first"],
+                shas={"api": "f" * 40, "web": SHA["web"]},
+            ),
         )
 
         self.assertEqual(result.parent_status, "blocked")
@@ -1737,7 +1769,7 @@ class GenericWorkflowTests(unittest.TestCase):
             pull_requests=pull_request_targets(),
         )
         failed = replace(
-            passing_smoke(),
+            passing_smoke(observation_id=SMOKE_OBSERVATION["first"]),
             repository_results={"api": "pass", "web": "fail"},
         )
         self.store.events.clear()
@@ -1763,12 +1795,101 @@ class GenericWorkflowTests(unittest.TestCase):
         self.store.fail_parent_reads_after_smoke_write = True
         self.store.events.clear()
 
-        result = self.workflow.record_smoke_read("PRO-101", passing_smoke())
+        result = self.workflow.record_smoke_read(
+            "PRO-101",
+            passing_smoke(observation_id=SMOKE_OBSERVATION["first"]),
+        )
 
         state = self.store.states["PRO-101"]
         self.assertEqual(result.next_action, "uncertain")
         self.assertEqual(len(state.snapshot.smoke_reads), 1)
         self.assertFalse(any(event[0] == "status" for event in self.store.events))
+
+    def test_committed_smoke_replay_noops_until_a_new_observation_arrives(self):
+        snapshot = passing_snapshot()
+        snapshot = replace(
+            snapshot,
+            merge_state="merged",
+            merged_shas=snapshot.candidate_shas,
+            pull_requests={
+                repository: PullRequestEvidence(sha, "merged", True, True, sha)
+                for repository, sha in snapshot.candidate_shas.items()
+            },
+        )
+        self.store.add_state("PRO-101", snapshot, pull_requests=pull_request_targets())
+        first_observation = passing_smoke(
+            observation_id=SMOKE_OBSERVATION["first"]
+        )
+        second_observation = passing_smoke(
+            observation_id=SMOKE_OBSERVATION["second"]
+        )
+        self.store.fail_parent_reads_after_smoke_write = True
+        self.store.events.clear()
+
+        first = self.workflow.record_smoke_read("PRO-101", first_observation)
+        committed = self.store.states["PRO-101"]
+        committed_ordinal = committed.metadata.stage_ordinal
+        committed_action_key = committed.metadata.last_action
+        replay = self.workflow.record_smoke_read("PRO-101", first_observation)
+        after_replay = self.store.states["PRO-101"]
+        writes_after_replay = [
+            event for event in self.store.events if event[0] == "write-smoke"
+        ]
+        second = self.workflow.record_smoke_read("PRO-101", second_observation)
+        final = self.store.states["PRO-101"]
+        second_action_key = [
+            event[2] for event in self.store.events if event[0] == "write-smoke"
+        ][-1]
+        completed_replay = self.workflow.record_smoke_read(
+            "PRO-101",
+            second_observation,
+        )
+
+        self.assertEqual(first.next_action, "uncertain")
+        self.assertEqual(replay.next_action, "noop")
+        self.assertEqual(replay.action_key, committed_action_key)
+        self.assertEqual(after_replay.parent_status, "in_progress")
+        self.assertEqual(after_replay.metadata.stage_ordinal, committed_ordinal)
+        self.assertEqual(after_replay.snapshot.smoke_reads, (first_observation,))
+        self.assertEqual(len(writes_after_replay), 1)
+        self.assertEqual(second.parent_status, "done")
+        self.assertEqual(completed_replay.next_action, "noop")
+        self.assertEqual(completed_replay.action_key, second_action_key)
+        self.assertEqual(
+            final.snapshot.smoke_reads,
+            (first_observation, second_observation),
+        )
+        self.assertEqual(
+            len([event for event in self.store.events if event[0] == "write-smoke"]),
+            2,
+        )
+
+    def test_conflicting_smoke_payload_for_existing_identity_blocks_before_write(self):
+        snapshot = passing_snapshot()
+        snapshot = replace(
+            snapshot,
+            merge_state="merged",
+            merged_shas=snapshot.candidate_shas,
+            pull_requests={
+                repository: PullRequestEvidence(sha, "merged", True, True, sha)
+                for repository, sha in snapshot.candidate_shas.items()
+            },
+        )
+        self.store.add_state("PRO-101", snapshot, pull_requests=pull_request_targets())
+        observation = passing_smoke(observation_id=SMOKE_OBSERVATION["first"])
+        self.workflow.record_smoke_read("PRO-101", observation)
+        conflict = replace(
+            observation,
+            repository_results={"api": "pass", "web": "fail"},
+        )
+        self.store.events.clear()
+
+        result = self.workflow.record_smoke_read("PRO-101", conflict)
+
+        state = self.store.states["PRO-101"]
+        self.assertEqual(result.next_action, "block")
+        self.assertEqual(state.snapshot.smoke_reads, (observation,))
+        self.assertFalse(any(event[0] == "write-smoke" for event in self.store.events))
 
     def test_smoke_evidence_without_its_parent_transition_is_uncertain_and_not_replayed(self):
         snapshot = passing_snapshot()
@@ -1786,13 +1907,14 @@ class GenericWorkflowTests(unittest.TestCase):
         self.store.write_smoke_evidence_without_transition = True
         self.store.events.clear()
 
-        first = self.workflow.record_smoke_read("PRO-101", passing_smoke())
-        second = self.workflow.record_smoke_read("PRO-101", passing_smoke())
+        smoke = passing_smoke(observation_id=SMOKE_OBSERVATION["first"])
+        first = self.workflow.record_smoke_read("PRO-101", smoke)
+        second = self.workflow.record_smoke_read("PRO-101", smoke)
 
         state = self.store.states["PRO-101"]
         self.assertEqual(first.next_action, "uncertain")
         self.assertEqual(second.next_action, "uncertain")
-        self.assertEqual(state.snapshot.smoke_reads, (passing_smoke(),))
+        self.assertEqual(state.snapshot.smoke_reads, (smoke,))
         self.assertEqual(state.metadata, metadata_before)
         self.assertEqual(
             len([event for event in self.store.events if event[0] == "write-smoke"]),
@@ -1812,7 +1934,9 @@ class GenericWorkflowTests(unittest.TestCase):
             },
         )
         self.store.add_state("PRO-101", snapshot, pull_requests=pull_request_targets())
-        smoke = FakeSmokeExecutor(passing_smoke())
+        smoke = FakeSmokeExecutor(
+            passing_smoke(observation_id=SMOKE_OBSERVATION["first"])
+        )
         workflow = GenericWorkflow(
             self.manifest,
             self.store,
@@ -1829,6 +1953,36 @@ class GenericWorkflowTests(unittest.TestCase):
             ("api", "web"),
             {"api": SHA["api"], "web": SHA["web"]},
         ))
+
+    def test_smoke_executor_cannot_replace_the_authoritative_observation_identity(self):
+        snapshot = passing_snapshot()
+        snapshot = replace(
+            snapshot,
+            merge_state="merged",
+            merged_shas=snapshot.candidate_shas,
+            pull_requests={
+                repository: PullRequestEvidence(sha, "merged", True, True, sha)
+                for repository, sha in snapshot.candidate_shas.items()
+            },
+        )
+        self.store.add_state("PRO-101", snapshot, pull_requests=pull_request_targets())
+        smoke = FakeSmokeExecutor(
+            passing_smoke(observation_id=SMOKE_OBSERVATION["first"]),
+            bind_observation_id=False,
+        )
+        workflow = GenericWorkflow(
+            self.manifest,
+            self.store,
+            self.store,
+            github=self.github,
+            smoke_executor=smoke,
+        )
+        self.store.events.clear()
+
+        result = workflow.execute_smoke("PRO-101")
+
+        self.assertEqual(result.next_action, "block")
+        self.assertFalse(any(event[0] == "write-smoke" for event in self.store.events))
 
     def test_owned_smoke_runs_repository_and_cross_repository_commands_then_cleans_up(self):
         manager = FakeOwnedProcessManager()

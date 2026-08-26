@@ -567,6 +567,7 @@ class OwnedSmokeExecutor:
             repository_results = {repository: "blocked" for repository in selected}
             integration_results = {suite.key: "blocked" for suite in applicable_suites}
         return SmokeRead(
+            observation_id=action_key,
             merged_shas=exact,
             repository_results=repository_results,
             integration_results=integration_results,
@@ -2228,31 +2229,61 @@ class GenericWorkflow:
             if action_key.startswith("smoke:")
         )
         first_smoke_ordinal = state.metadata.stage_ordinal - len(before) + 1
+        historical_observations = tuple(
+            zip(
+                range(first_smoke_ordinal, state.metadata.stage_ordinal + 1),
+                before,
+            )
+        )
         expected_smoke_action_keys = (
             frozenset(
-                self._action_key(state, "smoke", historical_ordinal)
-                for historical_ordinal in range(
-                    first_smoke_ordinal,
-                    state.metadata.stage_ordinal + 1,
+                self._action_key(
+                    state,
+                    f"smoke:{historical_read.observation_id}",
+                    historical_ordinal,
                 )
+                for historical_ordinal, historical_read in historical_observations
             )
             if before and first_smoke_ordinal >= 0
             else frozenset()
         )
+        observation_ids = tuple(read.observation_id for read in before)
         if (
-            smoke_action_keys != expected_smoke_action_keys
-            or (
-                before
-                and state.metadata.last_action
-                != self._action_key(state, "smoke", state.metadata.stage_ordinal)
-            )
+            (before and first_smoke_ordinal < 0)
+            or len(set(observation_ids)) != len(observation_ids)
+            or len(historical_observations) != len(before)
+            or smoke_action_keys != expected_smoke_action_keys
         ):
             return self._uncertain(
                 state,
                 "existing smoke evidence is not bound to an authoritative parent transition",
             )
+        for historical_ordinal, historical_read in historical_observations:
+            if historical_read.observation_id != smoke_read.observation_id:
+                continue
+            key = self._action_key(
+                state,
+                f"smoke:{historical_read.observation_id}",
+                historical_ordinal,
+            )
+            if historical_read != smoke_read:
+                return self._block(
+                    state,
+                    "smoke observation identity conflicts with persisted evidence",
+                    stage_kind="smoke",
+                )
+            return self._result(
+                state,
+                "noop",
+                "smoke observation is already authoritative",
+                action_key=key,
+            )
         ordinal = state.metadata.stage_ordinal + 1
-        key = self._action_key(state, "smoke", ordinal)
+        key = self._action_key(
+            state,
+            f"smoke:{smoke_read.observation_id}",
+            ordinal,
+        )
         metadata = self._metadata(
             state,
             action_key=key,
@@ -2323,6 +2354,15 @@ class GenericWorkflow:
             )
         except Exception:
             return self._block(state, "owned exact-SHA smoke execution failed", stage_kind="smoke")
+        if (
+            not isinstance(smoke_read, SmokeRead)
+            or smoke_read.observation_id != key
+        ):
+            return self._block(
+                state,
+                "owned smoke observation identity does not match its authoritative token",
+                stage_kind="smoke",
+            )
         return self.record_smoke_read(parent_identifier, smoke_read)
 
     def _watch_scope_problem(
