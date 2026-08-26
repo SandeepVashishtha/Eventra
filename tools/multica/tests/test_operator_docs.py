@@ -80,6 +80,20 @@ class OperatorDocsTests(unittest.TestCase):
         ):
             with self.subTest(fragment=fragment):
                 self.assertIn(fragment, readme)
+
+    def test_runbook_documents_independent_watcher_agent(self):
+        readme = Path("tools/multica/README.md").read_text()
+        normalized = " ".join(readme.split())
+        for fragment in (
+            "Eventra Workflow Watcher",
+            "not a member of `Eventra Local Delivery`",
+            "does not receive backend environment values",
+            "preserves the existing Autopilot and trigger IDs",
+            "Multica 0.4.34",
+        ):
+            with self.subTest(fragment=fragment):
+                self.assertIn(fragment, normalized)
+
     def test_cross_stack_qa_has_executable_dual_project_service_handoff(self):
         project_context = Path(
             "tools/multica/instructions/eventra_project.md"

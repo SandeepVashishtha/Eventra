@@ -1,4 +1,4 @@
-"""Project-neutral definitions for a five-role delivery team."""
+"""Project-neutral definitions for a delivery team and operational agents."""
 
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -25,10 +25,11 @@ class TeamBlueprint:
     squad_instructions_file: Path = field(repr=False)
     leader_role: str
     agents: tuple[AgentSpec, ...]
+    operational_agents: tuple[AgentSpec, ...]
 
 
 def build_multi_repo_blueprint(name_prefix: str) -> TeamBlueprint:
-    """Build the standard five-role team with project-neutral contracts."""
+    """Build the standard delivery team and its operational agents."""
 
     instructions = Path(__file__).with_name("instructions")
     common = ("using-superpowers",)
@@ -78,10 +79,20 @@ def build_multi_repo_blueprint(name_prefix: str) -> TeamBlueprint:
             common + ("systematic-debugging", "verification-before-completion"),
         ),
     )
+    operational_agents = (
+        AgentSpec(
+            "workflow_watcher",
+            f"{name_prefix} Workflow Watcher",
+            "Runs bounded workflow recovery without coordinating delivery or editing business code.",
+            instructions / "workflow_watcher.md",
+            common + ("systematic-debugging", "verification-before-completion"),
+        ),
+    )
     return TeamBlueprint(
         squad_name=f"{name_prefix} Local Delivery",
         squad_description="Coordinates quality-gated delivery across separate repositories.",
         squad_instructions_file=instructions / "squad.md",
         leader_role="delivery_lead",
         agents=agents,
+        operational_agents=operational_agents,
     )

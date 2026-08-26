@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useSyncExternalStore } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { getBackendBuildVersion } from "@/lib/api";
 import { 
   Home, 
   Calendar, 
@@ -64,6 +65,31 @@ function recordSessionVisit() {
   } catch {
     // Storage may be unavailable in hardened browser contexts; retain snapshot fallback.
   }
+}
+
+export function FooterBuildVersion() {
+  const [buildVersion, setBuildVersion] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+
+    getBackendBuildVersion().then((version) => {
+      if (active) setBuildVersion(version);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  return (
+    <span aria-live="polite" aria-atomic="true">
+      Backend build:{" "}
+      <span className="font-mono">
+        {buildVersion || "Unavailable"}
+      </span>
+    </span>
+  );
 }
 
 export default function Footer() {
@@ -476,12 +502,14 @@ export default function Footer() {
             © {new Date().getFullYear()} Eventra. All rights reserved.
           </div>
 
-          <div className="flex items-center space-x-3 text-zinc-600">
+          <div className="flex flex-wrap items-center justify-center gap-3 text-zinc-600">
             <span>10K+ Users</span>
             <span>•</span>
             <span>500+ Events</span>
             <span>•</span>
             <span>Privacy Focused</span>
+            <span>•</span>
+            <FooterBuildVersion />
           </div>
 
           <div className="flex items-center space-x-3 divide-x divide-zinc-200">

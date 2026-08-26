@@ -213,7 +213,9 @@ class FakeRunner:
         if command == ("agent", "create"):
             agent_id = self._id("agent")
             item = self._agent_from_flags(agent_id, flags)
-            self.agents[agent_id], self.envs[agent_id], self.bindings[agent_id] = item, copy.deepcopy(stdin_json or {}), set()
+            self.agents[agent_id], self.bindings[agent_id] = item, set()
+            if stdin_json is not None:
+                self.envs[agent_id] = copy.deepcopy(stdin_json)
             return copy.deepcopy(override if override is not None else item)
         if command == ("agent", "update"):
             agent_id = positionals[0]
@@ -659,6 +661,7 @@ class ProvisionerTests(unittest.TestCase):
     def test_apply_uses_frozen_cli_and_builds_complete_state(self):
         result = self.provisioner.reconcile(self.config, apply=True, backend_env=self.backend_env)
         self.assertEqual(set(result.agent_ids), {agent.role for agent in self.config.agents})
+        self.assertEqual(len(result.agent_ids), 6)
         rendered = "\n".join(" ".join(call["args"]) for call in self.runner.calls)
         self.assertNotIn("daemon get", rendered)
         self.assertNotIn("agent skills set", rendered)
@@ -759,6 +762,18 @@ class ProvisionerTests(unittest.TestCase):
                 result.agent_ids["independent_reviewer"]: "independent_reviewer",
             },
         )
+        self.assertNotIn(
+            result.agent_ids["workflow_watcher"],
+            self.runner.squads[result.squad_id]["members"],
+        )
+        self.assertNotIn(result.agent_ids["workflow_watcher"], self.runner.envs)
+        self.assertFalse(
+            any(
+                call["command"] in {("agent", "env", "get"), ("agent", "env", "set")}
+                and call["positionals"] == [result.agent_ids["workflow_watcher"]]
+                for call in self.runner.calls
+            )
+        )
         leader_mutations = [
             call for call in self.runner.calls
             if call["command"] in {("squad", "member", "add"), ("squad", "member", "set-role")}
@@ -778,7 +793,7 @@ class ProvisionerTests(unittest.TestCase):
         )
         self.assertEqual(watcher["execution_mode"], "run_only")
         self.assertEqual(watcher["project_id"], result.project_id)
-        self.assertEqual(watcher["assignee_id"], result.agent_ids["delivery_lead"])
+        self.assertEqual(watcher["assignee_id"], result.agent_ids["workflow_watcher"])
         self.assertEqual(watcher["description"], expected_description)
         self.assertNotIn("__FRONTEND_PROJECT_ID__", watcher["description"])
         self.assertEqual(len(watcher["triggers"]), 1)
@@ -787,6 +802,26 @@ class ProvisionerTests(unittest.TestCase):
             watcher["triggers"][0]["cron_expression"],
             "*/30 * * * *",
         )
+
+    def test_existing_watcher_migrates_in_place_to_operational_agent(self):
+        first = self.provisioner.reconcile(
+            self.config, apply=True, backend_env=self.backend_env
+        )
+        watcher = self.runner.autopilots[first.autopilot_id]
+        trigger_id = watcher["triggers"][0]["id"]
+        watcher["assignee_id"] = first.agent_ids["delivery_lead"]
+        before = self.runner.mutation_count
+
+        second = self.provisioner.reconcile(
+            self.config, apply=True, backend_env=None
+        )
+
+        self.assertEqual(second.autopilot_id, first.autopilot_id)
+        self.assertEqual(watcher["triggers"][0]["id"], trigger_id)
+        self.assertEqual(
+            watcher["assignee_id"], second.agent_ids["workflow_watcher"]
+        )
+        self.assertEqual(self.runner.mutation_count - before, 1)
 
     def test_existing_watcher_and_trigger_drift_are_updated_authoritatively(self):
         result = self.provisioner.reconcile(
@@ -1254,7 +1289,7 @@ class ProvisionerTests(unittest.TestCase):
                     del runner.skills[first_skill_id]
                 elif mutation == ("agent", "create"):
                     del runner.agents[lead_id]
-                    del runner.envs[lead_id]
+                    runner.envs.pop(lead_id, None)
                     del runner.bindings[lead_id]
                 elif mutation == ("agent", "update"):
                     runner.agents[lead_id]["description"] = "stale"
@@ -1551,6 +1586,19 @@ class ProvisionerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "environment recipients"):
             self.provisioner.reconcile(replace(self.config, agents=mutated), apply=True, backend_env=self.backend_env)
         self.assertEqual(self.runner.calls, [])
+
+    def test_local_validation_rejects_non_operational_watcher_roles_before_reads(self):
+        for role in ("missing_operator", "delivery_lead"):
+            with self.subTest(role=role):
+                runner = FakeRunner()
+                watcher = replace(self.config.watcher, agent_role=role)
+                with self.assertRaisesRegex(ValueError, "operational Agent"):
+                    Provisioner(runner).reconcile(
+                        replace(self.config, watcher=watcher),
+                        apply=True,
+                        backend_env=self.backend_env,
+                    )
+                self.assertEqual(runner.calls, [])
 
     def test_additive_binding_and_unsafe_resource_guards(self):
         agent = self.config.agents[0]

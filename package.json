@@ -7,6 +7,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
+    "test:footer-meta": "node --test scripts/test-footer-meta.mjs",
     "test:layout-hydration": "node --test scripts/test-layout-hydration.mjs",
     "dev:local": "bash scripts/run-local.sh",
     "test:local-contract": "bash scripts/test-local-contract.sh",
@@ -25,6 +26,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.1",
+    "jsdom": "^30.0.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

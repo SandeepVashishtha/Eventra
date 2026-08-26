@@ -53,6 +53,7 @@ class AutopilotSpec:
     cron: str
     timezone: str
     label: str
+    agent_role: str
 
 
 @dataclass(frozen=True)
@@ -88,13 +89,14 @@ def _eventra_agents(blueprint: TeamBlueprint) -> tuple[AgentSpec, ...]:
         "integration_qa": ("playwright-cli",),
     }
     backend_env_roles = {"backend_engineer", "integration_qa"}
+    catalog = blueprint.agents + blueprint.operational_agents
     return tuple(
         replace(
             agent,
             skill_keys=agent.skill_keys + additions.get(agent.role, ()),
             needs_backend_env=agent.role in backend_env_roles,
         )
-        for agent in blueprint.agents
+        for agent in catalog
     )
 
 
@@ -150,5 +152,6 @@ def build_eventra_config(runtime_id: str, daemon_id: str) -> ProjectConfig:
             cron="*/30 * * * *",
             timezone="Asia/Shanghai",
             label="Eventra stalled-work recovery",
+            agent_role="workflow_watcher",
         ),
     )

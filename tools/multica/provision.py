@@ -261,7 +261,7 @@ class Provisioner:
         autopilot_id = self._reconcile_autopilot(
             config,
             state.autopilot_detail,
-            agent_ids[config.blueprint.leader_role],
+            agent_ids[config.watcher.agent_role],
             project_id,
             backend_project_id,
         )
@@ -404,6 +404,18 @@ class Provisioner:
         roles = [agent.role for agent in config.agents]
         if len(roles) != len(set(roles)):
             raise ValueError("agent roles must be unique")
+        configured_roles = {agent.role for agent in config.agents}
+        delivery_roles = {agent.role for agent in config.blueprint.agents}
+        operational_roles = {
+            agent.role for agent in config.blueprint.operational_agents
+        }
+        if configured_roles != delivery_roles | operational_roles:
+            raise ValueError("configured Agent catalog does not match the blueprint")
+        if (
+            config.watcher.agent_role not in operational_roles
+            or config.watcher.agent_role in delivery_roles
+        ):
+            raise ValueError("watcher must target an operational Agent")
         recipients = {agent.role for agent in config.agents if agent.needs_backend_env}
         if recipients != ENV_RECIPIENTS:
             raise ValueError("backend environment recipients must be Backend Engineer and Integration QA")
@@ -643,13 +655,13 @@ class Provisioner:
         wanted.update(
             {
                 agent_ids[agent.role]: agent.role
-                for agent in config.agents
+                for agent in config.blueprint.agents
                 if agent.role != blueprint.leader_role
             }
         )
         non_leader_wanted = {
             agent_ids[agent.role]: agent.role
-            for agent in config.agents
+            for agent in config.blueprint.agents
             if agent.role != blueprint.leader_role
         }
         if set(by_member).difference(wanted):
@@ -759,7 +771,7 @@ class Provisioner:
         self,
         config,
         detail,
-        delivery_lead_id,
+        watcher_agent_id,
         frontend_project_id,
         backend_project_id,
     ):
@@ -774,7 +786,7 @@ class Provisioner:
             "description": description,
             "execution_mode": "run_only",
             "project_id": frontend_project_id,
-            "assignee_id": delivery_lead_id,
+            "assignee_id": watcher_agent_id,
             "assignee_type": "agent",
             "status": "active",
         }
@@ -784,7 +796,7 @@ class Provisioner:
                     "autopilot", "create",
                     "--title", wanted["title"],
                     "--description", wanted["description"],
-                    "--agent", delivery_lead_id,
+                    "--agent", watcher_agent_id,
                     "--mode", "run_only",
                     "--project", frontend_project_id,
                     "--output", "json",
@@ -798,7 +810,7 @@ class Provisioner:
                     "autopilot", "update", autopilot_id,
                     "--title", wanted["title"],
                     "--description", wanted["description"],
-                    "--agent", delivery_lead_id,
+                    "--agent", watcher_agent_id,
                     "--mode", "run_only",
                     "--project", frontend_project_id,
                     "--status", "active",
