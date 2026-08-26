@@ -200,8 +200,10 @@ class FakeWorkflowStore:
         self.fail_reads_after_create = False
         self.fail_reads_after_done = False
         self.fail_reads_after_rerun = False
-        self.fail_smoke_reads_after_write = False
-        self.smoke_read_failures_remaining = 0
+        self.write_smoke_evidence_without_transition = False
+        self.fail_parent_reads_after_smoke_write = False
+        self.fail_parent_reads_after_parent_done = False
+        self.write_incomplete_parent_done = False
         self.read_counts: dict[str, int] = {}
         self.list_arguments: tuple[object, ...] | None = None
         self.intake_transitions: dict[str, StatusTransition] = {}
@@ -582,12 +584,18 @@ class FakeWorkflowStore:
     ) -> None:
         self.events.append(("status", parent_identifier, status, reason, action_key))
         state = self.states[parent_identifier]
+        if status == "done" and self.write_incomplete_parent_done:
+            self.states[parent_identifier] = replace(state, parent_status=status)
+            return
         self.states[parent_identifier] = replace(
             state,
             parent_status=status,
             metadata=metadata,
             applied_action_keys=state.applied_action_keys | {action_key},
         )
+        if status == "done" and self.fail_parent_reads_after_parent_done:
+            self.fail_parent_reads_after_parent_done = False
+            self.parent_read_failures_remaining = 2
 
     def record_merge_state(
         self,
@@ -642,6 +650,15 @@ class FakeWorkflowStore:
     ) -> None:
         self.events.append(("write-smoke", smoke_read, action_key))
         state = self.states[parent_identifier]
+        if self.write_smoke_evidence_without_transition:
+            self.states[parent_identifier] = replace(
+                state,
+                snapshot=replace(
+                    state.snapshot,
+                    smoke_reads=state.snapshot.smoke_reads + (smoke_read,),
+                ),
+            )
+            return
         self.states[parent_identifier] = replace(
             state,
             metadata=metadata,
@@ -651,17 +668,9 @@ class FakeWorkflowStore:
             ),
             applied_action_keys=state.applied_action_keys | {action_key},
         )
-        if self.fail_smoke_reads_after_write:
-            self.fail_smoke_reads_after_write = False
-            self.smoke_read_failures_remaining = 2
-
-    def read_smoke_reads(self, parent_identifier: str) -> tuple[SmokeRead, ...]:
-        self.events.append(("read-smoke", parent_identifier))
-        if self.smoke_read_failures_remaining:
-            self.smoke_read_failures_remaining -= 1
-            raise RuntimeError("authoritative smoke read temporarily unavailable")
-        return self.states[parent_identifier].snapshot.smoke_reads
-
+        if self.fail_parent_reads_after_smoke_write:
+            self.fail_parent_reads_after_smoke_write = False
+            self.parent_read_failures_remaining = 2
     def rerun_child(
         self,
         parent_identifier: str,
@@ -1541,6 +1550,45 @@ class GenericWorkflowTests(unittest.TestCase):
         ordinals = [event[4] for event in writes]
         self.assertEqual(ordinals, sorted(set(ordinals)))
 
+    def test_remaining_preflight_failure_after_committed_prefix_is_partial_and_replay_noops(self):
+        self.store.add_state(
+            "PRO-101",
+            passing_snapshot(),
+            pull_requests=pull_request_targets(),
+        )
+        authoritative_api_sha = "1" * 40
+        self.github.merged_shas["api"] = authoritative_api_sha
+        self.store.inject_merge_progress_read_failure = True
+
+        first = self.workflow.execute_merge_plan("PRO-101")
+        self.github.heads["web"] = "f" * 40
+        second = self.workflow.execute_merge_plan("PRO-101")
+        mutation_events_after_partial = [
+            event
+            for event in self.store.events
+            if event[0] in {"merge-state", "status", "github-merge"}
+        ]
+        third = self.workflow.execute_merge_plan("PRO-101")
+
+        state = self.store.states["PRO-101"]
+        mutation_events_after_replay = [
+            event
+            for event in self.store.events
+            if event[0] in {"merge-state", "status", "github-merge"}
+        ]
+        self.assertEqual(first.next_action, "uncertain")
+        self.assertEqual(second.parent_status, "blocked")
+        self.assertEqual(second.merge_state, "partial")
+        self.assertEqual(third.next_action, "block")
+        self.assertEqual(third.merge_state, "partial")
+        self.assertEqual(state.snapshot.merge_state, "partial")
+        self.assertEqual(dict(state.snapshot.merged_shas), {"api": authoritative_api_sha})
+        self.assertEqual(
+            self.github.merged,
+            [("codeExploreHub/sample-commerce-api", 12)],
+        )
+        self.assertEqual(mutation_events_after_replay, mutation_events_after_partial)
+
     def test_all_merges_start_owned_smoke_when_executor_is_configured(self):
         self.store.add_state(
             "PRO-101",
@@ -1587,6 +1635,64 @@ class GenericWorkflowTests(unittest.TestCase):
         self.assertEqual(after_one.parent_status, "in_progress")
         self.assertEqual(after_one.next_action, "smoke")
         self.assertEqual(after_two.parent_status, "done")
+
+    def test_parent_done_write_read_failure_is_uncertain_without_stale_block(self):
+        snapshot = passing_snapshot()
+        smoke = passing_smoke()
+        snapshot = replace(
+            snapshot,
+            merge_state="merged",
+            merged_shas=snapshot.candidate_shas,
+            pull_requests={
+                repository: PullRequestEvidence(sha, "merged", True, True, sha)
+                for repository, sha in snapshot.candidate_shas.items()
+            },
+            smoke_reads=(smoke, smoke),
+        )
+        self.store.add_state("PRO-101", snapshot, pull_requests=pull_request_targets())
+        self.store.fail_parent_reads_after_parent_done = True
+        self.store.events.clear()
+
+        first = self.workflow.resume_parent("PRO-101")
+        second = self.workflow.resume_parent("PRO-101")
+
+        state = self.store.states["PRO-101"]
+        status_events = [event for event in self.store.events if event[0] == "status"]
+        self.assertEqual(first.next_action, "uncertain")
+        self.assertEqual(second.next_action, "noop")
+        self.assertEqual(state.parent_status, "done")
+        self.assertEqual([event[2] for event in status_events], ["done"])
+        self.assertIn(state.metadata.last_action, state.applied_action_keys)
+
+    def test_incomplete_parent_done_transition_stays_uncertain_without_rewrite(self):
+        snapshot = passing_snapshot()
+        smoke = passing_smoke()
+        snapshot = replace(
+            snapshot,
+            merge_state="merged",
+            merged_shas=snapshot.candidate_shas,
+            pull_requests={
+                repository: PullRequestEvidence(sha, "merged", True, True, sha)
+                for repository, sha in snapshot.candidate_shas.items()
+            },
+            smoke_reads=(smoke, smoke),
+        )
+        self.store.add_state("PRO-101", snapshot, pull_requests=pull_request_targets())
+        metadata_before = self.store.states["PRO-101"].metadata
+        self.store.write_incomplete_parent_done = True
+        self.store.events.clear()
+
+        first = self.workflow.resume_parent("PRO-101")
+        second = self.workflow.resume_parent("PRO-101")
+
+        state = self.store.states["PRO-101"]
+        status_events = [event for event in self.store.events if event[0] == "status"]
+        self.assertEqual(first.next_action, "uncertain")
+        self.assertEqual(second.next_action, "uncertain")
+        self.assertEqual(state.parent_status, "done")
+        self.assertEqual(state.metadata, metadata_before)
+        self.assertEqual(len(status_events), 1)
+        self.assertNotIn(status_events[0][4], state.applied_action_keys)
 
     def test_smoke_read_must_name_the_exact_authoritative_merged_sha_map(self):
         snapshot = passing_snapshot()
@@ -1654,7 +1760,7 @@ class GenericWorkflowTests(unittest.TestCase):
             },
         )
         self.store.add_state("PRO-101", snapshot, pull_requests=pull_request_targets())
-        self.store.fail_smoke_reads_after_write = True
+        self.store.fail_parent_reads_after_smoke_write = True
         self.store.events.clear()
 
         result = self.workflow.record_smoke_read("PRO-101", passing_smoke())
@@ -1662,6 +1768,36 @@ class GenericWorkflowTests(unittest.TestCase):
         state = self.store.states["PRO-101"]
         self.assertEqual(result.next_action, "uncertain")
         self.assertEqual(len(state.snapshot.smoke_reads), 1)
+        self.assertFalse(any(event[0] == "status" for event in self.store.events))
+
+    def test_smoke_evidence_without_its_parent_transition_is_uncertain_and_not_replayed(self):
+        snapshot = passing_snapshot()
+        snapshot = replace(
+            snapshot,
+            merge_state="merged",
+            merged_shas=snapshot.candidate_shas,
+            pull_requests={
+                repository: PullRequestEvidence(sha, "merged", True, True, sha)
+                for repository, sha in snapshot.candidate_shas.items()
+            },
+        )
+        self.store.add_state("PRO-101", snapshot, pull_requests=pull_request_targets())
+        metadata_before = self.store.states["PRO-101"].metadata
+        self.store.write_smoke_evidence_without_transition = True
+        self.store.events.clear()
+
+        first = self.workflow.record_smoke_read("PRO-101", passing_smoke())
+        second = self.workflow.record_smoke_read("PRO-101", passing_smoke())
+
+        state = self.store.states["PRO-101"]
+        self.assertEqual(first.next_action, "uncertain")
+        self.assertEqual(second.next_action, "uncertain")
+        self.assertEqual(state.snapshot.smoke_reads, (passing_smoke(),))
+        self.assertEqual(state.metadata, metadata_before)
+        self.assertEqual(
+            len([event for event in self.store.events if event[0] == "write-smoke"]),
+            1,
+        )
         self.assertFalse(any(event[0] == "status" for event in self.store.events))
 
     def test_smoke_execution_receives_exact_merged_sha_map(self):
