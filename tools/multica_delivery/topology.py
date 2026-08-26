@@ -24,14 +24,35 @@ def _validate_satisfied_edges(
     selected: frozenset[str],
     satisfied_dependencies: frozenset[tuple[str, str]],
 ) -> None:
-    for edge in sorted(satisfied_dependencies):
+    for edge in satisfied_dependencies:
         if not isinstance(edge, tuple) or len(edge) != 2:
             raise TopologyError("satisfied dependency edges must be (dependent, dependency) pairs")
         dependent, dependency = edge
+        if not isinstance(dependent, str) or not isinstance(dependency, str):
+            raise TopologyError("satisfied dependency edges must be (dependent, dependency) pairs")
         if dependent not in selected or dependency not in selected:
             raise TopologyError(f"satisfied dependency edge {dependent!r}, {dependency!r} is not selected")
         if dependency not in repositories[dependent].depends_on:
             raise TopologyError(f"{dependent} does not depend on {dependency}")
+
+
+def _declared_topological_order(
+    repositories: Mapping[str, RepositorySpec], selected: frozenset[str]
+) -> tuple[str, ...]:
+    """Order every declared edge, including frozen-contract edges, for safety."""
+    pending = {key: set(repositories[key].depends_on) for key in selected}
+    order: list[str] = []
+    while pending:
+        wave = tuple(sorted(key for key, dependencies in pending.items() if not dependencies))
+        if not wave:
+            raise TopologyError("repository dependency cycle among: " + ", ".join(sorted(pending)))
+        order.extend(wave)
+        resolved = set(wave)
+        for key in wave:
+            del pending[key]
+        for dependencies in pending.values():
+            dependencies.difference_update(resolved)
+    return tuple(order)
 
 
 def topological_waves(
@@ -46,28 +67,20 @@ def topological_waves(
     """
     _validate_selected(repositories, selected)
     _validate_satisfied_edges(repositories, selected, satisfied_dependencies)
-    pending = {
-        key: {
-            dependency
-            for dependency in repositories[key].depends_on
-            if (key, dependency) not in satisfied_dependencies
-        }
-        for key in selected
-    }
-    waves: list[tuple[str, ...]] = []
-    while pending:
-        wave = tuple(sorted(key for key, dependencies in pending.items() if not dependencies))
-        if not wave:
-            raise TopologyError(
-                "repository dependency cycle among: " + ", ".join(sorted(pending))
-            )
-        waves.append(wave)
-        resolved = set(wave)
-        for key in wave:
-            del pending[key]
-        for dependencies in pending.values():
-            dependencies.difference_update(resolved)
-    return tuple(waves)
+    order = _declared_topological_order(repositories, selected)
+    levels: dict[str, int] = {}
+    for key in order:
+        levels[key] = max(
+            (
+                levels[dependency] + (0 if (key, dependency) in satisfied_dependencies else 1)
+                for dependency in repositories[key].depends_on
+            ),
+            default=0,
+        )
+    return tuple(
+        tuple(sorted(key for key in selected if levels[key] == level))
+        for level in range(max(levels.values(), default=-1) + 1)
+    )
 
 
 def merge_order(

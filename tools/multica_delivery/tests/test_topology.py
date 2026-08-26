@@ -45,6 +45,21 @@ class TopologyTests(unittest.TestCase):
         )
         self.assertEqual(waves, (("api", "web"),))
 
+    def test_frozen_contract_never_allows_a_dependent_before_its_producer(self):
+        repositories = {
+            "db": repository("db"),
+            "api": repository("api", ("db",)),
+            "web": repository("web", ("api",)),
+        }
+        self.assertEqual(
+            topological_waves(
+                repositories,
+                frozenset(repositories),
+                satisfied_dependencies=frozenset({("web", "api")}),
+            ),
+            (("db",), ("api", "web")),
+        )
+
     def test_unknown_selected_repository_is_rejected(self):
         with self.assertRaisesRegex(TopologyError, "unknown selected repositories: missing"):
             topological_waves(self.repositories, frozenset({"missing"}))
@@ -63,6 +78,14 @@ class TopologyTests(unittest.TestCase):
                 self.repositories,
                 frozenset({"api", "web"}),
                 satisfied_dependencies=frozenset({"not-an-edge"}),  # type: ignore[arg-type]
+            )
+
+    def test_mixed_malformed_satisfied_edges_never_leak_a_type_error(self):
+        with self.assertRaisesRegex(TopologyError, "satisfied dependency edges"):
+            topological_waves(
+                self.repositories,
+                frozenset({"api", "web"}),
+                satisfied_dependencies=frozenset({("web", "api"), "not-an-edge"}),  # type: ignore[arg-type]
             )
 
     def test_merge_order_is_deterministic(self):

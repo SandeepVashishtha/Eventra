@@ -9,6 +9,11 @@ from typing import Any, Mapping, TypeVar
 
 _SHA = re.compile(r"[0-9a-f]{40}")
 _KEY = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/-]*")
+_ACTION_KEY = re.compile(r"(?:dispatch|stage|review|qa|merge|repair|smoke|resume|recovery):[A-Za-z0-9][A-Za-z0-9._/-]*")
+_MERGE_STATES = frozenset({"pending", "not_ready", "ready", "merged", "partial", "blocked"})
+_PHASE_KINDS = frozenset({"implementation", "review", "qa", "integration_qa", "merge", "smoke", "repair"})
+_PHASE_RESULTS = frozenset({"pending", "pass", "fail", "blocked"})
+_RECOVERY_ACTIONS = frozenset({"noop", "rerun", "resume_parent", "block"})
 
 
 class MetadataError(ValueError):
@@ -52,19 +57,57 @@ def _keys(values: tuple[str, ...], field_name: str) -> tuple[str, ...]:
     return result
 
 
+def _enum(value: str, field_name: str, allowed: frozenset[str]) -> str:
+    if value not in allowed:
+        raise MetadataError(f"{field_name} must be one of: {', '.join(sorted(allowed))}")
+    return value
+
+
+def _frozen_dag(
+    value: Mapping[str, tuple[str, ...]] | None, affected_repositories: tuple[str, ...]
+) -> Mapping[str, tuple[str, ...]]:
+    if value is None:
+        value = {key: () for key in affected_repositories}
+    if not isinstance(value, Mapping):
+        raise MetadataError("repository_dag must be an object")
+    if set(value) != set(affected_repositories):
+        raise MetadataError("repository_dag keys must exactly match affected_repositories")
+    dag: dict[str, tuple[str, ...]] = {}
+    for repository in affected_repositories:
+        dependencies = value[repository]
+        if not isinstance(dependencies, tuple):
+            raise MetadataError(f"repository_dag.{repository} must be a tuple")
+        normalized = _keys(dependencies, f"repository_dag.{repository}")
+        unknown = set(normalized) - set(affected_repositories)
+        if unknown:
+            raise MetadataError(f"repository_dag.{repository} has non-affected dependencies")
+        dag[repository] = tuple(sorted(normalized))
+    pending = {repository: set(dependencies) for repository, dependencies in dag.items()}
+    while pending:
+        resolved = {repository for repository, dependencies in pending.items() if not dependencies}
+        if not resolved:
+            raise MetadataError("repository_dag contains a cycle")
+        for repository in resolved:
+            del pending[repository]
+        for dependencies in pending.values():
+            dependencies.difference_update(resolved)
+    return MappingProxyType(dict(sorted(dag.items())))
+
+
 @dataclass(frozen=True)
 class ParentMetadata:
     workflow_version: int = 1
     metadata_version: int = 1
     instance_key: str = "default"
     affected_repositories: tuple[str, ...] = ()
+    repository_dag: Mapping[str, tuple[str, ...]] | None = None
     candidate_shas: Mapping[str, str] = field(default_factory=dict)
     contract_hashes: Mapping[str, str] = field(default_factory=dict)
     stage_ordinal: int = 0
     merge_plan: tuple[str, ...] = ()
     merge_state: str = "pending"
     attempt: int = 0
-    last_action: str = "initial"
+    last_action: str = "stage:initial"
 
     def __post_init__(self) -> None:
         for name in ("workflow_version", "metadata_version", "stage_ordinal", "attempt"):
@@ -75,11 +118,22 @@ class ParentMetadata:
             raise MetadataError("workflow_version and metadata_version must be positive integers")
         object.__setattr__(self, "instance_key", _key(self.instance_key, "instance_key"))
         object.__setattr__(self, "affected_repositories", _keys(self.affected_repositories, "affected_repositories"))
+        object.__setattr__(self, "repository_dag", _frozen_dag(self.repository_dag, self.affected_repositories))
         object.__setattr__(self, "candidate_shas", _frozen_mapping(self.candidate_shas, "candidate_shas", sha_values=True))
         object.__setattr__(self, "contract_hashes", _frozen_mapping(self.contract_hashes, "contract_hashes", sha_values=True))
         object.__setattr__(self, "merge_plan", _keys(self.merge_plan, "merge_plan"))
-        object.__setattr__(self, "merge_state", _key(self.merge_state, "merge_state", empty=True))
-        object.__setattr__(self, "last_action", _key(self.last_action, "last_action", empty=True))
+        affected = set(self.affected_repositories)
+        if set(self.candidate_shas) - affected:
+            raise MetadataError("candidate_shas must only contain affected repositories")
+        if set(self.merge_plan) - affected:
+            raise MetadataError("merge_plan must only contain affected repositories")
+        if self.merge_plan and set(self.candidate_shas) != affected:
+            raise MetadataError("candidate_shas must cover every affected repository when merge_plan is present")
+        if self.attempt > 2:
+            raise MetadataError("attempt must be between 0 and 2")
+        object.__setattr__(self, "merge_state", _enum(self.merge_state, "merge_state", _MERGE_STATES))
+        if not isinstance(self.last_action, str) or not _ACTION_KEY.fullmatch(self.last_action):
+            raise MetadataError("last_action must be a structured stable action key")
 
 
 @dataclass(frozen=True)
@@ -97,10 +151,14 @@ class ChildMetadata(ParentMetadata):
 @dataclass(frozen=True)
 class PhaseMetadata(ParentMetadata):
     phase_key: str = ""
+    phase_kind: str = "implementation"
+    phase_result: str = "pending"
 
     def __post_init__(self) -> None:
         super().__post_init__()
         object.__setattr__(self, "phase_key", _key(self.phase_key, "phase_key", empty=True))
+        object.__setattr__(self, "phase_kind", _enum(self.phase_kind, "phase_kind", _PHASE_KINDS))
+        object.__setattr__(self, "phase_result", _enum(self.phase_result, "phase_result", _PHASE_RESULTS))
 
 
 @dataclass(frozen=True)
@@ -117,11 +175,11 @@ class PullRequestMetadata(ChildMetadata):
 
 @dataclass(frozen=True)
 class RecoveryMetadata(ParentMetadata):
-    recovery_action: str = ""
+    recovery_action: str = "noop"
 
     def __post_init__(self) -> None:
         super().__post_init__()
-        object.__setattr__(self, "recovery_action", _key(self.recovery_action, "recovery_action", empty=True))
+        object.__setattr__(self, "recovery_action", _enum(self.recovery_action, "recovery_action", _RECOVERY_ACTIONS))
 
 
 _T = TypeVar("_T", bound=ParentMetadata)
@@ -160,6 +218,12 @@ def _decode(text: str, metadata_type: type[_T]) -> _T:
             if not isinstance(converted[field_name], list):
                 raise MetadataError(f"{field_name} must be a JSON array")
             converted[field_name] = tuple(converted[field_name])
+        if not isinstance(converted["repository_dag"], dict):
+            raise MetadataError("repository_dag must be a JSON object")
+        converted["repository_dag"] = {
+            repository: tuple(dependencies) if isinstance(dependencies, list) else dependencies
+            for repository, dependencies in converted["repository_dag"].items()
+        }
         return metadata_type(**converted)
     except (TypeError, MetadataError) as error:
         if isinstance(error, MetadataError):
