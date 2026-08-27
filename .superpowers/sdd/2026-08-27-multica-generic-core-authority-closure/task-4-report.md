@@ -193,3 +193,145 @@ nonexistent generic CLI invocation.
   focused failures; removing a prefix or either suffix form breaks its literal
   valid-ID subcase; permitting extra tokens breaks the zero-call assertion.
 - Open concerns: none.
+
+## Fix Round 1/5 — bind tests to the production prefix authority
+
+Starting HEAD: `04a639716fcc853bdd655b0aae2277e90d6529d9`
+
+The scoped review approved the production grammar and operator documentation
+but identified two Important test-authority gaps: the behavior loop used a
+disconnected literal prefix tuple, and the accepted-ID cases did not protect
+the minimum/maximum lengths or the complete punctuation alphabet.
+
+### Test changes
+
+The test module now imports `_PUBLIC_READ_ONE_ID` and compares it to the stable
+literal `_EXPECTED_PUBLIC_READ_ONE_ID` set before behavior cases. This makes
+both accidental surface expansion and accidental prefix removal fail while
+retaining an independently reviewed expected public surface. The behavior
+matrix iterates the production set itself, so every current production prefix
+and both supported suffix forms execute every grammar case.
+
+Committed valid IDs cover:
+
+- the one-character minimum: `A`;
+- the existing UUID example;
+- every allowed punctuation character in a non-leading position: `A._:-0`;
+- the exact 256-character maximum: `"A" + "a" * 255`.
+
+Committed invalid IDs cover empty and option-like values; each leading
+punctuation character `.`, `_`, `:`, and `-`; space, tab, newline, carriage
+return, vertical tab, form feed, NUL, unit-separator, and DEL controls; slash,
+Unicode, unsupported `?`, and the 257-character overlength boundary. Every
+invalid case asserts `MulticaContractError` and zero runner calls for every
+production prefix and both suffix forms. The per-prefix extra-token smuggling
+case retains the same zero-runner assertion.
+
+### Controlled mutation RED evidence
+
+Because approved production already implements the required behavior, each
+new test authority was proven through a temporary production mutation and the
+production file was restored after every run.
+
+Prefix addition mutation — adding `("daemon", "get")` only to production:
+
+```text
+.venv/bin/python -B -m unittest \
+  tools.multica_delivery.tests.test_multica_client.MulticaClientTests.test_public_one_id_prefixes_match_the_closed_production_surface -v
+FAILED (failures=1)
+Items in the first set but not the second: ('daemon', 'get')
+```
+
+Prefix removal mutation — removing `("issue", "runs")` only from production:
+
+```text
+.venv/bin/python -B -m unittest \
+  tools.multica_delivery.tests.test_multica_client.MulticaClientTests.test_public_one_id_prefixes_match_the_closed_production_surface -v
+FAILED (failures=1)
+Items in the second set but not the first: ('issue', 'runs')
+```
+
+Maximum off-by-one mutation — narrowing `{0,255}` to `{0,254}`:
+
+```text
+.venv/bin/python -B -m unittest \
+  tools.multica_delivery.tests.test_multica_client.MulticaClientTests.test_public_one_id_reads_enforce_the_closed_identifier_grammar -q
+Ran 1 test in 0.008s
+FAILED (errors=26)
+```
+
+Minimum off-by-one mutation — narrowing `{0,255}` to `{1,255}`:
+
+```text
+.venv/bin/python -B -m unittest \
+  tools.multica_delivery.tests.test_multica_client.MulticaClientTests.test_public_one_id_reads_enforce_the_closed_identifier_grammar -q
+Ran 1 test in 0.008s
+FAILED (errors=26)
+```
+
+Punctuation narrowing mutation — removing `:` from the continuation class:
+
+```text
+.venv/bin/python -B -m unittest \
+  tools.multica_delivery.tests.test_multica_client.MulticaClientTests.test_public_one_id_reads_enforce_the_closed_identifier_grammar -q
+Ran 1 test in 0.007s
+FAILED (errors=26)
+```
+
+Each grammar mutation failed once for every 13-prefix × 2-suffix combination
+at the intended valid boundary value. No mutation was retained.
+
+### Restored GREEN evidence
+
+After restoring the approved prefix set and exact grammar:
+
+```text
+.venv/bin/python -B -m unittest -v \
+  tools.multica_delivery.tests.test_multica_client.MulticaClientTests.test_public_one_id_prefixes_match_the_closed_production_surface \
+  tools.multica_delivery.tests.test_multica_client.MulticaClientTests.test_public_one_id_reads_enforce_the_closed_identifier_grammar
+Ran 2 tests in 0.005s
+OK
+
+.venv/bin/python -B -m unittest tools.multica_delivery.tests.test_multica_client -q
+Ran 29 tests in 0.006s
+OK
+```
+
+Final scoped diff inspection showed no change to
+`tools/multica_delivery/multica_client.py` or
+`docs/multica-delivery-core.md`. Fix Round 1 changes only the authority-bound
+test matrix and this report. Open concerns: none.
+
+### Fix Round 1 final verification
+
+```text
+.venv/bin/python -B -m unittest \
+  tools.multica_delivery.tests.test_multica_client \
+  tools.multica_delivery.tests.test_documentation -q
+Ran 41 tests in 0.008s
+OK
+
+.venv/bin/python -B -m unittest discover \
+  -s tools/multica_delivery/tests -p 'test_*.py' -q
+Ran 342 tests in 0.753s
+OK
+
+.venv/bin/python -B -m unittest discover \
+  -s tools/multica/tests -p 'test_*.py' -q
+Ran 174 tests in 0.163s
+OK
+
+.venv/bin/python -B -m unittest discover -s tools -p 'test_*.py' -q
+Ran 516 tests in 0.937s
+OK
+
+PYTHONPYCACHEPREFIX=/private/tmp/multica-authority-task4-fix1-pycache \
+  .venv/bin/python -B -m compileall -q tools/multica tools/multica_delivery
+exit 0, no output
+
+git diff --check
+exit 0, no output
+
+.venv/bin/python -c 'import yaml; assert yaml.__version__ == "6.0.2"; print(yaml.__version__)'
+6.0.2
+```

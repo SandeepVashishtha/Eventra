@@ -18,6 +18,26 @@ from tools.multica_delivery.multica_client import (
     SquadState,
     TransientCommandError,
     TriggerState,
+    _PUBLIC_READ_ONE_ID,
+)
+
+
+_EXPECTED_PUBLIC_READ_ONE_ID = frozenset(
+    {
+        ("project", "get"),
+        ("project", "resource", "list"),
+        ("agent", "get"),
+        ("agent", "skills", "list"),
+        ("skill", "get"),
+        ("squad", "get"),
+        ("squad", "member", "list"),
+        ("autopilot", "get"),
+        ("issue", "get"),
+        ("issue", "children"),
+        ("issue", "runs"),
+        ("issue", "metadata", "list"),
+        ("capability", "get"),
+    }
 )
 
 
@@ -35,47 +55,57 @@ class FakeRunner:
 
 
 class MulticaClientTests(unittest.TestCase):
+    def test_public_one_id_prefixes_match_the_closed_production_surface(self):
+        self.assertEqual(_PUBLIC_READ_ONE_ID, _EXPECTED_PUBLIC_READ_ONE_ID)
+
     def test_public_one_id_reads_enforce_the_closed_identifier_grammar(self):
-        prefixes = (
-            ("project", "get"),
-            ("project", "resource", "list"),
-            ("agent", "get"),
-            ("agent", "skills", "list"),
-            ("skill", "get"),
-            ("squad", "get"),
-            ("squad", "member", "list"),
-            ("autopilot", "get"),
-            ("issue", "get"),
-            ("issue", "children"),
-            ("issue", "runs"),
-            ("issue", "metadata", "list"),
-            ("capability", "get"),
-        )
+        prefixes = tuple(sorted(_PUBLIC_READ_ONE_ID))
         suffixes = ((), ("--output", "json"))
-        valid_id = "123e4567-e89b-12d3-a456-426614174000"
+        valid_ids = (
+            "A",
+            "123e4567-e89b-12d3-a456-426614174000",
+            "A._:-0",
+            "A" + "a" * 255,
+        )
         invalid_ids = (
             "",
             "--all",
             "--help",
             "-x",
-            "has space",
-            "owner/name",
-            "a" * 257,
             ".leading",
+            "_leading",
+            ":leading",
+            "-leading",
+            "has space",
+            "has\ttab",
+            "has\nnewline",
+            "has\rcarriage-return",
+            "has\vvertical-tab",
+            "has\fform-feed",
+            "has\x00nul",
+            "has\x1fcontrol",
+            "has\x7fdelete",
+            "owner/name",
             "unicode-é",
             "invalid?character",
+            "a" * 257,
         )
 
         for prefix in prefixes:
             for suffix in suffixes:
-                with self.subTest(prefix=prefix, suffix=suffix, valid=True):
-                    runner = FakeRunner({"data": {"id": valid_id}})
-                    result = MulticaClient(runner).call(
-                        ("multica",) + prefix + (valid_id,) + suffix
-                    )
+                for valid_id in valid_ids:
+                    with self.subTest(
+                        prefix=prefix,
+                        suffix=suffix,
+                        valid_id=valid_id,
+                    ):
+                        runner = FakeRunner({"data": {"id": valid_id}})
+                        result = MulticaClient(runner).call(
+                            ("multica",) + prefix + (valid_id,) + suffix
+                        )
 
-                    self.assertEqual(result["id"], valid_id)
-                    self.assertEqual(len(runner.calls), 1)
+                        self.assertEqual(result["id"], valid_id)
+                        self.assertEqual(len(runner.calls), 1)
 
                 for invalid_id in invalid_ids:
                     with self.subTest(
@@ -93,6 +123,7 @@ class MulticaClientTests(unittest.TestCase):
                         self.assertEqual(runner.calls, [])
 
             with self.subTest(prefix=prefix, extra_token=True):
+                valid_id = "123e4567-e89b-12d3-a456-426614174000"
                 runner = FakeRunner({"data": {"id": "unexpected"}})
 
                 with self.assertRaises(MulticaContractError):
