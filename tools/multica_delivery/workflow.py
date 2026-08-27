@@ -229,6 +229,24 @@ class WorkflowResult:
 
 
 @dataclass(frozen=True)
+class _MergePrefixObservation:
+    merged_shas: Mapping[str, str]
+    remaining: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "merged_shas",
+            MappingProxyType(dict(sorted(dict(self.merged_shas).items()))),
+        )
+        object.__setattr__(self, "remaining", tuple(self.remaining))
+
+
+class _MergePrefixObservationError(WorkflowError):
+    """An authoritative ordered pull-request scan could not be trusted."""
+
+
+@dataclass(frozen=True)
 class ScopeResolution:
     """Read-only issue analysis supplied to the generic intake boundary."""
 
@@ -1971,6 +1989,68 @@ class GenericWorkflow:
                 problems.append(f"{repository} merge preflight failed")
         return "; ".join(problems) or None
 
+    def _read_merge_prefix(
+        self,
+        state: WorkflowState,
+        order: tuple[str, ...],
+    ) -> _MergePrefixObservation:
+        if self.github is None:
+            raise _MergePrefixObservationError(
+                "authoritative merge-prefix read is unavailable"
+            )
+        if (
+            set(state.pull_requests) != set(state.snapshot.affected_repositories)
+            or not set(order) <= state.pull_requests.keys()
+        ):
+            raise _MergePrefixObservationError(
+                "authoritative merge-prefix targets are incomplete"
+            )
+
+        merged_shas: dict[str, str] = {}
+        remaining: list[str] = []
+        saw_unmerged = False
+        problems: list[str] = []
+        for repository in order:
+            target = state.pull_requests[repository]
+            repository_spec = self.manifest.repositories[repository]
+            try:
+                pull_request = self.github.get_pull_request(
+                    repository_spec.github,
+                    target.number,
+                )
+            except Exception:
+                problems.append(f"{repository} pull request could not be read")
+                continue
+            if not isinstance(pull_request, PullRequestInfo):
+                problems.append(f"{repository} pull request read is malformed")
+                continue
+            if (
+                pull_request.repository != repository_spec.github
+                or pull_request.number != target.number
+                or pull_request.head_sha
+                != state.snapshot.candidate_shas.get(repository)
+            ):
+                problems.append(f"{repository} pull request identity changed")
+                continue
+            if pull_request.state == "merged":
+                if (
+                    pull_request.merged_at is None
+                    or not _valid_sha(pull_request.merge_commit_sha)
+                ):
+                    problems.append(f"{repository} merged identity is malformed")
+                    continue
+                if saw_unmerged:
+                    problems.append("remote merge prefix is non-contiguous")
+                    continue
+                assert pull_request.merge_commit_sha is not None
+                merged_shas[repository] = pull_request.merge_commit_sha
+            else:
+                saw_unmerged = True
+                remaining.append(repository)
+        if problems:
+            raise _MergePrefixObservationError("; ".join(problems))
+        return _MergePrefixObservation(merged_shas, tuple(remaining))
+
     def _record_merge_transition(
         self,
         state: WorkflowState,
@@ -2130,13 +2210,14 @@ class GenericWorkflow:
             return self._block(state, "merge order is not dependency-safe", stage_kind="merge")
 
         merged = dict(state.snapshot.merged_shas)
+        if state.snapshot.merge_state == "merged" and set(merged) == affected:
+            return self.resume_parent(parent_identifier)
+
         merged_prs = {
             repository
             for repository, evidence in state.snapshot.pull_requests.items()
             if evidence.state == "merged"
         }
-        if state.snapshot.merge_state == "merged" and set(merged) == affected:
-            return self.resume_parent(parent_identifier)
 
         if state.snapshot.merge_state == "partial":
             prefix = order[: len(merged)]
@@ -2192,6 +2273,46 @@ class GenericWorkflow:
 
         resuming = state.snapshot.merge_state == "merging"
         if resuming:
+            try:
+                observed_prefix = self._read_merge_prefix(state, order)
+            except _MergePrefixObservationError as exc:
+                return self._uncertain(state, str(exc))
+            persisted_prefix = order[: len(merged)]
+            observed_count = len(observed_prefix.merged_shas)
+            persisted_matches_observation = (
+                len(merged) <= observed_count
+                and set(merged) == set(persisted_prefix)
+                and all(
+                    _valid_sha(merged[repository])
+                    and observed_prefix.merged_shas.get(repository)
+                    == merged[repository]
+                    for repository in persisted_prefix
+                )
+            )
+            if not persisted_matches_observation:
+                return self._uncertain(
+                    state,
+                    "persisted merge prefix does not match authoritative remote truth",
+                )
+            if observed_count > len(merged):
+                recovered_repository = order[observed_count - 1]
+                recovered, uncertain = self._record_merge_transition(
+                    state,
+                    merge_state="merging",
+                    merged_shas=observed_prefix.merged_shas,
+                    merge_plan=order,
+                    stage_kind=f"merge:recover:{recovered_repository}",
+                )
+                if uncertain is not None:
+                    return uncertain
+                assert recovered is not None
+                state = recovered
+                merged = dict(state.snapshot.merged_shas)
+                merged_prs = {
+                    repository
+                    for repository, evidence in state.snapshot.pull_requests.items()
+                    if evidence.state == "merged"
+                }
             prefix = order[: len(merged)]
             assert state.metadata is not None
             replay_problem = (
@@ -2214,7 +2335,7 @@ class GenericWorkflow:
                     merged_shas=merged,
                     merge_plan=order,
                 )
-            remaining = order[len(prefix) :]
+            remaining = observed_prefix.remaining
         else:
             observed_merged = set(merged) | merged_prs
             if observed_merged:

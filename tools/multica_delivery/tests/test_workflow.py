@@ -147,6 +147,28 @@ def passing_snapshot() -> ParentSnapshot:
     )
 
 
+def merging_snapshot(
+    merged_shas: dict[str, str] | None = None,
+) -> ParentSnapshot:
+    snapshot = passing_snapshot()
+    merged = dict(merged_shas or {})
+    return replace(
+        snapshot,
+        merge_state="merging",
+        merged_shas=merged,
+        pull_requests={
+            repository: PullRequestEvidence(
+                sha,
+                "merged" if repository in merged else "open",
+                True,
+                True,
+                merged.get(repository),
+            )
+            for repository, sha in snapshot.candidate_shas.items()
+        },
+    )
+
+
 def metadata_for(snapshot: ParentSnapshot, *, stage_ordinal: int = 5) -> ParentMetadata:
     affected = snapshot.affected_repositories
     merge_plan = (
@@ -736,6 +758,10 @@ class FakeGitHub:
         self.malformed_ack_on: str | None = None
         self.ack_without_commit_on: str | None = None
         self.fail_merged_reread_on: str | None = None
+        self.fail_merged_rereads_remaining: dict[str, int] = {}
+        self.read_failures_remaining: dict[str, int] = {}
+        self.malformed_read_on: str | None = None
+        self.missing_merge_sha_on: str | None = None
         self.committed: set[str] = set()
         self.event_log = event_log
 
@@ -748,8 +774,16 @@ class FakeGitHub:
         event = ("github-read-pr", key, number)
         if self.event_log is not None:
             self.event_log.append(event)
+        if self.read_failures_remaining.get(key, 0):
+            self.read_failures_remaining[key] -= 1
+            raise GitHubBoundaryError("authoritative pull request read unavailable")
+        if self.malformed_read_on == key:
+            return object()  # type: ignore[return-value]
         if self.fail_merged_reread_on == key and key in self.committed:
             raise GitHubBoundaryError("authoritative merged reread unavailable")
+        if key in self.committed and self.fail_merged_rereads_remaining.get(key, 0):
+            self.fail_merged_rereads_remaining[key] -= 1
+            raise GitHubBoundaryError("authoritative merged reread temporarily unavailable")
         return PullRequestInfo(
             repository,
             number,
@@ -758,7 +792,13 @@ class FakeGitHub:
             "main",
             self.mergeable[key],
             "2026-08-27T10:00:00Z" if key in self.committed else None,
-            self.merged_shas[key] if key in self.committed else None,
+            (
+                None
+                if key == self.missing_merge_sha_on
+                else self.merged_shas[key]
+            )
+            if key in self.committed
+            else None,
         )
 
     def required_status_checks(
@@ -1647,6 +1687,142 @@ class GenericWorkflowTests(unittest.TestCase):
         )
         self.assertFalse(any(event[0] == "status" for event in self.store.events))
 
+    def test_retry_recovers_commit_after_immediate_authoritative_read_is_unavailable(self):
+        self.store.add_state(
+            "PRO-101", passing_snapshot(), pull_requests=pull_request_targets()
+        )
+        api_merge_sha = "1" * 40
+        web_merge_sha = "2" * 40
+        self.github.merged_shas = {
+            "api": api_merge_sha,
+            "web": web_merge_sha,
+        }
+        self.github.fail_merged_rereads_remaining["api"] = 1
+
+        first = self.workflow.execute_merge_plan("PRO-101")
+        second = self.workflow.execute_merge_plan("PRO-101")
+
+        self.assertEqual(first.next_action, "uncertain")
+        self.assertEqual(second.merge_state, "merged")
+        self.assertEqual(
+            self.github.merged.count(("codeExploreHub/sample-commerce-api", 12)),
+            1,
+        )
+        self.assertEqual(
+            dict(self.store.states["PRO-101"].snapshot.merged_shas),
+            {"api": api_merge_sha, "web": web_merge_sha},
+        )
+
+    def test_resumed_merge_unavailable_prefix_read_is_uncertain_without_mutation(self):
+        self.store.add_state(
+            "PRO-101", merging_snapshot(), pull_requests=pull_request_targets()
+        )
+        self.github.read_failures_remaining["api"] = 1
+
+        result = self.workflow.execute_merge_plan("PRO-101")
+
+        self.assertEqual(result.next_action, "uncertain")
+        self.assertEqual(
+            dict(self.store.states["PRO-101"].snapshot.merged_shas),
+            {},
+        )
+        self.assertEqual(self.github.merged, [])
+        self.assertFalse(
+            any(
+                event[0] in {"merge-state", "status", "github-merge"}
+                for event in self.store.events
+            )
+        )
+
+    def test_resumed_merge_malformed_prefix_read_is_uncertain_without_mutation(self):
+        self.store.add_state(
+            "PRO-101", merging_snapshot(), pull_requests=pull_request_targets()
+        )
+        self.github.malformed_read_on = "api"
+
+        result = self.workflow.execute_merge_plan("PRO-101")
+
+        self.assertEqual(result.next_action, "uncertain")
+        self.assertEqual(self.github.merged, [])
+        self.assertFalse(any(event[0] == "merge-state" for event in self.store.events))
+
+    def test_resumed_merge_wrong_candidate_head_is_uncertain_without_mutation(self):
+        self.store.add_state(
+            "PRO-101", merging_snapshot(), pull_requests=pull_request_targets()
+        )
+        self.github.heads["api"] = "f" * 40
+
+        result = self.workflow.execute_merge_plan("PRO-101")
+
+        self.assertEqual(result.next_action, "uncertain")
+        self.assertEqual(self.github.merged, [])
+        self.assertFalse(any(event[0] == "merge-state" for event in self.store.events))
+
+    def test_resumed_merge_missing_remote_merge_sha_is_uncertain_without_mutation(self):
+        self.store.add_state(
+            "PRO-101", merging_snapshot(), pull_requests=pull_request_targets()
+        )
+        self.github.committed.add("api")
+        self.github.missing_merge_sha_on = "api"
+
+        result = self.workflow.execute_merge_plan("PRO-101")
+
+        self.assertEqual(result.next_action, "uncertain")
+        self.assertEqual(self.github.merged, [])
+        self.assertFalse(any(event[0] == "merge-state" for event in self.store.events))
+
+    def test_resumed_merge_persisted_prefix_longer_than_remote_is_uncertain(self):
+        api_merge_sha = "1" * 40
+        self.store.add_state(
+            "PRO-101",
+            merging_snapshot({"api": api_merge_sha}),
+            pull_requests=pull_request_targets(),
+        )
+        self.github.merged_shas["api"] = api_merge_sha
+
+        result = self.workflow.execute_merge_plan("PRO-101")
+
+        self.assertEqual(result.next_action, "uncertain")
+        self.assertEqual(
+            dict(self.store.states["PRO-101"].snapshot.merged_shas),
+            {"api": api_merge_sha},
+        )
+        self.assertEqual(self.github.merged, [])
+        self.assertFalse(any(event[0] == "merge-state" for event in self.store.events))
+
+    def test_resumed_merge_non_contiguous_remote_prefix_is_uncertain(self):
+        self.store.add_state(
+            "PRO-101", merging_snapshot(), pull_requests=pull_request_targets()
+        )
+        self.github.committed.add("web")
+
+        result = self.workflow.execute_merge_plan("PRO-101")
+
+        self.assertEqual(result.next_action, "uncertain")
+        self.assertEqual(self.github.merged, [])
+        self.assertFalse(any(event[0] == "merge-state" for event in self.store.events))
+
+    def test_resumed_merge_recovers_complete_remote_prefix_without_duplicate_merge(self):
+        api_merge_sha = "1" * 40
+        web_merge_sha = "2" * 40
+        self.store.add_state(
+            "PRO-101", merging_snapshot(), pull_requests=pull_request_targets()
+        )
+        self.github.merged_shas = {
+            "api": api_merge_sha,
+            "web": web_merge_sha,
+        }
+        self.github.committed.update({"api", "web"})
+
+        result = self.workflow.execute_merge_plan("PRO-101")
+
+        self.assertEqual(result.merge_state, "merged")
+        self.assertEqual(self.github.merged, [])
+        self.assertEqual(
+            dict(self.store.states["PRO-101"].snapshot.merged_shas),
+            {"api": api_merge_sha, "web": web_merge_sha},
+        )
+
     def test_all_merges_record_exact_candidate_map_then_route_smoke(self):
         self.store.add_state(
             "PRO-101",
@@ -1741,7 +1917,7 @@ class GenericWorkflowTests(unittest.TestCase):
         self.store.inject_merge_progress_read_failure = True
 
         first = self.workflow.execute_merge_plan("PRO-101")
-        self.github.heads["web"] = "f" * 40
+        self.github.checks["web"] = False
         second = self.workflow.execute_merge_plan("PRO-101")
         mutation_events_after_partial = [
             event
