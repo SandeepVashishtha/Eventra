@@ -231,6 +231,7 @@ class FakeWorkflowStore:
         self.failed_merge_progress_read = False
         self.inject_merge_progress_read_failure = False
         self.read_parent_identifier_override: str | None = None
+        self.read_state_override_by_count: dict[int, WorkflowState] = {}
         self.override_parent_after_rerun = False
         self.parent_read_failures_remaining = 0
         self.fail_reads_after_create = False
@@ -343,6 +344,7 @@ class FakeWorkflowStore:
         count = self.read_counts.get(parent_identifier, 0) + 1
         self.read_counts[parent_identifier] = count
         state = self.states[parent_identifier]
+        state = self.read_state_override_by_count.get(count, state)
         if self.change_on_recovery_reread and count == 2:
             state = replace(state, active_work=True)
             self.states[parent_identifier] = state
@@ -3444,6 +3446,94 @@ class GenericWorkflowTests(unittest.TestCase):
 
         self.assertEqual(result.next_action, "noop")
         self.assertFalse(any(event[0] == "rerun" for event in self.store.events))
+
+    def test_direct_recovery_initial_scope_mismatch_does_not_leak_untrusted_identity_or_status(self):
+        child = WorkflowChild(
+            "PRO-101-API", "api", "api", "", "implementation", 1, 0,
+            "in_progress", "dispatch:" + "3" * 64, False,
+        )
+        snapshot = ParentSnapshot(
+            affected_repositories=("api",),
+            children={"api": RepositoryEvidence("", "pending")},
+            stalled=True,
+            stalled_repository="api",
+        )
+
+        for mismatch in ("identity", "project"):
+            with self.subTest(mismatch=mismatch):
+                self.store.states.clear()
+                self.store.events.clear()
+                self.store.read_counts.clear()
+                self.store.read_state_override_by_count.clear()
+                self.store.add_state("PRO-101", snapshot, status="in_review", children=(child,))
+                self.store.add_state("PRO-999", snapshot, status="done", children=(child,))
+                requested_before = self.store.states["PRO-101"]
+                foreign_before = self.store.states["PRO-999"]
+                if mismatch == "identity":
+                    untrusted = foreign_before
+                else:
+                    untrusted = replace(
+                        requested_before,
+                        parent_status="done",
+                        project_key="foreign",
+                    )
+                self.store.read_state_override_by_count[1] = untrusted
+
+                result = self.workflow.recover_stalled_parent("PRO-101")
+
+                self.assertEqual(result.parent_identifier, "PRO-101")
+                self.assertEqual(result.parent_status, "in_progress")
+                self.assertEqual(result.next_action, "noop")
+                self.assertEqual(result.mutation_count, 0)
+                self.assertEqual(self.store.states["PRO-101"], requested_before)
+                self.assertEqual(self.store.states["PRO-999"], foreign_before)
+                self.assertFalse(
+                    any(event[0] in {"rerun", "status", "create"} for event in self.store.events)
+                )
+
+    def test_direct_recovery_reread_scope_mismatch_uses_last_trusted_requested_state(self):
+        child = WorkflowChild(
+            "PRO-101-API", "api", "api", "", "implementation", 1, 0,
+            "in_progress", "dispatch:" + "3" * 64, False,
+        )
+        snapshot = ParentSnapshot(
+            affected_repositories=("api",),
+            children={"api": RepositoryEvidence("", "pending")},
+            stalled=True,
+            stalled_repository="api",
+        )
+
+        for mismatch in ("identity", "project"):
+            with self.subTest(mismatch=mismatch):
+                self.store.states.clear()
+                self.store.events.clear()
+                self.store.read_counts.clear()
+                self.store.read_state_override_by_count.clear()
+                self.store.add_state("PRO-101", snapshot, status="in_review", children=(child,))
+                self.store.add_state("PRO-999", snapshot, status="done", children=(child,))
+                requested_before = self.store.states["PRO-101"]
+                foreign_before = self.store.states["PRO-999"]
+                if mismatch == "identity":
+                    untrusted = foreign_before
+                else:
+                    untrusted = replace(
+                        requested_before,
+                        parent_status="done",
+                        project_key="foreign",
+                    )
+                self.store.read_state_override_by_count[2] = untrusted
+
+                result = self.workflow.recover_stalled_parent("PRO-101")
+
+                self.assertEqual(result.parent_identifier, "PRO-101")
+                self.assertEqual(result.parent_status, "in_review")
+                self.assertEqual(result.next_action, "noop")
+                self.assertEqual(result.mutation_count, 0)
+                self.assertEqual(self.store.states["PRO-101"], requested_before)
+                self.assertEqual(self.store.states["PRO-999"], foreign_before)
+                self.assertFalse(
+                    any(event[0] in {"rerun", "status", "create"} for event in self.store.events)
+                )
 
     def test_successful_recovery_with_unobservable_reread_is_not_overwritten(self):
         child = WorkflowChild(

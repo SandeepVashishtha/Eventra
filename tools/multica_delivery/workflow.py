@@ -2812,6 +2812,23 @@ class GenericWorkflow:
             return "parent workflow is unsupported"
         return None
 
+    @staticmethod
+    def _recovery_noop(
+        parent_identifier: str,
+        reason: str,
+        *,
+        trusted_state: WorkflowState | None = None,
+    ) -> WorkflowResult:
+        return WorkflowResult(
+            parent_identifier,
+            "in_progress" if trusted_state is None else trusted_state.parent_status,
+            "noop",
+            reason,
+            merge_state=(
+                "pending" if trusted_state is None else trusted_state.snapshot.merge_state
+            ),
+        )
+
     def recover_stalled_parent(
         self,
         parent_identifier: str,
@@ -2833,8 +2850,10 @@ class GenericWorkflow:
         if problem_result is not None:
             return problem_result
         scope_problem = self._watch_scope_problem(initial, parent_identifier)
-        if scope_problem is not None or initial.human_wait or initial.active_work or not initial.snapshot.stalled:
-            return self._result(initial, "noop", scope_problem or "work is healthy or waiting for a human")
+        if scope_problem is not None:
+            return self._recovery_noop(parent_identifier, scope_problem)
+        if initial.human_wait or initial.active_work or not initial.snapshot.stalled:
+            return self._result(initial, "noop", "work is healthy or waiting for a human")
         decision = decide_parent_action(self.manifest, initial.snapshot)
         if decision.kind is DecisionKind.BLOCK and initial.snapshot.recovery_count >= 1:
             return self._block(initial, decision.reason, stage_kind="recovery-block")
@@ -2868,9 +2887,15 @@ class GenericWorkflow:
         )
         if problem_result is not None:
             return problem_result
+        fresh_scope_problem = self._watch_scope_problem(fresh, parent_identifier)
+        if fresh_scope_problem is not None:
+            return self._recovery_noop(
+                parent_identifier,
+                "workflow changed before recovery",
+                trusted_state=initial,
+            )
         if (
             fresh != initial
-            or self._watch_scope_problem(fresh, parent_identifier) is not None
             or fresh.human_wait
             or fresh.active_work
             or decide_parent_action(self.manifest, fresh.snapshot) != decision
