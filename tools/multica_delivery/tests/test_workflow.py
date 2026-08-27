@@ -2350,14 +2350,9 @@ class GenericWorkflowTests(unittest.TestCase):
             manager,
             LocalExactShaCommandRunner(self.manifest, backend),
         )
-        executor._command_runner = SelfReportingConcreteRunner(
-            self.manifest, backend
-        )
-
-        with self.assertRaises(TypeError):
-            executor.execute(
-                "PRO-101", ("api",), {"api": SHA["api"]},
-                action_key="smoke:" + "7" * 64,
+        with self.assertRaises(AttributeError):
+            executor._command_runner = SelfReportingConcreteRunner(
+                self.manifest, backend
             )
 
         self.assertEqual(backend.calls, [])
@@ -2368,14 +2363,35 @@ class GenericWorkflowTests(unittest.TestCase):
         backend = MutableClosedCommandBackend(self.manifest)
         runner = LocalExactShaCommandRunner(self.manifest, backend)
         executor = OwnedSmokeExecutor(self.manifest, manager, runner)
-        runner.manifest = replace(self.manifest)
+        with self.assertRaises(AttributeError):
+            runner.manifest = replace(self.manifest)
 
-        with self.assertRaises(TypeError):
-            executor.execute(
-                "PRO-101", ("api",), {"api": SHA["api"]},
-                action_key="smoke:" + "7" * 64,
-            )
+        self.assertEqual(backend.calls, [])
+        self.assertEqual(manager.started, [])
 
+    def test_owned_smoke_authority_bindings_cannot_be_mutated_into_matching_pair(self):
+        manager = FakeOwnedProcessManager()
+        backend = MutableClosedCommandBackend(self.manifest)
+        executor = OwnedSmokeExecutor(
+            self.manifest,
+            manager,
+            LocalExactShaCommandRunner(self.manifest, backend),
+        )
+        other_manifest = replace(self.manifest)
+        other_runner = LocalExactShaCommandRunner(
+            other_manifest, MutableClosedCommandBackend(other_manifest)
+        )
+
+        for attribute, replacement in (
+            ("manifest", other_manifest),
+            ("_command_runner", other_runner),
+            ("process_manager", FakeOwnedProcessManager()),
+        ):
+            with self.subTest(attribute=attribute):
+                with self.assertRaises(AttributeError):
+                    setattr(executor, attribute, replacement)
+
+        self.assertFalse(hasattr(executor, "__dict__"))
         self.assertEqual(backend.calls, [])
         self.assertEqual(manager.started, [])
 
@@ -2451,6 +2467,141 @@ class GenericWorkflowTests(unittest.TestCase):
         )
         self.assertNotIn("pass", recorded.repository_results.values())
         self.assertTrue(any(event[0] == "write-smoke" for event in self.store.events))
+
+    def test_repository_command_drift_persists_partial_named_block_and_leaves_unrun_pending(self):
+        candidates = dict(SHA)
+        base = passing_snapshot()
+        snapshot = replace(
+            base,
+            affected_repositories=("api", "web", "notifications"),
+            candidate_shas=candidates,
+            children={
+                repository: RepositoryEvidence(sha, "pass")
+                for repository, sha in candidates.items()
+            },
+            pull_requests={
+                repository: PullRequestEvidence(sha, "merged", True, True, sha)
+                for repository, sha in candidates.items()
+            },
+            reviews={
+                repository: RepositoryEvidence(sha, "pass")
+                for repository, sha in candidates.items()
+            },
+            qa={
+                repository: RepositoryEvidence(sha, "pass")
+                for repository, sha in candidates.items()
+            },
+            integration_qa={
+                "web-api": GateEvidence(candidates, "pass")
+            },
+            merge_state="merged",
+            merged_shas=candidates,
+        )
+        self.store.add_state(
+            "PRO-101", snapshot, pull_requests=pull_request_targets()
+        )
+        manager = FakeOwnedProcessManager()
+        backend = MutableClosedCommandBackend(self.manifest)
+
+        def change_web_during_api(argv, cwd):
+            if argv == self.manifest.repositories["api"].commands["smoke"]:
+                backend.heads[self.manifest.repositories["web"].local_path] = "f" * 40
+
+        backend.command_hook = change_web_during_api
+        workflow = GenericWorkflow(
+            self.manifest,
+            self.store,
+            self.store,
+            github=self.github,
+            smoke_executor=OwnedSmokeExecutor(
+                self.manifest,
+                manager,
+                LocalExactShaCommandRunner(self.manifest, backend),
+            ),
+        )
+        self.store.events.clear()
+
+        result = workflow.execute_smoke("PRO-101")
+
+        recorded = self.store.states["PRO-101"].snapshot.smoke_reads[0]
+        self.assertEqual(result.next_action, "block")
+        self.assertIn("web", result.reason)
+        self.assertFalse(recorded.authoritative)
+        self.assertEqual(
+            dict(recorded.checkout_shas),
+            {"api": SHA["api"], "notifications": SHA["notifications"]},
+        )
+        self.assertEqual(
+            dict(recorded.repository_results),
+            {"api": "blocked", "web": "blocked", "notifications": "pending"},
+        )
+        self.assertEqual(dict(recorded.integration_results), {"web-api": "pending"})
+        self.assertNotIn(
+            (
+                self.manifest.repositories["notifications"].commands["smoke"],
+                self.manifest.repositories["notifications"].local_path,
+            ),
+            backend.calls,
+        )
+        self.assertEqual(len(manager.stopped), len(manager.started))
+        self.assertFalse(
+            recorded.authoritative
+            and any(value == "pass" for value in recorded.repository_results.values())
+        )
+
+    def test_integration_command_drift_persists_partial_named_block(self):
+        snapshot = passing_snapshot()
+        snapshot = replace(
+            snapshot,
+            merge_state="merged",
+            merged_shas=snapshot.candidate_shas,
+            pull_requests={
+                repository: PullRequestEvidence(sha, "merged", True, True, sha)
+                for repository, sha in snapshot.candidate_shas.items()
+            },
+        )
+        self.store.add_state(
+            "PRO-101", snapshot, pull_requests=pull_request_targets()
+        )
+        manager = FakeOwnedProcessManager()
+        backend = MutableClosedCommandBackend(self.manifest)
+        integration_argv = self.manifest.integration_suites[0].command
+
+        def change_api_during_integration(argv, cwd):
+            if argv == integration_argv:
+                backend.heads[self.manifest.repositories["api"].local_path] = "f" * 40
+
+        backend.command_hook = change_api_during_integration
+        workflow = GenericWorkflow(
+            self.manifest,
+            self.store,
+            self.store,
+            github=self.github,
+            smoke_executor=OwnedSmokeExecutor(
+                self.manifest,
+                manager,
+                LocalExactShaCommandRunner(self.manifest, backend),
+            ),
+        )
+        self.store.events.clear()
+
+        result = workflow.execute_smoke("PRO-101")
+
+        recorded = self.store.states["PRO-101"].snapshot.smoke_reads[0]
+        self.assertEqual(result.next_action, "block")
+        self.assertIn("api", result.reason)
+        self.assertFalse(recorded.authoritative)
+        self.assertEqual(dict(recorded.checkout_shas), {"web": SHA["web"]})
+        self.assertEqual(
+            dict(recorded.repository_results),
+            {"api": "blocked", "web": "pass"},
+        )
+        self.assertEqual(dict(recorded.integration_results), {"web-api": "blocked"})
+        self.assertEqual(len(manager.stopped), len(manager.started))
+        self.assertFalse(
+            recorded.authoritative
+            and any(value == "pass" for value in recorded.repository_results.values())
+        )
 
     def test_concrete_runner_blocks_head_change_in_service_startup_hook(self):
         backend = MutableClosedCommandBackend(self.manifest)

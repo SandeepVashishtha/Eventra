@@ -60,6 +60,30 @@ class SubprocessCommandBackend:
         )
 
 
+def _read_git_head(
+    backend: ClosedCommandBackend,
+    path: Path,
+) -> tuple[str, str]:
+    """Reduce captured output to a closed status before the caller may raise."""
+
+    backend_failed = False
+    try:
+        completed = backend.run(_GIT_HEAD, path)
+    except (OSError, RuntimeError, TypeError, ValueError):
+        backend_failed = True
+    if backend_failed or not isinstance(completed, ClosedCommandResult):
+        return "command-failed", ""
+    if completed.returncode != 0:
+        return "command-failed", ""
+    try:
+        match = re.fullmatch(r"([0-9a-f]{40})\n?", completed.stdout)
+    except TypeError:
+        return "malformed-output", ""
+    if match is None:
+        return "malformed-output", ""
+    return "ok", match.group(1)
+
+
 @dataclass(frozen=True)
 class ExactShaVerification:
     repository_key: str
@@ -107,6 +131,15 @@ class ExactShaCommandResult:
 class LocalExactShaCommandRunner:
     """Own Git HEAD verification before and after a closed smoke command."""
 
+    __slots__ = ("_manifest", "_backend")
+
+    def __setattr__(self, name: str, value: object) -> None:
+        raise AttributeError("exact-SHA runner authority bindings are immutable")
+
+    @property
+    def manifest(self) -> DeliveryManifest:
+        return self._manifest
+
     def __init__(
         self,
         manifest: DeliveryManifest,
@@ -116,8 +149,12 @@ class LocalExactShaCommandRunner:
             raise TypeError("manifest must be a DeliveryManifest")
         if backend is not None and not callable(getattr(backend, "run", None)):
             raise TypeError("backend must implement ClosedCommandBackend")
-        self.manifest = manifest
-        self._backend = backend if backend is not None else SubprocessCommandBackend()
+        object.__setattr__(self, "_manifest", manifest)
+        object.__setattr__(
+            self,
+            "_backend",
+            backend if backend is not None else SubprocessCommandBackend(),
+        )
 
     def _repository_path(self, repository_key: str, cwd: Path) -> Path:
         if repository_key not in self.manifest.repositories:
@@ -144,25 +181,15 @@ class LocalExactShaCommandRunner:
             raise ExactShaBoundaryError(
                 "checkout verification argv is not closed", repository_key
             )
-        backend_failed = False
-        try:
-            completed = self._backend.run(_GIT_HEAD, path)
-        except (OSError, RuntimeError, TypeError, ValueError):
-            backend_failed = True
-        if backend_failed:
+        status, observed_sha = _read_git_head(self._backend, path)
+        if status == "command-failed":
             raise ExactShaBoundaryError(
                 "checkout verification command failed", repository_key
             )
-        if not isinstance(completed, ClosedCommandResult) or completed.returncode != 0:
-            raise ExactShaBoundaryError(
-                "checkout verification command failed", repository_key
-            )
-        match = re.fullmatch(r"([0-9a-f]{40})\n?", completed.stdout)
-        if match is None:
+        if status != "ok":
             raise ExactShaBoundaryError(
                 "checkout verification output is malformed", repository_key
             )
-        observed_sha = match.group(1)
         if observed_sha != expected_sha:
             raise ExactShaBoundaryError(
                 "local checkout does not match expected SHA", repository_key

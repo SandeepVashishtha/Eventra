@@ -430,7 +430,18 @@ class SmokeExecutor(Protocol):
 class OwnedSmokeExecutor:
     """Run manifest smoke commands with services owned by one exact-SHA Run."""
 
-    __slots__ = ("manifest", "process_manager", "_command_runner")
+    __slots__ = ("_manifest", "_process_manager", "_command_runner")
+
+    def __setattr__(self, name: str, value: object) -> None:
+        raise AttributeError("owned smoke authority bindings are immutable")
+
+    @property
+    def manifest(self) -> DeliveryManifest:
+        return self._manifest
+
+    @property
+    def process_manager(self) -> ProcessManager:
+        return self._process_manager
 
     def __init__(
         self,
@@ -450,9 +461,9 @@ class OwnedSmokeExecutor:
             or runner.manifest is not manifest
         ):
             raise TypeError("command_runner must be a LocalExactShaCommandRunner")
-        self.manifest = manifest
-        self.process_manager = process_manager
-        self._command_runner = runner
+        object.__setattr__(self, "_manifest", manifest)
+        object.__setattr__(self, "_process_manager", process_manager)
+        object.__setattr__(self, "_command_runner", runner)
 
     def _trusted_command_runner(self) -> LocalExactShaCommandRunner:
         runner = self._command_runner
@@ -574,6 +585,7 @@ class OwnedSmokeExecutor:
                 startup_failed = True
 
         if not startup_failed and authoritative:
+            command_boundary_failed = False
             for repository in ordered:
                 specification = self.manifest.repositories[repository]
                 try:
@@ -593,11 +605,18 @@ class OwnedSmokeExecutor:
                     repository_results[repository] = "blocked"
                     if error.repository_key in repository_results:
                         repository_results[error.repository_key] = "blocked"
+                        checkout_shas.pop(error.repository_key, None)
                     authoritative = False
+                    command_boundary_failed = True
+                    break
                 except Exception:
                     repository_results[repository] = "blocked"
+                    checkout_shas.pop(repository, None)
                     authoritative = False
-            for suite in applicable_suites:
+                    command_boundary_failed = True
+                    break
+            suites_to_run = () if command_boundary_failed else applicable_suites
+            for suite in suites_to_run:
                 if any(repository_results[repository] != "pass" for repository in suite.repositories):
                     integration_results[suite.key] = "blocked"
                     continue
@@ -619,10 +638,14 @@ class OwnedSmokeExecutor:
                     integration_results[suite.key] = "blocked"
                     if error.repository_key in repository_results:
                         repository_results[error.repository_key] = "blocked"
+                        checkout_shas.pop(error.repository_key, None)
                     authoritative = False
+                    break
                 except Exception:
                     integration_results[suite.key] = "blocked"
+                    checkout_shas.pop(suite.command_repository, None)
                     authoritative = False
+                    break
 
         cleanup_failed = False
         stopped_pids: set[int] = set()

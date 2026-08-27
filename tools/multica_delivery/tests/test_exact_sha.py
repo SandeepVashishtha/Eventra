@@ -38,6 +38,16 @@ def result(returncode: int, stdout: str = "", stderr: str = "") -> ClosedCommand
     return ClosedCommandResult(returncode, stdout, stderr)
 
 
+def exact_sha_traceback_locals(error: BaseException) -> tuple[dict[str, object], ...]:
+    frames = []
+    current = error.__traceback__
+    while current is not None:
+        if current.tb_frame.f_globals.get("__name__") == "tools.multica_delivery.exact_sha":
+            frames.append(dict(current.tb_frame.f_locals))
+        current = current.tb_next
+    return tuple(frames)
+
+
 def manifest_with_paths(paths: dict[str, Path]):
     manifest = load_manifest(FIXTURE)
     repositories = {
@@ -48,6 +58,24 @@ def manifest_with_paths(paths: dict[str, Path]):
 
 
 class LocalExactShaCommandRunnerTests(unittest.TestCase):
+    def test_runner_has_no_instance_dict_and_rejects_authority_binding_or_method_replacement(self):
+        manifest = load_manifest(FIXTURE)
+        for attribute, replacement in (
+            ("verify", lambda *args, **kwargs: None),
+            ("run", lambda *args, **kwargs: ExactShaCommandResult(True, {"api": "a" * 40})),
+            ("manifest", replace(manifest)),
+            ("_backend", QueueBackend([])),
+        ):
+            with self.subTest(attribute=attribute):
+                backend = QueueBackend([])
+                runner = LocalExactShaCommandRunner(manifest, backend)
+                self.assertFalse(hasattr(runner, "__dict__"))
+
+                with self.assertRaises(AttributeError):
+                    setattr(runner, attribute, replacement)
+
+                self.assertEqual(backend.calls, [])
+
     def test_production_backend_uses_closed_noninteractive_subprocess_options(self):
         completed = subprocess.CompletedProcess(["safe", "arg"], 0, "out", "err")
         cwd = Path("/declared/repository")
@@ -136,6 +164,56 @@ class LocalExactShaCommandRunnerTests(unittest.TestCase):
         message = str(raised.exception)
         self.assertNotIn("sensitive stdout", message)
         self.assertNotIn("sensitive stderr", message)
+
+    def test_nonzero_git_output_is_absent_from_exact_sha_traceback_locals(self):
+        manifest = load_manifest(FIXTURE)
+        sentinel = "DO-NOT-LEAK-NONZERO-OUTPUT"
+        runner = LocalExactShaCommandRunner(
+            manifest, QueueBackend([result(128, sentinel, sentinel)])
+        )
+
+        captured = None
+        try:
+            runner.verify(
+                "api", "a" * 40, manifest.repositories["api"].local_path,
+                argv=("git", "rev-parse", "HEAD"),
+            )
+        except ExactShaBoundaryError as error:
+            captured = error
+
+        self.assertIsNotNone(captured)
+        error = captured
+        for values in exact_sha_traceback_locals(error):
+            self.assertNotIn(sentinel, repr(values))
+            self.assertFalse({"completed", "result", "match", "error"} & values.keys())
+        self.assertNotIn(sentinel, "".join(traceback.format_exception(error)))
+        self.assertIsNone(error.__cause__)
+        self.assertIsNone(error.__context__)
+
+    def test_malformed_git_output_is_absent_from_exact_sha_traceback_locals(self):
+        manifest = load_manifest(FIXTURE)
+        sentinel = "DO-NOT-LEAK-MALFORMED-OUTPUT"
+        runner = LocalExactShaCommandRunner(
+            manifest, QueueBackend([result(0, sentinel + "\n", sentinel)])
+        )
+
+        captured = None
+        try:
+            runner.verify(
+                "api", "a" * 40, manifest.repositories["api"].local_path,
+                argv=("git", "rev-parse", "HEAD"),
+            )
+        except ExactShaBoundaryError as error:
+            captured = error
+
+        self.assertIsNotNone(captured)
+        error = captured
+        for values in exact_sha_traceback_locals(error):
+            self.assertNotIn(sentinel, repr(values))
+            self.assertFalse({"completed", "result", "match", "error"} & values.keys())
+        self.assertNotIn(sentinel, "".join(traceback.format_exception(error)))
+        self.assertIsNone(error.__cause__)
+        self.assertIsNone(error.__context__)
 
     def test_backend_runtime_error_is_not_retained_in_verification_exception_chain(self):
         manifest = load_manifest(FIXTURE)
