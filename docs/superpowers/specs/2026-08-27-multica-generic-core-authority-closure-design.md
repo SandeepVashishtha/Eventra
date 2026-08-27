@@ -150,7 +150,7 @@ requires current, exact-candidate evidence for:
 - repository QA;
 - required integration QA.
 
-Missing, pending, failed, blocked, stale, wrong-attempt, or wrong-SHA evidence
+Missing, pending, failed, blocked, stale, or wrong-SHA evidence
 returns `BLOCK` for human action. It never returns `DISPATCH` or `REPAIR` after
 all pull requests are merged. Only a complete, coherent pre-merge evidence set
 can advance an all-merged parent to smoke or completion evaluation.
