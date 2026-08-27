@@ -241,6 +241,35 @@ class MulticaClientTests(unittest.TestCase):
 
         assert_exception_graph_redacted(self, caught.exception, sentinel)
 
+    def test_hostile_linked_exception_cannot_escape_redaction_cleanup(self):
+        sentinel = "MULTICA-HOSTILE-CLEANUP-SENTINEL"
+
+        class CleanupAbort(BaseException):
+            pass
+
+        class HostileLinkedError(Exception):
+            armed = False
+
+            def __setattr__(self, name, value):
+                if self.armed and name in {
+                    "__cause__",
+                    "__context__",
+                    "__traceback__",
+                }:
+                    raise CleanupAbort(sentinel)
+                super().__setattr__(name, value)
+
+        linked = HostileLinkedError("linked")
+        linked.armed = True
+        outer = MulticaContractError("boundary failed")
+        outer.__cause__ = linked
+        runner = FakeRunner(outer)
+
+        with self.assertRaises(MulticaContractError) as caught:
+            MulticaClient(runner).list_projects()
+
+        assert_exception_graph_redacted(self, caught.exception, sentinel)
+
     def test_multica_captured_stdout_is_unreachable_from_exception_graph(self):
         sentinel = "MULTICA-CAPTURED-STDOUT-SENTINEL"
         runner = FakeRunner(CommandResult(0, sentinel))
@@ -708,6 +737,30 @@ class MulticaClientTests(unittest.TestCase):
 
         with self.assertRaisesRegex(MulticaContractError, "not reachable"):
             MulticaClient(runner, "runtime-1", "daemon-1").get_runtime()
+
+    def test_explicit_falsy_runtime_and_daemon_ids_never_default_or_execute(self):
+        invalid_identifiers = ("", 0, False, [])
+        for position in ("runtime", "daemon"):
+            for invalid in invalid_identifiers:
+                with self.subTest(position=position, invalid=invalid):
+                    runner = FakeRunner(
+                        [
+                            {
+                                "id": "runtime-1",
+                                "daemon_id": "daemon-1",
+                                "status": "online",
+                            }
+                        ]
+                    )
+                    client = MulticaClient(runner, "runtime-1", "daemon-1")
+
+                    with self.assertRaises(MulticaContractError):
+                        if position == "runtime":
+                            client.get_runtime(invalid, "daemon-1")
+                        else:
+                            client.get_runtime("runtime-1", invalid)
+
+                    self.assertEqual(runner.calls, [])
 
     def test_runtime_and_capability_reads_are_typed_and_frozen(self):
         runner = FakeRunner(

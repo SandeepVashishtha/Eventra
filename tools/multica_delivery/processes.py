@@ -35,6 +35,8 @@ _OWNED_FIELDS = frozenset(
         "run_id",
         "owner_token",
         "start_identity",
+        "launch_argv",
+        "launch_cwd",
     }
 )
 
@@ -71,6 +73,23 @@ def _local_health_url(value: object) -> str:
     return value
 
 
+def _launch_argv(value: object) -> tuple[str, ...]:
+    if (
+        type(value) is not tuple
+        or not value
+        or any(type(argument) is not str or not argument for argument in value)
+        or value[0].startswith("-")
+    ):
+        raise ProcessOwnershipError("launch argv must be a non-empty tuple of arguments")
+    return value
+
+
+def _launch_cwd(value: object) -> Path:
+    if not isinstance(value, Path) or not value.is_absolute():
+        raise ProcessOwnershipError("launch cwd must be an absolute path")
+    return value
+
+
 @dataclass(frozen=True)
 class OwnedProcess:
     """The complete proof needed to reuse or stop one local process."""
@@ -83,6 +102,8 @@ class OwnedProcess:
     run_id: str
     owner_token: str
     start_identity: str
+    launch_argv: tuple[str, ...]
+    launch_cwd: Path
 
     def __post_init__(self) -> None:
         _stable(self.repository_key, "repository_key")
@@ -90,6 +111,8 @@ class OwnedProcess:
         _stable(self.run_id, "run_id")
         _stable(self.owner_token, "owner_token")
         _stable(self.start_identity, "start_identity")
+        _launch_argv(self.launch_argv)
+        _launch_cwd(self.launch_cwd)
         if not isinstance(self.pid, int) or isinstance(self.pid, bool) or self.pid < 1:
             raise ProcessOwnershipError("pid must be a positive integer")
         if (
@@ -115,15 +138,8 @@ class ProcessRun:
     def __post_init__(self) -> None:
         _stable(self.repository_key, "repository_key")
         _stable(self.run_id, "run_id")
-        if (
-            not isinstance(self.argv, tuple)
-            or not self.argv
-            or any(not isinstance(argument, str) or not argument for argument in self.argv)
-            or self.argv[0].startswith("-")
-        ):
-            raise ProcessOwnershipError("argv must be a non-empty tuple of arguments")
-        if not isinstance(self.cwd, Path) or not self.cwd.is_absolute():
-            raise ProcessOwnershipError("cwd must be an absolute path")
+        _launch_argv(self.argv)
+        _launch_cwd(self.cwd)
 
 
 class ProcessBackend(Protocol):
@@ -274,13 +290,32 @@ class ProcessRegistry:
     @staticmethod
     def _validated(records: Sequence[OwnedProcess]) -> tuple[OwnedProcess, ...]:
         if not isinstance(records, (tuple, list)) or any(
-            not isinstance(record, OwnedProcess) for record in records
+            type(record) is not OwnedProcess for record in records
         ):
             raise ProcessOwnershipError("owned process registry is malformed")
         result = tuple(records)
         ports: set[int] = set()
-        pid_owners: dict[int, tuple[str, str, str, str, str]] = {}
+        pid_owners: dict[int, tuple[object, ...]] = {}
         for record in result:
+            try:
+                reconstructed = OwnedProcess(
+                    repository_key=record.repository_key,
+                    candidate_sha=record.candidate_sha,
+                    pid=record.pid,
+                    port=record.port,
+                    health_url=record.health_url,
+                    run_id=record.run_id,
+                    owner_token=record.owner_token,
+                    start_identity=record.start_identity,
+                    launch_argv=record.launch_argv,
+                    launch_cwd=record.launch_cwd,
+                )
+            except BaseException as error:
+                raise ProcessOwnershipError(
+                    "owned process registry is malformed"
+                ) from error
+            if reconstructed != record:
+                raise ProcessOwnershipError("owned process registry is malformed")
             if record.port in ports:
                 raise ProcessOwnershipError("duplicate owned process port")
             identity = (
@@ -289,6 +324,8 @@ class ProcessRegistry:
                 record.run_id,
                 record.owner_token,
                 record.start_identity,
+                record.launch_argv,
+                record.launch_cwd,
             )
             existing_identity = pid_owners.get(record.pid)
             if existing_identity is not None and existing_identity != identity:
@@ -311,15 +348,34 @@ class ProcessRegistry:
             for value in raw:
                 if not isinstance(value, dict) or set(value) != _OWNED_FIELDS:
                     raise ProcessOwnershipError("owned process registry is malformed")
-                records.append(OwnedProcess(**value))
-        except TypeError as error:
+                launch_argv = value["launch_argv"]
+                launch_cwd = value["launch_cwd"]
+                if type(launch_argv) is not list or type(launch_cwd) is not str:
+                    raise ProcessOwnershipError("owned process registry is malformed")
+                records.append(
+                    OwnedProcess(
+                        **{
+                            **value,
+                            "launch_argv": tuple(launch_argv),
+                            "launch_cwd": Path(launch_cwd),
+                        }
+                    )
+                )
+        except (TypeError, ValueError) as error:
             raise ProcessOwnershipError("owned process registry is malformed") from error
         return self._validated(records)
 
     def _write_unlocked(self, records: Sequence[OwnedProcess]) -> None:
         validated = self._validated(records)
         payload = json.dumps(
-            [asdict(record) for record in validated],
+            [
+                {
+                    **asdict(record),
+                    "launch_argv": list(record.launch_argv),
+                    "launch_cwd": str(record.launch_cwd),
+                }
+                for record in validated
+            ],
             ensure_ascii=False,
             sort_keys=True,
             separators=(",", ":"),
@@ -455,7 +511,27 @@ class ProcessManager:
             and record.health_url == service.health_url
             and record.run_id == run.run_id
             and record.owner_token == self.owner_token
+            and record.launch_argv == run.argv
+            and record.launch_cwd == run.cwd
         )
+
+    def _require_manifest_launch(
+        self,
+        services: tuple[ServiceSpec, ...],
+        run: ProcessRun,
+    ) -> None:
+        try:
+            specification = self.manifest.repositories.get(run.repository_key)
+            matches = (
+                specification is not None
+                and services == specification.services
+                and run.argv == specification.commands.get("start")
+                and run.cwd == specification.local_path
+            )
+        except BaseException:
+            matches = False
+        if not matches:
+            raise ProcessOwnershipError("service ownership is outside the manifest")
 
     def _start_identity(self, pid: int) -> str:
         try:
@@ -494,12 +570,13 @@ class ProcessManager:
         candidate_sha: str,
     ) -> tuple[OwnedProcess, ...]:
         if (
-            not isinstance(services, tuple)
+            type(services) is not tuple
             or not services
-            or any(not isinstance(service, ServiceSpec) for service in services)
-            or not isinstance(run, ProcessRun)
+            or any(type(service) is not ServiceSpec for service in services)
+            or type(run) is not ProcessRun
         ):
             raise TypeError("services and run must be typed process values")
+        self._require_manifest_launch(services, run)
         candidate_sha = _sha(candidate_sha)
         if len({service.port for service in services}) != len(services):
             raise ProcessOwnershipError("repository services contain a duplicate port")
@@ -619,6 +696,8 @@ class ProcessManager:
                         run_id=run.run_id,
                         owner_token=self.owner_token,
                         start_identity=start_identity,
+                        launch_argv=run.argv,
+                        launch_cwd=run.cwd,
                     )
                     for service in services
                 )
@@ -638,20 +717,19 @@ class ProcessManager:
         """Re-read registry and host ownership for one manifest service set."""
 
         if (
-            not isinstance(services, tuple)
-            or not isinstance(run, ProcessRun)
-            or not isinstance(records, tuple)
+            type(services) is not tuple
+            or not services
+            or any(type(service) is not ServiceSpec for service in services)
+            or type(run) is not ProcessRun
+            or type(records) is not tuple
             or any(type(record) is not OwnedProcess for record in records)
         ):
             raise TypeError("service ownership values must be concrete typed values")
+        self._require_manifest_launch(services, run)
         candidate_sha = _sha(candidate_sha)
         specification = self.manifest.repositories.get(run.repository_key)
         if (
-            specification is None
-            or services != specification.services
-            or run.argv != specification.commands.get("start")
-            or run.cwd != specification.local_path
-            or len(records) != len(services)
+            len(records) != len(services)
             or not records
         ):
             raise ProcessOwnershipError("service ownership is outside the manifest")
@@ -671,6 +749,8 @@ class ProcessManager:
                 or record.candidate_sha != candidate_sha
                 or record.run_id != run.run_id
                 or record.owner_token != self.owner_token
+                or record.launch_argv != run.argv
+                or record.launch_cwd != run.cwd
                 for record in records
             )
         ):
@@ -710,7 +790,7 @@ class ProcessManager:
         repository_key: str,
         candidate_sha: str,
     ) -> None:
-        if not isinstance(record, OwnedProcess):
+        if type(record) is not OwnedProcess:
             raise TypeError("record must be an OwnedProcess")
         _stable(run_id, "run_id")
         _stable(repository_key, "repository_key")
@@ -720,6 +800,11 @@ class ProcessManager:
             or record.repository_key != repository_key
             or record.candidate_sha != candidate_sha
             or record.owner_token != self.owner_token
+            or self.manifest.repositories.get(repository_key) is None
+            or record.launch_argv
+            != self.manifest.repositories[repository_key].commands.get("start")
+            or record.launch_cwd
+            != self.manifest.repositories[repository_key].local_path
         ):
             raise ProcessOwnershipError("owner mismatch")
         with self.registry.transaction() as transaction:
@@ -732,6 +817,8 @@ class ProcessManager:
                 or item.repository_key != repository_key
                 or item.candidate_sha != candidate_sha
                 or item.owner_token != self.owner_token
+                or item.launch_argv != record.launch_argv
+                or item.launch_cwd != record.launch_cwd
                 for item in owned_pid_records
             ):
                 raise ProcessOwnershipError("owner mismatch")

@@ -422,3 +422,288 @@ push, PR creation, remote merge, or worktree cleanup command was run.
   or product-specific branch.
 
 Open concerns: none.
+
+## Residual scoped-review round (2026-08-27)
+
+Residual starting HEAD: `cf3f9ecd87e3b415d896cb40dea469433c8f4d15`
+
+Scope: the eight findings in `final-residual-brief.md`. This round preserved
+the eleven findings already closed by the preceding final-fix pass. It did not
+implement the explicitly optional post-construction `object.__setattr__`
+manifest-policy digest hardening.
+
+The pre-residual complete-tools baseline was:
+
+```text
+.venv/bin/python -B -m unittest discover -s tools -p 'test_*.py' -q
+Ran 560 tests
+OK
+```
+
+All residuals were exercised with adversarial tests before the corresponding
+production changes. The initial RED observations were:
+
+```text
+process provenance batch: 2 failures and 1 error
+  non-manifest launch reached the bomb registry
+  registry records had no launch_argv/launch_cwd identity
+  the pre-provenance registry schema was accepted
+
+redaction + identifier batch: 1 error and 8 subtest failures
+  hostile cleanup raised the secret-bearing BaseException sentinel
+  each explicit falsy runtime/daemon ID reached the runner through a default
+
+workflow residual batch: 25 failures across 6 tests
+  malformed public DTOs performed store reads
+  nested exact-class forgeries produced decisions, noops, or mutations
+  a non-exact dispatch-prefix key authorized an API replay
+  pending review reran an implementation child
+  all 8 direct/watcher all-merged evidence cases were suppressed
+
+phase creation-provenance self-review: 1 failure
+  a done child with a forged creation action still replayed as noop
+```
+
+Every listed reproduction is now green. The exact web-completion action and a
+different arbitrary same-prefix action are both covered by the final phase
+replay test.
+
+### R1. Manifest-bound process launch provenance
+
+RED reproductions:
+
+- `test_start_rejects_non_manifest_launch_before_registry_access` supplied
+  `('/tmp/not-the-manifest-service', '--forge')` with `/tmp`; the old start
+  path entered the registry instead of rejecting the launch.
+- `test_launch_provenance_is_persisted_and_required_for_reuse_and_verify`
+  demonstrated that an owned record could not express launch argv/cwd and
+  therefore could not bind reuse or verification to the manifest launch.
+- `test_registry_rejects_pre_launch_provenance_schema` showed that the old
+  registry record shape was still readable.
+
+GREEN implementation:
+
+- `ProcessManager.start_services()` and `verify_services()` now require the
+  exact manifest repository, complete service tuple, start argv, and local cwd
+  before registry access, host ownership reads, or spawn.
+- Every exact `OwnedProcess` carries immutable `launch_argv` and `launch_cwd`.
+  The atomic JSON registry requires both fields, includes them in same-PID
+  ownership identity, and rejects the prior schema.
+- Reuse, verification, grouped stop, and registry comparison require the
+  persisted launch identity to match the current manifest-bound `ProcessRun`.
+
+### R2. BaseException-safe exception-graph disposal
+
+RED reproduction:
+`test_hostile_linked_exception_cannot_escape_redaction_cleanup` linked a custom
+exception whose cause/context/traceback assignment raises a secret-bearing
+`BaseException`. Cleanup leaked that sentinel instead of producing the safe
+boundary error.
+
+GREEN implementation:
+every cause/context/traceback read, traceback frame clear, and graph-detachment
+assignment is individually guarded by `BaseException`. Links are snapshotted
+before detachment, classifier failures are also contained, and the fresh safe
+raise remains outside the raw catch scope after boundary arguments and the
+closed outcome have been discarded. Recursive graph inspection confirms that
+the hostile linked object and sentinel are unreachable from the public error.
+
+### R3. Complete exact persisted-state and public-DTO schemas
+
+RED reproductions:
+
+- `test_public_phase_and_smoke_dtos_are_validated_before_parent_reads` forged
+  a query-bearing phase evidence URL and an integer smoke authority flag. Both
+  formerly caused parent/completion reads.
+- `test_nested_exact_class_state_forgery_blocks_every_progression_path`
+  placed a bool-like result inside an exact `RepositoryEvidence`; the public
+  status, parent-event, resume, phase, merge, smoke, recovery, and watcher
+  entrypoints did not all fail closed.
+- `test_every_nested_state_value_is_revalidated_after_exact_class_forgery`
+  covered noncanonical metadata and snapshot containers plus forged repository,
+  PR, gate, smoke, child, and PR-target values.
+
+GREEN implementation:
+one guarded `_exact_state_schema_problem()` is the common persisted-state gate.
+It revalidates exact classes, exact container types, field domains and scalar
+types for every `ParentMetadata` field, every `ParentSnapshot` field and nested
+evidence object, each workflow child including creation candidates, every
+applied action, and every manifest-derived PR target. It reconstructs metadata
+to enforce constructor invariants and canonical map ordering. All progression
+and watcher surfaces use this gate before a decision or state-changing block;
+malformed state returns the requested parent with zero mutations.
+
+`PhaseCompletion` and `SmokeRead` have separate guarded complete-schema checks
+at their public boundaries and again at internal/persisted replay boundaries.
+They require exact booleans/integers/containers, canonical UUIDs and SHAs,
+phase-consistent identity maps, and restricted HTTPS evidence/PR URLs before
+the first store read.
+
+### R4. Exact completion replay and child creation identity
+
+RED reproductions:
+
+- `test_api_phase_replay_rejects_a_web_or_same_prefix_action_key` removed the
+  actual API completion transition and left another `dispatch:` action. The
+  old any-prefix search returned replay `noop`; the final test covers both the
+  exact reconstructed web-completion key and an arbitrary same-prefix key.
+- `test_phase_replay_requires_the_done_child_exact_creation_provenance` forged
+  the done child's creation action and retained it in the applied-action set;
+  replay was still accepted.
+
+GREEN implementation:
+each child persists the immutable candidate map used for its creation. Replay
+requires one exact inactive/done child matching repository, target, suite,
+phase, attempt, evidence UUID, current candidate identity, exact reconstructed
+creation key, and applied creation action. It separately reconstructs the one
+completion action from the complete DTO and current evidence identity, requires
+that exact key to be applied and distinct from creation, and returns that exact
+key in the replay result. A web action or any prefix lookalike cannot authorize
+an API completion.
+
+### R5. Watcher intent derived from parent evidence
+
+RED reproduction:
+`test_watcher_derives_review_intent_instead_of_rerunning_implementation`
+provided current candidate evidence with review pending while only an inactive
+implementation child was present. The old child-led selection reran it.
+
+GREEN implementation:
+bounded recovery derives a set of exact semantic intents from the authoritative
+implementation, review, QA, and applicable integration evidence. It proceeds
+only when that evidence identifies one `(phase, target, repository, suite)` and
+the sole current-stage child matches it exactly. Recovery reconciliation also
+preserves the child's immutable creation-candidate identity.
+
+### R6. Explicit falsy runtime and daemon identifiers
+
+RED reproduction:
+`test_explicit_falsy_runtime_and_daemon_ids_never_default_or_execute` passed
+`''`, `0`, `False`, and `[]` in both runtime and daemon positions. Each of the
+eight cases was replaced with the configured default and reached the runner.
+
+GREEN implementation:
+`MulticaClient.get_runtime()` now uses its configured runtime or daemon only
+when the corresponding argument `is None`. Every explicit value reaches the
+central identifier validator; all invalid cases fail with zero runner calls.
+
+### R7. All-merged human block propagation
+
+RED reproduction:
+`test_recovery_and_watcher_propagate_every_all_merged_evidence_block` covers
+missing, pending, failed, and stale pre-merge evidence through both direct
+recovery and the watcher. All eight cases were previously reduced to noop or an
+empty watcher result.
+
+GREEN implementation:
+after exact state/scope authority, recovery evaluates the pure parent decision
+before healthy/noop and bounded-rerun selection. When every affected PR and SHA
+is authoritatively merged, a pure evidence `BLOCK` is returned as the requested
+parent's zero-mutation human block. `watch_active_parents()` propagates that
+first non-noop result unchanged except for scan counts.
+
+### R8. Operator documentation and preserved evidence
+
+RED observation:
+the operator guide and this report did not claim or evidence the residual
+launch-provenance, hostile-cleanup, complete-schema, exact-replay, semantic
+watcher, `is None` default, or all-merged block guarantees.
+
+GREEN implementation:
+`docs/multica-delivery-core.md` now describes each tested boundary in operator
+language. This section appends the residual RED/GREEN record without replacing
+or rewriting the preceding 17-finding review history.
+
+### Residual-round verification
+
+The residual-focused command named the twelve new regression tests across the
+process, client, and workflow modules:
+
+```text
+.venv/bin/python -B -m unittest \
+  tools.multica_delivery.tests.test_processes.ProcessManagerTests.test_start_rejects_non_manifest_launch_before_registry_access \
+  tools.multica_delivery.tests.test_processes.ProcessManagerTests.test_launch_provenance_is_persisted_and_required_for_reuse_and_verify \
+  tools.multica_delivery.tests.test_processes.ProcessManagerTests.test_registry_rejects_pre_launch_provenance_schema \
+  tools.multica_delivery.tests.test_multica_client.MulticaClientTests.test_hostile_linked_exception_cannot_escape_redaction_cleanup \
+  tools.multica_delivery.tests.test_multica_client.MulticaClientTests.test_explicit_falsy_runtime_and_daemon_ids_never_default_or_execute \
+  tools.multica_delivery.tests.test_workflow.GenericWorkflowTests.test_public_phase_and_smoke_dtos_are_validated_before_parent_reads \
+  tools.multica_delivery.tests.test_workflow.GenericWorkflowTests.test_nested_exact_class_state_forgery_blocks_every_progression_path \
+  tools.multica_delivery.tests.test_workflow.GenericWorkflowTests.test_every_nested_state_value_is_revalidated_after_exact_class_forgery \
+  tools.multica_delivery.tests.test_workflow.GenericWorkflowTests.test_api_phase_replay_rejects_a_web_or_same_prefix_action_key \
+  tools.multica_delivery.tests.test_workflow.GenericWorkflowTests.test_phase_replay_requires_the_done_child_exact_creation_provenance \
+  tools.multica_delivery.tests.test_workflow.GenericWorkflowTests.test_watcher_derives_review_intent_instead_of_rerunning_implementation \
+  tools.multica_delivery.tests.test_workflow.GenericWorkflowTests.test_recovery_and_watcher_propagate_every_all_merged_evidence_block -q
+Ran 12 tests
+OK
+```
+
+The completed tree was then verified with the required suites:
+
+```text
+.venv/bin/python -B -m unittest \
+  tools.multica_delivery.tests.test_manifest \
+  tools.multica_delivery.tests.test_metadata \
+  tools.multica_delivery.tests.test_multica_client \
+  tools.multica_delivery.tests.test_github_client \
+  tools.multica_delivery.tests.test_contract_audit \
+  tools.multica_delivery.tests.test_provision \
+  tools.multica_delivery.tests.test_decisions \
+  tools.multica_delivery.tests.test_processes \
+  tools.multica_delivery.tests.test_workflow -q
+Ran 350 tests
+OK
+
+.venv/bin/python -B -m unittest discover \
+  -s tools/multica_delivery/tests -p 'test_*.py' -q
+Ran 398 tests
+OK
+
+.venv/bin/python -B -m unittest discover \
+  -s tools/multica/tests -p 'test_*.py' -q
+Ran 174 tests
+OK
+
+.venv/bin/python -B -m unittest discover -s tools -p 'test_*.py' -q
+Ran 572 tests
+OK
+
+PYTHONPYCACHEPREFIX=/tmp/multica-residual-final-compile.tjnw9k \
+  .venv/bin/python -m compileall -q tools
+exit 0; 104 compiled cache files were written outside the worktree
+
+.venv/bin/python -B -c \
+  'import yaml; assert yaml.__version__ == "6.0.2"; print(yaml.__version__)'
+6.0.2
+
+git diff --check
+exit 0, no output
+```
+
+### Residual-round safety searches and self-review
+
+Diff-addition searches returned status 1 with no matches for new shell/process
+escapes, deploy/rollback definitions or calls, checkout/reset operations,
+network/process-launch call sites, product-specific names in generic
+production, literal credential assignments, and nonexistent documented module
+invocations. No live Multica/GitHub runner, network request, local service,
+deployment, rollback, checkout, reset, clean, push, PR, merge, or worktree
+cleanup action was used.
+
+Self-review confirmed:
+
+- Manifest launch validation precedes every registry or backend observation;
+  the old registry schema cannot be silently reused.
+- The safe exception is raised only after the raw cleanup catch and local raw
+  references have left scope, including hostile `BaseException` cleanup paths.
+- The exact schema gate is centralized and constructor-bypass forgeries cannot
+  reach a decision, state-changing block, merge read, rerun, or smoke write.
+- Replay independently proves immutable child creation and the exact completion
+  transition; prefix membership is never treated as authority.
+- Watcher ambiguity remains a zero-effect noop, while all-merged evidence
+  failures remain a zero-effect human block.
+- Product neutrality, Eventra legacy behavior, dry-run zero effects,
+  exact-SHA/no-checkout/no-reset execution, and the deployment/rollback
+  prohibitions remain intact.
+
+Open residual concerns: none found in the scoped adversarial and full-suite
+verification above.

@@ -1,7 +1,9 @@
+from dataclasses import replace
 from pathlib import Path
 import subprocess
 from tempfile import TemporaryDirectory
 import threading
+from types import MappingProxyType
 import unittest
 from unittest.mock import patch
 from urllib.parse import urlsplit
@@ -87,8 +89,88 @@ class ProcessManagerTests(unittest.TestCase):
             repository_key="api",
             run_id="run-1",
             argv=("./scripts/start.sh",),
-            cwd=Path("/workspace/api"),
+            cwd=Path("/workspace/sample-commerce-api"),
         )
+
+    def test_start_rejects_non_manifest_launch_before_registry_access(self):
+        class RegistryMustNotBeOpened(ProcessRegistry):
+            def transaction(self):
+                raise AssertionError("registry was opened")
+
+        manager = ProcessManager(
+            RegistryMustNotBeOpened(
+                Path(self.temporary.name) / "must-not-open.json"
+            ),
+            self.backend,
+            owner_token="owner-1",
+            manifest=self.manifest,
+        )
+        forged = ProcessRun(
+            "api",
+            "run-1",
+            ("/tmp/not-the-manifest-service", "--forge"),
+            Path("/tmp"),
+        )
+
+        with self.assertRaisesRegex(
+            ProcessOwnershipError,
+            "outside the manifest",
+        ):
+            manager.start_services(
+                self.manifest.repositories["api"].services,
+                forged,
+                candidate_sha=SHA,
+            )
+
+        self.assertEqual(self.backend.spawned, [])
+
+    def test_launch_provenance_is_persisted_and_required_for_reuse_and_verify(self):
+        specification = self.manifest.repositories["api"]
+        self.backend.healthy_urls.add(self.service.health_url)
+
+        record = self.manager.start_services(
+            specification.services,
+            self.run,
+            candidate_sha=SHA,
+        )[0]
+
+        self.assertEqual(record.launch_argv, specification.commands["start"])
+        self.assertEqual(record.launch_cwd, specification.local_path)
+        tampered = replace(
+            record,
+            launch_argv=("/tmp/not-the-manifest-service", "--forge"),
+            launch_cwd=Path("/tmp"),
+        )
+        self.registry.write((tampered,))
+        with self.assertRaisesRegex(ProcessOwnershipError, "owner mismatch"):
+            self.manager.start_services(
+                specification.services,
+                self.run,
+                candidate_sha=SHA,
+            )
+        with self.assertRaisesRegex(
+            ProcessOwnershipError,
+            "exact owned records",
+        ):
+            self.manager.verify_services(
+                specification.services,
+                self.run,
+                (tampered,),
+                candidate_sha=SHA,
+            )
+
+    def test_registry_rejects_pre_launch_provenance_schema(self):
+        self.registry.path.write_text(
+            '[{"candidate_sha":"' + SHA
+            + '","health_url":"http://localhost:8080/health",'
+            '"owner_token":"owner-1","pid":777,"port":8080,'
+            '"repository_key":"api","run_id":"run-1",'
+            '"start_identity":"start-777-generation-1"}]',
+            encoding="utf-8",
+        )
+
+        with self.assertRaisesRegex(ProcessOwnershipError, "registry is malformed"):
+            self.registry.read()
 
     def test_unknown_port_owner_blocks_service_start(self):
         self.backend.port_owners[8080] = 9999
@@ -185,6 +267,8 @@ class ProcessManagerTests(unittest.TestCase):
             run_id="run-1",
             owner_token="owner-1",
             start_identity="start-777-generation-1",
+            launch_argv=self.run.argv,
+            launch_cwd=self.run.cwd,
         )
         self.registry.write((record,))
         self.backend.port_owners[8080] = 777
@@ -210,6 +294,8 @@ class ProcessManagerTests(unittest.TestCase):
             run_id="run-1",
             owner_token="owner-1",
             start_identity="start-777-generation-1",
+            launch_argv=self.run.argv,
+            launch_cwd=self.run.cwd,
         )
         self.registry.write((record,))
         self.backend.port_owners[8080] = 777
@@ -237,6 +323,8 @@ class ProcessManagerTests(unittest.TestCase):
             run_id="run-1",
             owner_token="owner-1",
             start_identity="start-777-generation-1",
+            launch_argv=self.run.argv,
+            launch_cwd=self.run.cwd,
         )
         self.registry.write((record,))
         self.backend.port_owners[8080] = 9999
@@ -265,6 +353,8 @@ class ProcessManagerTests(unittest.TestCase):
             run_id="run-1",
             owner_token="owner-1",
             start_identity="start-777-generation-1",
+            launch_argv=self.run.argv,
+            launch_cwd=self.run.cwd,
         )
         self.registry.write((record,))
         self.backend.port_owners[8080] = 777
@@ -291,6 +381,8 @@ class ProcessManagerTests(unittest.TestCase):
             run_id="run-1",
             owner_token="owner-1",
             start_identity="start-777-generation-1",
+            launch_argv=self.run.argv,
+            launch_cwd=self.run.cwd,
         )
         second = OwnedProcess(
             repository_key="web",
@@ -301,6 +393,8 @@ class ProcessManagerTests(unittest.TestCase):
             run_id="run-2",
             owner_token="owner-1",
             start_identity="start-778-generation-1",
+            launch_argv=("npm", "run", "dev"),
+            launch_cwd=Path("/workspace/sample-commerce-web"),
         )
 
         with self.assertRaisesRegex(ProcessOwnershipError, "duplicate owned process port"):
@@ -308,11 +402,26 @@ class ProcessManagerTests(unittest.TestCase):
 
     def test_one_spawn_owns_all_repository_services_and_stop_removes_the_pid_group(self):
         second = ServiceSpec("admin", 8081, "http://localhost:8081/health")
+        repositories = dict(self.manifest.repositories)
+        repositories["api"] = replace(
+            repositories["api"],
+            services=(self.service, second),
+        )
+        manifest = replace(
+            self.manifest,
+            repositories=MappingProxyType(repositories),
+        )
+        manager = ProcessManager(
+            self.registry,
+            self.backend,
+            owner_token="owner-1",
+            manifest=manifest,
+        )
         self.backend.healthy_urls.update(
             {self.service.health_url, second.health_url}
         )
 
-        records = self.manager.start_services(
+        records = manager.start_services(
             (self.service, second),
             self.run,
             candidate_sha=SHA,
@@ -327,7 +436,7 @@ class ProcessManagerTests(unittest.TestCase):
         )
         self.assertEqual(self.registry.read(), records)
 
-        self.manager.stop(
+        manager.stop(
             records[0],
             run_id="run-1",
             repository_key="api",
@@ -347,6 +456,8 @@ class ProcessManagerTests(unittest.TestCase):
             run_id="run-1",
             owner_token="owner-1",
             start_identity="start-777-generation-1",
+            launch_argv=self.run.argv,
+            launch_cwd=self.run.cwd,
         )
         self.registry.write((record,))
         self.backend.port_owners[8080] = 777
@@ -412,6 +523,8 @@ class ProcessManagerTests(unittest.TestCase):
             run_id="run-1",
             owner_token="owner-1",
             start_identity="start-777-generation-1",
+            launch_argv=self.run.argv,
+            launch_cwd=self.run.cwd,
         )
         self.registry.write((record,))
         self.backend.port_owners[8080] = 777
@@ -439,6 +552,8 @@ class ProcessManagerTests(unittest.TestCase):
             run_id="run-1",
             owner_token="owner-1",
             start_identity="start-777-generation-1",
+            launch_argv=self.run.argv,
+            launch_cwd=self.run.cwd,
         )
         self.registry.write((record,))
         self.backend.port_owners[8080] = 777

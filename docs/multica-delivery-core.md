@@ -86,12 +86,20 @@ internals:
   and perform bounded stalled-work recovery. Its effects occur only when its
   explicit workflow methods are called; importing the module has no effect.
   Parent progression is authorized only from the manifest's exact control
-  Project. New phase evidence must name the active, current-stage child whose
-  creation action is already authoritative; historical or post-merge evidence
-  is replay-only.
+  Project. Before any decision or state-changing block, one guarded schema gate
+  revalidates every metadata field and every nested snapshot, evidence, child,
+  and pull-request target value; constructor identity alone is not authority.
+  Phase-completion and smoke DTOs are fully validated before the first store
+  read. New phase evidence must name the active, current-stage child whose
+  creation candidate map and exact creation action are already authoritative;
+  historical or post-merge evidence is replay-only and requires the one exact
+  completion action key.
 - `ProcessManager` starts, reuses, and stops local services only when its
   manifest binding and private runtime registry prove the same instance owner, Run, repository,
-  exact SHA, PID, port, and health URL. An unknown or partially owned process
+  exact SHA, PID, port, health URL, launch argv, and launch cwd. Service set and
+  launch identity must match the manifest before registry access or spawn. The
+  launch-provenance fields are required registry schema; older records are
+  invalid rather than migrated or reused. An unknown or partially owned process
   blocks the operation and is never reused or terminated.
 
 `MulticaClient` and `GitHubClient` are strict subprocess boundaries, not
@@ -100,12 +108,18 @@ JSON responses, retry only bounded safe reads, redact failures, and restrict
 GitHub operations to the manifest allowlist. Required checks, review, QA, and
 merge evidence name the exact candidate SHA. No secret value belongs in argv,
 logs, exceptions, Issues, comments, pull requests, reports, or the lock file.
+Exception relays discard raw traceback, cause, and context graphs through
+non-throwing cleanup that contains even hostile `BaseException` behavior; the
+new safe exception is raised only after caught raw references have left scope.
 
 Public one-ID reads accept only the exact full-match identifier grammar
 `[A-Za-z0-9][A-Za-z0-9._:-]{0,255}`. Empty, option-like,
 whitespace-containing, slash-containing, overlength, and extra-token forms are
 rejected before the runner is called. Identifiers are not normalized,
 lowercased, split, or aliased.
+For runtime lookup, configured runtime and daemon IDs are defaults only when
+the corresponding argument is exactly `None`; every explicit falsy or
+otherwise invalid value is validated and rejected before runner execution.
 
 ## Effect, merge, deployment, and Watcher policy
 
@@ -164,8 +178,12 @@ Delivery Lead's slot. The Watcher may reread only the configured Projects and
 rerun at most one already-intended stalled assignment. It never creates work,
 changes a repair attempt, waives a gate, edits business code, merges, rolls
 back, or deploys. Recovery selects only the current stage/attempt child with
-matching repository, phase, suite, and authoritative creation action; a
-historical child can never be rerun.
+matching repository, phase, suite, and authoritative creation action, and the
+expected phase is derived from current parent evidence rather than from the
+available child alone. A historical or wrong-phase child can never be rerun.
+If every repository is already merged, any pure missing, pending, failed, or
+stale pre-merge-evidence decision is propagated as a zero-mutation human block;
+the recovery path never converts it to a noop or rerun.
 
 ## Eventra compatibility and migration boundary
 

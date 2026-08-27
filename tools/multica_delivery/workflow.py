@@ -15,8 +15,11 @@ import uuid
 from .decisions import (
     DecisionKind,
     DispatchKind,
+    GateEvidence,
     ParentDecision,
     ParentSnapshot,
+    PullRequestEvidence,
+    RepositoryEvidence,
     SmokeRead,
     decide_parent_action,
 )
@@ -41,11 +44,22 @@ from .topology import TopologyError, merge_order
 _SHA = re.compile(r"[0-9a-f]{40}\Z")
 _STABLE_KEY = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/-]*\Z")
 _ISSUE_IDENTIFIER = re.compile(r"[A-Za-z][A-Za-z0-9]*-[1-9][0-9]*\Z")
+_SMOKE_OBSERVATION_ID = re.compile(r"smoke:[0-9a-f]{64}\Z")
 _ACTION_KEY = re.compile(
     r"(?:dispatch|stage|review|qa|merge|repair|smoke|resume|recovery):[0-9a-f]{64}\Z"
 )
 _PHASES = frozenset({"implementation", "review", "qa", "integration_qa", "repair", "smoke"})
 _PHASE_RESULTS = frozenset({"pass", "fail", "blocked"})
+_EVIDENCE_RESULTS = frozenset({"pending", "pass", "fail", "blocked"})
+_MERGE_STATES = frozenset(
+    {"pending", "not_ready", "ready", "merging", "merged", "partial", "blocked"}
+)
+_PARENT_STATUSES = frozenset(
+    {"backlog", "todo", "in_progress", "in_review", "done", "blocked", "cancelled"}
+)
+_CHILD_STATUSES = frozenset(
+    {"backlog", "todo", "in_progress", "in_review", "done", "blocked", "cancelled"}
+)
 _ACTIVE_PARENT_STATUSES = frozenset({"todo", "in_progress", "in_review"})
 _ACTIVE_CHILD_STATUSES = frozenset({"todo", "in_progress", "in_review"})
 _TERMINAL_CHILD_STATUSES = frozenset({"done", "blocked", "cancelled"})
@@ -71,7 +85,131 @@ def _stable(value: object, field_name: str, *, empty: bool = False) -> str:
 
 
 def _valid_sha(value: object) -> bool:
-    return isinstance(value, str) and _SHA.fullmatch(value) is not None
+    return type(value) is str and _SHA.fullmatch(value) is not None
+
+
+def _exact_stable(value: object, *, empty: bool = False) -> bool:
+    return type(value) is str and (
+        (empty and value == "")
+        or (bool(value) and _STABLE_KEY.fullmatch(value) is not None)
+    )
+
+
+def _canonical_uuid(value: object, *, empty: bool = False) -> bool:
+    if empty and value == "":
+        return True
+    if type(value) is not str:
+        return False
+    try:
+        return str(uuid.UUID(value)) == value
+    except (AttributeError, TypeError, ValueError):
+        return False
+
+
+def _exact_mapping(
+    value: object,
+    value_problem: Callable[[object], bool],
+) -> bool:
+    return (
+        type(value) is _MAPPING_PROXY_TYPE
+        and all(_exact_stable(key) and value_problem(item) for key, item in value.items())
+    )
+
+
+def _phase_completion_schema_problem(
+    completion: object,
+    *,
+    max_attempt: int,
+) -> str | None:
+    try:
+        if type(completion) is not PhaseCompletion:
+            return "phase completion is malformed"
+        if (
+            type(completion.parent_identifier) is not str
+            or _ISSUE_IDENTIFIER.fullmatch(completion.parent_identifier) is None
+            or not _exact_stable(completion.repository_key)
+            or type(completion.phase) is not str
+            or completion.phase not in _PHASES - {"smoke"}
+            or type(completion.result) is not str
+            or completion.result not in _PHASE_RESULTS
+            or type(completion.attempt) is not int
+            or not 0 <= completion.attempt <= max_attempt
+            or not _valid_sha(completion.candidate_sha)
+            or not _canonical_uuid(completion.evidence_comment_uuid)
+            or not _exact_stable(completion.suite_key, empty=True)
+            or not _exact_mapping(completion.candidate_shas, _valid_sha)
+        ):
+            return "phase completion is malformed"
+
+        evidence_url = urlsplit(completion.evidence_comment_url)
+        if (
+            type(completion.evidence_comment_url) is not str
+            or evidence_url.scheme != "https"
+            or not evidence_url.netloc
+            or evidence_url.username is not None
+            or evidence_url.password is not None
+            or evidence_url.query
+            or evidence_url.fragment
+            or not evidence_url.path
+        ):
+            return "phase completion evidence is malformed"
+
+        if type(completion.pull_request_url) is not str:
+            return "phase completion pull request is malformed"
+        if completion.pull_request_url:
+            pull_request_url = urlsplit(completion.pull_request_url)
+            pull_parts = pull_request_url.path.split("/")
+            if (
+                pull_request_url.scheme != "https"
+                or pull_request_url.netloc != "github.com"
+                or pull_request_url.username is not None
+                or pull_request_url.password is not None
+                or pull_request_url.query
+                or pull_request_url.fragment
+                or len(pull_parts) != 5
+                or pull_parts[0] != ""
+                or not _exact_stable(pull_parts[1])
+                or not _exact_stable(pull_parts[2])
+                or pull_parts[3] != "pull"
+                or not pull_parts[4].isdigit()
+                or pull_parts[4].startswith("0")
+            ):
+                return "phase completion pull request is malformed"
+        elif completion.phase in {"implementation", "repair"}:
+            return "phase completion pull request is malformed"
+
+        if completion.phase == "integration_qa":
+            if not completion.suite_key or not completion.candidate_shas:
+                return "phase completion integration identity is malformed"
+        elif completion.suite_key or completion.candidate_shas:
+            return "phase completion repository identity is malformed"
+    except BaseException:
+        return "phase completion is malformed"
+    return None
+
+
+def _smoke_read_schema_problem(smoke_read: object) -> str | None:
+    try:
+        if (
+            type(smoke_read) is not SmokeRead
+            or type(smoke_read.observation_id) is not str
+            or _SMOKE_OBSERVATION_ID.fullmatch(smoke_read.observation_id) is None
+            or not _exact_mapping(smoke_read.merged_shas, _valid_sha)
+            or not _exact_mapping(smoke_read.checkout_shas, _valid_sha)
+            or not _exact_mapping(
+                smoke_read.repository_results,
+                lambda result: type(result) is str and result in _EVIDENCE_RESULTS,
+            )
+            or not _exact_mapping(
+                smoke_read.integration_results,
+                lambda result: type(result) is str and result in _EVIDENCE_RESULTS,
+            )
+            or type(smoke_read.authoritative) is not bool
+        ):
+            return "smoke read is malformed"
+    except BaseException:
+        return "smoke read is malformed"
+    return None
 
 
 @dataclass(frozen=True)
@@ -108,6 +246,7 @@ class WorkflowChild:
     action_key: str
     active: bool
     evidence_comment_uuid: str = ""
+    creation_candidate_shas: Mapping[str, str] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         _stable(self.identifier, "child identifier")
@@ -132,6 +271,17 @@ class WorkflowChild:
                 raise WorkflowError("child evidence UUID is malformed") from error
             if observed != self.evidence_comment_uuid:
                 raise WorkflowError("child evidence UUID is malformed")
+        candidates = dict(self.creation_candidate_shas)
+        if any(
+            not _exact_stable(repository) or not _valid_sha(candidate_sha)
+            for repository, candidate_sha in candidates.items()
+        ):
+            raise WorkflowError("child creation candidate SHA map is malformed")
+        object.__setattr__(
+            self,
+            "creation_candidate_shas",
+            MappingProxyType(dict(sorted(candidates.items()))),
+        )
 
 
 @dataclass(frozen=True)
@@ -965,57 +1115,339 @@ class GenericWorkflow:
             ) if contract_hashes is None else contract_hashes,
         )
 
-    def _state_problem(self, state: object, parent_identifier: str) -> str | None:
-        if type(state) is not WorkflowState:
-            return _WRONG_PARENT_STATE
+    def _exact_state_schema_problem(self, state: object) -> str | None:
+        """Validate the complete persisted DTO graph without trusting constructors."""
+
+        malformed = "parent state schema is unsupported"
         try:
-            if type(state.parent_identifier) is not str:
-                return "parent state schema is unsupported"
-            if state.parent_identifier != parent_identifier:
+            if type(state) is not WorkflowState:
                 return _WRONG_PARENT_STATE
             if (
-                type(state.parent_status) is not str
+                not _exact_stable(state.parent_identifier)
+                or type(state.parent_status) is not str
+                or state.parent_status not in _PARENT_STATUSES
                 or type(state.project_key) is not str
+                or not state.project_key
                 or type(state.snapshot) is not ParentSnapshot
-                or type(state.snapshot.affected_repositories) is not tuple
-                or any(
-                    type(getattr(state.snapshot, name)) is not _MAPPING_PROXY_TYPE
-                    for name in (
-                        "candidate_shas",
-                        "children",
-                        "pull_requests",
-                        "reviews",
-                        "qa",
-                        "integration_qa",
-                        "merged_shas",
-                    )
-                )
-                or type(state.snapshot.smoke_reads) is not tuple
-                or type(state.snapshot.attempt) is not int
-                or type(state.snapshot.merge_state) is not str
-                or type(state.snapshot.stalled) is not bool
-                or type(state.snapshot.recovery_count) is not int
-                or type(state.snapshot.satisfied_dependencies) is not frozenset
                 or type(state.children) is not tuple
-                or any(type(child) is not WorkflowChild for child in state.children)
                 or type(state.pull_requests) is not _MAPPING_PROXY_TYPE
-                or any(
-                    type(repository) is not str
-                    or type(target) is not PullRequestTarget
-                    or target.repository_key != repository
-                    for repository, target in state.pull_requests.items()
-                )
                 or type(state.applied_action_keys) is not frozenset
-                or any(
-                    type(key) is not str or _ACTION_KEY.fullmatch(key) is None
-                    for key in state.applied_action_keys
-                )
                 or type(state.human_wait) is not bool
                 or type(state.active_work) is not bool
             ):
-                return "parent state schema is unsupported"
-        except (AttributeError, TypeError, ValueError):
-            return "parent state schema is unsupported"
+                return malformed
+
+            snapshot = state.snapshot
+            if (
+                type(snapshot.affected_repositories) is not tuple
+                or any(
+                    not _exact_stable(repository)
+                    for repository in snapshot.affected_repositories
+                )
+                or len(set(snapshot.affected_repositories))
+                != len(snapshot.affected_repositories)
+            ):
+                return malformed
+            affected = frozenset(snapshot.affected_repositories)
+
+            mapping_names = (
+                "candidate_shas",
+                "children",
+                "pull_requests",
+                "reviews",
+                "qa",
+                "integration_qa",
+                "merged_shas",
+            )
+            if any(
+                type(getattr(snapshot, name)) is not _MAPPING_PROXY_TYPE
+                for name in mapping_names
+            ):
+                return malformed
+
+            for values in (
+                snapshot.candidate_shas,
+                snapshot.children,
+                snapshot.pull_requests,
+                snapshot.reviews,
+                snapshot.qa,
+                snapshot.merged_shas,
+            ):
+                if (
+                    any(not _exact_stable(key) for key in values)
+                    or set(values) - affected
+                ):
+                    return malformed
+            if (
+                any(not _valid_sha(value) for value in snapshot.candidate_shas.values())
+                or any(not _valid_sha(value) for value in snapshot.merged_shas.values())
+            ):
+                return malformed
+
+            def repository_evidence_is_exact(evidence: object) -> bool:
+                return (
+                    type(evidence) is RepositoryEvidence
+                    and type(evidence.candidate_sha) is str
+                    and (
+                        _valid_sha(evidence.candidate_sha)
+                        or (
+                            evidence.result == "pending"
+                            and evidence.candidate_sha == ""
+                        )
+                    )
+                    and type(evidence.result) is str
+                    and evidence.result in _EVIDENCE_RESULTS
+                )
+
+            if any(
+                not repository_evidence_is_exact(evidence)
+                for values in (snapshot.children, snapshot.reviews, snapshot.qa)
+                for evidence in values.values()
+            ):
+                return malformed
+
+            for evidence in snapshot.pull_requests.values():
+                if (
+                    type(evidence) is not PullRequestEvidence
+                    or not _valid_sha(evidence.head_sha)
+                    or type(evidence.state) is not str
+                    or evidence.state not in {"open", "closed", "merged"}
+                    or (
+                        evidence.mergeable is not None
+                        and type(evidence.mergeable) is not bool
+                    )
+                    or (
+                        evidence.checks_pass is not None
+                        and type(evidence.checks_pass) is not bool
+                    )
+                    or (
+                        evidence.merged_sha is not None
+                        and not _valid_sha(evidence.merged_sha)
+                    )
+                ):
+                    return malformed
+
+            applicable_suites = {
+                suite.key: suite
+                for suite in self.manifest.integration_suites
+                if set(suite.repositories) <= affected
+            }
+            if (
+                any(not _exact_stable(key) for key in snapshot.integration_qa)
+                or set(snapshot.integration_qa) - set(applicable_suites)
+            ):
+                return malformed
+            for evidence in snapshot.integration_qa.values():
+                if (
+                    type(evidence) is not GateEvidence
+                    or type(evidence.candidate_shas) is not _MAPPING_PROXY_TYPE
+                    or not _exact_mapping(evidence.candidate_shas, _valid_sha)
+                    or set(evidence.candidate_shas) - affected
+                    or type(evidence.result) is not str
+                    or evidence.result not in _EVIDENCE_RESULTS
+                ):
+                    return malformed
+
+            if (
+                type(snapshot.merge_state) is not str
+                or snapshot.merge_state not in _MERGE_STATES
+                or type(snapshot.smoke_reads) is not tuple
+                or any(
+                    _smoke_read_schema_problem(smoke_read) is not None
+                    for smoke_read in snapshot.smoke_reads
+                )
+                or type(snapshot.attempt) is not int
+                or not 0 <= snapshot.attempt <= self.manifest.policy.max_repair_attempts
+                or type(snapshot.stalled) is not bool
+                or (
+                    snapshot.stalled_repository is not None
+                    and (
+                        not _exact_stable(snapshot.stalled_repository)
+                        or snapshot.stalled_repository not in affected
+                    )
+                )
+                or type(snapshot.recovery_count) is not int
+                or not 0 <= snapshot.recovery_count <= 1
+                or type(snapshot.satisfied_dependencies) is not frozenset
+            ):
+                return malformed
+            for dependency in snapshot.satisfied_dependencies:
+                if (
+                    type(dependency) is not tuple
+                    or len(dependency) != 2
+                    or any(not _exact_stable(item) for item in dependency)
+                    or any(item not in affected for item in dependency)
+                ):
+                    return malformed
+
+            metadata = state.metadata
+            if metadata is not None:
+                if (
+                    type(metadata) is not ParentMetadata
+                    or type(metadata.workflow_version) is not int
+                    or metadata.workflow_version < 1
+                    or type(metadata.metadata_version) is not int
+                    or metadata.metadata_version < 1
+                    or not _exact_stable(metadata.instance_key)
+                    or type(metadata.affected_repositories) is not tuple
+                    or any(
+                        not _exact_stable(repository)
+                        for repository in metadata.affected_repositories
+                    )
+                    or len(set(metadata.affected_repositories))
+                    != len(metadata.affected_repositories)
+                    or type(metadata.repository_dag) is not _MAPPING_PROXY_TYPE
+                    or type(metadata.candidate_shas) is not _MAPPING_PROXY_TYPE
+                    or type(metadata.contract_hashes) is not _MAPPING_PROXY_TYPE
+                    or type(metadata.stage_ordinal) is not int
+                    or metadata.stage_ordinal < 0
+                    or type(metadata.merge_plan) is not tuple
+                    or any(not _exact_stable(item) for item in metadata.merge_plan)
+                    or type(metadata.merge_state) is not str
+                    or type(metadata.attempt) is not int
+                    or type(metadata.last_action) is not str
+                ):
+                    return malformed
+                if set(metadata.repository_dag) != set(metadata.affected_repositories):
+                    return malformed
+                for repository, dependencies in metadata.repository_dag.items():
+                    if (
+                        not _exact_stable(repository)
+                        or type(dependencies) is not tuple
+                        or any(not _exact_stable(item) for item in dependencies)
+                        or len(set(dependencies)) != len(dependencies)
+                    ):
+                        return malformed
+                if (
+                    not _exact_mapping(metadata.candidate_shas, _valid_sha)
+                    or not _exact_mapping(metadata.contract_hashes, _valid_sha)
+                ):
+                    return malformed
+                reconstructed = ParentMetadata(
+                    workflow_version=metadata.workflow_version,
+                    metadata_version=metadata.metadata_version,
+                    instance_key=metadata.instance_key,
+                    affected_repositories=metadata.affected_repositories,
+                    repository_dag=dict(metadata.repository_dag),
+                    candidate_shas=dict(metadata.candidate_shas),
+                    contract_hashes=dict(metadata.contract_hashes),
+                    stage_ordinal=metadata.stage_ordinal,
+                    merge_plan=metadata.merge_plan,
+                    merge_state=metadata.merge_state,
+                    attempt=metadata.attempt,
+                    last_action=metadata.last_action,
+                )
+                if (
+                    reconstructed != metadata
+                    or tuple(reconstructed.repository_dag.items())
+                    != tuple(metadata.repository_dag.items())
+                    or tuple(reconstructed.candidate_shas.items())
+                    != tuple(metadata.candidate_shas.items())
+                    or tuple(reconstructed.contract_hashes.items())
+                    != tuple(metadata.contract_hashes.items())
+                ):
+                    return malformed
+            elif (
+                affected
+                or snapshot.candidate_shas
+                or snapshot.children
+                or snapshot.pull_requests
+                or snapshot.reviews
+                or snapshot.qa
+                or snapshot.integration_qa
+                or snapshot.merged_shas
+                or snapshot.smoke_reads
+                or state.children
+                or state.pull_requests
+            ):
+                return malformed
+
+            identifiers: set[str] = set()
+            for child in state.children:
+                if (
+                    type(child) is not WorkflowChild
+                    or not _exact_stable(child.identifier)
+                    or child.identifier in identifiers
+                    or not _exact_stable(child.target_key)
+                    or not _exact_stable(child.repository_key)
+                    or child.repository_key not in affected
+                    or not _exact_stable(child.suite_key, empty=True)
+                    or type(child.phase) is not str
+                    or child.phase not in _PHASES
+                    or type(child.stage_ordinal) is not int
+                    or child.stage_ordinal < 0
+                    or type(child.attempt) is not int
+                    or child.attempt < 0
+                    or type(child.status) is not str
+                    or child.status not in _CHILD_STATUSES
+                    or type(child.action_key) is not str
+                    or _ACTION_KEY.fullmatch(child.action_key) is None
+                    or child.action_key not in state.applied_action_keys
+                    or type(child.active) is not bool
+                    or not _canonical_uuid(child.evidence_comment_uuid, empty=True)
+                    or type(child.creation_candidate_shas)
+                    is not _MAPPING_PROXY_TYPE
+                    or not _exact_mapping(
+                        child.creation_candidate_shas,
+                        _valid_sha,
+                    )
+                    or set(child.creation_candidate_shas) - affected
+                ):
+                    return malformed
+                identifiers.add(child.identifier)
+                expected_prefix = {
+                    "implementation": "dispatch:",
+                    "repair": "repair:",
+                    "review": "stage:",
+                    "qa": "stage:",
+                    "integration_qa": "stage:",
+                    "smoke": "smoke:",
+                }[child.phase]
+                if not child.action_key.startswith(expected_prefix):
+                    return malformed
+                if child.phase == "integration_qa":
+                    suite = applicable_suites.get(child.suite_key)
+                    if (
+                        suite is None
+                        or child.target_key != child.suite_key
+                        or child.repository_key != suite.command_repository
+                    ):
+                        return malformed
+                elif child.target_key != child.repository_key or child.suite_key:
+                    return malformed
+
+            if any(
+                type(key) is not str or _ACTION_KEY.fullmatch(key) is None
+                for key in state.applied_action_keys
+            ):
+                return malformed
+            for repository, target in state.pull_requests.items():
+                if (
+                    not _exact_stable(repository)
+                    or repository not in affected
+                    or type(target) is not PullRequestTarget
+                    or target.repository_key != repository
+                    or type(target.number) is not int
+                    or target.number < 1
+                    or type(target.url) is not str
+                ):
+                    return malformed
+                specification = self.manifest.repositories.get(repository)
+                if specification is None or target.url != (
+                    f"https://github.com/{specification.github}/pull/{target.number}"
+                ):
+                    return malformed
+        except BaseException:
+            return malformed
+        return None
+
+    def _state_problem(self, state: object, parent_identifier: str) -> str | None:
+        schema_problem = self._exact_state_schema_problem(state)
+        if schema_problem is not None:
+            return schema_problem
+        assert type(state) is WorkflowState
+        if state.parent_identifier != parent_identifier:
+            return _WRONG_PARENT_STATE
         if state.project_key != self.manifest.instance.control_project:
             return _OUTSIDE_PROJECT_STATE
         if state.metadata is None:
@@ -1058,7 +1490,9 @@ class GenericWorkflow:
         if allow_uninitialized and problem == _UNINITIALIZED_PARENT_STATE:
             return None
         if problem is None or (
-            future_child_only and problem != _FUTURE_CHILD_RELATIONSHIP
+            future_child_only
+            and problem
+            not in {_FUTURE_CHILD_RELATIONSHIP, "parent state schema is unsupported"}
         ):
             return None
         merge_state = (
@@ -1725,6 +2159,7 @@ class GenericWorkflow:
                 request.stage_ordinal,
                 request.attempt,
                 key,
+                tuple(request.candidate_shas.items()),
             )
             for request in requests
         }
@@ -1745,6 +2180,7 @@ class GenericWorkflow:
                         child.stage_ordinal,
                         child.attempt,
                         child.action_key,
+                        tuple(child.creation_candidate_shas.items()),
                     )
                     for child in current.children
                 }
@@ -1834,6 +2270,9 @@ class GenericWorkflow:
                 state,
                 "parent could not be reread before completion",
             )
+        fresh_problem = self._state_problem_result(fresh, parent_identifier)
+        if fresh_problem is not None:
+            return fresh_problem
         if fresh != state or decide_parent_action(self.manifest, fresh.snapshot) != decision:
             return self._result(fresh, "noop", "parent changed before completion")
         assert fresh.metadata is not None
@@ -1890,8 +2329,12 @@ class GenericWorkflow:
         state: WorkflowState,
         completion: PhaseCompletion,
     ) -> tuple[str | None, WorkflowChild | None]:
-        if type(completion) is not PhaseCompletion:
-            return "phase completion is malformed", None
+        schema_problem = _phase_completion_schema_problem(
+            completion,
+            max_attempt=self.manifest.policy.max_repair_attempts,
+        )
+        if schema_problem is not None:
+            return schema_problem, None
         if completion.parent_identifier != state.parent_identifier:
             return "phase completion names the wrong parent", None
         if completion.phase not in _PHASES - {"smoke"} or completion.result not in _PHASE_RESULTS:
@@ -2045,17 +2488,37 @@ class GenericWorkflow:
         persisted = reads[0]
         if persisted is None:
             return None
-        if persisted != completion:
+        if (
+            _phase_completion_schema_problem(
+                persisted,
+                max_attempt=self.manifest.policy.max_repair_attempts,
+            )
+            is not None
+            or persisted != completion
+        ):
             return self._zero_mutation_block(
                 state,
                 "phase completion evidence identity conflicts with persisted evidence",
             )
+        expected_target = (
+            completion.suite_key
+            if completion.phase == "integration_qa"
+            else completion.repository_key
+        )
+        expected_suite = (
+            completion.suite_key if completion.phase == "integration_qa" else ""
+        )
         completed = tuple(
             child
             for child in state.children
             if child.status == "done"
             and not child.active
             and child.evidence_comment_uuid == completion.evidence_comment_uuid
+            and child.repository_key == completion.repository_key
+            and child.target_key == expected_target
+            and child.suite_key == expected_suite
+            and child.phase == completion.phase
+            and child.attempt == completion.attempt
             and child.action_key in state.applied_action_keys
         )
         if len(completed) != 1:
@@ -2063,21 +2526,70 @@ class GenericWorkflow:
                 state,
                 "persisted phase evidence lacks one authoritative child transition",
             )
-        completion_prefix = {
-            "implementation": "dispatch:",
-            "repair": "repair:",
-            "review": "review:",
-            "qa": "qa:",
-            "integration_qa": "qa:",
-        }.get(completion.phase)
-        completion_transitions = {
-            key
-            for key in state.applied_action_keys
-            if completion_prefix is not None
-            and key.startswith(completion_prefix)
-            and key != completed[0].action_key
-        }
-        if not completion_transitions:
+        candidate_identity = (
+            dict(completion.candidate_shas) == dict(state.snapshot.candidate_shas)
+            and completion.candidate_shas.get(completion.repository_key)
+            == completion.candidate_sha
+            if completion.phase == "integration_qa"
+            else state.snapshot.candidate_shas.get(completion.repository_key)
+            == completion.candidate_sha
+        )
+        if not candidate_identity:
+            return self._zero_mutation_block(
+                state,
+                "persisted phase evidence lacks the current candidate identity",
+            )
+        creation_stage_kind = (
+            "gates"
+            if completion.phase in {"review", "qa", "integration_qa"}
+            else completion.phase
+        )
+        expected_creation_key = self._action_key(
+            state,
+            creation_stage_kind,
+            completed[0].stage_ordinal,
+            attempt=completed[0].attempt,
+            candidate_shas=completed[0].creation_candidate_shas,
+        )
+        unchanged_creation_candidates = all(
+            repository == completion.repository_key
+            or state.snapshot.candidate_shas.get(repository) == candidate_sha
+            for repository, candidate_sha in completed[0].creation_candidate_shas.items()
+        )
+        gate_creation_candidates = (
+            dict(completed[0].creation_candidate_shas)
+            == dict(state.snapshot.candidate_shas)
+            if completion.phase in {"review", "qa", "integration_qa"}
+            else unchanged_creation_candidates
+        )
+        if (
+            completed[0].action_key != expected_creation_key
+            or expected_creation_key not in state.applied_action_keys
+            or not gate_creation_candidates
+        ):
+            return self._zero_mutation_block(
+                state,
+                "persisted phase evidence lacks exact child creation provenance",
+            )
+        action_candidates = (
+            completion.candidate_shas
+            if completion.phase == "integration_qa"
+            else {
+                **state.snapshot.candidate_shas,
+                completion.repository_key: completion.candidate_sha,
+            }
+        )
+        expected_completion_key = self._action_key(
+            state,
+            f"{completion.phase}:{completed[0].target_key}",
+            completed[0].stage_ordinal,
+            attempt=completion.attempt,
+            candidate_shas=action_candidates,
+        )
+        if (
+            expected_completion_key == completed[0].action_key
+            or expected_completion_key not in state.applied_action_keys
+        ):
             return self._zero_mutation_block(
                 state,
                 "persisted phase evidence lacks an authoritative completion action",
@@ -2087,10 +2599,32 @@ class GenericWorkflow:
             "noop",
             "phase completion already exists",
             completed_child_status="done",
+            action_key=expected_completion_key,
         )
 
     def record_phase_completion(self, completion: PhaseCompletion) -> WorkflowResult:
-        parent_identifier = getattr(completion, "parent_identifier", "")
+        parent_identifier = ""
+        try:
+            if (
+                type(completion) is PhaseCompletion
+                and type(completion.parent_identifier) is str
+                and _ISSUE_IDENTIFIER.fullmatch(completion.parent_identifier) is not None
+            ):
+                parent_identifier = completion.parent_identifier
+        except BaseException:
+            pass
+        completion_schema_problem = _phase_completion_schema_problem(
+            completion,
+            max_attempt=self.manifest.policy.max_repair_attempts,
+        )
+        if completion_schema_problem is not None:
+            return WorkflowResult(
+                parent_identifier,
+                "blocked",
+                "block",
+                completion_schema_problem,
+                mutation_count=0,
+            )
         try:
             state = self.snapshot_reader.read(parent_identifier)
         except Exception:
@@ -2993,8 +3527,9 @@ class GenericWorkflow:
         return replace(resumed, merge_state="merged")
 
     def _smoke_problem(self, state: WorkflowState, smoke_read: SmokeRead) -> str | None:
-        if not isinstance(smoke_read, SmokeRead):
-            return "smoke read is malformed"
+        schema_problem = _smoke_read_schema_problem(smoke_read)
+        if schema_problem is not None:
+            return schema_problem
         affected = set(state.snapshot.affected_repositories)
         expected_suites = {
             suite.key
@@ -3031,6 +3566,20 @@ class GenericWorkflow:
     def record_smoke_read(self, parent_identifier: str, smoke_read: SmokeRead) -> WorkflowResult:
         """Replay persisted smoke evidence; callers cannot mint new observations."""
 
+        identifier_valid = (
+            type(parent_identifier) is str
+            and _ISSUE_IDENTIFIER.fullmatch(parent_identifier) is not None
+        )
+        safe_identifier = parent_identifier if identifier_valid else ""
+        schema_problem = _smoke_read_schema_problem(smoke_read)
+        if not identifier_valid or schema_problem is not None:
+            return WorkflowResult(
+                safe_identifier,
+                "blocked",
+                "block",
+                schema_problem or "parent identifier is malformed",
+                mutation_count=0,
+            )
         return self._record_smoke_read(
             parent_identifier,
             smoke_read,
@@ -3044,6 +3593,20 @@ class GenericWorkflow:
         *,
         persistence_authority: object,
     ) -> WorkflowResult:
+        identifier_valid = (
+            type(parent_identifier) is str
+            and _ISSUE_IDENTIFIER.fullmatch(parent_identifier) is not None
+        )
+        safe_identifier = parent_identifier if identifier_valid else ""
+        schema_problem = _smoke_read_schema_problem(smoke_read)
+        if not identifier_valid or schema_problem is not None:
+            return WorkflowResult(
+                safe_identifier,
+                "blocked",
+                "block",
+                schema_problem or "parent identifier is malformed",
+                mutation_count=0,
+            )
         try:
             state = self.snapshot_reader.read(parent_identifier)
         except Exception:
@@ -3272,6 +3835,85 @@ class GenericWorkflow:
             ),
         )
 
+    @staticmethod
+    def _is_all_merged(snapshot: ParentSnapshot) -> bool:
+        affected = frozenset(snapshot.affected_repositories)
+        return (
+            bool(affected)
+            and snapshot.merge_state == "merged"
+            and set(snapshot.merged_shas) == affected
+            and {
+                repository
+                for repository, evidence in snapshot.pull_requests.items()
+                if evidence.state == "merged"
+            }
+            == affected
+        )
+
+    def _expected_recovery_intents(
+        self,
+        state: WorkflowState,
+        repository: str,
+    ) -> frozenset[tuple[str, str, str, str]]:
+        """Derive child identity only from the stalled parent evidence."""
+
+        snapshot = state.snapshot
+        candidate = snapshot.candidate_shas.get(repository)
+        implementation = snapshot.children.get(repository)
+        intents: set[tuple[str, str, str, str]] = set()
+        if (
+            implementation is not None
+            and implementation.result == "pending"
+        ):
+            intents.add(
+                (
+                    "repair" if snapshot.attempt else "implementation",
+                    repository,
+                    repository,
+                    "",
+                )
+            )
+            return frozenset(intents)
+        if (
+            implementation is None
+            or implementation.result != "pass"
+            or implementation.candidate_sha != candidate
+            or candidate is None
+        ):
+            return frozenset()
+
+        for phase, evidence_by_repository in (
+            ("review", snapshot.reviews),
+            ("qa", snapshot.qa),
+        ):
+            evidence = evidence_by_repository.get(repository)
+            if (
+                evidence is not None
+                and evidence.result == "pending"
+                and evidence.candidate_sha == candidate
+            ):
+                intents.add((phase, repository, repository, ""))
+        for suite in self.manifest.integration_suites:
+            evidence = snapshot.integration_qa.get(suite.key)
+            if (
+                suite.command_repository == repository
+                and set(suite.repositories)
+                <= set(snapshot.affected_repositories)
+                and evidence is not None
+                and evidence.result == "pending"
+                and dict(evidence.candidate_shas)
+                == dict(snapshot.candidate_shas)
+            ):
+                intents.add(
+                    (
+                        "integration_qa",
+                        suite.key,
+                        suite.command_repository,
+                        suite.key,
+                    )
+                )
+        return frozenset(intents)
+
     def recover_stalled_parent(
         self,
         parent_identifier: str,
@@ -3295,9 +3937,14 @@ class GenericWorkflow:
         scope_problem = self._watch_scope_problem(initial, parent_identifier)
         if scope_problem is not None:
             return self._recovery_noop(parent_identifier, scope_problem)
+        decision = decide_parent_action(self.manifest, initial.snapshot)
+        if (
+            decision.kind is DecisionKind.BLOCK
+            and self._is_all_merged(initial.snapshot)
+        ):
+            return self._zero_mutation_block(initial, decision.reason)
         if initial.human_wait or initial.active_work or not initial.snapshot.stalled:
             return self._result(initial, "noop", "work is healthy or waiting for a human")
-        decision = decide_parent_action(self.manifest, initial.snapshot)
         if decision.kind is DecisionKind.BLOCK and initial.snapshot.recovery_count >= 1:
             return self._block(initial, decision.reason, stage_kind="recovery-block")
         if (
@@ -3308,6 +3955,14 @@ class GenericWorkflow:
             return self._result(initial, "noop", "watcher has no bounded rerun action")
         repository = decision.repositories[0]
         assert initial.metadata is not None
+        expected_intents = self._expected_recovery_intents(initial, repository)
+        if len(expected_intents) != 1:
+            return self._result(
+                initial,
+                "noop",
+                "watcher cannot derive one stalled phase from parent evidence",
+            )
+        expected_intent = next(iter(expected_intents))
 
         def intended_current_child(child: WorkflowChild) -> bool:
             expected_prefix = {
@@ -3326,17 +3981,12 @@ class GenericWorkflow:
                 or child.repository_key != repository
             ):
                 return False
-            if child.phase == "integration_qa":
-                suites = {
-                    suite.key: suite for suite in self.manifest.integration_suites
-                }
-                suite = suites.get(child.suite_key)
-                return (
-                    suite is not None
-                    and child.target_key == child.suite_key
-                    and suite.command_repository == child.repository_key
-                )
-            return child.target_key == repository and child.suite_key == ""
+            return (
+                child.phase,
+                child.target_key,
+                child.repository_key,
+                child.suite_key,
+            ) == expected_intent
 
         candidates = tuple(
             child
@@ -3402,6 +4052,7 @@ class GenericWorkflow:
                 child.attempt,
                 child.action_key,
                 child.evidence_comment_uuid,
+                tuple(child.creation_candidate_shas.items()),
             )
 
         try:
@@ -3460,6 +4111,8 @@ class GenericWorkflow:
             and child.stage_ordinal == before_target.stage_ordinal
             and child.attempt == before_target.attempt
             and child.action_key == before_target.action_key
+            and child.creation_candidate_shas
+            == before_target.creation_candidate_shas
             and child.active
             and child_identity(child) != child_identity(before_target)
         )

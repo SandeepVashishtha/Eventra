@@ -396,8 +396,8 @@ class MulticaClient:
         return value
 
     def get_runtime(self, runtime_id: str | None = None, daemon_id: str | None = None) -> RuntimeInfo:
-        target_runtime = runtime_id or self.runtime_id
-        target_daemon = daemon_id or self.daemon_id
+        target_runtime = self.runtime_id if runtime_id is None else runtime_id
+        target_daemon = self.daemon_id if daemon_id is None else daemon_id
         _identifier(target_runtime, "runtime")
         _identifier(target_daemon, "daemon")
         raw = self._unwrap(

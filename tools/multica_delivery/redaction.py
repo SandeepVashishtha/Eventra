@@ -32,28 +32,43 @@ def _discard_exception_graph(error: BaseException) -> None:
         if id(current) in seen:
             continue
         seen.add(id(current))
-        cause = current.__cause__
-        context = current.__context__
-        if cause is not None:
-            pending.append(cause)
-        if context is not None:
-            pending.append(context)
-        if current.__traceback__ is not None:
-            traceback.clear_frames(current.__traceback__)
-        current.__traceback__ = None
-        current.__cause__ = None
-        current.__context__ = None
+        links: list[BaseException] = []
+        for name in ("__cause__", "__context__"):
+            try:
+                linked = getattr(current, name)
+            except BaseException:
+                linked = None
+            if isinstance(linked, BaseException):
+                links.append(linked)
+        pending.extend(links)
+        try:
+            current_traceback = getattr(current, "__traceback__")
+        except BaseException:
+            current_traceback = None
+        if current_traceback is not None:
+            try:
+                traceback.clear_frames(current_traceback)
+            except BaseException:
+                pass
+        for name in ("__traceback__", "__cause__", "__context__"):
+            try:
+                setattr(current, name, None)
+            except BaseException:
+                pass
 
 
 def exception_originates_in(error: BaseException, module_name: str) -> bool:
     """Return whether the innermost raising frame belongs to a trusted module."""
 
-    current = error.__traceback__
-    if current is None:
+    try:
+        current = error.__traceback__
+        if current is None:
+            return False
+        while current.tb_next is not None:
+            current = current.tb_next
+        return current.tb_frame.f_globals.get("__name__") == module_name
+    except BaseException:
         return False
-    while current.tb_next is not None:
-        current = current.tb_next
-    return current.tb_frame.f_globals.get("__name__") == module_name
 
 
 def _invoke_closed(
@@ -65,7 +80,13 @@ def _invoke_closed(
     try:
         return ClosedCall(True, function(*arguments, **keywords))
     except Exception as error:
-        failure = classify(error)
+        try:
+            failure = classify(error)
+        except BaseException:
+            try:
+                failure = classify(Exception())
+            except BaseException:
+                failure = ClosedFailure(RuntimeError, "boundary failed")
         _discard_exception_graph(error)
         return ClosedCall(False, failure=failure)
 
