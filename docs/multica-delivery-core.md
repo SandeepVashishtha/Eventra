@@ -96,6 +96,12 @@ GitHub operations to the manifest allowlist. Required checks, review, QA, and
 merge evidence name the exact candidate SHA. No secret value belongs in argv,
 logs, exceptions, Issues, comments, pull requests, reports, or the lock file.
 
+Public one-ID reads accept only the exact full-match identifier grammar
+`[A-Za-z0-9][A-Za-z0-9._:-]{0,255}`. Empty, option-like,
+whitespace-containing, slash-containing, overlength, and extra-token forms are
+rejected before the runner is called. Identifiers are not normalized,
+lowercased, split, or aliased.
+
 ## Effect, merge, deployment, and Watcher policy
 
 Dry-run is the default onboarding posture: audit contracts, validate local

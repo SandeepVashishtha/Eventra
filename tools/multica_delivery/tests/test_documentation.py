@@ -79,6 +79,24 @@ class CoreDocumentationTests(unittest.TestCase):
             inputs,
         )
 
+    def test_documents_closed_public_multica_identifier_grammar(self):
+        public_boundary = self.normalized_section("Public core boundary")
+        self.assertIn(
+            "Public one-ID reads accept only the exact full-match identifier "
+            "grammar `[A-Za-z0-9][A-Za-z0-9._:-]{0,255}`.",
+            public_boundary,
+        )
+        self.assertIn(
+            "Empty, option-like, whitespace-containing, slash-containing, "
+            "overlength, and extra-token forms are rejected before the runner "
+            "is called.",
+            public_boundary,
+        )
+        self.assertIn(
+            "Identifiers are not normalized, lowercased, split, or aliased.",
+            public_boundary,
+        )
+
     def test_documents_eventra_compatibility_boundary(self):
         compatibility = self.normalized_section(
             "Eventra compatibility and migration boundary"

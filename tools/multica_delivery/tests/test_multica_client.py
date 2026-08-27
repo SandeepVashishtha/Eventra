@@ -35,6 +35,75 @@ class FakeRunner:
 
 
 class MulticaClientTests(unittest.TestCase):
+    def test_public_one_id_reads_enforce_the_closed_identifier_grammar(self):
+        prefixes = (
+            ("project", "get"),
+            ("project", "resource", "list"),
+            ("agent", "get"),
+            ("agent", "skills", "list"),
+            ("skill", "get"),
+            ("squad", "get"),
+            ("squad", "member", "list"),
+            ("autopilot", "get"),
+            ("issue", "get"),
+            ("issue", "children"),
+            ("issue", "runs"),
+            ("issue", "metadata", "list"),
+            ("capability", "get"),
+        )
+        suffixes = ((), ("--output", "json"))
+        valid_id = "123e4567-e89b-12d3-a456-426614174000"
+        invalid_ids = (
+            "",
+            "--all",
+            "--help",
+            "-x",
+            "has space",
+            "owner/name",
+            "a" * 257,
+            ".leading",
+            "unicode-é",
+            "invalid?character",
+        )
+
+        for prefix in prefixes:
+            for suffix in suffixes:
+                with self.subTest(prefix=prefix, suffix=suffix, valid=True):
+                    runner = FakeRunner({"data": {"id": valid_id}})
+                    result = MulticaClient(runner).call(
+                        ("multica",) + prefix + (valid_id,) + suffix
+                    )
+
+                    self.assertEqual(result["id"], valid_id)
+                    self.assertEqual(len(runner.calls), 1)
+
+                for invalid_id in invalid_ids:
+                    with self.subTest(
+                        prefix=prefix,
+                        suffix=suffix,
+                        invalid_id=invalid_id,
+                    ):
+                        runner = FakeRunner({"data": {"id": "unexpected"}})
+
+                        with self.assertRaises(MulticaContractError):
+                            MulticaClient(runner).call(
+                                ("multica",) + prefix + (invalid_id,) + suffix
+                            )
+
+                        self.assertEqual(runner.calls, [])
+
+            with self.subTest(prefix=prefix, extra_token=True):
+                runner = FakeRunner({"data": {"id": "unexpected"}})
+
+                with self.assertRaises(MulticaContractError):
+                    MulticaClient(runner).call(
+                        ("multica",)
+                        + prefix
+                        + (valid_id, "--all", "--output", "json")
+                    )
+
+                self.assertEqual(runner.calls, [])
+
     def test_provisioning_reads_decode_exact_immutable_state(self):
         autopilot = {
             "id": "autopilot-1",

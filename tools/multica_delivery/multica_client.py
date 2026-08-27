@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import json
+import re
 from types import MappingProxyType
 from typing import Any, Mapping, Protocol
 from urllib.parse import urlparse
@@ -174,6 +175,7 @@ _PUBLIC_READ_ONE_ID = frozenset(
         ("capability", "get"),
     }
 )
+_PUBLIC_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,255}\Z")
 _EMPTY_ERROR_VALUES = (None, "", (), [], {})
 _UNSUPPORTED_CONTROL_KEYS = frozenset({"ok", "failed", "failure"})
 
@@ -204,6 +206,10 @@ def _contains_key(value: object, forbidden: str) -> bool:
     return False
 
 
+def _is_public_identifier(value: object) -> bool:
+    return isinstance(value, str) and _PUBLIC_ID.fullmatch(value) is not None
+
+
 def _is_public_read(command: tuple[str, ...]) -> bool:
     """Accept only complete, closed public read command shapes."""
 
@@ -216,7 +222,7 @@ def _is_public_read(command: tuple[str, ...]) -> bool:
             if (
                 len(command) == len(prefix) + 1 + len(suffix)
                 and command[: len(prefix)] == prefix
-                and bool(command[len(prefix)])
+                and _is_public_identifier(command[len(prefix)])
                 and command[len(prefix) + 1 :] == suffix
             ):
                 return True
