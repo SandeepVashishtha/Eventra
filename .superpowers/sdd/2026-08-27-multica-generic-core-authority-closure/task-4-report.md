@@ -335,3 +335,86 @@ exit 0, no output
 .venv/bin/python -c 'import yaml; assert yaml.__version__ == "6.0.2"; print(yaml.__version__)'
 6.0.2
 ```
+
+## Fix Round 2/5 — cover extra-token smuggling for both suffixes
+
+Starting HEAD: `65a2405b445ecd6b7364e0a81d0b9f1129ebd59c`
+
+The remaining Important test gap was limited to extra-token placement: the
+smuggling assertion sat outside the suffix loop and hardcoded only
+`(valid_id, "--all", "--output", "json")`. It therefore did not exercise the
+suffixless complete shape.
+
+The assertion now runs inside the suffix loop for every prefix in the
+authority-bound production `_PUBLIC_READ_ONE_ID` set. It constructs the
+command exactly as:
+
+```python
+("multica",) + prefix + (valid_id, "--all") + suffix
+```
+
+for both `suffix == ()` and `suffix == ("--output", "json")`. Every subcase
+requires `MulticaContractError` and `runner.calls == []`.
+
+### Controlled mutation RED evidence
+
+Approved production already rejects both forms, so the new suffix coverage was
+mutation-checked by temporarily discarding an injected `--all` token before
+the existing complete-shape validation. This converted each smuggled command
+back into an otherwise valid one. The focused regression failed exactly once
+per 13-prefix × 2-suffix combination:
+
+```text
+.venv/bin/python -B -m unittest \
+  tools.multica_delivery.tests.test_multica_client.MulticaClientTests.test_public_one_id_reads_enforce_the_closed_identifier_grammar -q
+Ran 1 test in 0.006s
+FAILED (failures=26)
+```
+
+Failure subtests explicitly included both `suffix=()` and
+`suffix=("--output", "json")` for every production prefix. The mutation was
+then removed; final diff inspection showed no production or operator-document
+change.
+
+### Restored GREEN and final verification
+
+```text
+.venv/bin/python -B -m unittest \
+  tools.multica_delivery.tests.test_multica_client.MulticaClientTests.test_public_one_id_reads_enforce_the_closed_identifier_grammar -q
+Ran 1 test in 0.004s
+OK
+
+.venv/bin/python -B -m unittest \
+  tools.multica_delivery.tests.test_multica_client \
+  tools.multica_delivery.tests.test_documentation -q
+Ran 41 tests in 0.006s
+OK
+
+.venv/bin/python -B -m unittest discover \
+  -s tools/multica_delivery/tests -p 'test_*.py' -q
+Ran 342 tests in 0.753s
+OK
+
+.venv/bin/python -B -m unittest discover \
+  -s tools/multica/tests -p 'test_*.py' -q
+Ran 174 tests in 0.148s
+OK
+
+.venv/bin/python -B -m unittest discover -s tools -p 'test_*.py' -q
+Ran 516 tests in 0.872s
+OK
+
+PYTHONPYCACHEPREFIX=/private/tmp/multica-authority-task4-fix2-pycache \
+  .venv/bin/python -B -m compileall -q tools/multica tools/multica_delivery
+exit 0, no output
+
+git diff --check
+exit 0, no output
+
+.venv/bin/python -c 'import yaml; assert yaml.__version__ == "6.0.2"; print(yaml.__version__)'
+6.0.2
+```
+
+Fix Round 2 changes only the one smuggling test placement/construction and this
+tracked report. Production grammar, closed prefix tables, and operator docs are
+unchanged. Open concerns: none.

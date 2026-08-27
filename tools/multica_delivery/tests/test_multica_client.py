@@ -122,18 +122,19 @@ class MulticaClientTests(unittest.TestCase):
 
                         self.assertEqual(runner.calls, [])
 
-            with self.subTest(prefix=prefix, extra_token=True):
-                valid_id = "123e4567-e89b-12d3-a456-426614174000"
-                runner = FakeRunner({"data": {"id": "unexpected"}})
+                with self.subTest(prefix=prefix, suffix=suffix, extra_token=True):
+                    valid_id = "123e4567-e89b-12d3-a456-426614174000"
+                    runner = FakeRunner({"data": {"id": "unexpected"}})
 
-                with self.assertRaises(MulticaContractError):
-                    MulticaClient(runner).call(
-                        ("multica",)
-                        + prefix
-                        + (valid_id, "--all", "--output", "json")
-                    )
+                    with self.assertRaises(MulticaContractError):
+                        MulticaClient(runner).call(
+                            ("multica",)
+                            + prefix
+                            + (valid_id, "--all")
+                            + suffix
+                        )
 
-                self.assertEqual(runner.calls, [])
+                    self.assertEqual(runner.calls, [])
 
     def test_provisioning_reads_decode_exact_immutable_state(self):
         autopilot = {
