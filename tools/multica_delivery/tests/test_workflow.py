@@ -1259,7 +1259,7 @@ class GenericWorkflowTests(unittest.TestCase):
             "web",
             "",
             "review",
-            6,
+            5,
             0,
             "in_progress",
             "review:" + "1" * 64,
@@ -1292,11 +1292,11 @@ class GenericWorkflowTests(unittest.TestCase):
         )
         children = (
             WorkflowChild(
-                "PRO-101-API-REVIEW", "api", "api", "", "review", 6, 0,
+                "PRO-101-API-REVIEW", "api", "api", "", "review", 5, 0,
                 "in_progress", "review:" + "1" * 64, True,
             ),
             WorkflowChild(
-                "PRO-101-WEB-REVIEW", "web", "web", "", "review", 6, 0,
+                "PRO-101-WEB-REVIEW", "web", "web", "", "review", 5, 0,
                 "in_progress", "review:" + "1" * 64, True,
             ),
         )
@@ -1473,6 +1473,54 @@ class GenericWorkflowTests(unittest.TestCase):
                     expected_attempt,
                 )
 
+    def test_direct_resume_fails_closed_without_mutation_for_future_child_relationship(self):
+        snapshot = replace(
+            passing_snapshot(),
+            reviews={
+                "api": RepositoryEvidence(SHA["api"], "pass"),
+                "web": RepositoryEvidence(SHA["web"], "fail"),
+            },
+        )
+        terminal_failure = WorkflowChild(
+            "PRO-101-WEB-REVIEW", "web", "web", "", "review", 5, 0,
+            "done", "review:" + "9" * 64, False,
+        )
+        future_relationships = {
+            "future Stage ordinal": WorkflowChild(
+                "PRO-101-FUTURE", "api", "api", "", "review", 6, 0,
+                "in_progress", "review:" + "a" * 64, True,
+            ),
+            "future current-Stage attempt": WorkflowChild(
+                "PRO-101-FUTURE", "api", "api", "", "review", 5, 1,
+                "in_progress", "review:" + "a" * 64, True,
+            ),
+        }
+
+        for relationship, future_child in future_relationships.items():
+            with self.subTest(relationship=relationship):
+                self.store.add_state(
+                    "PRO-101",
+                    snapshot,
+                    children=(terminal_failure, future_child),
+                    pull_requests=pull_request_targets(),
+                )
+                before = self.store.states["PRO-101"]
+                self.store.events.clear()
+
+                result = self.workflow.resume_parent("PRO-101")
+
+                self.assertEqual(result.parent_status, "blocked")
+                self.assertEqual(result.next_action, "block")
+                self.assertIn("child relationship", result.reason)
+                self.assertEqual(result.mutation_count, 0)
+                self.assertEqual(self.store.states["PRO-101"], before)
+                self.assertFalse(
+                    any(
+                        event[0] in {"create", "status", "merge-state", "write-smoke"}
+                        for event in self.store.events
+                    )
+                )
+
     def test_failed_implementation_is_done_and_repairs_its_existing_pr(self):
         self.workflow.handle_parent_event("PRO-101", affected=frozenset({"api"}))
 
@@ -1573,7 +1621,7 @@ class GenericWorkflowTests(unittest.TestCase):
             "web",
             "",
             "qa",
-            6,
+            5,
             0,
             "in_progress",
             "qa:" + "2" * 64,
@@ -1608,7 +1656,7 @@ class GenericWorkflowTests(unittest.TestCase):
             "web",
             "web-api",
             "integration_qa",
-            6,
+            5,
             0,
             "in_progress",
             "qa:" + "8" * 64,
@@ -1648,7 +1696,7 @@ class GenericWorkflowTests(unittest.TestCase):
             "web",
             "web-api",
             "integration_qa",
-            6,
+            5,
             0,
             "in_progress",
             "qa:" + "8" * 64,
@@ -2608,6 +2656,66 @@ class GenericWorkflowTests(unittest.TestCase):
             ("api", "web"),
             {"api": SHA["api"], "web": SHA["web"]},
         ))
+
+    def test_direct_smoke_preserves_all_merged_evidence_blocks_without_mutation(self):
+        snapshot = passing_snapshot()
+        snapshot = replace(
+            snapshot,
+            merge_state="merged",
+            merged_shas=snapshot.candidate_shas,
+            pull_requests={
+                repository: PullRequestEvidence(sha, "merged", True, True, sha)
+                for repository, sha in snapshot.candidate_shas.items()
+            },
+        )
+        corruptions = {
+            "missing implementation": replace(snapshot, children={}),
+            "missing review": replace(snapshot, reviews={}),
+            "missing repository QA": replace(snapshot, qa={}),
+            "missing integration QA": replace(snapshot, integration_qa={}),
+            "stale implementation": replace(
+                snapshot,
+                children={
+                    **snapshot.children,
+                    "web": RepositoryEvidence("d" * 40, "pass"),
+                },
+            ),
+        }
+        expected_reason = (
+            "merged work lacks complete, current-SHA PASS pre-merge implementation, review, "
+            "QA, or integration evidence; human action is required"
+        )
+
+        for corruption, corrupted in corruptions.items():
+            with self.subTest(corruption=corruption):
+                self.store.add_state(
+                    "PRO-101",
+                    corrupted,
+                    pull_requests=pull_request_targets(),
+                )
+                before = self.store.states["PRO-101"]
+                smoke = FakeSmokeExecutor(
+                    passing_smoke(observation_id=SMOKE_OBSERVATION["first"])
+                )
+                workflow = GenericWorkflow(
+                    self.manifest,
+                    self.store,
+                    self.store,
+                    github=self.github,
+                    smoke_executor=smoke,
+                )
+                self.store.events.clear()
+
+                result = workflow.execute_smoke("PRO-101")
+
+                self.assertEqual(result.next_action, "block")
+                self.assertEqual(result.reason, expected_reason)
+                self.assertEqual(result.mutation_count, 0)
+                self.assertEqual(smoke.calls, [])
+                self.assertEqual(self.store.states["PRO-101"], before)
+                self.assertFalse(
+                    any(event[0] in {"status", "write-smoke"} for event in self.store.events)
+                )
 
     def test_direct_smoke_waits_without_execution_for_active_current_stage(self):
         snapshot = passing_snapshot()

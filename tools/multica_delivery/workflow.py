@@ -49,6 +49,7 @@ _PHASE_RESULTS = frozenset({"pass", "fail", "blocked"})
 _ACTIVE_PARENT_STATUSES = frozenset({"todo", "in_progress", "in_review"})
 _ACTIVE_CHILD_STATUSES = frozenset({"todo", "in_progress", "in_review"})
 _TERMINAL_CHILD_STATUSES = frozenset({"done", "blocked", "cancelled"})
+_FUTURE_CHILD_RELATIONSHIP = "workflow child relationship is ahead of parent metadata"
 
 
 class WorkflowError(RuntimeError):
@@ -916,6 +917,15 @@ class GenericWorkflow:
             return "parent candidate SHA metadata disagrees with its snapshot"
         if metadata.merge_state != state.snapshot.merge_state or metadata.attempt != state.snapshot.attempt:
             return "parent transition metadata disagrees with its snapshot"
+        if any(
+            child.stage_ordinal > metadata.stage_ordinal
+            or (
+                child.stage_ordinal == metadata.stage_ordinal
+                and child.attempt > metadata.attempt
+            )
+            for child in state.children
+        ):
+            return _FUTURE_CHILD_RELATIONSHIP
         return None
 
     @staticmethod
@@ -981,6 +991,14 @@ class GenericWorkflow:
         merged_shas: Mapping[str, str] | None = None,
         action_key: str | None = None,
     ) -> WorkflowResult:
+        if reason == _FUTURE_CHILD_RELATIONSHIP:
+            return WorkflowResult(
+                state.parent_identifier,
+                "blocked",
+                "block",
+                reason,
+                merge_state=merge_state or state.snapshot.merge_state,
+            )
         if state.metadata is None:
             return WorkflowResult(
                 state.parent_identifier,
@@ -2682,6 +2700,8 @@ class GenericWorkflow:
         if problem is not None:
             return self._block(state, problem, stage_kind="smoke")
         decision = decide_parent_action(self.manifest, state.snapshot)
+        if decision.kind is DecisionKind.BLOCK:
+            return self._result(state, "block", decision.reason)
         if decision.kind is not DecisionKind.SMOKE:
             return self._result(state, "noop", "parent is not smoke-authorized")
         stage_wait = self._current_stage_wait(state)
