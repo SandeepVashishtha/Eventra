@@ -1135,6 +1135,54 @@ class GenericWorkflowTests(unittest.TestCase):
         self.assertEqual(result.next_action, "noop")
         self.assertEqual(len([event for event in self.store.events if event[0] == "create"]), before)
 
+    def test_event_entrypoints_fail_closed_without_mutation_for_future_child_relationship(self):
+        snapshot = passing_snapshot()
+        future_child = WorkflowChild(
+            "PRO-101-FUTURE", "api", "api", "", "review", 6, 0,
+            "in_progress", "review:" + "b" * 64, True,
+        )
+        entrypoints = {
+            "status callback": lambda: self.workflow.handle_status_change(
+                "PRO-101", "backlog", "todo"
+            ),
+            "parent event": lambda: self.workflow.handle_parent_event(
+                "PRO-101", affected=frozenset({"api", "web"})
+            ),
+        }
+
+        for entrypoint, invoke in entrypoints.items():
+            with self.subTest(entrypoint=entrypoint):
+                self.store.add_state(
+                    "PRO-101",
+                    snapshot,
+                    status="todo" if entrypoint == "status callback" else "in_progress",
+                    children=(future_child,),
+                    pull_requests=pull_request_targets(),
+                )
+                before = self.store.states["PRO-101"]
+                self.store.events.clear()
+
+                result = invoke()
+
+                self.assertEqual(result.parent_status, "blocked")
+                self.assertEqual(result.next_action, "block")
+                self.assertIn("child relationship", result.reason)
+                self.assertEqual(result.mutation_count, 0)
+                self.assertEqual(self.store.states["PRO-101"], before)
+                self.assertFalse(
+                    any(
+                        event[0]
+                        in {
+                            "record-intake-transition",
+                            "initialize",
+                            "human",
+                            "create",
+                            "status",
+                        }
+                        for event in self.store.events
+                    )
+                )
+
     def test_replayed_intake_action_key_is_noop_even_before_metadata_is_visible(self):
         key = coordinator_action_key(
             workflow_version=1,
@@ -3293,6 +3341,39 @@ class GenericWorkflowTests(unittest.TestCase):
         rerun_key = [event for event in self.store.events if event[0] == "rerun"][0][-1]
         blocked_key = [event for event in self.store.events if event[0] == "status"][-1][-1]
         self.assertNotEqual(rerun_key, blocked_key)
+
+    def test_watcher_entrypoints_fail_closed_without_mutation_for_future_child_relationship(self):
+        future_child = WorkflowChild(
+            "PRO-101-FUTURE", "api", "api", "", "implementation", 6, 0,
+            "in_progress", "dispatch:" + "c" * 64, False,
+        )
+        snapshot = ParentSnapshot(
+            affected_repositories=("api",),
+            children={"api": RepositoryEvidence("", "pending")},
+            stalled=True,
+            stalled_repository="api",
+        )
+        entrypoints = {
+            "direct recovery": lambda: self.workflow.recover_stalled_parent("PRO-101"),
+            "watcher scan": self.workflow.watch_active_parents,
+        }
+
+        for entrypoint, invoke in entrypoints.items():
+            with self.subTest(entrypoint=entrypoint):
+                self.store.add_state("PRO-101", snapshot, children=(future_child,))
+                before = self.store.states["PRO-101"]
+                self.store.events.clear()
+
+                result = invoke()
+
+                self.assertEqual(result.parent_status, "blocked")
+                self.assertEqual(result.next_action, "block")
+                self.assertIn("child relationship", result.reason)
+                self.assertEqual(result.mutation_count, 0)
+                self.assertEqual(self.store.states["PRO-101"], before)
+                self.assertFalse(
+                    any(event[0] in {"rerun", "status", "create"} for event in self.store.events)
+                )
 
     def test_watcher_does_not_accept_metadata_only_rerun_as_recovery(self):
         child = WorkflowChild(

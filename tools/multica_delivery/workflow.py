@@ -50,6 +50,7 @@ _ACTIVE_PARENT_STATUSES = frozenset({"todo", "in_progress", "in_review"})
 _ACTIVE_CHILD_STATUSES = frozenset({"todo", "in_progress", "in_review"})
 _TERMINAL_CHILD_STATUSES = frozenset({"done", "blocked", "cancelled"})
 _FUTURE_CHILD_RELATIONSHIP = "workflow child relationship is ahead of parent metadata"
+_UNINITIALIZED_PARENT_STATE = "parent has no initialized workflow metadata"
 
 
 class WorkflowError(RuntimeError):
@@ -904,7 +905,7 @@ class GenericWorkflow:
         if state.project_key not in self.project_keys:
             return "parent is outside the configured instance projects"
         if state.metadata is None:
-            return "parent has no initialized workflow metadata"
+            return _UNINITIALIZED_PARENT_STATE
         metadata = state.metadata
         if (
             metadata.workflow_version not in self.supported_workflow_versions
@@ -927,6 +928,24 @@ class GenericWorkflow:
         ):
             return _FUTURE_CHILD_RELATIONSHIP
         return None
+
+    def _state_problem_result(
+        self,
+        state: WorkflowState,
+        parent_identifier: str,
+        *,
+        stage_kind: str = "block",
+        allow_uninitialized: bool = False,
+        future_child_only: bool = False,
+    ) -> WorkflowResult | None:
+        problem = self._state_problem(state, parent_identifier)
+        if allow_uninitialized and problem == _UNINITIALIZED_PARENT_STATE:
+            return None
+        if problem is None or (
+            future_child_only and problem != _FUTURE_CHILD_RELATIONSHIP
+        ):
+            return None
+        return self._block(state, problem, stage_kind=stage_kind)
 
     @staticmethod
     def _current_stage_is_active(state: WorkflowState) -> bool:
@@ -1117,6 +1136,14 @@ class GenericWorkflow:
                 "noop",
                 "authoritative parent state does not confirm the intake transition",
             )
+        problem_result = self._state_problem_result(
+            state,
+            parent_identifier,
+            stage_kind="intake-transition",
+            allow_uninitialized=True,
+        )
+        if problem_result is not None:
+            return problem_result
         key = self._action_key(
             state,
             "intake-transition",
@@ -1225,6 +1252,14 @@ class GenericWorkflow:
                 "noop",
                 "parent intake is restricted to the control Project",
             )
+        problem_result = self._state_problem_result(
+            state,
+            parent_identifier,
+            stage_kind="parent-event",
+            allow_uninitialized=True,
+        )
+        if problem_result is not None:
+            return problem_result
         if state.metadata is not None:
             existing = frozenset(state.metadata.affected_repositories)
             if authority_requirements:
@@ -1582,9 +1617,9 @@ class GenericWorkflow:
             state = self.snapshot_reader.read(parent_identifier)
         except Exception:
             return WorkflowResult(parent_identifier, "blocked", "block", "parent could not be read")
-        problem = self._state_problem(state, parent_identifier)
-        if problem is not None:
-            return self._block(state, problem)
+        problem_result = self._state_problem_result(state, parent_identifier)
+        if problem_result is not None:
+            return problem_result
         if state.parent_status == "done":
             assert state.metadata is not None
             completed = decide_parent_action(self.manifest, state.snapshot)
@@ -1796,9 +1831,9 @@ class GenericWorkflow:
             state = self.snapshot_reader.read(parent_identifier)
         except Exception:
             return WorkflowResult(parent_identifier, "blocked", "block", "parent could not be read")
-        problem = self._state_problem(state, parent_identifier)
-        if problem is not None:
-            return self._block(state, problem)
+        problem_result = self._state_problem_result(state, parent_identifier)
+        if problem_result is not None:
+            return problem_result
         completion_problem, child = self._completion_problem(state, completion)
         if completion_problem is not None or child is None:
             return self._block(state, completion_problem or "phase completion child is missing")
@@ -2252,9 +2287,13 @@ class GenericWorkflow:
             state = self.snapshot_reader.read(parent_identifier)
         except Exception:
             return WorkflowResult(parent_identifier, "blocked", "block", "parent could not be read")
-        problem = self._state_problem(state, parent_identifier)
-        if problem is not None:
-            return self._block(state, problem, stage_kind="merge")
+        problem_result = self._state_problem_result(
+            state,
+            parent_identifier,
+            stage_kind="merge",
+        )
+        if problem_result is not None:
+            return problem_result
         entry_decision = decide_parent_action(self.manifest, state.snapshot)
         if entry_decision.kind is not DecisionKind.BLOCK:
             stage_wait = self._current_stage_wait(state)
@@ -2566,9 +2605,16 @@ class GenericWorkflow:
             state = self.snapshot_reader.read(parent_identifier)
         except Exception:
             return WorkflowResult(parent_identifier, "blocked", "block", "parent could not be read")
-        problem = self._state_problem(state, parent_identifier) or self._smoke_problem(state, smoke_read)
-        if problem is not None:
-            return self._block(state, problem, stage_kind="smoke")
+        problem_result = self._state_problem_result(
+            state,
+            parent_identifier,
+            stage_kind="smoke",
+        )
+        if problem_result is not None:
+            return problem_result
+        smoke_problem = self._smoke_problem(state, smoke_read)
+        if smoke_problem is not None:
+            return self._block(state, smoke_problem, stage_kind="smoke")
         assert state.metadata is not None
         before = state.snapshot.smoke_reads
         smoke_action_keys = frozenset(
@@ -2696,9 +2742,13 @@ class GenericWorkflow:
             state = self.snapshot_reader.read(parent_identifier)
         except Exception:
             return WorkflowResult(parent_identifier, "blocked", "block", "parent could not be read")
-        problem = self._state_problem(state, parent_identifier)
-        if problem is not None:
-            return self._block(state, problem, stage_kind="smoke")
+        problem_result = self._state_problem_result(
+            state,
+            parent_identifier,
+            stage_kind="smoke",
+        )
+        if problem_result is not None:
+            return problem_result
         decision = decide_parent_action(self.manifest, state.snapshot)
         if decision.kind is DecisionKind.BLOCK:
             return self._result(state, "block", decision.reason)
@@ -2764,6 +2814,14 @@ class GenericWorkflow:
             initial = self.snapshot_reader.read(parent_identifier)
         except Exception:
             return WorkflowResult(parent_identifier, "blocked", "block", "parent could not be read")
+        problem_result = self._state_problem_result(
+            initial,
+            parent_identifier,
+            stage_kind="recovery",
+            future_child_only=True,
+        )
+        if problem_result is not None:
+            return problem_result
         scope_problem = self._watch_scope_problem(initial, parent_identifier)
         if scope_problem is not None or initial.human_wait or initial.active_work or not initial.snapshot.stalled:
             return self._result(initial, "noop", scope_problem or "work is healthy or waiting for a human")
@@ -2792,6 +2850,14 @@ class GenericWorkflow:
             fresh = self.snapshot_reader.read(parent_identifier)
         except Exception:
             return self._result(initial, "noop", "parent became unreadable before recovery")
+        problem_result = self._state_problem_result(
+            fresh,
+            parent_identifier,
+            stage_kind="recovery",
+            future_child_only=True,
+        )
+        if problem_result is not None:
+            return problem_result
         if (
             fresh != initial
             or self._watch_scope_problem(fresh, parent_identifier) is not None
