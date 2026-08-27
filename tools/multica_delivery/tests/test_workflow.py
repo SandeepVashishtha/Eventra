@@ -1569,6 +1569,31 @@ class GenericWorkflowTests(unittest.TestCase):
                     )
                 )
 
+    def test_wrong_parent_read_blocks_requested_parent_without_mutating_either_parent(self):
+        requested = passing_snapshot()
+        foreign = ParentSnapshot(affected_repositories=("api",))
+        self.store.add_state(
+            "PRO-101",
+            requested,
+            pull_requests=pull_request_targets(),
+        )
+        self.store.add_state("PRO-999", foreign)
+        requested_before = self.store.states["PRO-101"]
+        foreign_before = self.store.states["PRO-999"]
+        self.store.read_parent_identifier_override = "PRO-999"
+        self.store.events.clear()
+
+        result = self.workflow.resume_parent("PRO-101")
+
+        self.assertEqual(result.parent_identifier, "PRO-101")
+        self.assertEqual(result.parent_status, "blocked")
+        self.assertEqual(result.next_action, "block")
+        self.assertIn("wrong parent", result.reason)
+        self.assertEqual(result.mutation_count, 0)
+        self.assertEqual(self.store.states["PRO-101"], requested_before)
+        self.assertEqual(self.store.states["PRO-999"], foreign_before)
+        self.assertFalse(any(event[0] == "status" for event in self.store.events))
+
     def test_failed_implementation_is_done_and_repairs_its_existing_pr(self):
         self.workflow.handle_parent_event("PRO-101", affected=frozenset({"api"}))
 

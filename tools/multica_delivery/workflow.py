@@ -51,6 +51,8 @@ _ACTIVE_CHILD_STATUSES = frozenset({"todo", "in_progress", "in_review"})
 _TERMINAL_CHILD_STATUSES = frozenset({"done", "blocked", "cancelled"})
 _FUTURE_CHILD_RELATIONSHIP = "workflow child relationship is ahead of parent metadata"
 _UNINITIALIZED_PARENT_STATE = "parent has no initialized workflow metadata"
+_WRONG_PARENT_STATE = "authoritative parent read returned the wrong parent"
+_OUTSIDE_PROJECT_STATE = "parent is outside the configured instance projects"
 
 
 class WorkflowError(RuntimeError):
@@ -901,9 +903,9 @@ class GenericWorkflow:
 
     def _state_problem(self, state: WorkflowState, parent_identifier: str) -> str | None:
         if not isinstance(state, WorkflowState) or state.parent_identifier != parent_identifier:
-            return "authoritative parent read returned the wrong parent"
+            return _WRONG_PARENT_STATE
         if state.project_key not in self.project_keys:
-            return "parent is outside the configured instance projects"
+            return _OUTSIDE_PROJECT_STATE
         if state.metadata is None:
             return _UNINITIALIZED_PARENT_STATE
         metadata = state.metadata
@@ -945,6 +947,14 @@ class GenericWorkflow:
             future_child_only and problem != _FUTURE_CHILD_RELATIONSHIP
         ):
             return None
+        if problem in {_WRONG_PARENT_STATE, _OUTSIDE_PROJECT_STATE}:
+            return WorkflowResult(
+                parent_identifier,
+                "blocked",
+                "block",
+                problem,
+                merge_state=state.snapshot.merge_state,
+            )
         return self._block(state, problem, stage_kind=stage_kind)
 
     @staticmethod
