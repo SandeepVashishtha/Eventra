@@ -445,6 +445,121 @@ class ParentDecisionTests(unittest.TestCase):
         self.assertEqual(decision.kind, DecisionKind.BLOCK)
         self.assertIn("pre-merge", decision.reason)
 
+    def test_all_merged_missing_evidence_classes_block_without_dispatch(self):
+        snapshot = merged_snapshot()
+        missing_evidence = {
+            "implementation": replace(snapshot, children={}),
+            "review": replace(snapshot, reviews={}),
+            "repository QA": replace(snapshot, qa={}),
+            "integration QA": replace(snapshot, integration_qa={}),
+        }
+
+        for evidence_class, corrupted in missing_evidence.items():
+            with self.subTest(evidence_class=evidence_class):
+                decision = decide_parent_action(self.manifest, corrupted)
+
+                self.assertEqual(decision.kind, DecisionKind.BLOCK)
+                self.assertEqual(decision.repositories, ())
+                self.assertIn("human action", decision.reason)
+
+    def test_all_merged_corruption_blocks_even_when_automatic_merge_is_forbidden(self):
+        production = replace(
+            self.manifest,
+            policy=replace(
+                self.manifest.policy,
+                environment="production",
+                automatic_merge=False,
+            ),
+        )
+        corrupted = replace(merged_snapshot(), children={})
+
+        decision = decide_parent_action(production, corrupted)
+
+        self.assertEqual(decision.kind, DecisionKind.BLOCK)
+        self.assertEqual(decision.repositories, ())
+        self.assertIn("human action", decision.reason)
+
+    def test_all_merged_nonpassing_or_stale_evidence_blocks_without_repair(self):
+        snapshot = merged_snapshot()
+        stale_sha = "d" * 40
+        corruptions = {
+            "implementation pending": replace(
+                snapshot,
+                children={**snapshot.children, "web": RepositoryEvidence("", "pending")},
+            ),
+            "implementation failed": replace(
+                snapshot,
+                children={**snapshot.children, "web": gate_for("web", result="fail")},
+            ),
+            "implementation blocked": replace(
+                snapshot,
+                children={**snapshot.children, "web": gate_for("web", result="blocked")},
+            ),
+            "implementation stale": replace(
+                snapshot,
+                children={**snapshot.children, "web": gate_for("web", sha=stale_sha)},
+            ),
+            "review pending": replace(
+                snapshot,
+                reviews={**snapshot.reviews, "web": RepositoryEvidence("", "pending")},
+            ),
+            "review failed": replace(
+                snapshot,
+                reviews={**snapshot.reviews, "web": gate_for("web", result="fail")},
+            ),
+            "review stale": replace(
+                snapshot,
+                reviews={**snapshot.reviews, "web": gate_for("web", sha=stale_sha)},
+            ),
+            "repository QA pending": replace(
+                snapshot,
+                qa={**snapshot.qa, "web": RepositoryEvidence("", "pending")},
+            ),
+            "repository QA failed": replace(
+                snapshot,
+                qa={**snapshot.qa, "web": gate_for("web", result="fail")},
+            ),
+            "repository QA stale": replace(
+                snapshot,
+                qa={**snapshot.qa, "web": gate_for("web", sha=stale_sha)},
+            ),
+            "integration QA pending": replace(
+                snapshot,
+                integration_qa={
+                    "web-api": GateEvidence(
+                        candidate_shas=snapshot.candidate_shas,
+                        result="pending",
+                    )
+                },
+            ),
+            "integration QA failed": replace(
+                snapshot,
+                integration_qa={
+                    "web-api": GateEvidence(
+                        candidate_shas=snapshot.candidate_shas,
+                        result="fail",
+                    )
+                },
+            ),
+            "integration QA stale": replace(
+                snapshot,
+                integration_qa={
+                    "web-api": GateEvidence(
+                        candidate_shas={"api": SHA["api"], "web": stale_sha},
+                        result="pass",
+                    )
+                },
+            ),
+        }
+
+        for corruption, corrupted in corruptions.items():
+            with self.subTest(corruption=corruption):
+                decision = decide_parent_action(self.manifest, corrupted)
+
+                self.assertEqual(decision.kind, DecisionKind.BLOCK)
+                self.assertEqual(decision.repositories, ())
+                self.assertIn("human action", decision.reason)
+
     def test_stale_integration_qa_sha_map_repairs(self):
         snapshot = passing_snapshot()
         snapshot = replace(

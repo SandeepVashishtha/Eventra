@@ -338,6 +338,40 @@ def _applicable_suites(manifest: DeliveryManifest, affected: frozenset[str]) -> 
     }
 
 
+def _all_merged_evidence_problem(
+    manifest: DeliveryManifest,
+    snapshot: ParentSnapshot,
+    affected: frozenset[str],
+) -> str | None:
+    expected_shas = dict(snapshot.candidate_shas)
+    evidence_problem = (
+        "merged work lacks complete, current-SHA PASS pre-merge implementation, review, "
+        "QA, or integration evidence; human action is required"
+    )
+    if set(expected_shas) != affected:
+        return evidence_problem
+
+    for evidence_by_repository in (snapshot.children, snapshot.reviews, snapshot.qa):
+        for repository in affected:
+            evidence = evidence_by_repository.get(repository)
+            if (
+                evidence is None
+                or evidence.result != "pass"
+                or evidence.candidate_sha != expected_shas[repository]
+            ):
+                return evidence_problem
+
+    for suite_key in _applicable_suites(manifest, affected):
+        evidence = snapshot.integration_qa.get(suite_key)
+        if (
+            evidence is None
+            or evidence.result != "pass"
+            or dict(evidence.candidate_shas) != expected_shas
+        ):
+            return evidence_problem
+    return None
+
+
 def _merged_problem(snapshot: ParentSnapshot, affected: frozenset[str]) -> tuple[str | None, bool]:
     merged_prs = {
         repository
@@ -467,6 +501,15 @@ def decide_parent_action(manifest: DeliveryManifest, snapshot: ParentSnapshot) -
     merged_problem, all_merged = _merged_problem(snapshot, affected)
     if merged_problem is not None:
         return _decision(DecisionKind.BLOCK, merged_problem)
+
+    if all_merged:
+        all_merged_evidence_problem = _all_merged_evidence_problem(
+            manifest,
+            snapshot,
+            affected,
+        )
+        if all_merged_evidence_problem is not None:
+            return _decision(DecisionKind.BLOCK, all_merged_evidence_problem)
 
     if manifest.policy.environment == "production":
         return _decision(DecisionKind.WAIT, "production automatic merge is forbidden")

@@ -48,6 +48,7 @@ _PHASES = frozenset({"implementation", "review", "qa", "integration_qa", "repair
 _PHASE_RESULTS = frozenset({"pass", "fail", "blocked"})
 _ACTIVE_PARENT_STATUSES = frozenset({"todo", "in_progress", "in_review"})
 _ACTIVE_CHILD_STATUSES = frozenset({"todo", "in_progress", "in_review"})
+_TERMINAL_CHILD_STATUSES = frozenset({"done", "blocked", "cancelled"})
 
 
 class WorkflowError(RuntimeError):
@@ -917,6 +918,30 @@ class GenericWorkflow:
             return "parent transition metadata disagrees with its snapshot"
         return None
 
+    @staticmethod
+    def _current_stage_is_active(state: WorkflowState) -> bool:
+        if state.metadata is None:
+            return False
+        current_children = (
+            child
+            for child in state.children
+            if child.stage_ordinal == state.metadata.stage_ordinal
+            and child.attempt == state.metadata.attempt
+        )
+        return state.active_work or any(
+            child.active or child.status not in _TERMINAL_CHILD_STATUSES
+            for child in current_children
+        )
+
+    def _current_stage_wait(self, state: WorkflowState) -> WorkflowResult | None:
+        if not self._current_stage_is_active(state):
+            return None
+        return self._result(
+            state,
+            "wait",
+            "current Stage still has active work",
+        )
+
     def _metadata(
         self,
         state: WorkflowState,
@@ -1567,6 +1592,16 @@ class GenericWorkflow:
         if state.human_wait:
             return self._result(state, "wait", "parent is waiting for a human")
         decision = decide_parent_action(self.manifest, state.snapshot)
+        if decision.kind in {
+            DecisionKind.DISPATCH,
+            DecisionKind.REPAIR,
+            DecisionKind.MERGE,
+            DecisionKind.SMOKE,
+            DecisionKind.COMPLETE,
+        }:
+            stage_wait = self._current_stage_wait(state)
+            if stage_wait is not None:
+                return stage_wait
         if decision.kind is DecisionKind.DISPATCH:
             if state.snapshot.stalled:
                 return self._result(state, "wait", "stalled work is reserved for bounded recovery")
@@ -1930,7 +1965,7 @@ class GenericWorkflow:
             if item.identifier != completed[0].identifier
             and item.stage_ordinal == child.stage_ordinal
             and item.attempt == child.attempt
-            and item.status not in {"done", "blocked", "cancelled"}
+            and item.status not in _TERMINAL_CHILD_STATUSES
         )
         if unfinished_stage_siblings:
             return self._result(
@@ -2202,6 +2237,11 @@ class GenericWorkflow:
         problem = self._state_problem(state, parent_identifier)
         if problem is not None:
             return self._block(state, problem, stage_kind="merge")
+        entry_decision = decide_parent_action(self.manifest, state.snapshot)
+        if entry_decision.kind is not DecisionKind.BLOCK:
+            stage_wait = self._current_stage_wait(state)
+            if stage_wait is not None:
+                return stage_wait
         affected = frozenset(state.snapshot.affected_repositories)
         try:
             confirmed = tuple(repository for repository in self.manifest.merge_order if repository in affected)
@@ -2346,7 +2386,7 @@ class GenericWorkflow:
                     merged_shas=merged,
                     merge_plan=order,
                 )
-            decision = decide_parent_action(self.manifest, state.snapshot)
+            decision = entry_decision
             if decision.kind is DecisionKind.BLOCK:
                 return self._block(state, decision.reason, stage_kind="merge")
             if decision.kind is not DecisionKind.MERGE:
@@ -2579,6 +2619,9 @@ class GenericWorkflow:
                 "block" if decision.kind is DecisionKind.BLOCK else "noop",
                 decision.reason,
             )
+        stage_wait = self._current_stage_wait(state)
+        if stage_wait is not None:
+            return stage_wait
         ordinal = state.metadata.stage_ordinal + 1
         key = self._action_key(
             state,
@@ -2641,6 +2684,9 @@ class GenericWorkflow:
         decision = decide_parent_action(self.manifest, state.snapshot)
         if decision.kind is not DecisionKind.SMOKE:
             return self._result(state, "noop", "parent is not smoke-authorized")
+        stage_wait = self._current_stage_wait(state)
+        if stage_wait is not None:
+            return stage_wait
         if self.smoke_executor is None:
             return self._block(state, "owned smoke executor is unavailable", stage_kind="smoke")
         assert state.metadata is not None
