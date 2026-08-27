@@ -33,7 +33,7 @@ from .exact_sha import (
     LocalExactShaCommandRunner,
 )
 from .metadata import MetadataError, ParentMetadata, canonical_json
-from .model import DeliveryManifest
+from .model import DeliveryManifest, validate_policy_authority
 from .processes import OwnedProcess, ProcessManager, ProcessOwnershipError, ProcessRun
 from .topology import TopologyError, merge_order
 
@@ -49,10 +49,12 @@ _PHASE_RESULTS = frozenset({"pass", "fail", "blocked"})
 _ACTIVE_PARENT_STATUSES = frozenset({"todo", "in_progress", "in_review"})
 _ACTIVE_CHILD_STATUSES = frozenset({"todo", "in_progress", "in_review"})
 _TERMINAL_CHILD_STATUSES = frozenset({"done", "blocked", "cancelled"})
+_MAPPING_PROXY_TYPE = type(MappingProxyType({}))
 _FUTURE_CHILD_RELATIONSHIP = "workflow child relationship is ahead of parent metadata"
 _UNINITIALIZED_PARENT_STATE = "parent has no initialized workflow metadata"
 _WRONG_PARENT_STATE = "authoritative parent read returned the wrong parent"
 _OUTSIDE_PROJECT_STATE = "parent is outside the configured instance projects"
+_SMOKE_PERSISTENCE_AUTHORITY = object()
 
 
 class WorkflowError(RuntimeError):
@@ -249,6 +251,37 @@ class _MergePrefixObservation:
 
 class _MergePrefixObservationError(WorkflowError):
     """An authoritative ordered pull-request scan could not be trusted."""
+
+
+@dataclass(frozen=True)
+class _MergeAuthority:
+    """The immutable candidate, evidence, and PR-target merge reservation."""
+
+    parent_identifier: str
+    affected_repositories: tuple[str, ...]
+    candidate_shas: Mapping[str, str]
+    child_evidence: Mapping[str, object]
+    pull_request_evidence: Mapping[str, object]
+    review_evidence: Mapping[str, object]
+    qa_evidence: Mapping[str, object]
+    integration_evidence: Mapping[str, object]
+    smoke_reads: tuple[SmokeRead, ...]
+    satisfied_dependencies: frozenset[tuple[str, str]]
+    workflow_children: tuple[WorkflowChild, ...]
+    pull_request_targets: Mapping[str, PullRequestTarget]
+    parent_status: str
+    project_key: str
+    human_wait: bool
+    active_work: bool
+    stalled: bool
+    stalled_repository: str | None
+    recovery_count: int
+    workflow_version: int
+    metadata_version: int
+    instance_key: str
+    repository_dag: Mapping[str, tuple[str, ...]]
+    contract_hashes: Mapping[str, str]
+    attempt: int
 
 
 @dataclass(frozen=True)
@@ -474,6 +507,14 @@ class OwnedSmokeExecutor:
     ) -> None:
         if not isinstance(manifest, DeliveryManifest):
             raise TypeError("manifest must be a DeliveryManifest")
+        if (
+            type(process_manager) is not ProcessManager
+            or process_manager.manifest is not manifest
+        ):
+            raise TypeError(
+                "process_manager must be a concrete manifest-bound ProcessManager"
+            )
+        validate_policy_authority(manifest.policy)
         runner = (
             command_runner
             if command_runner is not None
@@ -497,6 +538,14 @@ class OwnedSmokeExecutor:
             raise TypeError("command_runner must be a LocalExactShaCommandRunner")
         return runner
 
+    def _trusted_process_manager(self) -> ProcessManager:
+        manager = self._process_manager
+        if type(manager) is not ProcessManager or manager.manifest is not self.manifest:
+            raise TypeError(
+                "process_manager must be a concrete manifest-bound ProcessManager"
+            )
+        return manager
+
     def execute(
         self,
         parent_identifier: str,
@@ -506,6 +555,7 @@ class OwnedSmokeExecutor:
         action_key: str,
     ) -> SmokeRead:
         command_runner = self._trusted_command_runner()
+        process_manager = self._trusted_process_manager()
         selected = tuple(repositories)
         exact = dict(merged_shas)
         if (
@@ -587,17 +637,31 @@ class OwnedSmokeExecutor:
                         cwd=specification.local_path,
                     )
                     if specification.services:
-                        started.extend(
-                            self.process_manager.start_services(
-                                specification.services,
-                                run,
-                                candidate_sha=exact[repository],
-                            )
+                        owned = process_manager.start_services(
+                            specification.services,
+                            run,
+                            candidate_sha=exact[repository],
+                        )
+                        started.extend(owned)
+                        process_manager.verify_services(
+                            specification.services,
+                            run,
+                            owned,
+                            candidate_sha=exact[repository],
                         )
             except (ProcessOwnershipError, OSError, RuntimeError, TypeError, ValueError):
                 startup_failed = True
         else:
             startup_failed = True
+
+        if startup_failed:
+            repository_results = {
+                repository: "blocked" for repository in selected
+            }
+            integration_results = {
+                suite.key: "blocked" for suite in applicable_suites
+            }
+            authoritative = False
 
         if not startup_failed:
             checkout_shas, checkout_failure = verify_checkouts()
@@ -677,7 +741,7 @@ class OwnedSmokeExecutor:
                 continue
             stopped_pids.add(record.pid)
             try:
-                self.process_manager.stop(
+                process_manager.stop(
                     record,
                     run_id=run_id,
                     repository_key=record.repository_key,
@@ -791,6 +855,7 @@ class GenericWorkflow:
     ) -> None:
         if not isinstance(manifest, DeliveryManifest):
             raise TypeError("manifest must be a DeliveryManifest")
+        validate_policy_authority(manifest.policy)
         if not isinstance(workflow_version, int) or isinstance(workflow_version, bool) or workflow_version < 1:
             raise ValueError("workflow_version must be positive")
         versions = supported_workflow_versions or frozenset({workflow_version})
@@ -804,16 +869,15 @@ class GenericWorkflow:
         self.snapshot_reader = snapshot_reader
         self.executor = executor
         self.github = github
+        if smoke_executor is not None and type(smoke_executor) is not OwnedSmokeExecutor:
+            raise TypeError("smoke_executor must be an OwnedSmokeExecutor")
+        if smoke_executor is not None and smoke_executor.manifest is not manifest:
+            raise TypeError("OwnedSmokeExecutor must be bound to the workflow manifest")
         self.smoke_executor = smoke_executor
         self.scope_resolver = scope_resolver
         self.workflow_version = workflow_version
         self.supported_workflow_versions = versions
-        self.project_keys = frozenset(
-            {
-                manifest.instance.control_project,
-                *(repository.project_title for repository in manifest.repositories.values()),
-            }
-        )
+        self.project_keys = frozenset({manifest.instance.control_project})
 
     def _result(
         self,
@@ -865,10 +929,10 @@ class GenericWorkflow:
         for _ in range(2):
             try:
                 observed = self.snapshot_reader.read(parent_identifier)
+                if expected(observed):
+                    return observed
             except Exception:
                 continue
-            if expected(observed):
-                return observed
         return None
 
     def _action_key(
@@ -901,16 +965,66 @@ class GenericWorkflow:
             ) if contract_hashes is None else contract_hashes,
         )
 
-    def _state_problem(self, state: WorkflowState, parent_identifier: str) -> str | None:
-        if not isinstance(state, WorkflowState) or state.parent_identifier != parent_identifier:
+    def _state_problem(self, state: object, parent_identifier: str) -> str | None:
+        if type(state) is not WorkflowState:
             return _WRONG_PARENT_STATE
-        if state.project_key not in self.project_keys:
+        try:
+            if type(state.parent_identifier) is not str:
+                return "parent state schema is unsupported"
+            if state.parent_identifier != parent_identifier:
+                return _WRONG_PARENT_STATE
+            if (
+                type(state.parent_status) is not str
+                or type(state.project_key) is not str
+                or type(state.snapshot) is not ParentSnapshot
+                or type(state.snapshot.affected_repositories) is not tuple
+                or any(
+                    type(getattr(state.snapshot, name)) is not _MAPPING_PROXY_TYPE
+                    for name in (
+                        "candidate_shas",
+                        "children",
+                        "pull_requests",
+                        "reviews",
+                        "qa",
+                        "integration_qa",
+                        "merged_shas",
+                    )
+                )
+                or type(state.snapshot.smoke_reads) is not tuple
+                or type(state.snapshot.attempt) is not int
+                or type(state.snapshot.merge_state) is not str
+                or type(state.snapshot.stalled) is not bool
+                or type(state.snapshot.recovery_count) is not int
+                or type(state.snapshot.satisfied_dependencies) is not frozenset
+                or type(state.children) is not tuple
+                or any(type(child) is not WorkflowChild for child in state.children)
+                or type(state.pull_requests) is not _MAPPING_PROXY_TYPE
+                or any(
+                    type(repository) is not str
+                    or type(target) is not PullRequestTarget
+                    or target.repository_key != repository
+                    for repository, target in state.pull_requests.items()
+                )
+                or type(state.applied_action_keys) is not frozenset
+                or any(
+                    type(key) is not str or _ACTION_KEY.fullmatch(key) is None
+                    for key in state.applied_action_keys
+                )
+                or type(state.human_wait) is not bool
+                or type(state.active_work) is not bool
+            ):
+                return "parent state schema is unsupported"
+        except (AttributeError, TypeError, ValueError):
+            return "parent state schema is unsupported"
+        if state.project_key != self.manifest.instance.control_project:
             return _OUTSIDE_PROJECT_STATE
         if state.metadata is None:
             return _UNINITIALIZED_PARENT_STATE
         metadata = state.metadata
         if (
-            metadata.workflow_version not in self.supported_workflow_versions
+            type(metadata) is not ParentMetadata
+            or metadata.metadata_version != 1
+            or metadata.workflow_version not in self.supported_workflow_versions
             or metadata.instance_key != self.manifest.instance.key
         ):
             return "parent workflow version or instance is unsupported"
@@ -933,7 +1047,7 @@ class GenericWorkflow:
 
     def _state_problem_result(
         self,
-        state: WorkflowState,
+        state: object,
         parent_identifier: str,
         *,
         stage_kind: str = "block",
@@ -947,15 +1061,20 @@ class GenericWorkflow:
             future_child_only and problem != _FUTURE_CHILD_RELATIONSHIP
         ):
             return None
-        if problem in {_WRONG_PARENT_STATE, _OUTSIDE_PROJECT_STATE}:
-            return WorkflowResult(
-                parent_identifier,
-                "blocked",
-                "block",
-                problem,
-                merge_state=state.snapshot.merge_state,
-            )
-        return self._block(state, problem, stage_kind=stage_kind)
+        merge_state = (
+            state.snapshot.merge_state
+            if type(state) is WorkflowState
+            and type(getattr(state, "snapshot", None)) is ParentSnapshot
+            else "pending"
+        )
+        return WorkflowResult(
+            parent_identifier,
+            "blocked",
+            "block",
+            problem,
+            merge_state=merge_state,
+            mutation_count=0,
+        )
 
     @staticmethod
     def _current_stage_is_active(state: WorkflowState) -> bool:
@@ -1134,17 +1253,13 @@ class GenericWorkflow:
             state = self.snapshot_reader.read(parent_identifier)
         except Exception:
             return WorkflowResult(parent_identifier, "blocked", "block", "parent could not be read")
-        if (
-            not isinstance(state, WorkflowState)
-            or state.parent_identifier != parent_identifier
-            or state.parent_status != "todo"
-            or state.project_key != self.manifest.instance.control_project
-        ):
+        if self._state_problem(state, parent_identifier) == _OUTSIDE_PROJECT_STATE:
+            assert type(state) is WorkflowState
             return WorkflowResult(
                 parent_identifier,
-                state.parent_status if isinstance(state, WorkflowState) else "blocked",
+                state.parent_status,
                 "noop",
-                "authoritative parent state does not confirm the intake transition",
+                "parent intake is restricted to the control Project",
             )
         problem_result = self._state_problem_result(
             state,
@@ -1154,6 +1269,14 @@ class GenericWorkflow:
         )
         if problem_result is not None:
             return problem_result
+        assert type(state) is WorkflowState
+        if state.parent_status != "todo":
+            return WorkflowResult(
+                parent_identifier,
+                state.parent_status,
+                "noop",
+                "authoritative parent state does not confirm the intake transition",
+            )
         key = self._action_key(
             state,
             "intake-transition",
@@ -1182,6 +1305,14 @@ class GenericWorkflow:
                 "intake transition could not be authoritatively reconciled",
                 action_key=key,
             )
+        authoritative_problem = self._state_problem_result(
+            authoritative,
+            parent_identifier,
+            allow_uninitialized=True,
+        )
+        if authoritative_problem is not None:
+            return authoritative_problem
+        assert type(authoritative) is WorkflowState
         normalized_authoritative = replace(
             authoritative,
             applied_action_keys=state.applied_action_keys,
@@ -1252,13 +1383,11 @@ class GenericWorkflow:
             state = self.snapshot_reader.read(parent_identifier)
         except Exception:
             return WorkflowResult(parent_identifier, "blocked", "block", "parent could not be read")
-        if (
-            not isinstance(state, WorkflowState)
-            or state.project_key != self.manifest.instance.control_project
-        ):
+        if self._state_problem(state, parent_identifier) == _OUTSIDE_PROJECT_STATE:
+            assert type(state) is WorkflowState
             return WorkflowResult(
                 parent_identifier,
-                state.parent_status if isinstance(state, WorkflowState) else "blocked",
+                state.parent_status,
                 "noop",
                 "parent intake is restricted to the control Project",
             )
@@ -1270,6 +1399,7 @@ class GenericWorkflow:
         )
         if problem_result is not None:
             return problem_result
+        assert type(state) is WorkflowState
         if state.metadata is not None:
             existing = frozenset(state.metadata.affected_repositories)
             if authority_requirements:
@@ -1512,6 +1642,21 @@ class GenericWorkflow:
             missing_prs = set(decision.repositories) - state.pull_requests.keys()
             if missing_prs:
                 return self._block(state, "repair cannot identify every existing pull request")
+            for repository in decision.repositories:
+                target = state.pull_requests[repository]
+                specification = self.manifest.repositories[repository]
+                expected_url = (
+                    f"https://github.com/{specification.github}/pull/{target.number}"
+                )
+                if (
+                    target.repository_key != repository
+                    or target.url != expected_url
+                    or state.snapshot.pull_requests.get(repository) is None
+                ):
+                    return self._block(
+                        state,
+                        "repair pull request target is outside the manifest repository",
+                    )
             requests = tuple(
                 ChildRequest(
                     repository,
@@ -1745,7 +1890,7 @@ class GenericWorkflow:
         state: WorkflowState,
         completion: PhaseCompletion,
     ) -> tuple[str | None, WorkflowChild | None]:
-        if not isinstance(completion, PhaseCompletion):
+        if type(completion) is not PhaseCompletion:
             return "phase completion is malformed", None
         if completion.parent_identifier != state.parent_identifier:
             return "phase completion names the wrong parent", None
@@ -1821,6 +1966,20 @@ class GenericWorkflow:
             for child in state.children
             if child.phase == completion.phase
             and child.attempt == completion.attempt
+            and state.metadata is not None
+            and child.stage_ordinal == state.metadata.stage_ordinal
+            and child.active
+            and child.status in _ACTIVE_CHILD_STATUSES
+            and child.action_key in state.applied_action_keys
+            and child.action_key.startswith(
+                {
+                    "implementation": "dispatch:",
+                    "repair": "repair:",
+                    "review": "stage:",
+                    "qa": "stage:",
+                    "integration_qa": "stage:",
+                }[completion.phase]
+            )
             and (
                 child.repository_key == completion.repository_key
                 if completion.phase != "integration_qa"
@@ -1832,8 +1991,103 @@ class GenericWorkflow:
             )
         )
         if len(matching) != 1:
-            return "phase completion does not resolve one intended child", None
+            return "phase completion does not resolve one active authoritative current-stage child", None
         return None, matching[0]
+
+    @staticmethod
+    def _zero_mutation_block(
+        state: WorkflowState,
+        reason: str,
+    ) -> WorkflowResult:
+        return WorkflowResult(
+            state.parent_identifier,
+            "blocked",
+            "block",
+            reason,
+            merge_state=state.snapshot.merge_state,
+            mutation_count=0,
+        )
+
+    def _phase_replay_result(
+        self,
+        state: WorkflowState,
+        completion: object,
+    ) -> WorkflowResult | None:
+        """Return an exact historical replay result, or None for genuinely new evidence."""
+
+        if type(completion) is not PhaseCompletion:
+            return None
+        try:
+            evidence_id = str(uuid.UUID(completion.evidence_comment_uuid))
+        except (AttributeError, TypeError, ValueError):
+            return None
+        if evidence_id != completion.evidence_comment_uuid:
+            return None
+        reads: list[PhaseCompletion | None] = []
+        for _ in range(2):
+            try:
+                reads.append(
+                    self.snapshot_reader.read_phase_completion(
+                        state.parent_identifier,
+                        completion.evidence_comment_uuid,
+                    )
+                )
+            except Exception:
+                return self._uncertain(
+                    state,
+                    "existing phase evidence could not be read authoritatively",
+                )
+        if reads[0] != reads[1]:
+            return self._uncertain(
+                state,
+                "existing phase evidence changed during authoritative read",
+            )
+        persisted = reads[0]
+        if persisted is None:
+            return None
+        if persisted != completion:
+            return self._zero_mutation_block(
+                state,
+                "phase completion evidence identity conflicts with persisted evidence",
+            )
+        completed = tuple(
+            child
+            for child in state.children
+            if child.status == "done"
+            and not child.active
+            and child.evidence_comment_uuid == completion.evidence_comment_uuid
+            and child.action_key in state.applied_action_keys
+        )
+        if len(completed) != 1:
+            return self._zero_mutation_block(
+                state,
+                "persisted phase evidence lacks one authoritative child transition",
+            )
+        completion_prefix = {
+            "implementation": "dispatch:",
+            "repair": "repair:",
+            "review": "review:",
+            "qa": "qa:",
+            "integration_qa": "qa:",
+        }.get(completion.phase)
+        completion_transitions = {
+            key
+            for key in state.applied_action_keys
+            if completion_prefix is not None
+            and key.startswith(completion_prefix)
+            and key != completed[0].action_key
+        }
+        if not completion_transitions:
+            return self._zero_mutation_block(
+                state,
+                "persisted phase evidence lacks an authoritative completion action",
+            )
+        return self._result(
+            state,
+            "noop",
+            "phase completion already exists",
+            completed_child_status="done",
+        )
 
     def record_phase_completion(self, completion: PhaseCompletion) -> WorkflowResult:
         parent_identifier = getattr(completion, "parent_identifier", "")
@@ -1844,18 +2098,26 @@ class GenericWorkflow:
         problem_result = self._state_problem_result(state, parent_identifier)
         if problem_result is not None:
             return problem_result
+        replay = self._phase_replay_result(state, completion)
+        if replay is not None:
+            return replay
+        if (
+            state.parent_status not in _ACTIVE_PARENT_STATUSES
+            or state.metadata is None
+            or state.snapshot.merged_shas
+            or state.snapshot.merge_state
+            not in {"pending", "not_ready", "ready", "blocked"}
+        ):
+            return self._zero_mutation_block(
+                state,
+                "new phase evidence is allowed only for an active pre-merge parent",
+            )
         completion_problem, child = self._completion_problem(state, completion)
         if completion_problem is not None or child is None:
-            return self._block(state, completion_problem or "phase completion child is missing")
-        if child.status == "done":
-            if child.evidence_comment_uuid == completion.evidence_comment_uuid:
-                return self._result(
-                    state,
-                    "noop",
-                    "phase completion already exists",
-                    completed_child_status="done",
-                )
-            return self._block(state, "terminal child has conflicting completion evidence")
+            return self._zero_mutation_block(
+                state,
+                completion_problem or "phase completion child is missing",
+            )
         previous_candidate_sha = state.snapshot.candidate_shas.get(
             completion.repository_key
         )
@@ -2087,6 +2349,111 @@ class GenericWorkflow:
                 problems.append(f"{repository} merge preflight failed")
         return "; ".join(problems) or None
 
+    @staticmethod
+    def _merge_authority(state: WorkflowState) -> _MergeAuthority:
+        assert state.metadata is not None
+        return _MergeAuthority(
+            parent_identifier=state.parent_identifier,
+            affected_repositories=tuple(state.snapshot.affected_repositories),
+            candidate_shas=MappingProxyType(dict(state.snapshot.candidate_shas)),
+            child_evidence=MappingProxyType(dict(state.snapshot.children)),
+            pull_request_evidence=MappingProxyType(dict(state.snapshot.pull_requests)),
+            review_evidence=MappingProxyType(dict(state.snapshot.reviews)),
+            qa_evidence=MappingProxyType(dict(state.snapshot.qa)),
+            integration_evidence=MappingProxyType(dict(state.snapshot.integration_qa)),
+            smoke_reads=tuple(state.snapshot.smoke_reads),
+            satisfied_dependencies=frozenset(
+                state.snapshot.satisfied_dependencies
+            ),
+            workflow_children=tuple(state.children),
+            pull_request_targets=MappingProxyType(dict(state.pull_requests)),
+            parent_status=state.parent_status,
+            project_key=state.project_key,
+            human_wait=state.human_wait,
+            active_work=state.active_work,
+            stalled=state.snapshot.stalled,
+            stalled_repository=state.snapshot.stalled_repository,
+            recovery_count=state.snapshot.recovery_count,
+            workflow_version=state.metadata.workflow_version,
+            metadata_version=state.metadata.metadata_version,
+            instance_key=state.metadata.instance_key,
+            repository_dag=MappingProxyType(dict(state.metadata.repository_dag)),
+            contract_hashes=MappingProxyType(dict(state.metadata.contract_hashes)),
+            attempt=state.metadata.attempt,
+        )
+
+    def _merge_authority_matches(
+        self,
+        state: object,
+        authority: _MergeAuthority,
+        merged_shas: Mapping[str, str],
+    ) -> bool:
+        if (
+            type(state) is not WorkflowState
+            or state.parent_identifier != authority.parent_identifier
+            or self._state_problem(state, authority.parent_identifier) is not None
+            or set(state.snapshot.pull_requests)
+            != set(authority.pull_request_evidence)
+        ):
+            return False
+        observed = self._merge_authority(state)
+        if replace(
+            observed,
+            pull_request_evidence=authority.pull_request_evidence,
+        ) != authority:
+            return False
+        merged = dict(merged_shas)
+        if set(merged) - set(authority.affected_repositories):
+            return False
+        for repository, initial in authority.pull_request_evidence.items():
+            current = state.snapshot.pull_requests.get(repository)
+            if current is None:
+                return False
+            if repository in merged:
+                if (
+                    current.head_sha != initial.head_sha
+                    or current.mergeable != initial.mergeable
+                    or current.checks_pass != initial.checks_pass
+                    or current.state != "merged"
+                    or current.merged_sha != merged[repository]
+                ):
+                    return False
+            elif current != initial:
+                return False
+        return True
+
+    def _stable_merge_authority_read(
+        self,
+        parent_identifier: str,
+        authority: _MergeAuthority,
+        merged_shas: Mapping[str, str],
+        *,
+        merge_plan: tuple[str, ...] | None = None,
+    ) -> WorkflowState | None:
+        observations: list[WorkflowState] = []
+        for _ in range(2):
+            try:
+                current = self.snapshot_reader.read(parent_identifier)
+            except Exception:
+                return None
+            if not self._merge_authority_matches(current, authority, merged_shas):
+                return None
+            if merge_plan is not None and (
+                current.metadata is None
+                or current.metadata.merge_state != "merging"
+                or current.snapshot.merge_state != "merging"
+                or tuple(current.metadata.merge_plan) != merge_plan
+                or dict(current.snapshot.merged_shas) != dict(merged_shas)
+                or type(current.metadata.last_action) is not str
+                or not current.metadata.last_action.startswith("merge:")
+                or current.metadata.last_action not in current.applied_action_keys
+            ):
+                return None
+            observations.append(current)
+        if observations[0] != observations[1]:
+            return None
+        return observations[1]
+
     def _read_merge_prefix(
         self,
         state: WorkflowState,
@@ -2304,11 +2671,10 @@ class GenericWorkflow:
         )
         if problem_result is not None:
             return problem_result
+        stage_wait = self._current_stage_wait(state)
+        if stage_wait is not None:
+            return stage_wait
         entry_decision = decide_parent_action(self.manifest, state.snapshot)
-        if entry_decision.kind is not DecisionKind.BLOCK:
-            stage_wait = self._current_stage_wait(state)
-            if stage_wait is not None:
-                return stage_wait
         affected = frozenset(state.snapshot.affected_repositories)
         try:
             confirmed = tuple(repository for repository in self.manifest.merge_order if repository in affected)
@@ -2462,6 +2828,7 @@ class GenericWorkflow:
                 return self._result(state, "noop", "parent is not merge-authorized")
             remaining = order
 
+        authority = self._merge_authority(state)
         preflight_problem = self._preflight(state, remaining)
         if preflight_problem is not None:
             return self._persist_merge_failure(
@@ -2471,7 +2838,11 @@ class GenericWorkflow:
                 merged_shas=merged,
                 merge_plan=order,
             )
-        fresh = self._reconcile_parent(parent_identifier, lambda current: current == state)
+        fresh = self._stable_merge_authority_read(
+            parent_identifier,
+            authority,
+            merged,
+        )
         if fresh is None:
             return self._uncertain(state, "parent changed or became unreadable during all-PR preflight")
 
@@ -2486,10 +2857,57 @@ class GenericWorkflow:
             if uncertain is not None:
                 return uncertain
             assert reserved is not None
-            fresh = reserved
+            fresh = self._stable_merge_authority_read(
+                parent_identifier,
+                authority,
+                merged,
+                merge_plan=order,
+            )
+            if fresh is None:
+                return self._uncertain(
+                    reserved,
+                    "merge authority changed across reservation",
+                )
 
         current = fresh
         for repository in remaining:
+            verified = self._stable_merge_authority_read(
+                parent_identifier,
+                authority,
+                merged,
+                merge_plan=order,
+            )
+            if verified is None:
+                return self._uncertain(
+                    current,
+                    "merge authority changed before a GitHub mutation",
+                )
+            stage_wait = self._current_stage_wait(verified)
+            if stage_wait is not None:
+                return stage_wait
+            preflight_problem = self._preflight(verified, (repository,))
+            if preflight_problem is not None:
+                return self._persist_merge_failure(
+                    verified,
+                    preflight_problem,
+                    merge_state="partial" if merged else "blocked",
+                    merged_shas=merged,
+                    merge_plan=order,
+                )
+            current = self._stable_merge_authority_read(
+                parent_identifier,
+                authority,
+                merged,
+                merge_plan=order,
+            )
+            if current is None:
+                return self._uncertain(
+                    verified,
+                    "merge authority changed during per-PR preflight",
+                )
+            stage_wait = self._current_stage_wait(current)
+            if stage_wait is not None:
+                return stage_wait
             target = current.pull_requests[repository]
             expected_sha = current.snapshot.candidate_shas[repository]
             result: MergeResult | None = None
@@ -2611,6 +3029,21 @@ class GenericWorkflow:
         return None
 
     def record_smoke_read(self, parent_identifier: str, smoke_read: SmokeRead) -> WorkflowResult:
+        """Replay persisted smoke evidence; callers cannot mint new observations."""
+
+        return self._record_smoke_read(
+            parent_identifier,
+            smoke_read,
+            persistence_authority=None,
+        )
+
+    def _record_smoke_read(
+        self,
+        parent_identifier: str,
+        smoke_read: SmokeRead,
+        *,
+        persistence_authority: object,
+    ) -> WorkflowResult:
         try:
             state = self.snapshot_reader.read(parent_identifier)
         except Exception:
@@ -2624,6 +3057,8 @@ class GenericWorkflow:
             return problem_result
         smoke_problem = self._smoke_problem(state, smoke_read)
         if smoke_problem is not None:
+            if persistence_authority is not _SMOKE_PERSISTENCE_AUTHORITY:
+                return self._zero_mutation_block(state, smoke_problem)
             return self._block(state, smoke_problem, stage_kind="smoke")
         assert state.metadata is not None
         before = state.snapshot.smoke_reads
@@ -2671,10 +3106,9 @@ class GenericWorkflow:
                 historical_ordinal,
             )
             if historical_read != smoke_read:
-                return self._block(
+                return self._zero_mutation_block(
                     state,
                     "smoke observation identity conflicts with persisted evidence",
-                    stage_kind="smoke",
                 )
             return self._result(
                 state,
@@ -2686,6 +3120,11 @@ class GenericWorkflow:
             return self._result(state, "noop", "parent is not active")
         if state.human_wait:
             return self._result(state, "noop", "parent is waiting for a human")
+        if persistence_authority is not _SMOKE_PERSISTENCE_AUTHORITY:
+            return self._zero_mutation_block(
+                state,
+                "new smoke evidence requires the owned smoke execution authority",
+            )
         decision = decide_parent_action(self.manifest, state.snapshot)
         if decision.kind is not DecisionKind.SMOKE:
             return self._result(
@@ -2790,7 +3229,11 @@ class GenericWorkflow:
                 "owned smoke observation identity does not match its authoritative token",
                 stage_kind="smoke",
             )
-        return self.record_smoke_read(parent_identifier, smoke_read)
+        return self._record_smoke_read(
+            parent_identifier,
+            smoke_read,
+            persistence_authority=_SMOKE_PERSISTENCE_AUTHORITY,
+        )
 
     def _watch_scope_problem(
         self,
@@ -2864,11 +3307,41 @@ class GenericWorkflow:
         ):
             return self._result(initial, "noop", "watcher has no bounded rerun action")
         repository = decision.repositories[0]
+        assert initial.metadata is not None
+
+        def intended_current_child(child: WorkflowChild) -> bool:
+            expected_prefix = {
+                "implementation": "dispatch:",
+                "repair": "repair:",
+                "review": "stage:",
+                "qa": "stage:",
+                "integration_qa": "stage:",
+            }.get(child.phase)
+            if expected_prefix is None or not child.action_key.startswith(expected_prefix):
+                return False
+            if (
+                child.stage_ordinal != initial.metadata.stage_ordinal
+                or child.attempt != initial.metadata.attempt
+                or child.action_key not in initial.applied_action_keys
+                or child.repository_key != repository
+            ):
+                return False
+            if child.phase == "integration_qa":
+                suites = {
+                    suite.key: suite for suite in self.manifest.integration_suites
+                }
+                suite = suites.get(child.suite_key)
+                return (
+                    suite is not None
+                    and child.target_key == child.suite_key
+                    and suite.command_repository == child.repository_key
+                )
+            return child.target_key == repository and child.suite_key == ""
+
         candidates = tuple(
             child
             for child in initial.children
-            if child.repository_key == repository
-            and child.attempt == initial.snapshot.attempt
+            if intended_current_child(child)
             and child.status in _ACTIVE_CHILD_STATUSES
             and not child.active
         )
@@ -2981,8 +3454,12 @@ class GenericWorkflow:
             for child in observed.children
             if child.identifier != target_identifier
             and child.repository_key == before_target.repository_key
+            and child.target_key == before_target.target_key
+            and child.suite_key == before_target.suite_key
             and child.phase == before_target.phase
+            and child.stage_ordinal == before_target.stage_ordinal
             and child.attempt == before_target.attempt
+            and child.action_key == before_target.action_key
             and child.active
             and child_identity(child) != child_identity(before_target)
         )

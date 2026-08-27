@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 import re
 from typing import Callable, Mapping
 
@@ -132,6 +133,8 @@ def audit_contracts(multica: object, github: object, manifest: DeliveryManifest)
             head_sha = value.get("head_sha")
             base_ref = value.get("base_ref")
             mergeable = value.get("mergeable")
+            merged_at = value.get("merged_at")
+            merge_commit_sha = value.get("merge_commit_sha")
         else:
             repository = getattr(value, "repository", None)
             actual_number = getattr(value, "number", None)
@@ -139,19 +142,45 @@ def audit_contracts(multica: object, github: object, manifest: DeliveryManifest)
             head_sha = getattr(value, "head_sha", None)
             base_ref = getattr(value, "base_ref", None)
             mergeable = getattr(value, "mergeable", "malformed")
+            merged_at = getattr(value, "merged_at", None)
+            merge_commit_sha = getattr(value, "merge_commit_sha", None)
+        merged_time_valid = False
+        if isinstance(merged_at, str) and merged_at:
+            try:
+                merged_time_valid = datetime.fromisoformat(
+                    merged_at.replace("Z", "+00:00")
+                ).tzinfo is not None
+            except ValueError:
+                merged_time_valid = False
+        merged_commit_valid = (
+            isinstance(merge_commit_sha, str)
+            and re.fullmatch(r"[0-9a-f]{40}", merge_commit_sha) is not None
+        )
+        if state == "merged":
+            merge_identity_coherent = merged_time_valid and merged_commit_valid
+        elif state == "closed":
+            merge_identity_coherent = (
+                merged_at is None and merge_commit_sha is None
+            )
+        else:
+            merge_identity_coherent = (
+                merged_at is None
+                and (merge_commit_sha is None or merged_commit_valid)
+            )
         return (
             repository == expected
             and isinstance(actual_number, int)
             and not isinstance(actual_number, bool)
             and actual_number > 0
             and (number is None or actual_number == number)
-            and state in {"open", "closed"}
+            and state in {"open", "closed", "merged"}
             and isinstance(head_sha, str)
             and re.fullmatch(r"[0-9a-f]{40}", head_sha) is not None
             and isinstance(base_ref, str)
             and bool(base_ref)
             and not base_ref.startswith("-")
             and mergeable in {True, False, None}
+            and merge_identity_coherent
         )
 
     def required_shape(value: object, expected: str, base_ref: str, sha: str) -> bool:

@@ -76,7 +76,8 @@ internals:
 - `Provisioner.reconcile(manifest, lock, apply=False, secret_lookup=...)`
   performs authoritative reads and returns a deterministic, redacted plan.
   It does not create or update Multica resources. Provisioning live effects
-  require an explicit `apply=True` call. A converged second apply has
+  require an explicit `apply=True` call where `apply` is an exact `bool`;
+  strings, integers, and bool-like values fail before any read. A converged second apply has
   `mutation_count == 0`; duplicate, foreign, malformed, or non-convergent state
   fails closed.
 - `GenericWorkflow` consumes typed snapshots and injected adapters to intake a
@@ -84,8 +85,12 @@ internals:
   completion, resume the parent, merge an already-gated plan, run local smoke,
   and perform bounded stalled-work recovery. Its effects occur only when its
   explicit workflow methods are called; importing the module has no effect.
+  Parent progression is authorized only from the manifest's exact control
+  Project. New phase evidence must name the active, current-stage child whose
+  creation action is already authoritative; historical or post-merge evidence
+  is replay-only.
 - `ProcessManager` starts, reuses, and stops local services only when its
-  private runtime registry proves the same instance owner, Run, repository,
+  manifest binding and private runtime registry prove the same instance owner, Run, repository,
   exact SHA, PID, port, and health URL. An unknown or partially owned process
   blocks the operation and is never reused or terminated.
 
@@ -116,7 +121,10 @@ automatic merge. Before merging, the current Core proves exact-SHA
 implementation PASS evidence, independent review and repository/integration QA
 evidence, required GitHub checks, and merge preflight. Multi-repository gates
 pass before the first merge; merges then follow the confirmed
-dependency-compatible order. A partial merge blocks without rollback.
+dependency-compatible order. The candidate, gate-evidence, child, and exact PR
+target authority is frozen across merge reservation and reread before every
+GitHub mutation. Any current-stage work is an unconditional barrier, including
+merge recovery. A partial merge blocks without rollback.
 
 `focused_test`, `test`, and `build` are manifest and Agent contracts, and
 inputs for a future executor; the current Core neither executes them nor
@@ -131,7 +139,13 @@ execution. Every command result must also carry the same structured exact-SHA
 map. `OwnedSmokeExecutor` trusts only the concrete
 `LocalExactShaCommandRunner`; tests may inject only its closed command backend,
 so a self-reporting runner cannot create authoritative smoke evidence. The
-concrete boundary never checks out or resets a repository; operators or Agents
+workflow likewise accepts only the concrete manifest-bound
+`OwnedSmokeExecutor`; the public smoke-record method can replay an already
+persisted exact observation but cannot mint one. Its concrete `ProcessManager`
+must return registry- and host-verified ownership records covering every
+declared service. Startup or ownership failure records all affected repository
+and integration results as blocked and nonauthoritative, then human-blocks the
+parent. The concrete boundary never checks out or resets a repository; operators or Agents
 must place every checkout at the exact merged candidate. Unverified
 owner-checked cleanup blocks every smoke result. It starts declared local
 services only through `ProcessManager`, which blocks unknown or mismatched
@@ -149,7 +163,9 @@ It is outside the delivery Squad, so its scheduled recovery cannot consume the
 Delivery Lead's slot. The Watcher may reread only the configured Projects and
 rerun at most one already-intended stalled assignment. It never creates work,
 changes a repair attempt, waives a gate, edits business code, merges, rolls
-back, or deploys.
+back, or deploys. Recovery selects only the current stage/attempt child with
+matching repository, phase, suite, and authoritative creation action; a
+historical child can never be rerun.
 
 ## Eventra compatibility and migration boundary
 

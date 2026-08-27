@@ -9,7 +9,10 @@ from tools.multica_delivery.github_client import (
     RequiredCheckIdentity,
     RequiredStatusChecks,
 )
-from tools.multica_delivery.multica_client import TransientCommandError
+from tools.multica_delivery.multica_client import CommandResult, TransientCommandError
+from tools.multica_delivery.tests.security_assertions import (
+    assert_exception_graph_redacted,
+)
 
 
 class FakeRunner:
@@ -54,6 +57,58 @@ class GitHubClientTests(unittest.TestCase):
         with self.assertRaisesRegex(GitHubBoundaryError, "not managed"):
             self.client.get_pull_request("other/repo", 4)
 
+        self.assertEqual(self.runner.calls, [])
+
+    def test_pull_request_numbers_are_exact_positive_ints_before_execution(self):
+        for number in (True, False, 0, -1, 1.0, "4", None):
+            with self.subTest(number=number):
+                runner = FakeRunner(self.pull("a" * 40))
+                client = GitHubClient(
+                    runner, frozenset({"codeExploreHub/api"})
+                )
+                with self.assertRaisesRegex(
+                    GitHubBoundaryError, "positive integer"
+                ):
+                    client.get_pull_request("codeExploreHub/api", number)
+                self.assertEqual(runner.calls, [])
+
+                with self.assertRaisesRegex(
+                    GitHubBoundaryError, "positive integer"
+                ):
+                    client.merge_pull_request(
+                        "codeExploreHub/api", number, expected_sha="a" * 40
+                    )
+                self.assertEqual(runner.calls, [])
+
+    def test_github_raw_response_is_unreachable_from_exception_graph(self):
+        sentinel = "GITHUB-RAW-OUTPUT-SENTINEL"
+        runner = FakeRunner({"unexpected": [sentinel]})
+
+        with self.assertRaises(GitHubBoundaryError) as caught:
+            GitHubClient(
+                runner, frozenset({"codeExploreHub/api"})
+            ).get_repository("codeExploreHub/api")
+
+        assert_exception_graph_redacted(self, caught.exception, sentinel)
+
+    def test_github_captured_stdout_is_unreachable_from_exception_graph(self):
+        sentinel = "GITHUB-CAPTURED-STDOUT-SENTINEL"
+        runner = FakeRunner(CommandResult(0, sentinel))
+
+        with self.assertRaises(GitHubBoundaryError) as caught:
+            GitHubClient(
+                runner, frozenset({"codeExploreHub/api"})
+            ).get_repository("codeExploreHub/api")
+
+        assert_exception_graph_redacted(self, caught.exception, sentinel)
+
+    def test_github_repository_input_is_unreachable_from_exception_graph(self):
+        sentinel = "GITHUB-RAW-INPUT-SENTINEL"
+
+        with self.assertRaises(GitHubBoundaryError) as caught:
+            self.client.get_repository(sentinel)
+
+        assert_exception_graph_redacted(self, caught.exception, sentinel)
         self.assertEqual(self.runner.calls, [])
 
     def test_repository_and_project_reads_return_typed_immutable_values(self):
@@ -489,6 +544,18 @@ class GitHubClientTests(unittest.TestCase):
 
         self.assertEqual(len(transient.calls), 2)
         self.assertEqual(len(permanent.calls), 1)
+
+    def test_runner_cannot_forge_a_secret_bearing_github_error(self):
+        sentinel = "GITHUB-FORGED-ERROR-SENTINEL"
+        runner = FakeRunner(GitHubBoundaryError(sentinel))
+
+        with self.assertRaises(GitHubBoundaryError) as caught:
+            GitHubClient(
+                runner,
+                frozenset({"codeExploreHub/api"}),
+            ).get_repository("codeExploreHub/api")
+
+        assert_exception_graph_redacted(self, caught.exception, sentinel)
 
     def test_merge_refuses_malformed_expected_sha_before_any_read(self):
         with self.assertRaisesRegex(GitHubBoundaryError, "expected SHA"):

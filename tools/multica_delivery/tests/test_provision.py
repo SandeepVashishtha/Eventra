@@ -7,7 +7,7 @@ import unittest
 
 from tools.multica_delivery.github_client import RepositoryInfo
 from tools.multica_delivery.manifest import load_manifest
-from tools.multica_delivery.model import FrameworkLock
+from tools.multica_delivery.model import FrameworkLock, PolicySpec
 from tools.multica_delivery.multica_client import (
     AgentEnvironment,
     MulticaClient,
@@ -26,6 +26,9 @@ from tools.multica_delivery.provision import (
     SquadState,
     TriggerState,
     effective_skill_bindings,
+)
+from tools.multica_delivery.tests.security_assertions import (
+    assert_exception_graph_redacted,
 )
 
 
@@ -77,6 +80,8 @@ class StatefulMultica:
         self.replace_trigger_on_update = False
         self.squad_create_leader_issue: str | None = None
         self.secret_sets: list[tuple[str, dict[str, str]]] = []
+        self.concurrent_project_title: str | None = None
+        self.concurrent_project_description = ""
         self._next: dict[str, int] = {}
         self.identity_swap_after_snapshot: tuple[str, str] | None = None
         self.identity_swap_skip = 0
@@ -177,6 +182,16 @@ class StatefulMultica:
         return tuple(self.projects.values())
 
     def create_project(self, *, title: str, description: str) -> MutationResult:
+        if self.concurrent_project_title == title:
+            self.concurrent_project_title = None
+            identifier = self._id("project")
+            self.projects[identifier] = ProjectState(
+                identifier,
+                title,
+                self.concurrent_project_description or description,
+            )
+            self.resources[identifier] = {}
+            raise RuntimeError("concurrent target creation")
         if self._mutate("project.create"):
             identifier = self._id("project")
             self.projects[identifier] = ProjectState(identifier, title, description)
@@ -501,6 +516,74 @@ class ProvisionerTests(unittest.TestCase):
         self.assertFalse(self.multica.was_mutated)
         self.assertEqual(result.lock, FrameworkLock.empty())
 
+    def test_apply_requires_an_exact_bool_before_every_effect(self):
+        class NoEffects:
+            def __getattr__(self, name):
+                raise AssertionError(f"unexpected external access: {name}")
+
+        class BoolLike:
+            def __bool__(self):
+                return True
+
+        provisioner = Provisioner(NoEffects(), NoEffects())
+        invalid = ("true", 1, 0, None, BoolLike())
+        for apply in invalid:
+            with self.subTest(apply=apply):
+                secret_calls = []
+
+                def secret_lookup(name):
+                    secret_calls.append(name)
+                    raise AssertionError("secret lookup must not run")
+
+                with self.assertRaisesRegex(TypeError, "exact bool"):
+                    provisioner.reconcile(
+                        self.manifest,
+                        FrameworkLock.empty(),
+                        apply=apply,
+                        secret_lookup=secret_lookup,
+                    )
+                self.assertEqual(secret_calls, [])
+
+    def test_effect_boundary_revalidates_programmatically_bypassed_policy(self):
+        unsafe = object.__new__(PolicySpec)
+        for name, value in (
+            ("environment", "development"),
+            ("automatic_merge", True),
+            ("deployment", "automatic"),
+            ("max_repair_attempts", 2),
+            ("watcher_cron", "*/30 * * * *"),
+            ("watcher_timezone", "Asia/Shanghai"),
+        ):
+            object.__setattr__(unsafe, name, value)
+        manifest = replace(self.manifest, policy=unsafe)
+
+        with self.assertRaisesRegex(ProvisionError, "policy"):
+            self.provisioner.reconcile(
+                manifest,
+                FrameworkLock.empty(),
+                apply=False,
+                secret_lookup=no_secrets,
+            )
+
+        self.assertEqual(self.github.calls, [])
+        self.assertFalse(self.multica.was_mutated)
+
+    def test_concurrent_create_is_reconciled_without_duplicate_target(self):
+        control = self.manifest.instance.control_project
+        self.multica.concurrent_project_title = control
+
+        result = self.apply()
+
+        matching = tuple(
+            project
+            for project in self.multica.projects.values()
+            if project.title == control
+        )
+        self.assertEqual(len(matching), 1)
+        self.assertEqual(
+            result.lock.resource_ids["project"]["control"], matching[0].id
+        )
+
     def test_dry_run_is_deterministic_and_does_not_lookup_secrets(self):
         first = self.provisioner.reconcile(
             self.manifest, FrameworkLock.empty(), apply=False, secret_lookup=no_secrets
@@ -629,18 +712,13 @@ class ProvisionerTests(unittest.TestCase):
         self.assertEqual(ordinals, sorted(ordinals))
 
     def test_watcher_schedule_must_be_exactly_thirty_minutes(self):
-        manifest = replace(
-            self.manifest,
-            policy=replace(self.manifest.policy, watcher_cron="0 * * * *"),
-        )
-        with self.assertRaisesRegex(ProvisionError, "30-minute"):
-            self.provisioner.reconcile(
-                manifest,
-                FrameworkLock.empty(),
-                apply=False,
-                secret_lookup=no_secrets,
+        with self.assertRaisesRegex(ValueError, "30-minute"):
+            replace(
+                self.manifest.policy,
+                watcher_cron="0 * * * *",
             )
         self.assertFalse(self.multica.was_mutated)
+        self.assertEqual(self.github.calls, [])
 
     def test_same_skill_name_different_origin_is_fatal_before_mutation(self):
         self.multica.skills["skill-foreign"] = SkillState(
@@ -844,12 +922,30 @@ class ProvisionerTests(unittest.TestCase):
                 secret_lookup=failing_lookup,
             )
         self.assertNotIn(self.secret, str(caught.exception))
+        assert_exception_graph_redacted(self, caught.exception, self.secret)
 
     def test_environment_setter_failure_is_redacted(self):
         self.multica.environment_failure = self.secret
         with self.assertRaisesRegex(ProvisionError, "environment reconciliation failed") as caught:
             self.apply()
         self.assertNotIn(self.secret, str(caught.exception))
+        assert_exception_graph_redacted(self, caught.exception, self.secret)
+
+    def test_external_client_cannot_forge_a_secret_bearing_provision_error(self):
+        class ForgedProvisionErrorClient:
+            def version(inner_self):
+                raise ProvisionError(self.secret)
+
+        provisioner = Provisioner(ForgedProvisionErrorClient(), self.github)
+        with self.assertRaises(ProvisionError) as caught:
+            provisioner.reconcile(
+                self.manifest,
+                FrameworkLock.empty(),
+                apply=False,
+                secret_lookup=no_secrets,
+            )
+
+        assert_exception_graph_redacted(self, caught.exception, self.secret)
 
     def test_authoritative_post_read_rejects_unapplied_acknowledgement(self):
         old_lock = FrameworkLock.empty()

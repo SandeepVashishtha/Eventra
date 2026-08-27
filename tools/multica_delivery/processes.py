@@ -20,7 +20,7 @@ from urllib.error import URLError
 from urllib.parse import urlsplit
 from urllib.request import urlopen
 
-from .model import ServiceSpec
+from .model import DeliveryManifest, ServiceSpec, validate_policy_authority
 
 
 _SHA = re.compile(r"[0-9a-f]{40}\Z")
@@ -401,19 +401,45 @@ def default_registry_path(instance_key: str) -> Path:
 class ProcessManager:
     """Start, reuse, and stop only processes proven to match all owner fields."""
 
+    __slots__ = ("_manifest", "_registry", "_backend", "_owner_token")
+
+    def __setattr__(self, name: str, value: object) -> None:
+        raise AttributeError("process authority bindings are immutable")
+
+    @property
+    def manifest(self) -> DeliveryManifest:
+        return self._manifest
+
+    @property
+    def registry(self) -> ProcessRegistry:
+        return self._registry
+
+    @property
+    def backend(self) -> ProcessBackend:
+        return self._backend
+
+    @property
+    def owner_token(self) -> str:
+        return self._owner_token
+
     def __init__(
         self,
         registry: ProcessRegistry,
         backend: ProcessBackend,
         *,
         owner_token: str,
+        manifest: DeliveryManifest,
     ) -> None:
+        if type(manifest) is not DeliveryManifest:
+            raise TypeError("manifest must be an exact DeliveryManifest")
+        validate_policy_authority(manifest.policy)
         if not isinstance(registry, ProcessRegistry):
             raise TypeError("registry must be a ProcessRegistry")
         _stable(owner_token, "owner_token")
-        self.registry = registry
-        self.backend = backend
-        self.owner_token = owner_token
+        object.__setattr__(self, "_manifest", manifest)
+        object.__setattr__(self, "_registry", registry)
+        object.__setattr__(self, "_backend", backend)
+        object.__setattr__(self, "_owner_token", owner_token)
 
     def _matching_record(
         self,
@@ -600,6 +626,81 @@ class ProcessManager:
             except Exception as error:
                 cleanup(error)
             return owned
+
+    def verify_services(
+        self,
+        services: tuple[ServiceSpec, ...],
+        run: ProcessRun,
+        records: tuple[OwnedProcess, ...],
+        *,
+        candidate_sha: str,
+    ) -> tuple[OwnedProcess, ...]:
+        """Re-read registry and host ownership for one manifest service set."""
+
+        if (
+            not isinstance(services, tuple)
+            or not isinstance(run, ProcessRun)
+            or not isinstance(records, tuple)
+            or any(type(record) is not OwnedProcess for record in records)
+        ):
+            raise TypeError("service ownership values must be concrete typed values")
+        candidate_sha = _sha(candidate_sha)
+        specification = self.manifest.repositories.get(run.repository_key)
+        if (
+            specification is None
+            or services != specification.services
+            or run.argv != specification.commands.get("start")
+            or run.cwd != specification.local_path
+            or len(records) != len(services)
+            or not records
+        ):
+            raise ProcessOwnershipError("service ownership is outside the manifest")
+        expected_services = {
+            (service.port, service.health_url) for service in services
+        }
+        observed_services = {
+            (record.port, record.health_url) for record in records
+        }
+        if (
+            observed_services != expected_services
+            or len(observed_services) != len(records)
+            or len({record.pid for record in records}) != 1
+            or len({record.start_identity for record in records}) != 1
+            or any(
+                record.repository_key != run.repository_key
+                or record.candidate_sha != candidate_sha
+                or record.run_id != run.run_id
+                or record.owner_token != self.owner_token
+                for record in records
+            )
+        ):
+            raise ProcessOwnershipError("declared services lack exact owned records")
+        pid = records[0].pid
+        identity = records[0].start_identity
+        with self.registry.transaction() as transaction:
+            registered = transaction.read()
+            registered_pid_records = tuple(
+                record for record in registered if record.pid == pid
+            )
+            if (
+                any(record not in registered for record in records)
+                or set(registered_pid_records) != set(records)
+            ):
+                raise ProcessOwnershipError(
+                    "declared services lack registry ownership"
+                )
+            self._verify_start_identity(pid, identity)
+            if not self.backend.is_alive(pid):
+                raise ProcessOwnershipError("PID ownership is unknown")
+            for record in records:
+                if (
+                    self.backend.port_owner(record.port) != pid
+                    or not self.backend.wait_healthy(record.health_url, pid)
+                ):
+                    raise ProcessOwnershipError(
+                        "declared service ownership is not healthy"
+                    )
+        return records
 
     def stop(
         self,

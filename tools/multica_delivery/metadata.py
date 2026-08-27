@@ -206,7 +206,11 @@ class RecoveryMetadata(ParentMetadata):
 _T = TypeVar("_T", bound=ParentMetadata)
 
 
-def _encode(metadata: ParentMetadata) -> str:
+def _encode(metadata: ParentMetadata, metadata_type: type[ParentMetadata]) -> str:
+    if type(metadata) is not metadata_type:
+        raise MetadataError(
+            f"encoder requires exact metadata type {metadata_type.__name__}"
+        )
     value = {
         field_name: dict(field_value) if isinstance(field_value, Mapping) else field_value
         for field_name, field_value in ((name, getattr(metadata, name)) for name in metadata.__dataclass_fields__)
@@ -253,7 +257,7 @@ def _decode(text: str, metadata_type: type[_T]) -> _T:
 
 
 def encode_parent_metadata(metadata: ParentMetadata) -> str:
-    return _encode(metadata)
+    return _encode(metadata, ParentMetadata)
 
 
 def decode_parent_metadata(text: str) -> ParentMetadata:
@@ -261,7 +265,7 @@ def decode_parent_metadata(text: str) -> ParentMetadata:
 
 
 def encode_child_metadata(metadata: ChildMetadata) -> str:
-    return _encode(metadata)
+    return _encode(metadata, ChildMetadata)
 
 
 def decode_child_metadata(text: str) -> ChildMetadata:
@@ -269,7 +273,7 @@ def decode_child_metadata(text: str) -> ChildMetadata:
 
 
 def encode_phase_metadata(metadata: PhaseMetadata) -> str:
-    return _encode(metadata)
+    return _encode(metadata, PhaseMetadata)
 
 
 def decode_phase_metadata(text: str) -> PhaseMetadata:
@@ -277,7 +281,7 @@ def decode_phase_metadata(text: str) -> PhaseMetadata:
 
 
 def encode_pull_request_metadata(metadata: PullRequestMetadata) -> str:
-    return _encode(metadata)
+    return _encode(metadata, PullRequestMetadata)
 
 
 def decode_pull_request_metadata(text: str) -> PullRequestMetadata:
@@ -285,7 +289,7 @@ def decode_pull_request_metadata(text: str) -> PullRequestMetadata:
 
 
 def encode_recovery_metadata(metadata: RecoveryMetadata) -> str:
-    return _encode(metadata)
+    return _encode(metadata, RecoveryMetadata)
 
 
 def decode_recovery_metadata(text: str) -> RecoveryMetadata:

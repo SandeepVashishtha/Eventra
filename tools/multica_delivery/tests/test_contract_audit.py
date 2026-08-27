@@ -142,6 +142,90 @@ class ContractAuditTests(unittest.TestCase):
         self.assertTrue(all(statuses[f"github.pull_request.{slug}"] == "fail" for slug in ({self.manifest.control.github} | {repo.github for repo in self.manifest.repositories.values()})))
         self.assertEqual(statuses["github.pull_request_shape"], "fail")
 
+    def test_merged_pull_request_sample_requires_coherent_merge_identity(self):
+        sha = "a" * 40
+        merged_sha = "b" * 40
+        github = RecordingGitHub()
+
+        def merged(repository, *, complete=True):
+            return {
+                "repository": repository,
+                "number": 4,
+                "state": "merged",
+                "head_sha": sha,
+                "base_ref": "main",
+                "mergeable": True,
+                "merged_at": (
+                    "2026-08-27T10:00:00Z" if complete else None
+                ),
+                "merge_commit_sha": merged_sha,
+            }
+
+        github.list_pull_requests = lambda repository: (merged(repository),)
+        github.get_pull_request = lambda repository, number: merged(repository)
+        github.required_status_checks = lambda repository, base_ref, head_sha: {
+            "repository": repository,
+            "base_ref": base_ref,
+            "sha": head_sha,
+            "strict": True,
+            "required_contexts": (),
+            "required_checks": (),
+            "successful_contexts": (),
+            "successful_checks": (),
+            "passing": True,
+        }
+
+        complete = audit_contracts(RecordingMultica(), github, self.manifest)
+        complete_statuses = {
+            entry.subject: entry.status for entry in complete.entries
+        }
+        self.assertEqual(complete_statuses["github.pull_request_shape"], "pass")
+
+        github.list_pull_requests = lambda repository: (
+            merged(repository, complete=False),
+        )
+        malformed = audit_contracts(RecordingMultica(), github, self.manifest)
+        malformed_statuses = {
+            entry.subject: entry.status for entry in malformed.entries
+        }
+        self.assertEqual(malformed_statuses["github.pull_request_shape"], "fail")
+
+    def test_open_pull_request_sample_accepts_valid_provisional_merge_sha(self):
+        head_sha = "a" * 40
+        provisional_merge_sha = "b" * 40
+        github = RecordingGitHub()
+
+        def pull(repository):
+            return {
+                "repository": repository,
+                "number": 4,
+                "state": "open",
+                "head_sha": head_sha,
+                "base_ref": "main",
+                "mergeable": True,
+                "merged_at": None,
+                "merge_commit_sha": provisional_merge_sha,
+            }
+
+        github.list_pull_requests = lambda repository: (pull(repository),)
+        github.get_pull_request = lambda repository, number: pull(repository)
+        github.required_status_checks = lambda repository, base_ref, sha: {
+            "repository": repository,
+            "base_ref": base_ref,
+            "sha": sha,
+            "strict": True,
+            "required_contexts": (),
+            "required_checks": (),
+            "successful_contexts": (),
+            "successful_checks": (),
+            "passing": True,
+        }
+
+        report = audit_contracts(RecordingMultica(), github, self.manifest)
+
+        statuses = {entry.subject: entry.status for entry in report.entries}
+        self.assertEqual(statuses["github.pull_request_shape"], "pass")
+
     def test_malformed_required_check_detail_keeps_overall_summary_failed(self):
         sha = "a" * 40
         github = RecordingGitHub()

@@ -3,6 +3,7 @@
 from dataclasses import fields, is_dataclass
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import shlex
@@ -110,6 +111,20 @@ def _github_slug(value: Any, field: str) -> str:
     return slug
 
 
+def _local_path(value: Any, field: str) -> Path:
+    raw = _string(value, field)
+    path = Path(raw)
+    if not path.is_absolute() or os.path.normpath(raw) != raw:
+        raise ManifestError(f"{field} must be an absolute lexically normalized path")
+    try:
+        resolved = path.resolve(strict=False)
+    except OSError:
+        raise ManifestError(f"{field} symlink identity could not be verified") from None
+    if resolved != path:
+        raise ManifestError(f"{field} must not use a symlink alias")
+    return path
+
+
 def _public_skill_url(value: Any, field: str) -> str:
     url = _string(value, field)
     parsed = urlparse(url)
@@ -181,7 +196,10 @@ def load_manifest_text(text: str) -> DeliveryManifest:
 
     control_data = _mapping(top["control"], "control")
     _expect_keys(control_data, "control", {"github", "local_path"})
-    control = ControlSpec(_github_slug(control_data["github"], "control.github"), Path(_string(control_data["local_path"], "control.local_path")))
+    control = ControlSpec(
+        _github_slug(control_data["github"], "control.github"),
+        _local_path(control_data["local_path"], "control.local_path"),
+    )
 
     skill_sources: dict[str, SkillSource] = {}
     for key, source in _mapping(top["skill_registry"], "skill_registry").items():
@@ -248,7 +266,10 @@ def load_manifest_text(text: str) -> DeliveryManifest:
         if project in projects:
             raise ManifestError(f"duplicate Project: {project}")
         projects.add(project)
-        local_path = Path(_string(data["local_path"], f"repositories.{name}.local_path"))
+        local_path = _local_path(
+            data["local_path"],
+            f"repositories.{name}.local_path",
+        )
         if local_path in paths:
             raise ManifestError(f"duplicate local-path: {local_path}")
         paths.add(local_path)

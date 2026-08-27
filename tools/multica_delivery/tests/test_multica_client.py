@@ -20,6 +20,9 @@ from tools.multica_delivery.multica_client import (
     TriggerState,
     _PUBLIC_READ_ONE_ID,
 )
+from tools.multica_delivery.tests.security_assertions import (
+    assert_exception_graph_redacted,
+)
 
 
 _EXPECTED_PUBLIC_READ_ONE_ID = frozenset(
@@ -55,6 +58,209 @@ class FakeRunner:
 
 
 class MulticaClientTests(unittest.TestCase):
+    def test_every_typed_identifier_rejects_option_tokens_before_execution(self):
+        calls = (
+            lambda client: client.get_runtime("--all", "daemon-1"),
+            lambda client: client.get_runtime("runtime-1", "--all"),
+            lambda client: client.list_project_resources("--all"),
+            lambda client: client.list_agent_skill_ids("--all"),
+            lambda client: client.list_squad_members("--all"),
+            lambda client: client.list_autopilot_triggers("--all"),
+            lambda client: client.get_agent_environment("--all"),
+            lambda client: client.set_agent_environment("--all", {}),
+            lambda client: client.update_project(
+                "--all", title="x", description="x"
+            ),
+            lambda client: client.add_project_worktree(
+                "--all",
+                local_path="/tmp/repository",
+                daemon_id="daemon-1",
+                execution_mode="worktree",
+            ),
+            lambda client: client.update_project_worktree(
+                "project-1",
+                "--all",
+                daemon_id="daemon-1",
+                execution_mode="worktree",
+            ),
+            lambda client: client.create_agent(
+                name="x",
+                description="x",
+                instructions="x",
+                runtime_id="--all",
+                visibility="workspace",
+                max_concurrent_tasks=1,
+            ),
+            lambda client: client.update_agent(
+                "--all",
+                name="x",
+                description="x",
+                instructions="x",
+                runtime_id="runtime-1",
+                visibility="workspace",
+                max_concurrent_tasks=1,
+            ),
+            lambda client: client.add_agent_skill("agent-1", "--all"),
+            lambda client: client.create_squad(
+                name="x", description="x", leader_id="--all"
+            ),
+            lambda client: client.update_squad(
+                "--all",
+                name="x",
+                description="x",
+                instructions="x",
+                leader_id="agent-1",
+            ),
+            lambda client: client.add_squad_member(
+                "squad-1", "--all", role="reviewer"
+            ),
+            lambda client: client.update_squad_member(
+                "--all", "agent-1", role="reviewer"
+            ),
+            lambda client: client.create_autopilot(
+                title="x",
+                description="x",
+                execution_mode="run_only",
+                project_id="--all",
+                assignee_id="agent-1",
+                status="active",
+            ),
+            lambda client: client.update_autopilot(
+                "--all",
+                title="x",
+                description="x",
+                execution_mode="run_only",
+                project_id="project-1",
+                assignee_id="agent-1",
+                status="active",
+            ),
+            lambda client: client.add_autopilot_trigger(
+                "--all",
+                cron_expression="*/30 * * * *",
+                timezone="Asia/Shanghai",
+                label="x",
+            ),
+            lambda client: client.update_autopilot_trigger(
+                "autopilot-1",
+                "--all",
+                cron_expression="*/30 * * * *",
+                timezone="Asia/Shanghai",
+                enabled=True,
+                label="x",
+            ),
+        )
+        for invoke in calls:
+            with self.subTest(invoke=invoke):
+                runner = FakeRunner({"unexpected": True})
+                with self.assertRaises(MulticaContractError):
+                    invoke(MulticaClient(runner))
+                self.assertEqual(runner.calls, [])
+
+    def test_server_derived_summary_ids_are_validated_before_followup_reads(self):
+        cases = (
+            (
+                lambda client: client.list_projects(),
+                {"data": {"projects": [{"id": "--all", "title": "x"}]}},
+            ),
+            (
+                lambda client: client.list_agents(),
+                {"data": {"agents": [{"id": "--all", "name": "x"}]}},
+            ),
+            (
+                lambda client: client.list_skills(),
+                {"data": {"skills": [{"id": "--all", "name": "x"}]}},
+            ),
+            (
+                lambda client: client.list_squads(),
+                {"data": {"squads": [{"id": "--all", "name": "x"}]}},
+            ),
+        )
+        for invoke, response in cases:
+            with self.subTest(invoke=invoke):
+                runner = FakeRunner(response, {"unexpected": True})
+                with self.assertRaises(MulticaContractError):
+                    invoke(MulticaClient(runner))
+                self.assertEqual(len(runner.calls), 1)
+
+    def test_server_derived_resource_and_binding_ids_are_strict(self):
+        cases = (
+            (
+                lambda client: client.list_project_resources("project-1"),
+                {
+                    "data": {
+                        "resources": [
+                            {
+                                "id": "--all",
+                                "project_id": "project-1",
+                                "resource_type": "local_directory",
+                                "resource_ref": {
+                                    "local_path": "/tmp/repository",
+                                    "daemon_id": "daemon-1",
+                                    "execution_mode": "worktree",
+                                },
+                            }
+                        ]
+                    }
+                },
+            ),
+            (
+                lambda client: client.list_agent_skill_ids("agent-1"),
+                {"data": {"skills": [{"id": "--all"}]}},
+            ),
+        )
+        for invoke, response in cases:
+            with self.subTest(invoke=invoke):
+                runner = FakeRunner(response)
+                with self.assertRaises(MulticaContractError):
+                    invoke(MulticaClient(runner))
+
+    def test_multica_raw_response_is_unreachable_from_exception_graph(self):
+        sentinel = "MULTICA-RAW-OUTPUT-SENTINEL"
+        runner = FakeRunner({"data": {"unexpected": [sentinel]}})
+
+        with self.assertRaises(MulticaContractError) as caught:
+            MulticaClient(runner).get_agent_environment("agent-1")
+
+        assert_exception_graph_redacted(self, caught.exception, sentinel)
+
+    def test_multica_raw_mapping_keys_are_not_rendered_or_retained(self):
+        sentinel = "MULTICA-RAW-KEY-SENTINEL"
+        runner = FakeRunner({"data": {sentinel: "value"}})
+
+        with self.assertRaises(MulticaContractError) as caught:
+            MulticaClient(runner).list_projects()
+
+        assert_exception_graph_redacted(self, caught.exception, sentinel)
+
+    def test_runner_cannot_forge_a_secret_bearing_boundary_error(self):
+        sentinel = "MULTICA-FORGED-ERROR-SENTINEL"
+        runner = FakeRunner(MulticaContractError(sentinel))
+
+        with self.assertRaises(MulticaContractError) as caught:
+            MulticaClient(runner).list_projects()
+
+        assert_exception_graph_redacted(self, caught.exception, sentinel)
+
+    def test_multica_captured_stdout_is_unreachable_from_exception_graph(self):
+        sentinel = "MULTICA-CAPTURED-STDOUT-SENTINEL"
+        runner = FakeRunner(CommandResult(0, sentinel))
+
+        with self.assertRaises(MulticaContractError) as caught:
+            MulticaClient(runner).list_projects()
+
+        assert_exception_graph_redacted(self, caught.exception, sentinel)
+
+    def test_environment_input_is_unreachable_from_failure_exception_graph(self):
+        sentinel = "MULTICA-ENVIRONMENT-SECRET-SENTINEL"
+        runner = FakeRunner(TransientCommandError(sentinel))
+
+        with self.assertRaises(CommandFailure) as caught:
+            MulticaClient(runner).set_agent_environment(
+                "agent-1", {"TOKEN": sentinel}
+            )
+
+        assert_exception_graph_redacted(self, caught.exception, sentinel)
+
     def test_public_one_id_prefixes_match_the_closed_production_surface(self):
         self.assertEqual(_PUBLIC_READ_ONE_ID, _EXPECTED_PUBLIC_READ_ONE_ID)
 
@@ -354,7 +560,9 @@ class MulticaClientTests(unittest.TestCase):
     def test_public_call_rejects_generic_mutations_before_execution(self):
         runner = FakeRunner({"data": {"agent": {"id": "agent-1"}}})
 
-        with self.assertRaisesRegex(MulticaContractError, "unsupported Multica argv"):
+        with self.assertRaisesRegex(
+            MulticaContractError, "unsupported Multica argv"
+        ) as caught:
             MulticaClient(runner).call(
                 (
                     "multica",
@@ -365,6 +573,7 @@ class MulticaClientTests(unittest.TestCase):
                 )
             )
 
+        assert_exception_graph_redacted(self, caught.exception, "SENTINEL")
         self.assertEqual(runner.calls, [])
 
     def test_public_call_rejects_extra_read_arguments_before_execution(self):
@@ -407,7 +616,7 @@ class MulticaClientTests(unittest.TestCase):
             MulticaClient(runner).call(("multica", "issue", "get", "issue-1"))
 
         self.assertNotIn(secret, str(caught.exception))
-        self.assertIn("success", str(caught.exception))
+        self.assertIn("malformed", str(caught.exception))
 
     def test_unwraps_nested_created_resource(self):
         runner = FakeRunner({"data": {"skill": {"id": "skill-1", "name": "tdd"}}})
@@ -475,7 +684,7 @@ class MulticaClientTests(unittest.TestCase):
         with self.assertRaisesRegex(MulticaContractError, "agent environment") as caught:
             MulticaClient(runner).get_agent_environment("agent-1")
 
-        self.assertIn("unexpected", str(caught.exception))
+        self.assertIn("malformed", str(caught.exception))
         self.assertNotIn(secret, str(caught.exception))
 
     def test_read_retries_once_after_transient_failure(self):

@@ -1,3 +1,4 @@
+from dataclasses import replace
 from pathlib import Path
 from types import MappingProxyType
 import tempfile
@@ -69,6 +70,67 @@ class ManifestTests(unittest.TestCase):
                 )
                 with self.assertRaisesRegex(ManifestError, "environment"):
                     load_manifest_text(text)
+
+    def test_policy_constructor_enforces_every_fixed_authority_invariant(self):
+        policy = load_manifest(FIXTURE).policy
+        cases = (
+            {"deployment": "allowed"},
+            {"max_repair_attempts": 1},
+            {"max_repair_attempts": True},
+            {"watcher_cron": "0 * * * *"},
+            {"watcher_timezone": ""},
+            {"watcher_timezone": "not/a-real-timezone"},
+        )
+        for changes in cases:
+            with self.subTest(changes=changes):
+                with self.assertRaises(ValueError):
+                    replace(policy, **changes)
+
+    def test_manifest_paths_must_be_absolute_and_lexically_normalized(self):
+        source = FIXTURE.read_text(encoding="utf-8")
+        cases = (
+            source.replace(
+                "/workspace/sample-commerce-delivery-control",
+                "relative/control",
+                1,
+            ),
+            source.replace(
+                "/workspace/sample-commerce-api",
+                "/workspace/alias/../sample-commerce-api",
+                1,
+            ),
+            source.replace(
+                "/workspace/sample-commerce-api",
+                "/workspace//sample-commerce-api",
+                1,
+            ),
+        )
+        for text in cases:
+            with self.subTest(path=next(
+                line.strip() for line in text.splitlines()
+                if "local_path:" in line and (
+                    "relative" in line or ".." in line or "//" in line
+                )
+            )):
+                with self.assertRaisesRegex(ManifestError, "local_path"):
+                    load_manifest_text(text)
+
+    def test_manifest_rejects_symlink_path_aliases_conservatively(self):
+        source = FIXTURE.read_text(encoding="utf-8")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            target = root / "control"
+            target.mkdir()
+            alias = root / "control-alias"
+            alias.symlink_to(target, target_is_directory=True)
+            text = source.replace(
+                "/workspace/sample-commerce-delivery-control",
+                str(alias),
+                1,
+            )
+
+            with self.assertRaisesRegex(ManifestError, "symlink"):
+                load_manifest_text(text)
 
     def test_rejects_duplicate_yaml_keys(self):
         text = FIXTURE.read_text().replace(

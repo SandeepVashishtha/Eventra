@@ -8,17 +8,33 @@ from tools.multica_delivery.metadata import (
     ParentMetadata,
     PhaseMetadata,
     PullRequestMetadata,
+    RecoveryMetadata,
     canonical_json,
     decode_child_metadata,
     decode_parent_metadata,
     decode_pull_request_metadata,
     encode_child_metadata,
     encode_parent_metadata,
+    encode_phase_metadata,
     encode_pull_request_metadata,
+    encode_recovery_metadata,
 )
 
 
 class MetadataTests(unittest.TestCase):
+    def test_every_encoder_requires_its_exact_metadata_type(self):
+        cases = (
+            (encode_parent_metadata, ChildMetadata()),
+            (encode_child_metadata, PullRequestMetadata(pull_request_number=1)),
+            (encode_phase_metadata, ParentMetadata()),
+            (encode_pull_request_metadata, ChildMetadata()),
+            (encode_recovery_metadata, ParentMetadata()),
+        )
+        for encoder, value in cases:
+            with self.subTest(encoder=encoder.__name__, value=type(value).__name__):
+                with self.assertRaisesRegex(MetadataError, "exact metadata type"):
+                    encoder(value)
+
     def test_parent_envelope_is_canonical_json(self):
         encoded = encode_parent_metadata(
             ParentMetadata(

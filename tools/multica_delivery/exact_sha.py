@@ -10,7 +10,7 @@ import subprocess
 from types import MappingProxyType
 from typing import Protocol
 
-from .model import DeliveryManifest
+from .model import DeliveryManifest, validate_policy_authority
 
 
 _SHA = re.compile(r"[0-9a-f]{40}\Z")
@@ -169,6 +169,7 @@ class LocalExactShaCommandRunner:
     ) -> None:
         if not isinstance(manifest, DeliveryManifest):
             raise TypeError("manifest must be a DeliveryManifest")
+        validate_policy_authority(manifest.policy)
         if backend is not None and not callable(getattr(backend, "run", None)):
             raise TypeError("backend must implement ClosedCommandBackend")
         object.__setattr__(self, "_manifest", manifest)

@@ -214,16 +214,10 @@ class ParentDecisionTests(unittest.TestCase):
         self.assertEqual(decide_parent_action(manual, passing_snapshot()).kind, DecisionKind.WAIT)
 
     def test_policy_cannot_expand_repair_or_deployment_authority(self):
-        expanded_repairs = replace(
-            self.manifest,
-            policy=replace(self.manifest.policy, max_repair_attempts=3),
-        )
-        deploy_enabled = replace(
-            self.manifest,
-            policy=replace(self.manifest.policy, deployment="automatic"),
-        )
-        self.assertEqual(decide_parent_action(expanded_repairs, passing_snapshot()).kind, DecisionKind.BLOCK)
-        self.assertEqual(decide_parent_action(deploy_enabled, passing_snapshot()).kind, DecisionKind.BLOCK)
+        with self.assertRaisesRegex(ValueError, "max_repair_attempts"):
+            replace(self.manifest.policy, max_repair_attempts=3)
+        with self.assertRaisesRegex(ValueError, "deployment"):
+            replace(self.manifest.policy, deployment="automatic")
 
     def test_direct_policy_construction_rejects_aliases_unknowns_and_unsafe_merge(self):
         valid = dict(

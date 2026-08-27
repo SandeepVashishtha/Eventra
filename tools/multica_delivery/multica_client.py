@@ -9,6 +9,12 @@ from types import MappingProxyType
 from typing import Any, Mapping, Protocol
 from urllib.parse import urlparse
 
+from .redaction import (
+    ClosedFailure,
+    exception_originates_in,
+    redact_public_methods,
+)
+
 
 class CommandFailure(RuntimeError):
     """A permanent runner failure without retained command output."""
@@ -183,7 +189,7 @@ _UNSUPPORTED_CONTROL_KEYS = frozenset({"ok", "failed", "failure"})
 def _keys(value: object) -> str:
     if not isinstance(value, Mapping):
         return f"type={type(value).__name__}"
-    return "keys=" + ",".join(sorted(str(key) for key in value.keys()))
+    return f"mapping-size={len(value)}"
 
 
 def _contract(operation: str, value: object) -> MulticaContractError:
@@ -210,6 +216,21 @@ def _is_public_identifier(value: object) -> bool:
     return isinstance(value, str) and _PUBLIC_ID.fullmatch(value) is not None
 
 
+def _identifier(value: object, operation: str) -> str:
+    if not _is_public_identifier(value):
+        raise MulticaContractError(f"{operation} identifier is malformed")
+    return value
+
+
+def _classify_boundary_error(error: Exception) -> ClosedFailure:
+    if isinstance(
+        error,
+        (MulticaContractError, CommandFailure, TypeError, ValueError),
+    ) and exception_originates_in(error, __name__):
+        return ClosedFailure(type(error), str(error))
+    return ClosedFailure(MulticaContractError, "Multica boundary failed")
+
+
 def _is_public_read(command: tuple[str, ...]) -> bool:
     """Accept only complete, closed public read command shapes."""
 
@@ -229,6 +250,7 @@ def _is_public_read(command: tuple[str, ...]) -> bool:
     return False
 
 
+@redact_public_methods(_classify_boundary_error)
 class MulticaClient:
     """Product-neutral argv and response-shape adapter for Multica."""
 
@@ -351,9 +373,9 @@ class MulticaClient:
             raise _contract(operation, value)
         resource_id = value.get("id")
         name = value.get("name", value.get("title"))
-        if not isinstance(resource_id, str) or not resource_id or (name is not None and not isinstance(name, str)):
+        if name is not None and not isinstance(name, str):
             raise _contract(operation, value)
-        return MulticaResource(resource_id, name)
+        return MulticaResource(_identifier(resource_id, operation), name)
 
     @staticmethod
     def _resources(value: object, operation: str) -> tuple[MulticaResource, ...]:
@@ -376,6 +398,8 @@ class MulticaClient:
     def get_runtime(self, runtime_id: str | None = None, daemon_id: str | None = None) -> RuntimeInfo:
         target_runtime = runtime_id or self.runtime_id
         target_daemon = daemon_id or self.daemon_id
+        _identifier(target_runtime, "runtime")
+        _identifier(target_daemon, "daemon")
         raw = self._unwrap(
             self._read(("multica", "runtime", "list", "--output", "json"), "runtime list"),
             "runtime list",
@@ -444,6 +468,7 @@ class MulticaClient:
         self,
         project_id: str,
     ) -> tuple[ProjectResourceState, ...]:
+        _identifier(project_id, "Project")
         operation = "project resource list"
         raw = self._unwrap(
             self._read(
@@ -475,11 +500,11 @@ class MulticaClient:
                 raise _contract(operation, item)
             result.append(
                 ProjectResourceState(
-                    self._string_field(item, "id", operation),
+                    _identifier(item.get("id"), operation),
                     project_id,
                     self._string_field(item, "resource_type", operation),
                     self._string_field(reference, "local_path", operation),
-                    self._string_field(reference, "daemon_id", operation),
+                    _identifier(reference.get("daemon_id"), operation),
                     execution_mode,
                 )
             )
@@ -515,7 +540,7 @@ class MulticaClient:
                     self._string_field(detail, "name", detail_operation),
                     self._text_field(detail, "description", detail_operation),
                     self._text_field(detail, "instructions", detail_operation),
-                    self._string_field(detail, "runtime_id", detail_operation),
+                    _identifier(detail.get("runtime_id"), detail_operation),
                     self._string_field(detail, "visibility", detail_operation),
                     concurrency,
                 )
@@ -523,6 +548,7 @@ class MulticaClient:
         return tuple(agents)
 
     def list_agent_skill_ids(self, agent_id: str) -> tuple[str, ...]:
+        _identifier(agent_id, "agent")
         operation = "agent skill list"
         raw = self._unwrap(
             self._read(
@@ -596,12 +622,13 @@ class MulticaClient:
                     self._string_field(detail, "name", detail_operation),
                     self._text_field(detail, "description", detail_operation),
                     self._text_field(detail, "instructions", detail_operation),
-                    self._string_field(detail, "leader_id", detail_operation),
+                    _identifier(detail.get("leader_id"), detail_operation),
                 )
             )
         return tuple(squads)
 
     def list_squad_members(self, squad_id: str) -> tuple[SquadMemberState, ...]:
+        _identifier(squad_id, "Squad")
         operation = "squad member list"
         raw = self._unwrap(
             self._read(
@@ -619,8 +646,8 @@ class MulticaClient:
         for item in raw:
             if not isinstance(item, Mapping) or item.get("squad_id") != squad_id:
                 raise _contract(operation, item)
-            record_id = self._string_field(item, "id", operation)
-            member_id = self._string_field(item, "member_id", operation)
+            record_id = _identifier(item.get("id"), operation)
+            member_id = _identifier(item.get("member_id"), operation)
             if record_id in record_ids or member_id in member_ids:
                 raise _contract(operation, item)
             record_ids.add(record_id)
@@ -653,12 +680,12 @@ class MulticaClient:
         ):
             raise _contract(operation, value)
         return AutopilotState(
-            cls._string_field(value, "id", operation),
+            _identifier(value.get("id"), operation),
             cls._string_field(value, "title", operation),
             cls._text_field(value, "description", operation),
             execution_mode,
-            project_id,
-            cls._string_field(value, "assignee_id", operation),
+            None if project_id is None else _identifier(project_id, operation),
+            _identifier(value.get("assignee_id"), operation),
             assignee_type,
             status,
         )
@@ -682,6 +709,7 @@ class MulticaClient:
         return tuple(self._autopilot_state(item, operation) for item in items)
 
     def list_autopilot_triggers(self, autopilot_id: str) -> tuple[TriggerState, ...]:
+        _identifier(autopilot_id, "Autopilot")
         operation = "autopilot trigger list"
         raw = self._unwrap(
             self._read(
@@ -732,7 +760,7 @@ class MulticaClient:
                 raise _contract(operation, item)
             result.append(
                 TriggerState(
-                    self._string_field(item, "id", operation),
+                    _identifier(item.get("id"), operation),
                     autopilot_id,
                     "schedule",
                     cron_expression,
@@ -766,16 +794,14 @@ class MulticaClient:
             raise _contract(operation, raw)
         resource_id = raw.get(id_field)
         if (
-            not isinstance(resource_id, str)
-            or not resource_id
-            or (expected_id is not None and resource_id != expected_id)
+            (expected_id is not None and resource_id != expected_id)
             or (
                 association is not None
                 and raw.get(association[0]) != association[1]
             )
         ):
             raise _contract(operation, raw)
-        return MutationResult(resource_id)
+        return MutationResult(_identifier(resource_id, operation))
 
     def create_project(self, *, title: str, description: str) -> MutationResult:
         return self._mutation_result(
@@ -794,6 +820,7 @@ class MulticaClient:
         title: str,
         description: str,
     ) -> MutationResult:
+        _identifier(project_id, "Project")
         return self._mutation_result(
             (
                 "multica", "project", "update", project_id, "--title", title,
@@ -812,6 +839,8 @@ class MulticaClient:
         daemon_id: str,
         execution_mode: str,
     ) -> MutationResult:
+        _identifier(project_id, "Project")
+        _identifier(daemon_id, "daemon")
         return self._mutation_result(
             (
                 "multica", "project", "resource", "add", project_id,
@@ -832,6 +861,9 @@ class MulticaClient:
         daemon_id: str,
         execution_mode: str,
     ) -> MutationResult:
+        _identifier(project_id, "Project")
+        _identifier(resource_id, "Project resource")
+        _identifier(daemon_id, "daemon")
         return self._mutation_result(
             (
                 "multica", "project", "resource", "update", project_id,
@@ -854,6 +886,7 @@ class MulticaClient:
         visibility: str,
         max_concurrent_tasks: int,
     ) -> MutationResult:
+        _identifier(runtime_id, "runtime")
         return self._mutation_result(
             self._agent_mutation_argv(
                 "create",
@@ -880,6 +913,8 @@ class MulticaClient:
         visibility: str,
         max_concurrent_tasks: int,
     ) -> MutationResult:
+        _identifier(agent_id, "agent")
+        _identifier(runtime_id, "runtime")
         return self._mutation_result(
             self._agent_mutation_argv(
                 "update",
@@ -923,6 +958,8 @@ class MulticaClient:
         )
 
     def add_agent_skill(self, agent_id: str, skill_id: str) -> MutationResult:
+        _identifier(agent_id, "agent")
+        _identifier(skill_id, "skill")
         return self._mutation_result(
             (
                 "multica", "agent", "skills", "add", agent_id,
@@ -940,6 +977,7 @@ class MulticaClient:
         description: str,
         leader_id: str,
     ) -> MutationResult:
+        _identifier(leader_id, "Squad leader")
         return self._mutation_result(
             (
                 "multica", "squad", "create", "--name", name,
@@ -959,6 +997,8 @@ class MulticaClient:
         instructions: str,
         leader_id: str,
     ) -> MutationResult:
+        _identifier(squad_id, "Squad")
+        _identifier(leader_id, "Squad leader")
         return self._mutation_result(
             (
                 "multica", "squad", "update", squad_id, "--name", name,
@@ -977,6 +1017,8 @@ class MulticaClient:
         *,
         role: str,
     ) -> MutationResult:
+        _identifier(squad_id, "Squad")
+        _identifier(agent_id, "agent")
         return self._mutation_result(
             (
                 "multica", "squad", "member", "add", squad_id,
@@ -996,6 +1038,8 @@ class MulticaClient:
         *,
         role: str,
     ) -> MutationResult:
+        _identifier(squad_id, "Squad")
+        _identifier(agent_id, "agent")
         return self._mutation_result(
             (
                 "multica", "squad", "member", "set-role", squad_id,
@@ -1018,6 +1062,8 @@ class MulticaClient:
         assignee_id: str,
         status: str,
     ) -> MutationResult:
+        _identifier(project_id, "Project")
+        _identifier(assignee_id, "Autopilot assignee")
         if status != "active":
             raise MulticaContractError("new Autopilot must be active")
         return self._mutation_result(
@@ -1042,6 +1088,9 @@ class MulticaClient:
         assignee_id: str,
         status: str,
     ) -> MutationResult:
+        _identifier(autopilot_id, "Autopilot")
+        _identifier(project_id, "Project")
+        _identifier(assignee_id, "Autopilot assignee")
         return self._mutation_result(
             (
                 "multica", "autopilot", "update", autopilot_id,
@@ -1063,6 +1112,7 @@ class MulticaClient:
         timezone: str,
         label: str,
     ) -> MutationResult:
+        _identifier(autopilot_id, "Autopilot")
         return self._mutation_result(
             (
                 "multica", "autopilot", "trigger-add", autopilot_id,
@@ -1085,6 +1135,8 @@ class MulticaClient:
         enabled: bool,
         label: str,
     ) -> MutationResult:
+        _identifier(autopilot_id, "Autopilot")
+        _identifier(trigger_id, "Autopilot trigger")
         if enabled is not True:
             raise MulticaContractError("Autopilot trigger update requires enabled state")
         return self._mutation_result(
@@ -1116,6 +1168,7 @@ class MulticaClient:
         return SkillImportCapability(raw["dry_run"])
 
     def get_agent_environment(self, agent_id: str) -> AgentEnvironment:
+        _identifier(agent_id, "agent")
         operation = "agent environment"
         raw = self._unwrap(
             self._read(
@@ -1169,6 +1222,7 @@ class MulticaClient:
         return self._resource(raw, "skill import")
 
     def set_agent_environment(self, agent_id: str, values: Mapping[str, str]) -> MutationResult:
+        _identifier(agent_id, "agent")
         if not all(isinstance(key, str) and key and isinstance(value, str) for key, value in values.items()):
             raise TypeError("environment must map non-empty names to string values")
         response = self._mutate(

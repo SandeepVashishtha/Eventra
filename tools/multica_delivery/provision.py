@@ -9,7 +9,12 @@ from urllib.parse import urlparse
 
 from .github_client import RepositoryInfo
 from .manifest import manifest_digest
-from .model import DeliveryManifest, FrameworkLock, RepositorySpec
+from .model import (
+    DeliveryManifest,
+    FrameworkLock,
+    RepositorySpec,
+    validate_policy_authority,
+)
 from .multica_client import (
     AgentState,
     AutopilotState,
@@ -20,6 +25,11 @@ from .multica_client import (
     SquadMemberState,
     SquadState,
     TriggerState,
+)
+from .redaction import (
+    ClosedFailure,
+    exception_originates_in,
+    redact_public_methods,
 )
 
 
@@ -48,6 +58,20 @@ _RESTRICTED_SKILL_AGENTS = frozenset({"integration-qa", "workflow-watcher"})
 
 class ProvisionError(RuntimeError):
     """A sanitized desired-state, conflict, or reconciliation failure."""
+
+
+def _closed_provision_failure(error: Exception) -> ClosedFailure:
+    if isinstance(error, ProvisionError) and exception_originates_in(
+        error, __name__
+    ):
+        return ClosedFailure(ProvisionError, str(error))
+    if (
+        type(error) is TypeError
+        and str(error) == "apply must be an exact bool"
+        and exception_originates_in(error, __name__)
+    ):
+        return ClosedFailure(TypeError, str(error))
+    return ClosedFailure(ProvisionError, "provisioning boundary failed")
 
 
 def effective_skill_bindings(
@@ -194,6 +218,7 @@ def _unique_target(records, field: str, value: str, label: str):
     return matches[0] if matches else None
 
 
+@redact_public_methods(_closed_provision_failure)
 class Provisioner:
     """Reconcile exact instance-scoped targets while preserving unrelated state."""
 
@@ -213,6 +238,8 @@ class Provisioner:
         apply: bool,
         secret_lookup: Callable[[str], str],
     ) -> ReconcileResult:
+        if type(apply) is not bool:
+            raise TypeError("apply must be an exact bool")
         self._validate_local_inputs(manifest, lock)
         desired = self._desired_state(manifest)
         self._validate_external_scope(manifest)
@@ -254,6 +281,10 @@ class Provisioner:
         manifest: DeliveryManifest,
         lock: FrameworkLock,
     ) -> None:
+        try:
+            validate_policy_authority(manifest.policy)
+        except (AttributeError, TypeError, ValueError):
+            raise ProvisionError("policy authority is invalid") from None
         effective_skill_bindings(manifest)
         for repository_key, repository in manifest.repositories.items():
             if len(repository.skills) != len(set(repository.skills)):
@@ -879,8 +910,20 @@ class Provisioner:
         """Bind every mutation to authoritative locked identities before and after."""
 
         before = self._stable_snapshot(manifest, desired, lock)
-        mutation(before)
+        try:
+            mutation(before)
+        except Exception:
+            # A failed acknowledgement does not prove that the server failed
+            # to commit. The stable authoritative post-read decides.
+            pass
         return self._stable_snapshot(manifest, desired, lock)
+
+    @staticmethod
+    def _mutate_if(condition: bool, mutation: Callable[[], None]) -> None:
+        """Consume a stable pre-read and skip a stale create/add intention."""
+
+        if condition:
+            mutation()
 
     def _stable_snapshot(
         self,
@@ -986,7 +1029,10 @@ class Provisioner:
                     manifest,
                     desired,
                     lock,
-                    lambda _: self.multica.import_skill(source),
+                    lambda current: self._mutate_if(
+                        current.skills[key] is None,
+                        lambda: self.multica.import_skill(source),
+                    ),
                 )
                 observed = snapshot.skills[key]
             if observed is None or observed.source_url != source:
@@ -1015,9 +1061,12 @@ class Provisioner:
                     manifest,
                     desired,
                     lock,
-                    lambda _: self.multica.create_project(
-                        title=project.title,
-                        description=project.description,
+                    lambda current: self._mutate_if(
+                        current.projects[project.key] is None,
+                        lambda: self.multica.create_project(
+                            title=project.title,
+                            description=project.description,
+                        ),
                     ),
                 )
             elif (
@@ -1070,11 +1119,14 @@ class Provisioner:
                     manifest,
                     desired,
                     lock,
-                    lambda snapshot: self.multica.add_project_worktree(
-                        snapshot.projects[key].id,
-                        local_path=str(repository.local_path),
-                        daemon_id=manifest.instance.daemon_id,
-                        execution_mode="worktree",
+                    lambda snapshot: self._mutate_if(
+                        snapshot.resources[key] is None,
+                        lambda: self.multica.add_project_worktree(
+                            snapshot.projects[key].id,
+                            local_path=str(repository.local_path),
+                            daemon_id=manifest.instance.daemon_id,
+                            execution_mode="worktree",
+                        ),
                     ),
                 )
             elif (
@@ -1148,7 +1200,10 @@ class Provisioner:
                     manifest,
                     desired,
                     lock,
-                    lambda _: self.multica.create_agent(**fields),
+                    lambda current: self._mutate_if(
+                        current.agents[agent.key] is None,
+                        lambda: self.multica.create_agent(**fields),
+                    ),
                 )
             elif any(getattr(observed, key) != value for key, value in fields.items()):
                 self._checked_mutation(
@@ -1205,9 +1260,13 @@ class Provisioner:
                         manifest,
                         desired,
                         lock,
-                        lambda current: self.multica.add_agent_skill(
-                            current.agents[agent.key].id,
-                            current.skills[skill_key].id,
+                        lambda current: self._mutate_if(
+                            current.skills[skill_key].id
+                            not in current.bindings[agent.key],
+                            lambda: self.multica.add_agent_skill(
+                                current.agents[agent.key].id,
+                                current.skills[skill_key].id,
+                            ),
                         ),
                     )
                     final_agent = snapshot.agents[agent.key]
@@ -1296,10 +1355,13 @@ class Provisioner:
                 manifest,
                 desired,
                 lock,
-                lambda snapshot: self.multica.create_squad(
-                    name=desired.squad_name,
-                    description=desired.squad_description,
-                    leader_id=snapshot.agents["delivery-lead"].id,
+                lambda snapshot: self._mutate_if(
+                    snapshot.squad is None,
+                    lambda: self.multica.create_squad(
+                        name=desired.squad_name,
+                        description=desired.squad_description,
+                        leader_id=snapshot.agents["delivery-lead"].id,
+                    ),
                 ),
             )
             squad = _unique_target(
@@ -1384,10 +1446,14 @@ class Provisioner:
                     manifest,
                     desired,
                     lock,
-                    lambda snapshot: self.multica.add_squad_member(
-                        snapshot.squad.id,
-                        snapshot.agents[role].id,
-                        role=role,
+                    lambda snapshot: self._mutate_if(
+                        snapshot.agents[role].id
+                        not in {member.member_id for member in snapshot.members},
+                        lambda: self.multica.add_squad_member(
+                            snapshot.squad.id,
+                            snapshot.agents[role].id,
+                            role=role,
+                        ),
                     ),
                 )
             elif observed.member_type != "agent":
@@ -1461,13 +1527,16 @@ class Provisioner:
                 manifest,
                 desired,
                 lock,
-                lambda snapshot: self.multica.create_autopilot(
-                    title=desired.autopilot_title,
-                    description=desired.autopilot_description,
-                    execution_mode="run_only",
-                    project_id=snapshot.projects["control"].id,
-                    assignee_id=snapshot.agents["workflow-watcher"].id,
-                    status="active",
+                lambda snapshot: self._mutate_if(
+                    snapshot.autopilot is None,
+                    lambda: self.multica.create_autopilot(
+                        title=desired.autopilot_title,
+                        description=desired.autopilot_description,
+                        execution_mode="run_only",
+                        project_id=snapshot.projects["control"].id,
+                        assignee_id=snapshot.agents["workflow-watcher"].id,
+                        status="active",
+                    ),
                 ),
             )
         elif not self._autopilot_matches(
@@ -1520,11 +1589,14 @@ class Provisioner:
                 manifest,
                 desired,
                 lock,
-                lambda snapshot: self.multica.add_autopilot_trigger(
-                    snapshot.autopilot.id,
-                    cron_expression=manifest.policy.watcher_cron,
-                    timezone=manifest.policy.watcher_timezone,
-                    label=desired.trigger_label,
+                lambda snapshot: self._mutate_if(
+                    snapshot.trigger is None,
+                    lambda: self.multica.add_autopilot_trigger(
+                        snapshot.autopilot.id,
+                        cron_expression=manifest.policy.watcher_cron,
+                        timezone=manifest.policy.watcher_timezone,
+                        label=desired.trigger_label,
+                    ),
                 ),
             )
         elif not self._trigger_matches(trigger, manifest, desired):

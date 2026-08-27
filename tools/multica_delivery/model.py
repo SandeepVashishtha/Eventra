@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
 from typing import Mapping
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 
 @dataclass(frozen=True)
@@ -75,15 +76,43 @@ class PolicySpec:
     watcher_timezone: str
 
     def __post_init__(self) -> None:
-        if (
-            not isinstance(self.environment, str)
-            or self.environment not in {"development", "production"}
-        ):
-            raise ValueError("policy environment must be development or production")
-        if not isinstance(self.automatic_merge, bool):
-            raise ValueError("policy automatic_merge must be a boolean")
-        if self.environment != "development" and self.automatic_merge:
-            raise ValueError("policy automatic_merge is allowed only in development")
+        validate_policy_authority(self)
+
+
+def validate_policy_authority(policy: object) -> None:
+    """Validate every fixed policy authority, including forged dataclasses."""
+
+    if type(policy) is not PolicySpec:
+        raise ValueError("policy must be an exact PolicySpec")
+    if (
+        not isinstance(policy.environment, str)
+        or policy.environment not in {"development", "production"}
+    ):
+        raise ValueError("policy environment must be development or production")
+    if type(policy.automatic_merge) is not bool:
+        raise ValueError("policy automatic_merge must be a boolean")
+    if policy.environment != "development" and policy.automatic_merge:
+        raise ValueError("policy automatic_merge is allowed only in development")
+    if type(policy.deployment) is not str or policy.deployment != "forbidden":
+        raise ValueError("policy deployment must be forbidden")
+    if (
+        type(policy.max_repair_attempts) is not int
+        or policy.max_repair_attempts != 2
+    ):
+        raise ValueError("policy max_repair_attempts must be exactly 2")
+    if (
+        type(policy.watcher_cron) is not str
+        or policy.watcher_cron != "*/30 * * * *"
+    ):
+        raise ValueError("policy watcher_cron must be the approved 30-minute schedule")
+    if type(policy.watcher_timezone) is not str or not policy.watcher_timezone:
+        raise ValueError("policy watcher_timezone must be a valid IANA timezone")
+    try:
+        ZoneInfo(policy.watcher_timezone)
+    except (ZoneInfoNotFoundError, ValueError, TypeError):
+        raise ValueError(
+            "policy watcher_timezone must be a valid IANA timezone"
+        ) from None
 
 
 @dataclass(frozen=True)

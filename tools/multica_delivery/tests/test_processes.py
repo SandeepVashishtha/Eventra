@@ -6,6 +6,7 @@ import unittest
 from unittest.mock import patch
 from urllib.parse import urlsplit
 
+from tools.multica_delivery.manifest import load_manifest
 from tools.multica_delivery.model import ServiceSpec
 from tools.multica_delivery.processes import (
     OwnedProcess,
@@ -18,6 +19,7 @@ from tools.multica_delivery.processes import (
 
 
 SHA = "a" * 40
+FIXTURE = Path(__file__).parent / "fixtures" / "three-repository-delivery.yaml"
 
 
 class FakeProcessBackend:
@@ -69,6 +71,7 @@ class FakeProcessBackend:
 
 class ProcessManagerTests(unittest.TestCase):
     def setUp(self) -> None:
+        self.manifest = load_manifest(FIXTURE)
         self.temporary = TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
         self.registry = ProcessRegistry(Path(self.temporary.name) / "owned-processes.json")
@@ -77,6 +80,7 @@ class ProcessManagerTests(unittest.TestCase):
             self.registry,
             self.backend,
             owner_token="owner-1",
+            manifest=self.manifest,
         )
         self.service = ServiceSpec("api", 8080, "http://localhost:8080/health")
         self.run = ProcessRun(
@@ -112,6 +116,40 @@ class ProcessManagerTests(unittest.TestCase):
         self.assertEqual(record.owner_token, "owner-1")
         self.assertEqual(record.start_identity, "start-4100-generation-1")
 
+    def test_manifest_service_records_must_be_complete_and_registry_owned(self):
+        specification = self.manifest.repositories["api"]
+        run = ProcessRun(
+            "api",
+            "smoke-run",
+            specification.commands["start"],
+            specification.local_path,
+        )
+        self.backend.healthy_urls.update(
+            service.health_url for service in specification.services
+        )
+        records = self.manager.start_services(
+            specification.services,
+            run,
+            candidate_sha=SHA,
+        )
+
+        self.assertEqual(
+            self.manager.verify_services(
+                specification.services,
+                run,
+                records,
+                candidate_sha=SHA,
+            ),
+            records,
+        )
+        with self.assertRaisesRegex(ProcessOwnershipError, "outside the manifest"):
+            self.manager.verify_services(
+                specification.services,
+                run,
+                (),
+                candidate_sha=SHA,
+            )
+
     def test_failed_health_never_leaves_a_registry_record(self):
         with self.assertRaisesRegex(ProcessOwnershipError, "failed health check"):
             self.manager.start(self.service, self.run, candidate_sha=SHA)
@@ -128,6 +166,7 @@ class ProcessManagerTests(unittest.TestCase):
             FailingWriteRegistry(Path(self.temporary.name) / "unwritable.json"),
             self.backend,
             owner_token="owner-1",
+            manifest=self.manifest,
         )
         self.backend.healthy_urls.add(self.service.health_url)
 
@@ -329,7 +368,12 @@ class ProcessManagerTests(unittest.TestCase):
                 return False
 
         backend = ReusingPidBackend()
-        manager = ProcessManager(self.registry, backend, owner_token="owner-1")
+        manager = ProcessManager(
+            self.registry,
+            backend,
+            owner_token="owner-1",
+            manifest=self.manifest,
+        )
 
         with self.assertRaisesRegex(ProcessOwnershipError, "cleanup failed"):
             manager.start(self.service, self.run, candidate_sha=SHA)
@@ -345,7 +389,12 @@ class ProcessManagerTests(unittest.TestCase):
                 )
 
         backend = UnknownSpawnIdentityBackend()
-        manager = ProcessManager(self.registry, backend, owner_token="owner-1")
+        manager = ProcessManager(
+            self.registry,
+            backend,
+            owner_token="owner-1",
+            manifest=self.manifest,
+        )
 
         with self.assertRaisesRegex(ProcessOwnershipError, "identity could not"):
             manager.start(self.service, self.run, candidate_sha=SHA)

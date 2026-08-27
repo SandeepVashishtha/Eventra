@@ -15,10 +15,29 @@ from .multica_client import (
     CommandRunner,
     TransientCommandError,
 )
+from .redaction import (
+    ClosedFailure,
+    exception_originates_in,
+    redact_public_methods,
+)
 
 
 class GitHubBoundaryError(RuntimeError):
     """A sanitized GitHub scope or contract failure."""
+
+
+def _classify_boundary_error(error: Exception) -> ClosedFailure:
+    if isinstance(error, (GitHubBoundaryError, TypeError, ValueError)) and (
+        exception_originates_in(error, __name__)
+    ):
+        return ClosedFailure(type(error), str(error))
+    return ClosedFailure(GitHubBoundaryError, "GitHub boundary failed")
+
+
+def _pull_request_number(value: object) -> int:
+    if type(value) is not int or value <= 0:
+        raise GitHubBoundaryError("pull request number must be a positive integer")
+    return value
 
 
 @dataclass(frozen=True)
@@ -129,6 +148,7 @@ class MergeResult:
     merged_sha: str
 
 
+@redact_public_methods(_classify_boundary_error)
 class GitHubClient:
     """Only operates on repositories frozen into the delivery manifest."""
 
@@ -140,7 +160,7 @@ class GitHubClient:
 
     def _allow(self, repository: str) -> None:
         if repository not in self.allowed_repositories:
-            raise GitHubBoundaryError(f"repository {repository!r} is not managed")
+            raise GitHubBoundaryError("repository is not managed")
 
     def _run(self, argv: tuple[str, ...], operation: str, *, read_only: bool) -> object:
         attempts = 2 if read_only else 1
@@ -271,6 +291,7 @@ class GitHubClient:
 
     def get_pull_request(self, repository: str, number: int) -> PullRequestInfo:
         self._allow(repository)
+        _pull_request_number(number)
         raw = self._run(("gh", "api", f"repos/{repository}/pulls/{number}"), "pull request read", read_only=True)
         return self._decode_pull_request(repository, raw, expected_number=number)
 
@@ -504,6 +525,7 @@ class GitHubClient:
         """Authoritatively reread every gate immediately before one mutation."""
 
         self._allow(repository)
+        _pull_request_number(number)
         if re.fullmatch(r"[0-9a-f]{40}", expected_sha) is None:
             raise GitHubBoundaryError("expected SHA is malformed")
         pull_request = self.get_pull_request(repository, number)
