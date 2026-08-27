@@ -60,10 +60,11 @@ class SubprocessCommandBackend:
         )
 
 
-def _read_git_head(
+def _check_git_head(
     backend: ClosedCommandBackend,
     path: Path,
-) -> tuple[str, str]:
+    expected_sha: str,
+) -> str:
     """Reduce captured output to a closed status before the caller may raise."""
 
     backend_failed = False
@@ -72,16 +73,37 @@ def _read_git_head(
     except (OSError, RuntimeError, TypeError, ValueError):
         backend_failed = True
     if backend_failed or not isinstance(completed, ClosedCommandResult):
-        return "command-failed", ""
+        return "command-failed"
     if completed.returncode != 0:
-        return "command-failed", ""
+        return "command-failed"
     try:
         match = re.fullmatch(r"([0-9a-f]{40})\n?", completed.stdout)
     except TypeError:
-        return "malformed-output", ""
+        return "malformed-output"
     if match is None:
-        return "malformed-output", ""
-    return "ok", match.group(1)
+        return "malformed-output"
+    if match.group(1) != expected_sha:
+        return "mismatch"
+    return "match"
+
+
+def _run_closed_command(
+    backend: ClosedCommandBackend,
+    argv: tuple[str, ...],
+    cwd: Path,
+) -> str:
+    """Discard captured smoke output before post-command verification."""
+
+    backend_failed = False
+    try:
+        completed = backend.run(argv, cwd)
+    except (OSError, RuntimeError, TypeError, ValueError):
+        backend_failed = True
+    if backend_failed:
+        return "execution-failed"
+    if not isinstance(completed, ClosedCommandResult):
+        return "malformed-result"
+    return "pass" if completed.returncode == 0 else "fail"
 
 
 @dataclass(frozen=True)
@@ -181,20 +203,20 @@ class LocalExactShaCommandRunner:
             raise ExactShaBoundaryError(
                 "checkout verification argv is not closed", repository_key
             )
-        status, observed_sha = _read_git_head(self._backend, path)
+        status = _check_git_head(self._backend, path, expected_sha)
         if status == "command-failed":
             raise ExactShaBoundaryError(
                 "checkout verification command failed", repository_key
             )
-        if status != "ok":
+        if status == "malformed-output":
             raise ExactShaBoundaryError(
                 "checkout verification output is malformed", repository_key
             )
-        if observed_sha != expected_sha:
+        if status != "match":
             raise ExactShaBoundaryError(
                 "local checkout does not match expected SHA", repository_key
             )
-        return ExactShaVerification(repository_key, expected_sha, observed_sha, _GIT_HEAD)
+        return ExactShaVerification(repository_key, expected_sha, expected_sha, _GIT_HEAD)
 
     def _validate_smoke_command(
         self,
@@ -254,16 +276,12 @@ class LocalExactShaCommandRunner:
             }
 
         before = verify_all()
-        backend_failed = False
-        try:
-            completed = self._backend.run(argv, cwd)
-        except (OSError, RuntimeError, TypeError, ValueError):
-            backend_failed = True
-        if backend_failed:
+        command_status = _run_closed_command(self._backend, argv, cwd)
+        if command_status == "execution-failed":
             raise ExactShaBoundaryError(
                 "smoke command failed to execute", repository_key
             )
-        if not isinstance(completed, ClosedCommandResult):
+        if command_status == "malformed-result":
             raise ExactShaBoundaryError(
                 "smoke command result is malformed", repository_key
             )
@@ -272,4 +290,4 @@ class LocalExactShaCommandRunner:
             raise ExactShaBoundaryError(
                 "checkout binding changed during smoke command", repository_key
             )
-        return ExactShaCommandResult(completed.returncode == 0, after)
+        return ExactShaCommandResult(command_status == "pass", after)

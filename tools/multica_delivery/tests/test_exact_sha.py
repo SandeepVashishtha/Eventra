@@ -1,4 +1,5 @@
 from dataclasses import replace
+from collections.abc import Mapping
 from pathlib import Path
 import subprocess
 import tempfile
@@ -48,6 +49,106 @@ def exact_sha_traceback_locals(error: BaseException) -> tuple[dict[str, object],
     return tuple(frames)
 
 
+def object_reaches_text(value: object, sentinel: str, seen: set[int]) -> bool:
+    identity = id(value)
+    if identity in seen:
+        return False
+    seen.add(identity)
+    if isinstance(value, str):
+        return sentinel in value
+    if isinstance(value, bytes):
+        return sentinel.encode() in value
+    if value is None or isinstance(value, (bool, int, float, Path, type)):
+        return False
+    if isinstance(value, Mapping):
+        return any(
+            object_reaches_text(item, sentinel, seen)
+            for pair in value.items()
+            for item in pair
+        )
+    if isinstance(value, (tuple, list, set, frozenset)):
+        return any(object_reaches_text(item, sentinel, seen) for item in value)
+    if isinstance(value, BaseException):
+        return sentinel in str(value)
+    attributes = getattr(value, "__dict__", None)
+    if isinstance(attributes, dict) and object_reaches_text(attributes, sentinel, seen):
+        return True
+    slots = getattr(type(value), "__slots__", ())
+    if isinstance(slots, str):
+        slots = (slots,)
+    return any(
+        hasattr(value, slot)
+        and object_reaches_text(getattr(value, slot), sentinel, seen)
+        for slot in slots
+    )
+
+
+def capture_repository_smoke_output_then_drift(manifest):
+    runner = LocalExactShaCommandRunner(
+        manifest,
+        QueueBackend(
+            [
+                result(0, "a" * 40 + "\n"),
+                result(0, "c" * 40 + "\n"),
+                result(0, "REPOSITORY-SMOKE-SECRET", "REPOSITORY-SMOKE-SECRET"),
+                result(0, "a" * 40 + "\n"),
+                result(0, "f" * 40 + "\n"),
+            ]
+        ),
+    )
+    try:
+        runner.run(
+            "api",
+            {"api": "a" * 40, "web": "c" * 40},
+            manifest.repositories["api"].commands["smoke"],
+            manifest.repositories["api"].local_path,
+        )
+    except ExactShaBoundaryError as error:
+        return error
+    raise AssertionError("repository smoke drift did not fail")
+
+
+def capture_integration_smoke_output_then_drift(manifest):
+    runner = LocalExactShaCommandRunner(
+        manifest,
+        QueueBackend(
+            [
+                result(0, "a" * 40 + "\n"),
+                result(0, "c" * 40 + "\n"),
+                result(0, "INTEGRATION-SMOKE-SECRET", "INTEGRATION-SMOKE-SECRET"),
+                result(0, "f" * 40 + "\n"),
+            ]
+        ),
+    )
+    try:
+        runner.run(
+            "web",
+            {"api": "a" * 40, "web": "c" * 40},
+            manifest.integration_suites[0].command,
+            manifest.repositories["web"].local_path,
+        )
+    except ExactShaBoundaryError as error:
+        return error
+    raise AssertionError("integration smoke drift did not fail")
+
+
+def capture_wrong_observed_git_sha(manifest):
+    runner = LocalExactShaCommandRunner(
+        manifest,
+        QueueBackend([result(0, "d" * 40 + "\n")]),
+    )
+    try:
+        runner.verify(
+            "api",
+            "a" * 40,
+            manifest.repositories["api"].local_path,
+            argv=("git", "rev-parse", "HEAD"),
+        )
+    except ExactShaBoundaryError as error:
+        return error
+    raise AssertionError("wrong observed Git SHA did not fail")
+
+
 def manifest_with_paths(paths: dict[str, Path]):
     manifest = load_manifest(FIXTURE)
     repositories = {
@@ -58,6 +159,35 @@ def manifest_with_paths(paths: dict[str, Path]):
 
 
 class LocalExactShaCommandRunnerTests(unittest.TestCase):
+    def assert_error_graph_is_redacted(self, error, sentinel):
+        current = error.__traceback__
+        while current is not None:
+            for value in current.tb_frame.f_locals.values():
+                self.assertFalse(object_reaches_text(value, sentinel, set()))
+            current = current.tb_next
+        self.assertNotIn(sentinel, "".join(traceback.format_exception(error)))
+        self.assertIsNone(error.__cause__)
+        self.assertIsNone(error.__context__)
+
+    def test_repository_smoke_output_is_unreachable_when_post_command_sha_drifts(self):
+        error = capture_repository_smoke_output_then_drift(load_manifest(FIXTURE))
+
+        self.assert_error_graph_is_redacted(error, "REPOSITORY-SMOKE-SECRET")
+        self.assertEqual(error.repository_key, "web")
+
+    def test_integration_smoke_output_is_unreachable_when_post_command_sha_drifts(self):
+        error = capture_integration_smoke_output_then_drift(load_manifest(FIXTURE))
+
+        self.assert_error_graph_is_redacted(error, "INTEGRATION-SMOKE-SECRET")
+        self.assertEqual(error.repository_key, "api")
+
+    def test_wrong_observed_git_sha_is_unreachable_from_error_traceback(self):
+        error = capture_wrong_observed_git_sha(load_manifest(FIXTURE))
+
+        self.assert_error_graph_is_redacted(error, "d" * 40)
+        self.assertEqual(str(error), "local checkout does not match expected SHA")
+        self.assertEqual(error.repository_key, "api")
+
     def test_runner_has_no_instance_dict_and_rejects_authority_binding_or_method_replacement(self):
         manifest = load_manifest(FIXTURE)
         for attribute, replacement in (
