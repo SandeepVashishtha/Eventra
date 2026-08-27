@@ -127,9 +127,14 @@ class CoreDocumentationTests(unittest.TestCase):
             effects,
         )
         self.assertIn(
-            "Every command result must also carry the same structured exact-SHA "
-            "map, so a runner returning only a boolean cannot create authoritative "
-            "smoke evidence.",
+            "`OwnedSmokeExecutor` trusts only the concrete "
+            "`LocalExactShaCommandRunner`; tests may inject only its closed "
+            "command backend, so a self-reporting runner cannot create "
+            "authoritative smoke evidence.",
+            effects,
+        )
+        self.assertIn(
+            "The concrete boundary never checks out or resets a repository",
             effects,
         )
         self.assertNotRegex(effects, r"exact-SHA tests(?:,| and) builds")

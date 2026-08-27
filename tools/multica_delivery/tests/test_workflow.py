@@ -6,8 +6,6 @@ import unittest
 import uuid
 from unittest.mock import patch
 
-from tools.multica_delivery import workflow as workflow_module
-
 from tools.multica_delivery.decisions import (
     DecisionKind,
     DispatchKind,
@@ -23,6 +21,10 @@ from tools.multica_delivery.github_client import (
     MergeResult,
     PullRequestInfo,
     RequiredStatusChecks,
+)
+from tools.multica_delivery.exact_sha import (
+    ClosedCommandResult,
+    LocalExactShaCommandRunner,
 )
 from tools.multica_delivery.manifest import load_manifest
 from tools.multica_delivery.metadata import ParentMetadata
@@ -874,46 +876,30 @@ class FakeOwnedProcessManager:
         self.stopped.append((record, run_id, repository_key, candidate_sha))
 
 
-class FakeExactShaCommandRunner:
-    def __init__(self) -> None:
-        self.calls: list[tuple[str, dict[str, str], tuple[str, ...], Path]] = []
-        self.verify_calls: list[tuple[str, str, Path, tuple[str, ...]]] = []
-        self.observed_shas = dict(SHA)
-        self.ignore_candidate_map = False
+class SelfReportingFakeRunner:
+    def verify(self, repository_key, expected_sha, cwd, *, argv):
+        raise AssertionError("untrusted runner must never be called")
 
-    def verify(
-        self,
-        repository_key: str,
-        expected_sha: str,
-        cwd: Path,
-        *,
-        argv: tuple[str, ...],
-    ):
-        self.verify_calls.append((repository_key, expected_sha, cwd, argv))
-        result_type = getattr(workflow_module, "ExactShaVerification", None)
-        if result_type is None:
-            return None
-        return result_type(
-            repository_key,
-            expected_sha,
-            self.observed_shas[repository_key],
-            argv,
-        )
+    def run(self, repository_key, candidate_shas, argv, cwd):
+        raise AssertionError("untrusted runner must never be called")
 
-    def run(
-        self,
-        repository_key: str,
-        candidate_shas,
-        argv: tuple[str, ...],
-        cwd: Path,
-    ) -> bool:
-        self.calls.append((repository_key, dict(candidate_shas), argv, cwd))
-        if self.ignore_candidate_map:
-            return True
-        result_type = getattr(workflow_module, "ExactShaCommandResult", None)
-        if result_type is None:
-            return True
-        return result_type(True, candidate_shas)
+
+class MutableClosedCommandBackend:
+    def __init__(self, manifest) -> None:
+        self.heads = {
+            repository.local_path: SHA[key]
+            for key, repository in manifest.repositories.items()
+        }
+        self.calls: list[tuple[tuple[str, ...], Path]] = []
+        self.command_hook = None
+
+    def run(self, argv: tuple[str, ...], cwd: Path) -> ClosedCommandResult:
+        self.calls.append((argv, cwd))
+        if argv == ("git", "rev-parse", "HEAD"):
+            return ClosedCommandResult(0, self.heads[cwd] + "\n", "")
+        if self.command_hook is not None:
+            self.command_hook(argv, cwd)
+        return ClosedCommandResult(0, "", "")
 
 
 class GenericWorkflowTests(unittest.TestCase):
@@ -2292,9 +2278,98 @@ class GenericWorkflowTests(unittest.TestCase):
         self.assertEqual(result.next_action, "block")
         self.assertFalse(any(event[0] == "write-smoke" for event in self.store.events))
 
+    def test_owned_smoke_rejects_arbitrary_self_reporting_runner(self):
+        with self.assertRaises(TypeError):
+            OwnedSmokeExecutor(
+                self.manifest,
+                FakeOwnedProcessManager(),
+                SelfReportingFakeRunner(),
+            )
+
+    def test_owned_smoke_constructs_concrete_runner_when_omitted(self):
+        executor = OwnedSmokeExecutor(self.manifest, FakeOwnedProcessManager())
+
+        self.assertIsInstance(executor.command_runner, LocalExactShaCommandRunner)
+
+    def test_concrete_runner_blocks_stale_head_before_service_startup(self):
+        manager = FakeOwnedProcessManager()
+        backend = MutableClosedCommandBackend(self.manifest)
+        backend.heads[self.manifest.repositories["web"].local_path] = "f" * 40
+        executor = OwnedSmokeExecutor(
+            self.manifest,
+            manager,
+            LocalExactShaCommandRunner(self.manifest, backend),
+        )
+
+        result = executor.execute(
+            "PRO-101", ("api", "web"), {"api": SHA["api"], "web": SHA["web"]},
+            action_key="smoke:" + "7" * 64,
+        )
+
+        self.assertEqual(manager.started, [])
+        self.assertFalse(result.authoritative)
+        self.assertNotIn("pass", result.repository_results.values())
+        self.assertNotIn("pass", result.integration_results.values())
+
+    def test_concrete_runner_blocks_head_change_in_service_startup_hook(self):
+        backend = MutableClosedCommandBackend(self.manifest)
+
+        class CheckoutChangingManager(FakeOwnedProcessManager):
+            def start_services(inner_self, services, run, *, candidate_sha):
+                records = super(CheckoutChangingManager, inner_self).start_services(
+                    services, run, candidate_sha=candidate_sha
+                )
+                backend.heads[self.manifest.repositories["web"].local_path] = "f" * 40
+                return records
+
+        manager = CheckoutChangingManager()
+        executor = OwnedSmokeExecutor(
+            self.manifest,
+            manager,
+            LocalExactShaCommandRunner(self.manifest, backend),
+        )
+
+        result = executor.execute(
+            "PRO-101", ("api", "web"), {"api": SHA["api"], "web": SHA["web"]},
+            action_key="smoke:" + "7" * 64,
+        )
+
+        self.assertGreater(len(manager.started), 0)
+        self.assertEqual(len(manager.stopped), len(manager.started))
+        self.assertFalse(result.authoritative)
+        self.assertNotIn("pass", result.repository_results.values())
+
+    def test_concrete_runner_blocks_head_change_during_smoke_command(self):
+        manager = FakeOwnedProcessManager()
+        backend = MutableClosedCommandBackend(self.manifest)
+        changed = False
+
+        def change_checkout(argv, cwd):
+            nonlocal changed
+            if not changed:
+                changed = True
+                backend.heads[self.manifest.repositories["web"].local_path] = "f" * 40
+
+        backend.command_hook = change_checkout
+        executor = OwnedSmokeExecutor(
+            self.manifest,
+            manager,
+            LocalExactShaCommandRunner(self.manifest, backend),
+        )
+
+        result = executor.execute(
+            "PRO-101", ("api", "web"), {"api": SHA["api"], "web": SHA["web"]},
+            action_key="smoke:" + "7" * 64,
+        )
+
+        self.assertFalse(result.authoritative)
+        self.assertNotIn("pass", result.repository_results.values())
+        self.assertNotIn("pass", result.integration_results.values())
+
     def test_owned_smoke_runs_repository_and_cross_repository_commands_then_cleans_up(self):
         manager = FakeOwnedProcessManager()
-        commands = FakeExactShaCommandRunner()
+        backend = MutableClosedCommandBackend(self.manifest)
+        commands = LocalExactShaCommandRunner(self.manifest, backend)
         executor = OwnedSmokeExecutor(self.manifest, manager, commands)
         exact = {"api": SHA["api"], "web": SHA["web"]}
 
@@ -2310,14 +2385,13 @@ class GenericWorkflowTests(unittest.TestCase):
             ["api", "web"],
         )
         self.assertEqual(
-            [(repository, argv) for repository, _, argv, _ in commands.calls],
+            [argv for argv, _ in backend.calls if argv != ("git", "rev-parse", "HEAD")],
             [
-                ("api", self.manifest.repositories["api"].commands["smoke"]),
-                ("web", self.manifest.repositories["web"].commands["smoke"]),
-                ("web", self.manifest.integration_suites[0].command),
+                self.manifest.repositories["api"].commands["smoke"],
+                self.manifest.repositories["web"].commands["smoke"],
+                self.manifest.integration_suites[0].command,
             ],
         )
-        self.assertTrue(all(candidate_map == exact for _, candidate_map, _, _ in commands.calls))
         self.assertEqual(
             [item[0].repository_key for item in manager.stopped],
             ["web", "api"],
@@ -2327,68 +2401,6 @@ class GenericWorkflowTests(unittest.TestCase):
         self.assertEqual(dict(result.integration_results), {"web-api": "pass"})
         self.assertTrue(result.authoritative)
         self.assertEqual(dict(result.checkout_shas), exact)
-        self.assertEqual(
-            [call[3] for call in commands.verify_calls],
-            [("git", "rev-parse", "HEAD")] * 4,
-        )
-
-    def test_owned_smoke_blocks_stale_checkout_before_starting_any_service(self):
-        manager = FakeOwnedProcessManager()
-        commands = FakeExactShaCommandRunner()
-        commands.observed_shas["web"] = "f" * 40
-        executor = OwnedSmokeExecutor(self.manifest, manager, commands)
-        exact = {"api": SHA["api"], "web": SHA["web"]}
-
-        result = executor.execute(
-            "PRO-101", ("api", "web"), exact,
-            action_key="smoke:" + "7" * 64,
-        )
-
-        self.assertEqual(manager.started, [])
-        self.assertEqual(commands.calls, [])
-        self.assertFalse(result.authoritative)
-        self.assertEqual(result.repository_results["web"], "blocked")
-        self.assertEqual(result.checkout_shas["web"], "f" * 40)
-
-    def test_owned_smoke_rejects_runner_that_ignores_exact_sha_map(self):
-        manager = FakeOwnedProcessManager()
-        commands = FakeExactShaCommandRunner()
-        commands.ignore_candidate_map = True
-        executor = OwnedSmokeExecutor(self.manifest, manager, commands)
-        exact = {"api": SHA["api"], "web": SHA["web"]}
-
-        result = executor.execute(
-            "PRO-101", ("api", "web"), exact,
-            action_key="smoke:" + "7" * 64,
-        )
-
-        self.assertFalse(result.authoritative)
-        self.assertTrue(all(value == "blocked" for value in result.repository_results.values()))
-
-    def test_owned_smoke_reverifies_checkout_after_services_start(self):
-        class CheckoutChangesAfterStart(FakeExactShaCommandRunner):
-            def verify(self, repository_key, expected_sha, cwd, *, argv):
-                if len(self.verify_calls) >= 2 and repository_key == "web":
-                    self.observed_shas["web"] = "f" * 40
-                return super().verify(
-                    repository_key, expected_sha, cwd, argv=argv
-                )
-
-        manager = FakeOwnedProcessManager()
-        commands = CheckoutChangesAfterStart()
-        executor = OwnedSmokeExecutor(self.manifest, manager, commands)
-        exact = {"api": SHA["api"], "web": SHA["web"]}
-
-        result = executor.execute(
-            "PRO-101", ("api", "web"), exact,
-            action_key="smoke:" + "7" * 64,
-        )
-
-        self.assertEqual(len(manager.started), 2)
-        self.assertEqual(len(manager.stopped), 2)
-        self.assertEqual(commands.calls, [])
-        self.assertFalse(result.authoritative)
-        self.assertEqual(result.checkout_shas["web"], "f" * 40)
 
     def test_owned_smoke_starts_multiple_repository_services_with_one_manager_call(self):
         repositories = dict(self.manifest.repositories)
@@ -2401,7 +2413,12 @@ class GenericWorkflowTests(unittest.TestCase):
         )
         manifest = replace(self.manifest, repositories=MappingProxyType(repositories))
         manager = FakeOwnedProcessManager()
-        executor = OwnedSmokeExecutor(manifest, manager, FakeExactShaCommandRunner())
+        backend = MutableClosedCommandBackend(manifest)
+        executor = OwnedSmokeExecutor(
+            manifest,
+            manager,
+            LocalExactShaCommandRunner(manifest, backend),
+        )
 
         executor.execute(
             "PRO-101",

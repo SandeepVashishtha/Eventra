@@ -6,7 +6,6 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field, replace
 from datetime import datetime
 import hashlib
-from pathlib import Path
 import re
 from types import MappingProxyType
 from typing import Protocol
@@ -26,6 +25,11 @@ from .github_client import (
     MergeResult,
     PullRequestInfo,
     RequiredStatusChecks,
+)
+from .exact_sha import (
+    ExactShaCommandResult,
+    ExactShaVerification,
+    LocalExactShaCommandRunner,
 )
 from .metadata import MetadataError, ParentMetadata, canonical_json
 from .model import DeliveryManifest
@@ -422,56 +426,6 @@ class SmokeExecutor(Protocol):
     ) -> SmokeRead: ...
 
 
-class ExactShaCommandRunner(Protocol):
-    """Run one argv only after binding every named repository to its exact SHA."""
-
-    def verify(
-        self,
-        repository_key: str,
-        expected_sha: str,
-        cwd: Path,
-        *,
-        argv: tuple[str, ...],
-    ) -> ExactShaVerification: ...
-
-    def run(
-        self,
-        repository_key: str,
-        candidate_shas: Mapping[str, str],
-        argv: tuple[str, ...],
-        cwd: Path,
-    ) -> ExactShaCommandResult: ...
-
-
-@dataclass(frozen=True)
-class ExactShaVerification:
-    repository_key: str
-    expected_sha: str
-    observed_sha: str
-    argv: tuple[str, ...]
-
-    def __post_init__(self) -> None:
-        _stable(self.repository_key, "repository_key")
-        if not _valid_sha(self.expected_sha) or not _valid_sha(self.observed_sha):
-            raise WorkflowError("checkout verification SHA is malformed")
-        if self.argv != ("git", "rev-parse", "HEAD"):
-            raise WorkflowError("checkout verification argv is not closed")
-
-
-@dataclass(frozen=True)
-class ExactShaCommandResult:
-    passed: bool
-    verified_shas: Mapping[str, str]
-
-    def __post_init__(self) -> None:
-        if not isinstance(self.passed, bool):
-            raise WorkflowError("exact-SHA command pass result must be boolean")
-        values = dict(self.verified_shas)
-        if any(not isinstance(key, str) or not key or not _valid_sha(sha) for key, sha in values.items()):
-            raise WorkflowError("exact-SHA command binding is malformed")
-        object.__setattr__(self, "verified_shas", MappingProxyType(dict(sorted(values.items()))))
-
-
 class OwnedSmokeExecutor:
     """Run manifest smoke commands with services owned by one exact-SHA Run."""
 
@@ -479,13 +433,21 @@ class OwnedSmokeExecutor:
         self,
         manifest: DeliveryManifest,
         process_manager: ProcessManager,
-        command_runner: ExactShaCommandRunner,
+        command_runner: LocalExactShaCommandRunner | None = None,
     ) -> None:
         if not isinstance(manifest, DeliveryManifest):
             raise TypeError("manifest must be a DeliveryManifest")
+        if command_runner is not None and not isinstance(
+            command_runner, LocalExactShaCommandRunner
+        ):
+            raise TypeError("command_runner must be a LocalExactShaCommandRunner")
         self.manifest = manifest
         self.process_manager = process_manager
-        self.command_runner = command_runner
+        self.command_runner = (
+            command_runner
+            if command_runner is not None
+            else LocalExactShaCommandRunner(manifest)
+        )
 
     def execute(
         self,
