@@ -24,6 +24,8 @@ from tools.multica_delivery.github_client import (
 )
 from tools.multica_delivery.exact_sha import (
     ClosedCommandResult,
+    ExactShaCommandResult,
+    ExactShaVerification,
     LocalExactShaCommandRunner,
 )
 from tools.multica_delivery.manifest import load_manifest
@@ -882,6 +884,14 @@ class SelfReportingFakeRunner:
 
     def run(self, repository_key, candidate_shas, argv, cwd):
         raise AssertionError("untrusted runner must never be called")
+
+
+class SelfReportingConcreteRunner(LocalExactShaCommandRunner):
+    def verify(self, repository_key, expected_sha, cwd, *, argv):
+        return ExactShaVerification(repository_key, expected_sha, expected_sha, argv)
+
+    def run(self, repository_key, candidate_shas, argv, cwd):
+        return ExactShaCommandResult(True, candidate_shas)
 
 
 class MutableClosedCommandBackend:
@@ -2286,10 +2296,93 @@ class GenericWorkflowTests(unittest.TestCase):
                 SelfReportingFakeRunner(),
             )
 
+    def test_owned_smoke_rejects_concrete_runner_subclass_before_any_effect(self):
+        manager = FakeOwnedProcessManager()
+        backend = MutableClosedCommandBackend(self.manifest)
+
+        with self.assertRaises(TypeError):
+            OwnedSmokeExecutor(
+                self.manifest,
+                manager,
+                SelfReportingConcreteRunner(self.manifest, backend),
+            )
+
+        self.assertEqual(backend.calls, [])
+        self.assertEqual(manager.started, [])
+
+    def test_owned_smoke_rejects_runner_bound_to_another_manifest_object(self):
+        manager = FakeOwnedProcessManager()
+        backend = MutableClosedCommandBackend(self.manifest)
+        equivalent_manifest = replace(self.manifest)
+
+        with self.assertRaises(TypeError):
+            OwnedSmokeExecutor(
+                self.manifest,
+                manager,
+                LocalExactShaCommandRunner(equivalent_manifest, backend),
+            )
+
+        self.assertEqual(backend.calls, [])
+        self.assertEqual(manager.started, [])
+
+    def test_owned_smoke_runner_public_attribute_cannot_be_replaced(self):
+        manager = FakeOwnedProcessManager()
+        backend = MutableClosedCommandBackend(self.manifest)
+        executor = OwnedSmokeExecutor(
+            self.manifest,
+            manager,
+            LocalExactShaCommandRunner(self.manifest, backend),
+        )
+
+        with self.assertRaises((AttributeError, TypeError)):
+            executor.command_runner = SelfReportingConcreteRunner(
+                self.manifest, backend
+            )
+
+        self.assertEqual(backend.calls, [])
+        self.assertEqual(manager.started, [])
+
+    def test_owned_smoke_revalidates_privately_stored_runner_before_execute(self):
+        manager = FakeOwnedProcessManager()
+        backend = MutableClosedCommandBackend(self.manifest)
+        executor = OwnedSmokeExecutor(
+            self.manifest,
+            manager,
+            LocalExactShaCommandRunner(self.manifest, backend),
+        )
+        executor._command_runner = SelfReportingConcreteRunner(
+            self.manifest, backend
+        )
+
+        with self.assertRaises(TypeError):
+            executor.execute(
+                "PRO-101", ("api",), {"api": SHA["api"]},
+                action_key="smoke:" + "7" * 64,
+            )
+
+        self.assertEqual(backend.calls, [])
+        self.assertEqual(manager.started, [])
+
+    def test_owned_smoke_revalidates_runner_manifest_identity_before_execute(self):
+        manager = FakeOwnedProcessManager()
+        backend = MutableClosedCommandBackend(self.manifest)
+        runner = LocalExactShaCommandRunner(self.manifest, backend)
+        executor = OwnedSmokeExecutor(self.manifest, manager, runner)
+        runner.manifest = replace(self.manifest)
+
+        with self.assertRaises(TypeError):
+            executor.execute(
+                "PRO-101", ("api",), {"api": SHA["api"]},
+                action_key="smoke:" + "7" * 64,
+            )
+
+        self.assertEqual(backend.calls, [])
+        self.assertEqual(manager.started, [])
+
     def test_owned_smoke_constructs_concrete_runner_when_omitted(self):
         executor = OwnedSmokeExecutor(self.manifest, FakeOwnedProcessManager())
 
-        self.assertIsInstance(executor.command_runner, LocalExactShaCommandRunner)
+        self.assertIs(type(executor._command_runner), LocalExactShaCommandRunner)
 
     def test_concrete_runner_blocks_stale_head_before_service_startup(self):
         manager = FakeOwnedProcessManager()
@@ -2310,6 +2403,54 @@ class GenericWorkflowTests(unittest.TestCase):
         self.assertFalse(result.authoritative)
         self.assertNotIn("pass", result.repository_results.values())
         self.assertNotIn("pass", result.integration_results.values())
+
+    def test_execute_smoke_persists_partial_stale_head_evidence_then_blocks_named_repository(self):
+        snapshot = passing_snapshot()
+        snapshot = replace(
+            snapshot,
+            merge_state="merged",
+            merged_shas=snapshot.candidate_shas,
+            pull_requests={
+                repository: PullRequestEvidence(sha, "merged", True, True, sha)
+                for repository, sha in snapshot.candidate_shas.items()
+            },
+        )
+        self.store.add_state(
+            "PRO-101", snapshot, pull_requests=pull_request_targets()
+        )
+        manager = FakeOwnedProcessManager()
+        backend = MutableClosedCommandBackend(self.manifest)
+        backend.heads[self.manifest.repositories["web"].local_path] = "f" * 40
+        smoke_executor = OwnedSmokeExecutor(
+            self.manifest,
+            manager,
+            LocalExactShaCommandRunner(self.manifest, backend),
+        )
+        workflow = GenericWorkflow(
+            self.manifest,
+            self.store,
+            self.store,
+            github=self.github,
+            smoke_executor=smoke_executor,
+        )
+        self.store.events.clear()
+
+        result = workflow.execute_smoke("PRO-101")
+
+        state = self.store.states["PRO-101"]
+        self.assertEqual(result.next_action, "block")
+        self.assertIn("web", result.reason)
+        self.assertEqual(manager.started, [])
+        self.assertEqual(len(state.snapshot.smoke_reads), 1)
+        recorded = state.snapshot.smoke_reads[0]
+        self.assertFalse(recorded.authoritative)
+        self.assertEqual(dict(recorded.checkout_shas), {"api": SHA["api"]})
+        self.assertEqual(
+            dict(recorded.repository_results),
+            {"api": "pending", "web": "blocked"},
+        )
+        self.assertNotIn("pass", recorded.repository_results.values())
+        self.assertTrue(any(event[0] == "write-smoke" for event in self.store.events))
 
     def test_concrete_runner_blocks_head_change_in_service_startup_hook(self):
         backend = MutableClosedCommandBackend(self.manifest)

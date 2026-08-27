@@ -392,10 +392,16 @@ def _smoke_decision(
             DecisionKind.BLOCK,
             "post-merge smoke does not match authoritative merged SHAs; human action is required",
         )
-    if dict(latest.checkout_shas) != expected_shas:
+    checkout_problems = tuple(
+        repository
+        for repository in _ordered(manifest, affected)
+        if latest.checkout_shas.get(repository) != expected_shas[repository]
+    )
+    if checkout_problems:
         return _decision(
             DecisionKind.BLOCK,
-            "post-merge smoke checkout does not match authoritative merged SHAs; human action is required",
+            f"{checkout_problems[0]} post-merge smoke checkout does not match "
+            "the authoritative merged SHA; human action is required",
         )
 
     repository_failures = {

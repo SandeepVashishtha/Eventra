@@ -14,11 +14,21 @@ from .model import DeliveryManifest
 
 
 _SHA = re.compile(r"[0-9a-f]{40}\Z")
+_SAFE_REPOSITORY_KEY = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,255}\Z")
 _GIT_HEAD = ("git", "rev-parse", "HEAD")
 
 
 class ExactShaBoundaryError(RuntimeError):
     """A fail-closed local checkout or command boundary failure."""
+
+    def __init__(self, message: str, repository_key: object = "unknown") -> None:
+        super().__init__(message)
+        self.repository_key = (
+            repository_key
+            if isinstance(repository_key, str)
+            and _SAFE_REPOSITORY_KEY.fullmatch(repository_key) is not None
+            else "unknown"
+        )
 
 
 @dataclass(frozen=True)
@@ -111,10 +121,12 @@ class LocalExactShaCommandRunner:
 
     def _repository_path(self, repository_key: str, cwd: Path) -> Path:
         if repository_key not in self.manifest.repositories:
-            raise ExactShaBoundaryError("repository is not declared")
+            raise ExactShaBoundaryError("repository is not declared", repository_key)
         expected_path = self.manifest.repositories[repository_key].local_path
         if not isinstance(cwd, Path) or cwd != expected_path:
-            raise ExactShaBoundaryError("command working directory is not declared")
+            raise ExactShaBoundaryError(
+                "command working directory is not declared", repository_key
+            )
         return expected_path
 
     def verify(
@@ -127,21 +139,34 @@ class LocalExactShaCommandRunner:
     ) -> ExactShaVerification:
         path = self._repository_path(repository_key, cwd)
         if not isinstance(expected_sha, str) or _SHA.fullmatch(expected_sha) is None:
-            raise ExactShaBoundaryError("expected SHA is malformed")
+            raise ExactShaBoundaryError("expected SHA is malformed", repository_key)
         if argv != _GIT_HEAD:
-            raise ExactShaBoundaryError("checkout verification argv is not closed")
+            raise ExactShaBoundaryError(
+                "checkout verification argv is not closed", repository_key
+            )
+        backend_failed = False
         try:
             completed = self._backend.run(_GIT_HEAD, path)
-        except (OSError, RuntimeError, TypeError, ValueError) as error:
-            raise ExactShaBoundaryError("checkout verification command failed") from error
+        except (OSError, RuntimeError, TypeError, ValueError):
+            backend_failed = True
+        if backend_failed:
+            raise ExactShaBoundaryError(
+                "checkout verification command failed", repository_key
+            )
         if not isinstance(completed, ClosedCommandResult) or completed.returncode != 0:
-            raise ExactShaBoundaryError("checkout verification command failed")
+            raise ExactShaBoundaryError(
+                "checkout verification command failed", repository_key
+            )
         match = re.fullmatch(r"([0-9a-f]{40})\n?", completed.stdout)
         if match is None:
-            raise ExactShaBoundaryError("checkout verification output is malformed")
+            raise ExactShaBoundaryError(
+                "checkout verification output is malformed", repository_key
+            )
         observed_sha = match.group(1)
         if observed_sha != expected_sha:
-            raise ExactShaBoundaryError("local checkout does not match expected SHA")
+            raise ExactShaBoundaryError(
+                "local checkout does not match expected SHA", repository_key
+            )
         return ExactShaVerification(repository_key, expected_sha, observed_sha, _GIT_HEAD)
 
     def _validate_smoke_command(
@@ -157,7 +182,9 @@ class LocalExactShaCommandRunner:
             if suite.command_repository == repository_key
         )
         if not isinstance(argv, tuple) or argv not in allowed:
-            raise ExactShaBoundaryError("smoke command argv is not declared")
+            raise ExactShaBoundaryError(
+                "smoke command argv is not declared", repository_key
+            )
 
     def run(
         self,
@@ -169,7 +196,9 @@ class LocalExactShaCommandRunner:
         self._repository_path(repository_key, cwd)
         self._validate_smoke_command(repository_key, argv)
         if not isinstance(candidate_shas, Mapping):
-            raise ExactShaBoundaryError("candidate SHA map is malformed")
+            raise ExactShaBoundaryError(
+                "candidate SHA map is malformed", repository_key
+            )
         exact = dict(candidate_shas)
         if (
             not exact
@@ -182,7 +211,9 @@ class LocalExactShaCommandRunner:
                 for key, sha in exact.items()
             )
         ):
-            raise ExactShaBoundaryError("candidate SHA map is malformed")
+            raise ExactShaBoundaryError(
+                "candidate SHA map is malformed", repository_key
+            )
 
         def verify_all() -> dict[str, str]:
             return {
@@ -196,13 +227,22 @@ class LocalExactShaCommandRunner:
             }
 
         before = verify_all()
+        backend_failed = False
         try:
             completed = self._backend.run(argv, cwd)
-        except (OSError, RuntimeError, TypeError, ValueError) as error:
-            raise ExactShaBoundaryError("smoke command failed to execute") from error
+        except (OSError, RuntimeError, TypeError, ValueError):
+            backend_failed = True
+        if backend_failed:
+            raise ExactShaBoundaryError(
+                "smoke command failed to execute", repository_key
+            )
         if not isinstance(completed, ClosedCommandResult):
-            raise ExactShaBoundaryError("smoke command result is malformed")
+            raise ExactShaBoundaryError(
+                "smoke command result is malformed", repository_key
+            )
         after = verify_all()
         if before != exact or after != exact or before != after:
-            raise ExactShaBoundaryError("checkout binding changed during smoke command")
+            raise ExactShaBoundaryError(
+                "checkout binding changed during smoke command", repository_key
+            )
         return ExactShaCommandResult(completed.returncode == 0, after)

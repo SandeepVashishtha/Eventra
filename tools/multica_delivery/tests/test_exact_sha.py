@@ -2,6 +2,7 @@ from dataclasses import replace
 from pathlib import Path
 import subprocess
 import tempfile
+import traceback
 from types import MappingProxyType
 import unittest
 from unittest.mock import patch
@@ -19,7 +20,7 @@ FIXTURE = Path(__file__).parent / "fixtures" / "three-repository-delivery.yaml"
 
 
 class QueueBackend:
-    def __init__(self, results: list[ClosedCommandResult]) -> None:
+    def __init__(self, results: list[ClosedCommandResult | Exception]) -> None:
         self.results = list(results)
         self.calls: list[tuple[tuple[str, ...], Path]] = []
 
@@ -27,7 +28,10 @@ class QueueBackend:
         self.calls.append((argv, cwd))
         if not self.results:
             raise AssertionError("unexpected backend call")
-        return self.results.pop(0)
+        result = self.results.pop(0)
+        if isinstance(result, Exception):
+            raise result
+        return result
 
 
 def result(returncode: int, stdout: str = "", stderr: str = "") -> ClosedCommandResult:
@@ -96,8 +100,27 @@ class LocalExactShaCommandRunnerTests(unittest.TestCase):
             )
             self.assertEqual(verification.observed_sha, first_sha)
 
-            with self.assertRaises(ExactShaBoundaryError):
+            with self.assertRaises(ExactShaBoundaryError) as raised:
                 runner.verify("api", second_sha, api_path, argv=("git", "rev-parse", "HEAD"))
+
+            self.assertEqual(raised.exception.repository_key, "api")
+
+    def test_boundary_error_replaces_unsafe_repository_input_with_safe_key(self):
+        manifest = load_manifest(FIXTURE)
+        backend = QueueBackend([])
+        runner = LocalExactShaCommandRunner(manifest, backend)
+
+        with self.assertRaises(ExactShaBoundaryError) as raised:
+            runner.verify(
+                "api\nDO-NOT-LEAK", "a" * 40,
+                manifest.repositories["api"].local_path,
+                argv=("git", "rev-parse", "HEAD"),
+            )
+
+        self.assertEqual(raised.exception.repository_key, "unknown")
+        self.assertRegex(raised.exception.repository_key, r"[A-Za-z0-9][A-Za-z0-9._:-]{0,255}\Z")
+        self.assertNotIn("DO-NOT-LEAK", str(raised.exception))
+        self.assertEqual(backend.calls, [])
 
     def test_git_nonzero_exit_is_a_redacted_boundary_failure(self):
         manifest = load_manifest(FIXTURE)
@@ -113,6 +136,50 @@ class LocalExactShaCommandRunnerTests(unittest.TestCase):
         message = str(raised.exception)
         self.assertNotIn("sensitive stdout", message)
         self.assertNotIn("sensitive stderr", message)
+
+    def test_backend_runtime_error_is_not_retained_in_verification_exception_chain(self):
+        manifest = load_manifest(FIXTURE)
+        sentinel = "DO-NOT-LEAK-RUNTIME-SENTINEL"
+        runner = LocalExactShaCommandRunner(
+            manifest, QueueBackend([RuntimeError(sentinel)])
+        )
+
+        with self.assertRaises(ExactShaBoundaryError) as raised:
+            runner.verify(
+                "api", "a" * 40, manifest.repositories["api"].local_path,
+                argv=("git", "rev-parse", "HEAD"),
+            )
+
+        error = raised.exception
+        self.assertEqual(str(error), "checkout verification command failed")
+        self.assertIsNone(error.__cause__)
+        self.assertIsNone(error.__context__)
+        self.assertNotIn(sentinel, "".join(traceback.format_exception(error)))
+
+    def test_unicode_decode_error_is_not_retained_in_smoke_exception_chain(self):
+        manifest = load_manifest(FIXTURE)
+        sha = "a" * 40
+        decode_error = UnicodeDecodeError(
+            "utf-8", b"\xffprivate-output", 0, 1, "DO-NOT-LEAK-DECODE-SENTINEL"
+        )
+        runner = LocalExactShaCommandRunner(
+            manifest,
+            QueueBackend([result(0, sha + "\n"), decode_error]),
+        )
+
+        with self.assertRaises(ExactShaBoundaryError) as raised:
+            runner.run(
+                "api", {"api": sha}, manifest.repositories["api"].commands["smoke"],
+                manifest.repositories["api"].local_path,
+            )
+
+        error = raised.exception
+        rendered = "".join(traceback.format_exception(error))
+        self.assertEqual(str(error), "smoke command failed to execute")
+        self.assertIsNone(error.__cause__)
+        self.assertIsNone(error.__context__)
+        self.assertNotIn("private-output", rendered)
+        self.assertNotIn("DO-NOT-LEAK-DECODE-SENTINEL", rendered)
 
     def test_git_stdout_must_be_exactly_one_lowercase_sha_line(self):
         invalid_outputs = (

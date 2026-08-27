@@ -541,6 +541,25 @@ class ParentDecisionTests(unittest.TestCase):
         )
         self.assertEqual(decision.kind, DecisionKind.SMOKE)
 
+    def test_partial_non_authoritative_checkout_blocks_named_repository(self):
+        partial = SmokeRead(
+            observation_id=SMOKE_OBSERVATION["first"],
+            merged_shas={"api": SHA["api"], "web": SHA["web"]},
+            checkout_shas={"api": SHA["api"]},
+            repository_results={"api": "pending", "web": "blocked"},
+            integration_results={"web-api": "pending"},
+            authoritative=False,
+        )
+
+        decision = decide_parent_action(
+            self.manifest,
+            merged_snapshot(smoke_reads=(partial,)),
+        )
+
+        self.assertEqual(decision.kind, DecisionKind.BLOCK)
+        self.assertIn("web", decision.reason)
+        self.assertIn("human", decision.reason)
+
     def test_stale_post_merge_smoke_blocks_for_human_without_repair(self):
         stale = passing_smoke_read(observation_id=SMOKE_OBSERVATION["first"])
         repeated = replace(stale, observation_id=SMOKE_OBSERVATION["second"])

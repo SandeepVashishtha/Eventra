@@ -27,6 +27,7 @@ from .github_client import (
     RequiredStatusChecks,
 )
 from .exact_sha import (
+    ExactShaBoundaryError,
     ExactShaCommandResult,
     ExactShaVerification,
     LocalExactShaCommandRunner,
@@ -429,6 +430,8 @@ class SmokeExecutor(Protocol):
 class OwnedSmokeExecutor:
     """Run manifest smoke commands with services owned by one exact-SHA Run."""
 
+    __slots__ = ("manifest", "process_manager", "_command_runner")
+
     def __init__(
         self,
         manifest: DeliveryManifest,
@@ -437,17 +440,28 @@ class OwnedSmokeExecutor:
     ) -> None:
         if not isinstance(manifest, DeliveryManifest):
             raise TypeError("manifest must be a DeliveryManifest")
-        if command_runner is not None and not isinstance(
-            command_runner, LocalExactShaCommandRunner
-        ):
-            raise TypeError("command_runner must be a LocalExactShaCommandRunner")
-        self.manifest = manifest
-        self.process_manager = process_manager
-        self.command_runner = (
+        runner = (
             command_runner
             if command_runner is not None
             else LocalExactShaCommandRunner(manifest)
         )
+        if (
+            type(runner) is not LocalExactShaCommandRunner
+            or runner.manifest is not manifest
+        ):
+            raise TypeError("command_runner must be a LocalExactShaCommandRunner")
+        self.manifest = manifest
+        self.process_manager = process_manager
+        self._command_runner = runner
+
+    def _trusted_command_runner(self) -> LocalExactShaCommandRunner:
+        runner = self._command_runner
+        if (
+            type(runner) is not LocalExactShaCommandRunner
+            or runner.manifest is not self.manifest
+        ):
+            raise TypeError("command_runner must be a LocalExactShaCommandRunner")
+        return runner
 
     def execute(
         self,
@@ -457,6 +471,7 @@ class OwnedSmokeExecutor:
         *,
         action_key: str,
     ) -> SmokeRead:
+        command_runner = self._trusted_command_runner()
         selected = tuple(repositories)
         exact = dict(merged_shas)
         if (
@@ -492,36 +507,40 @@ class OwnedSmokeExecutor:
 
         run_id = f"{parent_identifier}:{action_key}"
         started: list[OwnedProcess] = []
-        repository_results = {repository: "blocked" for repository in selected}
-        integration_results = {suite.key: "blocked" for suite in applicable_suites}
+        repository_results = {repository: "pending" for repository in selected}
+        integration_results = {suite.key: "pending" for suite in applicable_suites}
         checkout_shas: dict[str, str] = {}
         authoritative = False
 
-        def verify_checkouts() -> dict[str, str]:
+        def verify_checkouts() -> tuple[dict[str, str], str | None]:
             observed: dict[str, str] = {}
             for repository in ordered:
                 specification = self.manifest.repositories[repository]
-                verification = self.command_runner.verify(
-                    repository,
-                    exact[repository],
-                    specification.local_path,
-                    argv=("git", "rev-parse", "HEAD"),
-                )
+                try:
+                    verification = command_runner.verify(
+                        repository,
+                        exact[repository],
+                        specification.local_path,
+                        argv=("git", "rev-parse", "HEAD"),
+                    )
+                except ExactShaBoundaryError as error:
+                    return observed, error.repository_key
+                except Exception:
+                    return observed, repository
                 if (
                     not isinstance(verification, ExactShaVerification)
                     or verification.repository_key != repository
                     or verification.expected_sha != exact[repository]
                     or verification.argv != ("git", "rev-parse", "HEAD")
                 ):
-                    raise WorkflowError("checkout verification result is malformed")
+                    return observed, repository
                 observed[repository] = verification.observed_sha
-            return observed
+            return observed, None
 
-        try:
-            checkout_shas = verify_checkouts()
-        except Exception:
-            checkout_shas = {}
-        pre_start_bound = checkout_shas == exact
+        checkout_shas, checkout_failure = verify_checkouts()
+        if checkout_failure in repository_results:
+            repository_results[checkout_failure] = "blocked"
+        pre_start_bound = checkout_failure is None and checkout_shas == exact
         startup_failed = False
         if pre_start_bound:
             try:
@@ -547,11 +566,10 @@ class OwnedSmokeExecutor:
             startup_failed = True
 
         if not startup_failed:
-            try:
-                checkout_shas = verify_checkouts()
-                authoritative = checkout_shas == exact
-            except Exception:
-                authoritative = False
+            checkout_shas, checkout_failure = verify_checkouts()
+            if checkout_failure in repository_results:
+                repository_results[checkout_failure] = "blocked"
+            authoritative = checkout_failure is None and checkout_shas == exact
             if not authoritative:
                 startup_failed = True
 
@@ -559,7 +577,7 @@ class OwnedSmokeExecutor:
             for repository in ordered:
                 specification = self.manifest.repositories[repository]
                 try:
-                    command_result = self.command_runner.run(
+                    command_result = command_runner.run(
                         repository,
                         exact,
                         specification.commands["smoke"],
@@ -571,6 +589,11 @@ class OwnedSmokeExecutor:
                     ):
                         raise WorkflowError("exact-SHA command result is malformed")
                     repository_results[repository] = "pass" if command_result.passed else "fail"
+                except ExactShaBoundaryError as error:
+                    repository_results[repository] = "blocked"
+                    if error.repository_key in repository_results:
+                        repository_results[error.repository_key] = "blocked"
+                    authoritative = False
                 except Exception:
                     repository_results[repository] = "blocked"
                     authoritative = False
@@ -580,7 +603,7 @@ class OwnedSmokeExecutor:
                     continue
                 command_repository = self.manifest.repositories[suite.command_repository]
                 try:
-                    command_result = self.command_runner.run(
+                    command_result = command_runner.run(
                         suite.command_repository,
                         exact,
                         suite.command,
@@ -592,6 +615,11 @@ class OwnedSmokeExecutor:
                     ):
                         raise WorkflowError("exact-SHA command result is malformed")
                     integration_results[suite.key] = "pass" if command_result.passed else "fail"
+                except ExactShaBoundaryError as error:
+                    integration_results[suite.key] = "blocked"
+                    if error.repository_key in repository_results:
+                        repository_results[error.repository_key] = "blocked"
+                    authoritative = False
                 except Exception:
                     integration_results[suite.key] = "blocked"
                     authoritative = False
@@ -2304,16 +2332,24 @@ class GenericWorkflow:
             for suite in self.manifest.integration_suites
             if set(suite.repositories) <= affected
         }
+        checkout_keys = set(smoke_read.checkout_shas)
+        checkout_scope_valid = (
+            checkout_keys == affected
+            and dict(smoke_read.checkout_shas) == dict(state.snapshot.merged_shas)
+            if smoke_read.authoritative
+            else checkout_keys <= affected
+            and all(
+                smoke_read.checkout_shas[repository]
+                == state.snapshot.merged_shas.get(repository)
+                for repository in checkout_keys
+            )
+        )
         if (
             set(smoke_read.merged_shas) != affected
             or dict(smoke_read.merged_shas) != dict(state.snapshot.merged_shas)
             or any(not _valid_sha(sha) for sha in smoke_read.merged_shas.values())
-            or set(smoke_read.checkout_shas) != affected
             or any(not _valid_sha(sha) for sha in smoke_read.checkout_shas.values())
-            or (
-                smoke_read.authoritative
-                and dict(smoke_read.checkout_shas) != dict(state.snapshot.merged_shas)
-            )
+            or not checkout_scope_valid
             or set(smoke_read.repository_results) != affected
             or set(smoke_read.integration_results) != expected_suites
             or any(value not in {"pending", "pass", "fail", "blocked"} for value in smoke_read.repository_results.values())
