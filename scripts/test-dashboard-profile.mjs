@@ -290,6 +290,10 @@ test("trims usernames, enforces 3-50 characters, and saves only an available can
       () => availabilityCalls.includes("current-user"),
       "current username was not checked",
     );
+    await waitFor(
+      () => findButton(rendered.container, "Save Profile").disabled === false,
+      "available current username did not enable saving",
+    );
 
     await rendered.changeInput(2, " ab ");
     assert.match(rendered.container.textContent, /3 to 50 characters/);
@@ -407,6 +411,79 @@ test("rechecks a revisited username before allowing it to be saved", async () =>
       await revisitedRequest.promise;
     });
     assert.equal(findButton(rendered.container, "Save Profile").disabled, false);
+  } finally {
+    await rendered.cleanup();
+  }
+});
+
+test("requires a fresh availability result after reopening the editor", async () => {
+  let currentUsernameRequests = 0;
+  const reopenedRequest = deferred();
+  const rendered = await renderDashboard({
+    checkUsernameAvailability(username) {
+      currentUsernameRequests += 1;
+      return currentUsernameRequests === 1
+        ? Promise.resolve({ available: true, username })
+        : reopenedRequest.promise;
+    },
+  });
+
+  try {
+    await rendered.openEditor();
+    await waitFor(
+      () => findButton(rendered.container, "Save Profile").disabled === false,
+      "first availability result did not enable saving",
+    );
+    await act(async () => findButton(rendered.container, "Cancel").click());
+    await rendered.openEditor();
+    await waitFor(
+      () => currentUsernameRequests === 2,
+      "reopened editor did not request fresh availability",
+    );
+
+    assert.equal(findButton(rendered.container, "Save Profile").disabled, true);
+    await act(async () => {
+      reopenedRequest.resolve({ available: true, username: "current-user" });
+      await reopenedRequest.promise;
+    });
+    assert.equal(findButton(rendered.container, "Save Profile").disabled, false);
+  } finally {
+    await rendered.cleanup();
+  }
+});
+
+test("does not dismiss the editor while a profile save is in flight", async () => {
+  const updateRequest = deferred();
+  const rendered = await renderDashboard({
+    updateUserProfile() {
+      return updateRequest.promise;
+    },
+  });
+
+  try {
+    await rendered.openEditor();
+    await waitFor(
+      () => findButton(rendered.container, "Save Profile").disabled === false,
+      "available current username did not enable saving",
+    );
+    await rendered.submit();
+    await waitFor(
+      () => findButton(rendered.container, "Saving..."),
+      "profile save did not start",
+    );
+    await act(async () => findButton(rendered.container, "Cancel").click());
+    await act(async () => {
+      updateRequest.reject(new Error("Server rejected the profile update"));
+      try {
+        await updateRequest.promise;
+      } catch {}
+    });
+    await waitFor(
+      () => rendered.container.textContent.includes("Server rejected the profile update"),
+      "save failure was not shown in the open editor",
+    );
+
+    assert.ok(findButton(rendered.container, "Save Profile"));
   } finally {
     await rendered.cleanup();
   }

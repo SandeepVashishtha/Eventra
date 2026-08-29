@@ -319,6 +319,7 @@ export default function DashboardPage() {
                 onClick={() => {
                   setProfileSaveError("");
                   setSaveSuccess(false);
+                  setUsernameAvailability({ candidate: "", status: "idle" });
                   setIsEditingProfile(true);
                 }}
                 className="inline-flex items-center gap-2 px-4 py-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-xs font-bold rounded-xl transition-all cursor-pointer"
@@ -578,7 +579,12 @@ export default function DashboardPage() {
       {/* Edit Profile Modal */}
       {isEditingProfile && (
         <div className="fixed inset-0 z-50 overflow-hidden flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-zinc-950/40 backdrop-blur-xs" onClick={() => setIsEditingProfile(false)} />
+          <div
+            className="fixed inset-0 bg-zinc-950/40 backdrop-blur-xs"
+            onClick={() => {
+              if (!isSavingProfile) setIsEditingProfile(false);
+            }}
+          />
           
           <div className="relative w-full max-w-md bg-white border border-emerald-900/10 rounded-3xl p-6 shadow-2xl space-y-5 z-10 animate-in zoom-in-95 duration-200">
             <h3 className="text-lg font-extrabold text-zinc-900">Edit Profile</h3>
@@ -655,8 +661,9 @@ export default function DashboardPage() {
               <div className="flex items-center justify-end gap-2 pt-2">
                 <button
                   type="button"
+                  disabled={isSavingProfile}
                   onClick={() => setIsEditingProfile(false)}
-                  className="px-4 py-2 text-xs font-bold text-zinc-600 hover:bg-zinc-100 rounded-xl transition-colors cursor-pointer"
+                  className="px-4 py-2 text-xs font-bold text-zinc-600 hover:bg-zinc-100 disabled:text-zinc-300 disabled:cursor-not-allowed rounded-xl transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
