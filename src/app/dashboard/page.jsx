@@ -20,6 +20,7 @@ import {
   CalendarX
 } from "lucide-react";
 import { 
+  checkUsernameAvailability,
   getUserProfile, 
   updateUserProfile, 
   getMyRegisteredEvents, 
@@ -51,6 +52,24 @@ export default function DashboardPage() {
   const [editLastName, setEditLastName] = useState("");
   const [editUsername, setEditUsername] = useState("");
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [profileSaveError, setProfileSaveError] = useState("");
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [usernameAvailability, setUsernameAvailability] = useState({
+    candidate: "",
+    status: "idle",
+  });
+
+  const trimmedUsername = editUsername.trim();
+  const usernameIsLocallyValid =
+    trimmedUsername.length >= 3 && trimmedUsername.length <= 50;
+  const usernameAvailabilityStatus = !usernameIsLocallyValid
+    ? "invalid"
+    : usernameAvailability.candidate === trimmedUsername
+      ? usernameAvailability.status
+      : "checking";
+  const canSaveUsername =
+    usernameIsLocallyValid &&
+    usernameAvailabilityStatus === "available";
 
   useEffect(() => {
     async function loadDashboardData() {
@@ -118,6 +137,40 @@ export default function DashboardPage() {
     loadDashboardData();
   }, []);
 
+  useEffect(() => {
+    if (!isEditingProfile) return;
+
+    const candidate = editUsername.trim();
+    if (candidate.length < 3 || candidate.length > 50) {
+      return;
+    }
+
+    let ignore = false;
+    const controller = new AbortController();
+
+    checkUsernameAvailability(candidate, { signal: controller.signal })
+      .then((result) => {
+        if (ignore) return;
+        setUsernameAvailability({
+          candidate,
+          status: result?.available === true ? "available" : "unavailable",
+        });
+      })
+      .catch((error) => {
+        if (ignore || error?.name === "AbortError") return;
+        setUsernameAvailability({
+          candidate,
+          error: error?.message || "Unable to check username availability.",
+          status: "error",
+        });
+      });
+
+    return () => {
+      ignore = true;
+      controller.abort();
+    };
+  }, [editUsername, isEditingProfile]);
+
   const handleLogout = () => {
     if (typeof window !== "undefined") {
       localStorage.removeItem("eventra_token");
@@ -128,13 +181,17 @@ export default function DashboardPage() {
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
+    if (!canSaveUsername || isSavingProfile) return;
+
+    setIsSavingProfile(true);
+    setProfileSaveError("");
     try {
       const updated = await updateUserProfile({
         firstName: editFirstName,
         lastName: editLastName,
-        username: editUsername
+        username: trimmedUsername
       });
-      const newProf = { ...profile, ...updated, firstName: editFirstName, lastName: editLastName, username: editUsername };
+      const newProf = { ...profile, ...updated, firstName: editFirstName, lastName: editLastName, username: trimmedUsername };
       setProfile(newProf);
       if (typeof window !== "undefined") {
         localStorage.setItem("eventra_user", JSON.stringify(newProf));
@@ -145,16 +202,9 @@ export default function DashboardPage() {
         setIsEditingProfile(false);
       }, 1000);
     } catch (err) {
-      const newProf = { ...profile, firstName: editFirstName, lastName: editLastName, username: editUsername };
-      setProfile(newProf);
-      if (typeof window !== "undefined") {
-        localStorage.setItem("eventra_user", JSON.stringify(newProf));
-      }
-      setSaveSuccess(true);
-      setTimeout(() => {
-        setSaveSuccess(false);
-        setIsEditingProfile(false);
-      }, 1000);
+      setProfileSaveError(err?.message || "Failed to update profile.");
+    } finally {
+      setIsSavingProfile(false);
     }
   };
 
@@ -266,7 +316,11 @@ export default function DashboardPage() {
             {/* Profile Action Buttons */}
             <div className="flex items-center gap-3 w-full md:w-auto justify-end">
               <button
-                onClick={() => setIsEditingProfile(true)}
+                onClick={() => {
+                  setProfileSaveError("");
+                  setSaveSuccess(false);
+                  setIsEditingProfile(true);
+                }}
                 className="inline-flex items-center gap-2 px-4 py-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-xs font-bold rounded-xl transition-all cursor-pointer"
               >
                 <Edit3 className="w-4 h-4 text-zinc-600" />
@@ -536,6 +590,12 @@ export default function DashboardPage() {
               </div>
             )}
 
+            {profileSaveError && (
+              <div role="alert" className="p-3 bg-red-50 border border-red-200 text-red-800 text-xs font-bold rounded-xl">
+                {profileSaveError}
+              </div>
+            )}
+
             <form onSubmit={handleUpdateProfile} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-zinc-700 mb-1">First Name</label>
@@ -565,9 +625,31 @@ export default function DashboardPage() {
                   type="text"
                   required
                   value={editUsername}
-                  onChange={(e) => setEditUsername(e.target.value)}
+                  onChange={(e) => {
+                    setUsernameAvailability({ candidate: "", status: "idle" });
+                    setEditUsername(e.target.value);
+                    setProfileSaveError("");
+                  }}
                   className="w-full px-3.5 py-2 text-sm bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00b887] text-zinc-900"
                 />
+                <p className={`mt-1.5 text-xs ${
+                  usernameAvailabilityStatus === "available"
+                    ? "text-emerald-700"
+                    : usernameAvailabilityStatus === "checking"
+                      ? "text-zinc-500"
+                      : "text-red-700"
+                }`} aria-live="polite">
+                  {usernameAvailabilityStatus === "invalid" &&
+                    "Username must be 3 to 50 characters after trimming."}
+                  {usernameAvailabilityStatus === "checking" &&
+                    "Checking username availability..."}
+                  {usernameAvailabilityStatus === "available" &&
+                    "Username is available."}
+                  {usernameAvailabilityStatus === "unavailable" &&
+                    "Username is already in use"}
+                  {usernameAvailabilityStatus === "error" &&
+                    usernameAvailability.error}
+                </p>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2">
@@ -580,9 +662,10 @@ export default function DashboardPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-[#00b887] hover:bg-[#049d73] text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer"
+                  disabled={!canSaveUsername || isSavingProfile}
+                  className="px-5 py-2 bg-[#00b887] hover:bg-[#049d73] disabled:bg-zinc-300 disabled:cursor-not-allowed text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer"
                 >
-                  Save Profile
+                  {isSavingProfile ? "Saving..." : "Save Profile"}
                 </button>
               </div>
             </form>

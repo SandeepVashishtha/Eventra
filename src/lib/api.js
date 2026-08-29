@@ -125,6 +125,14 @@ export async function getUserProfile() {
   }
 }
 
+export async function checkUsernameAvailability(username, options = {}) {
+  const candidate = username.trim();
+  return await fetchAPI(
+    `/api/users/username-availability?username=${encodeURIComponent(candidate)}`,
+    { signal: options.signal },
+  );
+}
+
 export async function updateUserProfile(profileData) {
   try {
     return await fetchAPI("/api/users/profile", {

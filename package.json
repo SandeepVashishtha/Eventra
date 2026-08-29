@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test:footer-meta": "node --test scripts/test-footer-meta.mjs",
     "test:layout-hydration": "node --test scripts/test-layout-hydration.mjs",
+    "test:dashboard-profile": "node --test scripts/test-dashboard-profile.mjs",
     "dev:local": "bash scripts/run-local.sh",
     "test:local-contract": "bash scripts/test-local-contract.sh",
     "smoke:local": "bash scripts/smoke-local.sh"
