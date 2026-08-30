@@ -243,3 +243,53 @@ export async function createProject(projectData) {
     throw err;
   }
 }
+
+export async function getEventAnalytics(eventId) {
+  try {
+    // Attempt to fetch from local Next.js API route first for rich analytics
+    const res = await fetch(`/api/events/${eventId}/analytics`);
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (err) {
+    console.warn("Could not fetch local analytics route, falling back...", err);
+  }
+
+  try {
+    // Fallback to backend API endpoint if configured
+    return await fetchAPI(`/api/events/${eventId}/analytics`);
+  } catch (err) {
+    console.error(`Failed to fetch analytics for event ${eventId}:`, err);
+    throw err;
+  }
+}
+
+export function exportEventRegistrationsCSV(analyticsData, eventTitle = "event") {
+  if (!analyticsData || !analyticsData.attendees || analyticsData.attendees.length === 0) {
+    throw new Error("No attendee registration data available to export.");
+  }
+
+  const headers = ["Registration ID", "Name", "Email", "Role", "Location", "Registration Date", "Checked In", "Check-in Time"];
+  const rows = analyticsData.attendees.map((attendee) => [
+    attendee.id,
+    `"${attendee.name.replace(/"/g, '""')}"`,
+    attendee.email,
+    `"${attendee.role.replace(/"/g, '""')}"`,
+    `"${attendee.location.replace(/"/g, '""')}"`,
+    attendee.registeredAt,
+    attendee.checkedIn ? "Yes" : "No",
+    attendee.checkInTime || "N/A"
+  ]);
+
+  const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const sanitizedTitle = eventTitle.toLowerCase().replace(/[^a-z0-9]/g, "-");
+  link.setAttribute("href", url);
+  link.setAttribute("download", `registrations-${sanitizedTitle}-${new Date().toISOString().split("T")[0]}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+

@@ -17,12 +17,14 @@ import {
   ArrowRight, 
   ShieldCheck, 
   Lock,
-  CalendarX
+  CalendarX,
+  BarChart3
 } from "lucide-react";
 import { 
   getUserProfile, 
   updateUserProfile, 
   getMyRegisteredEvents, 
+  getEvents,
   getHackathons, 
   getProjects, 
   getUserNotifications, 
@@ -32,6 +34,7 @@ import EventCard from "@/components/ui/EventCard";
 import HackathonCard from "@/components/ui/HackathonCard";
 import ProjectCard from "@/components/ui/ProjectCard";
 import { CardSkeleton } from "@/components/ui/Skeleton";
+import OrganizerAnalyticsDashboard from "@/components/analytics/OrganizerAnalyticsDashboard";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -42,6 +45,8 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("events");
 
   const [myEvents, setMyEvents] = useState([]);
+  const [allEvents, setAllEvents] = useState([]);
+  const [selectedAnalyticsEventId, setSelectedAnalyticsEventId] = useState("1");
   const [hackathons, setHackathons] = useState([]);
   const [projects, setProjects] = useState([]);
   const [notifications, setNotifications] = useState([]);
@@ -97,14 +102,26 @@ export default function DashboardPage() {
       setEditUsername(userProfile.username || userProfile.email?.split("@")[0] || "");
 
       try {
-        const [eventsData, hackathonsData, projectsData, notifsData] = await Promise.all([
+        const [eventsData, allEventsData, hackathonsData, projectsData, notifsData] = await Promise.all([
           getMyRegisteredEvents().catch(() => []),
+          getEvents().catch(() => []),
           getHackathons().catch(() => []),
           getProjects().catch(() => []),
           getUserNotifications().catch(() => [])
         ]);
 
         setMyEvents(Array.isArray(eventsData) ? eventsData : []);
+        const loadedAllEvents = Array.isArray(allEventsData) && allEventsData.length > 0
+          ? allEventsData
+          : [
+              { id: "1", title: "Cloud Architecture Summit 2026", eventDate: new Date().toISOString() },
+              { id: "2", title: "React & Next.js Core Maintainers Workshop", eventDate: new Date().toISOString() },
+              { id: "3", title: "AI & Distributed Systems Keynote", eventDate: new Date().toISOString() },
+            ];
+        setAllEvents(loadedAllEvents);
+        if (loadedAllEvents.length > 0) {
+          setSelectedAnalyticsEventId(String(loadedAllEvents[0].id));
+        }
         setHackathons(Array.isArray(hackathonsData) ? hackathonsData : []);
         setProjects(Array.isArray(projectsData) ? projectsData : []);
         setNotifications(Array.isArray(notifsData) ? notifsData : []);
@@ -373,6 +390,18 @@ export default function DashboardPage() {
               <Bell className="w-4 h-4" />
               <span>Notifications ({notifications.filter((n) => !n.read).length})</span>
             </button>
+
+            <button
+              onClick={() => setActiveTab("analytics")}
+              className={`flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-full transition-all cursor-pointer ${
+                activeTab === "analytics"
+                  ? "bg-emerald-800 text-white shadow-md shadow-emerald-200"
+                  : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+              }`}
+            >
+              <BarChart3 className="w-4 h-4" />
+              <span>Organizer Analytics</span>
+            </button>
           </div>
 
           {/* Tab Contents */}
@@ -514,6 +543,42 @@ export default function DashboardPage() {
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {activeTab === "analytics" && (
+            <div className="space-y-6 pt-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-100">
+                <div className="space-y-1">
+                  <h3 className="text-base font-extrabold text-zinc-900">
+                    Event Performance & Conversion Analytics
+                  </h3>
+                  <p className="text-xs text-zinc-500">
+                    Select an event to inspect live registrations, attendance rate, peak times, and demographic breakdowns.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-bold text-zinc-600 shrink-0">Select Event:</label>
+                  <select
+                    value={selectedAnalyticsEventId}
+                    onChange={(e) => setSelectedAnalyticsEventId(e.target.value)}
+                    className="px-3.5 py-2 text-xs font-semibold bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00b887] text-zinc-800 cursor-pointer"
+                  >
+                    {allEvents.map((evt) => (
+                      <option key={`analytics-opt-${evt.id}`} value={String(evt.id)}>
+                        {evt.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <OrganizerAnalyticsDashboard
+                eventId={selectedAnalyticsEventId}
+                isEmbedded={true}
+                initialEvent={allEvents.find((e) => String(e.id) === String(selectedAnalyticsEventId))}
+              />
             </div>
           )}
 
