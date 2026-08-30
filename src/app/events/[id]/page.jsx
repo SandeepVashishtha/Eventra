@@ -16,7 +16,8 @@ import {
   Award,
   ShieldCheck,
   UserCheck,
-  AlertCircle
+  AlertCircle,
+  BarChart3
 } from "lucide-react";
 import { getEventById, registerForEvent } from "@/lib/api";
 import { CardSkeleton } from "@/components/ui/Skeleton";
@@ -266,6 +267,16 @@ export default function EventDetailPage() {
               <div className="flex items-center justify-center gap-2 text-xs text-zinc-500 pt-2 border-t border-zinc-100">
                 <ShieldCheck className="w-4 h-4 text-emerald-600" />
                 <span>Free Entry • Instant RSVP</span>
+              </div>
+
+              <div className="pt-2">
+                <Link
+                  href={`/events/${eventId}/analytics`}
+                  className="w-full py-2.5 px-4 bg-zinc-100 hover:bg-emerald-50 hover:text-emerald-900 border border-zinc-200 hover:border-emerald-300 text-zinc-700 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2"
+                >
+                  <BarChart3 className="w-4 h-4 text-[#00b887]" />
+                  <span>View Organizer Analytics</span>
+                </Link>
               </div>
 
             </div>
