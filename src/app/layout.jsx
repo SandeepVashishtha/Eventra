@@ -2,6 +2,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import SkipToContent from "@/components/accessibility/SkipToContent";
 import { DrawerProvider } from "@/context/DrawerContext";
 
 const geistSans = Geist({
@@ -27,10 +28,11 @@ export default function RootLayout({ children }) {
     >
       <body className="min-h-full flex flex-col bg-[#fafafa] text-neutral-900 selection:bg-neutral-900 selection:text-white antialiased">
         <DrawerProvider>
+          <SkipToContent />
           <Navbar />
-          <div className="flex-1">
+          <main id="main-content" className="flex-1">
             {children}
-          </div>
+          </main>
           <Footer />
         </DrawerProvider>
       </body>
