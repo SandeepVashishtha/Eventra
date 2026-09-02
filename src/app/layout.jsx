@@ -3,6 +3,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { DrawerProvider } from "@/context/DrawerContext";
+import SessionExpiryBanner from "@/components/ui/SessionExpiryBanner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,6 +33,7 @@ export default function RootLayout({ children }) {
             {children}
           </div>
           <Footer />
+          <SessionExpiryBanner />
         </DrawerProvider>
       </body>
     </html>

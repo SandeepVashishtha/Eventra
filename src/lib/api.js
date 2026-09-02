@@ -1,5 +1,89 @@
 export const API_BASE_URL = "https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net";
 
+export function clearAuthStorage() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem("eventra_token");
+  localStorage.removeItem("eventra_user");
+  localStorage.removeItem("eventra_refresh_token");
+}
+
+export function decodeJWT(token) {
+  if (!token || typeof token !== "string") return null;
+  try {
+    const base64Url = token.split(".")[1];
+    if (!base64Url) return null;
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    return null;
+  }
+}
+
+export function getTokenExpiration(token) {
+  const decoded = decodeJWT(token);
+  if (!decoded || !decoded.exp) return null;
+  return decoded.exp * 1000;
+}
+
+let refreshPromise = null;
+
+export async function attemptTokenRefresh() {
+  if (typeof window === "undefined") return false;
+
+  if (refreshPromise) {
+    return refreshPromise;
+  }
+
+  const refreshToken = localStorage.getItem("eventra_refresh_token") || localStorage.getItem("eventra_token");
+  if (!refreshToken) return false;
+
+  refreshPromise = (async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${refreshToken}`
+        },
+        body: JSON.stringify({ refreshToken })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Refresh failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      const newToken = data.token || data.accessToken;
+      const newRefreshToken = data.refreshToken || data.refresh_token;
+
+      if (newToken) {
+        localStorage.setItem("eventra_token", newToken);
+        if (newRefreshToken) {
+          localStorage.setItem("eventra_refresh_token", newRefreshToken);
+        }
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("eventra:token_refreshed"));
+        }
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.warn("[Eventra Auth] Silent token refresh failed:", err);
+      return false;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+}
+
 function getAuthHeader() {
   if (typeof window === "undefined") return {};
   const token = localStorage.getItem("eventra_token");
@@ -10,18 +94,28 @@ async function fetchAPI(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
   try {
     const res = await fetch(url, {
+      ...options,
       headers: {
         "Content-Type": "application/json",
         ...getAuthHeader(),
         ...options.headers,
       },
-      ...options,
     });
 
     if (res.status === 401 && typeof window !== "undefined") {
-      localStorage.removeItem("eventra_token");
-      localStorage.removeItem("eventra_user");
-      window.location.href = "/login";
+      if (!options._isRetry) {
+        const refreshed = await attemptTokenRefresh();
+        if (refreshed) {
+          return fetchAPI(endpoint, {
+            ...options,
+            _isRetry: true,
+          });
+        }
+      }
+
+      clearAuthStorage();
+      window.dispatchEvent(new Event("eventra:session_expired"));
+      window.location.href = "/login?reason=session_expired";
       throw new Error("Session expired. Please log in again.");
     }
 
@@ -55,6 +149,9 @@ export async function loginUser(credentials) {
 
     if (data?.token && typeof window !== "undefined") {
       localStorage.setItem("eventra_token", data.token);
+      if (data.refreshToken || data.refresh_token) {
+        localStorage.setItem("eventra_refresh_token", data.refreshToken || data.refresh_token);
+      }
       localStorage.setItem("eventra_user", JSON.stringify(data));
     }
     return data;
@@ -81,6 +178,9 @@ export async function registerUser(userData) {
 
     if (data?.token && typeof window !== "undefined") {
       localStorage.setItem("eventra_token", data.token);
+      if (data.refreshToken || data.refresh_token) {
+        localStorage.setItem("eventra_refresh_token", data.refreshToken || data.refresh_token);
+      }
       localStorage.setItem("eventra_user", JSON.stringify(data));
     }
     return data;
