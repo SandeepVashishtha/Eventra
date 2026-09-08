@@ -114,7 +114,7 @@ export default function HackathonDetailPage() {
   }
 
   const formattedStart = hackathon.startDate
-    ? new Date(hackathon.startDate).toLocaleDateString(undefined, {
+    ? new Date(`${hackathon.startDate}T00:00:00`).toLocaleDateString(undefined, {
         month: "short",
         day: "numeric",
         year: "numeric"
@@ -122,7 +122,7 @@ export default function HackathonDetailPage() {
     : "TBD";
 
   const formattedEnd = hackathon.endDate
-    ? new Date(hackathon.endDate).toLocaleDateString(undefined, {
+    ? new Date(`${hackathon.endDate}T00:00:00`).toLocaleDateString(undefined, {
         month: "short",
         day: "numeric",
         year: "numeric"
