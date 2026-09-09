@@ -59,7 +59,13 @@ function clearStoredRecentSearches() {
     } catch (e) {}
   }
 }
-
+function fmtFeatured(v) {
+  if (!v) return "Date TBD";
+  const d = new Date(v);
+  return isNaN(d.getTime()) 
+    ? "Date TBD" 
+    : d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
 export default function EventsPage() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -201,12 +207,8 @@ export default function EventsPage() {
                     <Sparkles className="w-3.5 h-3.5 text-[#00b887]" />
                     <span>Spotlight Event</span>
                   </span>
-                  <span className="text-xs font-mono text-zinc-500">
-                    {new Date(featuredEvent.eventDate).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric"
-                    })}
+                 <span className="text-xs font-mono text-zinc-500">
+                    {fmtFeatured(featuredEvent.eventDate)}
                   </span>
                 </div>
 
