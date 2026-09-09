@@ -225,7 +225,7 @@ export default function EventsPage() {
                   </span>
                   <span className="flex items-center gap-1.5">
                     <Users className="w-4 h-4 text-emerald-600" />
-                    <span>{featuredEvent.registeredCount || 184} Attendees RSVP&apos;d</span>
+                    <span>{(typeof featuredEvent.registeredCount === "number" ? featuredEvent.registeredCount : 0)} Attendees RSVP&apos;d</span>
                   </span>
                 </div>
               </div>
