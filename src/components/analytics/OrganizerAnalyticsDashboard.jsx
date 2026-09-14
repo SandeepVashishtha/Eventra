@@ -26,6 +26,7 @@ import RegistrationHeatmap from "./RegistrationHeatmap";
 import CapacityUtilizationCard from "./CapacityUtilizationCard";
 import GeographicBreakdown from "./GeographicBreakdown";
 import { CardSkeleton } from "@/components/ui/Skeleton";
+import ErrorBoundary from "@/components/ui/ErrorBoundary";
 
 export default function OrganizerAnalyticsDashboard({ eventId, initialEvent = null, isEmbedded = false }) {
   const [analytics, setAnalytics] = useState(null);
@@ -264,148 +265,160 @@ export default function OrganizerAnalyticsDashboard({ eventId, initialEvent = nu
       </div>
 
       {/* Primary Chart: Registration Timeline */}
-      <RegistrationTimelineChart timeline={timeline} />
+      <ErrorBoundary fallbackTitle="Timeline Chart Error">
+        <RegistrationTimelineChart timeline={timeline} />
+      </ErrorBoundary>
 
       {/* Row 2: Attendance Rate Gauge & Capacity Utilization */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <AttendanceGauge
-          totalRegistered={summary.totalRegistered}
-          checkedIn={summary.checkedIn}
-          attendanceRate={summary.attendanceRate}
-        />
+        <ErrorBoundary fallbackTitle="Attendance Gauge Error">
+          <AttendanceGauge
+            totalRegistered={summary.totalRegistered}
+            checkedIn={summary.checkedIn}
+            attendanceRate={summary.attendanceRate}
+          />
+        </ErrorBoundary>
 
-        <CapacityUtilizationCard
-          totalRegistered={summary.totalRegistered}
-          maxCapacity={summary.maxCapacity}
-          capacityUtilization={summary.capacityUtilization}
-          seatsRemaining={summary.seatsRemaining}
-          isSoldOut={summary.isSoldOut}
-        />
+        <ErrorBoundary fallbackTitle="Capacity Utilization Error">
+          <CapacityUtilizationCard
+            totalRegistered={summary.totalRegistered}
+            maxCapacity={summary.maxCapacity}
+            capacityUtilization={summary.capacityUtilization}
+            seatsRemaining={summary.seatsRemaining}
+            isSoldOut={summary.isSoldOut}
+          />
+        </ErrorBoundary>
       </div>
 
       {/* Row 3: Peak Registration Heatmap & Geographic Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-7">
-          <RegistrationHeatmap heatmap={heatmap} />
+          <ErrorBoundary fallbackTitle="Registration Heatmap Error">
+            <RegistrationHeatmap heatmap={heatmap} />
+          </ErrorBoundary>
         </div>
         <div className="lg:col-span-5">
-          <GeographicBreakdown geographic={geographic} />
+          <ErrorBoundary fallbackTitle="Geographic Breakdown Error">
+            <GeographicBreakdown geographic={geographic} />
+          </ErrorBoundary>
         </div>
       </div>
 
       {/* Row 4: Attendee Registration Roster Table */}
-      <div className="bg-white border border-emerald-900/10 rounded-3xl p-6 sm:p-7 shadow-xs space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-xl bg-emerald-50 text-[#00b887] border border-emerald-200">
-                <FileSpreadsheet className="w-4 h-4" />
+      <ErrorBoundary fallbackTitle="Attendee Roster Error">
+        <div className="bg-white border border-emerald-900/10 rounded-3xl p-6 sm:p-7 shadow-xs space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-emerald-50 text-[#00b887] border border-emerald-200">
+                  <FileSpreadsheet className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-zinc-900">
+                    Attendee Registration Roster
+                  </h3>
+                  <p className="text-xs text-zinc-500 font-medium">
+                    Search, filter, and inspect verified registrant data
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-base font-extrabold text-zinc-900">
-                  Attendee Registration Roster
-                </h3>
-                <p className="text-xs text-zinc-500 font-medium">
-                  Search, filter, and inspect verified registrant data
-                </p>
+            </div>
+
+            {/* Table Controls */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-3 text-zinc-400" />
+                <input
+                  type="text"
+                  placeholder="Search attendees..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8 pr-3 py-1.5 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00b887] text-zinc-900"
+                />
+              </div>
+
+              <div className="flex items-center bg-zinc-100 p-1 rounded-xl text-xs font-semibold text-zinc-600">
+                <button
+                  onClick={() => setAttendeeFilter("all")}
+                  className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                    attendeeFilter === "all" ? "bg-[#00b887] text-white font-bold" : "hover:text-zinc-900"
+                  }`}
+                >
+                  All ({attendees.length})
+                </button>
+                <button
+                  onClick={() => setAttendeeFilter("checked_in")}
+                  className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                    attendeeFilter === "checked_in" ? "bg-[#00b887] text-white font-bold" : "hover:text-zinc-900"
+                  }`}
+                >
+                  Checked In
+                </button>
+                <button
+                  onClick={() => setAttendeeFilter("pending")}
+                  className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                    attendeeFilter === "pending" ? "bg-[#00b887] text-white font-bold" : "hover:text-zinc-900"
+                  }`}
+                >
+                  Pending
+                </button>
               </div>
             </div>
           </div>
 
-          {/* Table Controls */}
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-3 text-zinc-400" />
-              <input
-                type="text"
-                placeholder="Search attendees..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 pr-3 py-1.5 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00b887] text-zinc-900"
-              />
-            </div>
-
-            <div className="flex items-center bg-zinc-100 p-1 rounded-xl text-xs font-semibold text-zinc-600">
-              <button
-                onClick={() => setAttendeeFilter("all")}
-                className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                  attendeeFilter === "all" ? "bg-[#00b887] text-white font-bold" : "hover:text-zinc-900"
-                }`}
-              >
-                All ({attendees.length})
-              </button>
-              <button
-                onClick={() => setAttendeeFilter("checked_in")}
-                className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                  attendeeFilter === "checked_in" ? "bg-[#00b887] text-white font-bold" : "hover:text-zinc-900"
-                }`}
-              >
-                Checked In
-              </button>
-              <button
-                onClick={() => setAttendeeFilter("pending")}
-                className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                  attendeeFilter === "pending" ? "bg-[#00b887] text-white font-bold" : "hover:text-zinc-900"
-                }`}
-              >
-                Pending
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-zinc-200 text-zinc-400 font-mono text-[11px] uppercase tracking-wider">
-                <th className="py-3 px-3">ID</th>
-                <th className="py-3 px-3">Attendee</th>
-                <th className="py-3 px-3">Role</th>
-                <th className="py-3 px-3">Location</th>
-                <th className="py-3 px-3">Status</th>
-                <th className="py-3 px-3">Check-in Time</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100 font-medium">
-              {filteredAttendees.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-8 text-center text-zinc-400">
-                    No attendees match the criteria.
-                  </td>
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-zinc-200 text-zinc-400 font-mono text-[11px] uppercase tracking-wider">
+                  <th className="py-3 px-3">ID</th>
+                  <th className="py-3 px-3">Attendee</th>
+                  <th className="py-3 px-3">Role</th>
+                  <th className="py-3 px-3">Location</th>
+                  <th className="py-3 px-3">Status</th>
+                  <th className="py-3 px-3">Check-in Time</th>
                 </tr>
-              ) : (
-                filteredAttendees.slice(0, 15).map((att) => (
-                  <tr key={att.id} className="hover:bg-zinc-50/80 transition-colors">
-                    <td className="py-3 px-3 font-mono text-zinc-500">{att.id}</td>
-                    <td className="py-3 px-3">
-                      <div className="font-bold text-zinc-900">{att.name}</div>
-                      <div className="text-zinc-400 text-[11px]">{att.email}</div>
-                    </td>
-                    <td className="py-3 px-3 text-zinc-600">{att.role}</td>
-                    <td className="py-3 px-3 text-zinc-600">{att.location}</td>
-                    <td className="py-3 px-3">
-                      {att.checkedIn ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-200">
-                          <CheckCircle2 className="w-3 h-3 text-[#00b887]" />
-                          <span>Checked In</span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-zinc-100 text-zinc-600 text-[10px] font-medium border border-zinc-200">
-                          <span>Pending</span>
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-3 px-3 font-mono text-zinc-500">
-                      {att.checkInTime}
+              </thead>
+              <tbody className="divide-y divide-zinc-100 font-medium">
+                {filteredAttendees.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-zinc-400">
+                      No attendees match the criteria.
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  filteredAttendees.slice(0, 15).map((att) => (
+                    <tr key={att.id} className="hover:bg-zinc-50/80 transition-colors">
+                      <td className="py-3 px-3 font-mono text-zinc-500">{att.id}</td>
+                      <td className="py-3 px-3">
+                        <div className="font-bold text-zinc-900">{att.name}</div>
+                        <div className="text-zinc-400 text-[11px]">{att.email}</div>
+                      </td>
+                      <td className="py-3 px-3 text-zinc-600">{att.role}</td>
+                      <td className="py-3 px-3 text-zinc-600">{att.location}</td>
+                      <td className="py-3 px-3">
+                        {att.checkedIn ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-200">
+                            <CheckCircle2 className="w-3 h-3 text-[#00b887]" />
+                            <span>Checked In</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-zinc-100 text-zinc-600 text-[10px] font-medium border border-zinc-200">
+                            <span>Pending</span>
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 px-3 font-mono text-zinc-500">
+                        {att.checkInTime}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      </ErrorBoundary>
     </div>
   );
 }
