@@ -1,13 +1,19 @@
 "use client";
 
 import React from "react";
-import { UserCheck, Users, UserX, Award, CheckCircle } from "lucide-react";
+import { UserCheck, Users, UserX, CheckCircle } from "lucide-react";
 
 export default function AttendanceGauge({
   totalRegistered = 0,
   checkedIn = 0,
   attendanceRate = 0,
+  simulateCrash = false, // Pass simulateCrash={true} to test ErrorBoundary
 }) {
+  // Manual error trigger for testing Error Boundary isolation (#14355)
+  if (simulateCrash) {
+    throw new Error("AttendanceGauge component intentional test crash.");
+  }
+
   const radius = 64;
   const strokeWidth = 12;
   const circumference = 2 * Math.PI * radius;
