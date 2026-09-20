@@ -2,15 +2,15 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { 
-  Search, 
-  Calendar, 
-  MapPin, 
-  Users, 
-  Filter, 
-  RefreshCw, 
-  Sparkles, 
-  ArrowRight, 
+import {
+  Search,
+  Calendar,
+  MapPin,
+  Users,
+  Filter,
+  RefreshCw,
+  Sparkles,
+  ArrowRight,
   PlusCircle,
   History,
   Trash2,
@@ -56,14 +56,14 @@ function clearStoredRecentSearches() {
   if (typeof window !== "undefined") {
     try {
       localStorage.removeItem(SEARCH_HISTORY_KEY);
-    } catch (e) {}
+    } catch (e) { }
   }
 }
 function fmtFeatured(v) {
   if (!v) return "Date TBD";
   const d = new Date(v);
-  return isNaN(d.getTime()) 
-    ? "Date TBD" 
+  return isNaN(d.getTime())
+    ? "Date TBD"
     : d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 export default function EventsPage() {
@@ -131,7 +131,7 @@ export default function EventsPage() {
       const filtered = recentSearches.filter((t) => t !== termToRemove);
       try {
         localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(filtered));
-      } catch (err) {}
+      } catch (err) { }
       setRecentSearches(filtered);
     }
   };
@@ -144,8 +144,8 @@ export default function EventsPage() {
 
     const matchesFormat =
       selectedFormat === "all" ||
-      (e.title || "").toLowerCase().includes(selectedFormat.toLowerCase()) ||
-      (e.description || "").toLowerCase().includes(selectedFormat.toLowerCase());
+      (e.format || e.type || "").toLowerCase() === selectedFormat.toLowerCase() ||
+      (e.format || e.type || "").toLowerCase().includes(selectedFormat.toLowerCase());
 
     const matchesLocation =
       selectedLocation === "all" ||
@@ -207,7 +207,7 @@ export default function EventsPage() {
                     <Sparkles className="w-3.5 h-3.5 text-[#00b887]" />
                     <span>Spotlight Event</span>
                   </span>
-                 <span className="text-xs font-mono text-zinc-500">
+                  <span className="text-xs font-mono text-zinc-500">
                     {fmtFeatured(featuredEvent.eventDate)}
                   </span>
                 </div>
