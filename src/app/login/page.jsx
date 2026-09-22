@@ -29,11 +29,20 @@ function LoginForm() {
     setErrorMsg("");
 
     try {
-      await loginUser({
+      const data = await loginUser({
         usernameOrEmail: email,
         password: password
       });
+
+      if (!data?.token) {
+        setErrorMsg(
+          "Login succeeded but no session was created. Please verify your account or contact support."
+        );
+        return;
+      }
+
       setSuccess(true);
+
       setTimeout(() => {
         router.push("/dashboard");
       }, 800);
@@ -124,7 +133,7 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen bg-[#f4fbf7] text-zinc-900 font-sans flex items-center justify-center p-4 py-16">
       <div className="w-full max-w-md bg-white border border-emerald-900/10 rounded-3xl p-8 shadow-xl space-y-6">
-        
+
         <div className="text-center space-y-3">
           <Link href="/" className="inline-flex items-center gap-2.5 group">
             <div className="w-10 h-10 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center p-1 group-hover:scale-105 transition-transform">
