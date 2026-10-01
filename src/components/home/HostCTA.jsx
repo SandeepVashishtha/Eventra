@@ -62,7 +62,7 @@ export default function HostCTA() {
             {isSubmitted ? (
               <div className="p-4 rounded-xl bg-neutral-800 border border-neutral-700 text-xs text-neutral-200 flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span>You're subscribed! Keep an eye on your inbox for the weekly roundup.</span>
+                <span>You&apos;re subscribed! Keep an eye on your inbox for the weekly roundup.</span>
               </div>
             ) : (
               <form onSubmit={handleSubscribe} className="pt-2 flex gap-2">
