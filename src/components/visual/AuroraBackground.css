@@ -1,0 +1,55 @@
+.aurora-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(34, 197, 94, 0.24), transparent 32%),
+    radial-gradient(circle at 78% 12%, rgba(56, 189, 248, 0.26), transparent 34%),
+    linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.88));
+}
+
+.aurora-layer {
+  position: absolute;
+  inset: -25%;
+  border-radius: 9999px;
+  filter: blur(44px);
+  opacity: 0.62;
+  transform: translate3d(0, 0, 0);
+  animation: aurora-drift 18s ease-in-out infinite alternate;
+}
+
+.aurora-layer.layer-1 {
+  background: rgba(20, 184, 166, 0.42);
+  transform-origin: 30% 40%;
+}
+
+.aurora-layer.layer-2 {
+  background: rgba(99, 102, 241, 0.34);
+  animation-duration: 22s;
+  animation-delay: -6s;
+  transform-origin: 70% 20%;
+}
+
+.aurora-layer.layer-3 {
+  background: rgba(244, 114, 182, 0.26);
+  animation-duration: 26s;
+  animation-delay: -12s;
+  transform-origin: 50% 80%;
+}
+
+@keyframes aurora-drift {
+  from {
+    transform: translate3d(-8%, -4%, 0) rotate(0deg) scale(1);
+  }
+
+  to {
+    transform: translate3d(8%, 6%, 0) rotate(16deg) scale(1.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora-layer {
+    animation: none;
+  }
+}
