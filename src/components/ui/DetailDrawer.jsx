@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { formatEventDate } from "@/lib/dateUtils";
 import { 
   X, 
   MapPin, 
@@ -41,27 +42,29 @@ export default function DetailDrawer({ isOpen, onClose, type, data }) {
       ? `/hackathons/${data.id}`
       : `/projects/${data.id}`;
 
-  const formattedDate = data.eventDate
-    ? new Date(data.eventDate).toLocaleDateString(undefined, {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-        year: "numeric"
-      })
-    : data.startDate
-    ? new Date(data.startDate).toLocaleDateString(undefined, {
-        month: "short",
-        day: "numeric"
-      })
-    : "";
+  const formattedDate = (data.eventDate || data.startDate)
+  ? formatEventDate(data.eventDate || data.startDate, {
+      ...(data.eventDate
+        ? {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+            year: "numeric"
+          }
+        : {
+            month: "short",
+            day: "numeric"
+          })
+    })
+  : "";
 
-  const formattedEnd = data.endDate
-    ? new Date(data.endDate).toLocaleDateString(undefined, {
-        month: "short",
-        day: "numeric",
-        year: "numeric"
-      })
-    : "";
+const formattedEnd = data.endDate
+  ? formatEventDate(data.endDate, {
+      month: "short",
+      day: "numeric",
+      year: "numeric"
+    })
+  : "";
 
   const handleAction = async () => {
     setActionLoading(true);

@@ -4,17 +4,19 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Bookmark, ArrowUpRight } from "lucide-react";
 import { useDrawer } from "@/context/DrawerContext";
+import { formatEventDate } from "@/lib/dateUtils";
+
 
 export default function HackathonCard({ hackathon, onClick }) {
   const { openDrawer } = useDrawer();
   const [isBookmarked, setIsBookmarked] = useState(false);
 
   const formattedStart = hackathon?.startDate
-    ? new Date(hackathon.startDate).toLocaleDateString(undefined, {
-        month: "short",
-        day: "numeric"
-      })
-    : "TBD";
+  ? formatEventDate(hackathon.startDate, {
+      month: "short",
+      day: "numeric"
+    })
+  : "TBD";
 
   const imageUrl =
     hackathon?.imageUrl ||

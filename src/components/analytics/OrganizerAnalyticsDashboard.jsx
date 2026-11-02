@@ -27,6 +27,7 @@ import CapacityUtilizationCard from "./CapacityUtilizationCard";
 import GeographicBreakdown from "./GeographicBreakdown";
 import { CardSkeleton } from "@/components/ui/Skeleton";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
+import { formatEventDate } from "@/lib/dateUtils";
 
 export default function OrganizerAnalyticsDashboard({ eventId, initialEvent = null, isEmbedded = false }) {
   const [analytics, setAnalytics] = useState(null);
@@ -164,12 +165,12 @@ export default function OrganizerAnalyticsDashboard({ eventId, initialEvent = nu
                 <Calendar className="w-3.5 h-3.5 text-emerald-600" />
                 <span>
                   {eventDetails?.eventDate
-                    ? new Date(eventDetails.eventDate).toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })
-                    : "Upcoming Event"}
+                    ? formatEventDate(eventDetails.eventDate, {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric"
+                  })
+                  : "Upcoming Event"}
                 </span>
               </span>
               <span>•</span>

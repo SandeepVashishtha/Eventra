@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { formatEventDate } from "@/lib/dateUtils";
 import { 
   Trophy, 
   MapPin, 
@@ -114,20 +115,20 @@ export default function HackathonDetailPage() {
   }
 
   const formattedStart = hackathon.startDate
-    ? new Date(hackathon.startDate).toLocaleDateString(undefined, {
-        month: "short",
-        day: "numeric",
-        year: "numeric"
-      })
-    : "TBD";
+  ? formatEventDate(hackathon.startDate, {
+      month: "short",
+      day: "numeric",
+      year: "numeric"
+    })
+  : "TBD";
 
-  const formattedEnd = hackathon.endDate
-    ? new Date(hackathon.endDate).toLocaleDateString(undefined, {
-        month: "short",
-        day: "numeric",
-        year: "numeric"
-      })
-    : "TBD";
+const formattedEnd = hackathon.endDate
+  ? formatEventDate(hackathon.endDate, {
+      month: "short",
+      day: "numeric",
+      year: "numeric"
+    })
+  : "TBD";
 
   return (
     <main className="min-h-screen bg-[#f4fbf7] text-zinc-900 font-sans py-12">
