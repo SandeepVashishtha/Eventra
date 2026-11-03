@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { getEventById, registerForEvent } from "@/lib/api";
 import { CardSkeleton } from "@/components/ui/Skeleton";
+import { formatEventDate, formatEventTime } from "@/lib/dateUtils";
 
 export default function EventDetailPage() {
   const params = useParams();
@@ -88,21 +89,14 @@ export default function EventDetailPage() {
     );
   }
 
-  const formattedDate = event.eventDate
-    ? new Date(event.eventDate).toLocaleDateString(undefined, {
-        weekday: "long",
-        month: "long",
-        day: "numeric",
-        year: "numeric"
-      })
-    : "Date TBD";
+  const formattedDate = formatEventDate(event.eventDate, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric"
+  });
 
-  const formattedTime = event.eventDate
-    ? new Date(event.eventDate).toLocaleTimeString(undefined, {
-        hour: "2-digit",
-        minute: "2-digit"
-      })
-    : "6:00 PM UTC";
+  const formattedTime = formatEventTime(event.eventDate);
 
   const capacity = event.capacity || 250;
   const registeredCount = event.registeredCount || 184;

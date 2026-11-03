@@ -4,18 +4,17 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Bookmark, ArrowUpRight, Calendar, MapPin } from "lucide-react";
 import { useDrawer } from "@/context/DrawerContext";
+import { formatEventDate } from "@/lib/dateUtils";
 
 export default function EventCard({ event, onClick }) {
   const { openDrawer } = useDrawer();
   const [isBookmarked, setIsBookmarked] = useState(false);
 
-  const formattedDate = event?.eventDate
-    ? new Date(event.eventDate).toLocaleDateString(undefined, {
-        month: "short",
-        day: "numeric",
-        year: "numeric"
-      })
-    : "Date TBD";
+  const formattedDate = formatEventDate(event?.eventDate, {
+    month: "short",
+    day: "numeric",
+    year: "numeric"
+  });
 
   const imageUrl =
     event?.imageUrl ||

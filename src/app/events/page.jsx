@@ -21,6 +21,7 @@ import { getEvents } from "@/lib/api";
 import EventCard from "@/components/ui/EventCard";
 import DetailDrawer from "@/components/ui/DetailDrawer";
 import { CardSkeleton } from "@/components/ui/Skeleton";
+import { formatEventDate } from "@/lib/dateUtils";
 
 const SEARCH_HISTORY_KEY = "eventra_recent_searches";
 
@@ -59,12 +60,12 @@ function clearStoredRecentSearches() {
     } catch (e) { }
   }
 }
-function fmtFeatured(v) {
-  if (!v) return "Date TBD";
-  const d = new Date(v);
-  return isNaN(d.getTime())
-    ? "Date TBD"
-    : d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+function fmtFeatured(value) {
+  return formatEventDate(value, {
+    month: "short",
+    day: "numeric",
+    year: "numeric"
+  });
 }
 export default function EventsPage() {
   const [events, setEvents] = useState([]);
