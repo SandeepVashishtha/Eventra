@@ -370,6 +370,7 @@ export function exportEventRegistrationsCSV(analyticsData, eventTitle = "event")
   }
 
   const headers = ["Registration ID", "Name", "Email", "Role", "Location", "Registration Date", "Checked In", "Check-in Time"];
+
   const rows = analyticsData.attendees.map((attendee) => [
     attendee.id,
     `"${attendee.name.replace(/"/g, '""')}"`,
@@ -384,12 +385,29 @@ export function exportEventRegistrationsCSV(analyticsData, eventTitle = "event")
   const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  const sanitizedTitle = eventTitle.toLowerCase().replace(/[^a-z0-9]/g, "-");
-  link.setAttribute("href", url);
-  link.setAttribute("download", `registrations-${sanitizedTitle}-${new Date().toISOString().split("T")[0]}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
+  let link;
 
+  try {
+    const sanitizedTitle = String(eventTitle ?? "event")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "event";
+
+    link = document.createElement("a");
+
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `registrations-${sanitizedTitle}-${new Date().toISOString().split("T")[0]}.csv`
+    );
+
+    document.body.appendChild(link);
+    link.click();
+  } finally {
+    try {
+      link?.remove();
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+}
