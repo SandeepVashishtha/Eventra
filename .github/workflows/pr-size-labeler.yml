@@ -1,0 +1,65 @@
+name: PR Size Labeler
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  label:
+    name: Auto Label PR Size
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Calculate PR Size
+        id: size
+        run: |
+          # Fetch the target branch to compare
+          git fetch origin ${{ github.event.pull_request.base.ref }}
+          
+          # Calculate line changes (additions + deletions) excluding package-lock.json and mock assets
+          CHANGES=$(git diff --numstat origin/${{ github.event.pull_request.base.ref }}...HEAD | \
+            grep -v 'package-lock.json' | \
+            grep -v 'Mock' | \
+            awk '{add += $1; del += $2} END {print add + del}')
+          
+          # Default to 0 if no changes
+          if [ -z "$CHANGES" ]; then CHANGES=0; fi
+          echo "Total line changes: $CHANGES"
+          echo "changes=$CHANGES" >> $GITHUB_OUTPUT
+
+      - name: Apply Label based on Size
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CHANGES: ${{ steps.size.outputs.changes }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          LABEL="size/XS"
+          if [ "$CHANGES" -gt 500 ]; then
+            LABEL="size/XL"
+          elif [ "$CHANGES" -gt 200 ]; then
+            LABEL="size/L"
+          elif [ "$CHANGES" -gt 50 ]; then
+            LABEL="size/M"
+          elif [ "$CHANGES" -gt 10 ]; then
+            LABEL="size/S"
+          fi
+          
+          echo "Assigning label: $LABEL"
+          
+          # First, clean up any old size labels to prevent duplicates on update
+          ALL_LABELS=("size/XS" "size/S" "size/M" "size/L" "size/XL")
+          for L in "${ALL_LABELS[@]}"; do
+            if [ "$L" != "$LABEL" ]; then
+              gh pr edit "$PR_URL" --remove-label "$L" || true
+            fi
+          done
+          
+          # Add the correct size label
+          gh pr edit "$PR_URL" --add-label "$LABEL"
