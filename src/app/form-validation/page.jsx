@@ -2,97 +2,98 @@
 
 import DynamicFormValidator from "@/components/ui/DynamicFormValidator";
 
-export default function FormValidationDemoPage() {
+export default function HackathonRegisterPage() {
   function handleSuccess(sanitizedData) {
-    console.log("[Eventra] Validated payload:", sanitizedData);
-    // In a real flow: forward sanitizedData to the registration endpoint
-    // e.g. await registerForHackathon({ ...sanitizedData });
+    // Forward to real registration endpoint
+    console.log("[Eventra] Registration payload:", sanitizedData);
   }
 
   return (
-    <main className="min-h-screen bg-[#fafafa] py-16 px-4">
-      <div className="max-w-2xl mx-auto space-y-10">
-        {/* Page heading */}
-        <div className="text-center space-y-2">
-          <span className="inline-block text-xs font-semibold tracking-widest uppercase text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">
-            Issue #18853
-          </span>
-          <h1 className="text-3xl font-bold text-neutral-900">
-            Dynamic Form Field Template Validation
-          </h1>
-          <p className="text-neutral-500 text-sm max-w-lg mx-auto">
-            Submissions are validated server-side via{" "}
-            <code className="bg-neutral-100 px-1.5 py-0.5 rounded text-indigo-700 text-xs">
-              POST /api/forms/validate
-            </code>
-            . String inputs are sanitized to strip XSS payloads before
-            validation runs.
-          </p>
-        </div>
+    <main className="min-h-screen bg-[#fafafa] text-neutral-900 font-sans">
 
-        {/* Form */}
-        <DynamicFormValidator
-          title="Hackathon Registration"
-          description="Register your team for the Eventra Hackathon. All fields are validated and sanitized."
-          onSuccess={handleSuccess}
-        />
-
-        {/* How it works card */}
-        <div className="rounded-2xl border border-neutral-200 bg-white p-6 space-y-4">
-          <h2 className="font-semibold text-neutral-800">How it works</h2>
-          <ol className="list-decimal list-inside space-y-2 text-sm text-neutral-600">
-            <li>
-              The <strong>field template</strong> (array of descriptors) is
-              converted to a JSON Schema on the client side.
-            </li>
-            <li>
-              On submit,{" "}
-              <code className="bg-neutral-100 px-1 py-0.5 rounded text-xs">
-                POST /api/forms/validate
-              </code>{" "}
-              receives <code className="bg-neutral-100 px-1 py-0.5 rounded text-xs">{"{ schema, formData }"}</code>.
-            </li>
-            <li>
-              The server <strong>sanitizes</strong> all string values (strips
-              HTML / script tags, removes javascript: URIs).
-            </li>
-            <li>
-              The schema validator checks <strong>type, required,
-              minLength, maxLength, minimum, maximum, pattern,
-              format, enum</strong>.
-            </li>
-            <li>
-              Errors are returned as a field-keyed map (HTTP 422) or a success
-              payload with <code className="bg-neutral-100 px-1 py-0.5 rounded text-xs">sanitizedData</code> (HTTP 200).
-            </li>
-          </ol>
-
-          {/* Example curl snippet */}
-          <div className="mt-2">
-            <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-1">
-              Test with curl
+      {/* Page header — matches existing Eventra editorial style */}
+      <section className="border-b border-neutral-200/80 py-10 sm:py-14">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-2xl space-y-3">
+            <div className="inline-flex items-center gap-2 text-xs font-mono text-neutral-500 uppercase tracking-widest">
+              <span className="w-2 h-2 rounded-full bg-neutral-900"></span>
+              <span>Hackathons · Registration</span>
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-medium tracking-tight text-neutral-950 leading-tight">
+              Register for a Hackathon
+            </h1>
+            <p className="text-base text-neutral-500 leading-relaxed">
+              Fill in your team details below. All fields are reviewed before your registration is confirmed.
             </p>
-            <pre className="text-xs bg-neutral-900 text-green-400 rounded-lg p-4 overflow-x-auto whitespace-pre-wrap">
-{`curl -X POST http://localhost:3000/api/forms/validate \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "schema": {
-      "type": "object",
-      "required": ["teamName", "githubHandle"],
-      "properties": {
-        "teamName":    { "type": "string", "minLength": 3 },
-        "githubHandle":{ "type": "string", "pattern": "^[a-zA-Z0-9-]+$" }
-      }
-    },
-    "formData": {
-      "teamName": "CodeBuilders <script>alert(1)</script>",
-      "githubHandle": "rajatsingh535"
-    }
-  }'`}
-            </pre>
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* Form section */}
+      <section className="py-10 sm:py-14">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-16 items-start">
+
+            {/* Left: form */}
+            <div className="lg:col-span-2">
+              <DynamicFormValidator
+                title="Team Registration"
+                description="Complete all required fields to secure your spot. You can register as a solo participant or as a team of up to 4."
+                onSuccess={handleSuccess}
+              />
+            </div>
+
+            {/* Right: sidebar info — matches existing Eventra card style */}
+            <div className="space-y-6">
+
+              <div className="rounded-2xl border border-neutral-200 bg-white p-6 space-y-4">
+                <h2 className="text-sm font-semibold text-neutral-800 uppercase tracking-wide font-mono">
+                  Registration Info
+                </h2>
+                <ul className="space-y-3 text-sm text-neutral-600">
+                  <li className="flex items-start gap-2.5">
+                    <span className="mt-0.5 w-1.5 h-1.5 rounded-full bg-neutral-400 flex-shrink-0"></span>
+                    Teams of 1–4 members are accepted.
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <span className="mt-0.5 w-1.5 h-1.5 rounded-full bg-neutral-400 flex-shrink-0"></span>
+                    GitHub handle must contain only letters, numbers, and hyphens.
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <span className="mt-0.5 w-1.5 h-1.5 rounded-full bg-neutral-400 flex-shrink-0"></span>
+                    Choose a track that best matches your project idea.
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <span className="mt-0.5 w-1.5 h-1.5 rounded-full bg-neutral-400 flex-shrink-0"></span>
+                    You will receive a confirmation email within 24 hours.
+                  </li>
+                </ul>
+              </div>
+
+              <div className="rounded-2xl border border-neutral-200 bg-white p-6 space-y-3">
+                <h2 className="text-sm font-semibold text-neutral-800 uppercase tracking-wide font-mono">
+                  Tracks Available
+                </h2>
+                <ul className="space-y-2 text-sm text-neutral-600">
+                  {[
+                    ["AI / ML", "Machine learning, LLMs, generative AI"],
+                    ["Web3 / Blockchain", "DeFi, NFTs, smart contracts"],
+                    ["Open Innovation", "Any problem you choose to solve"],
+                    ["Social Impact", "Education, health, sustainability"],
+                  ].map(([track, desc]) => (
+                    <li key={track} className="flex flex-col gap-0.5">
+                      <span className="font-medium text-neutral-800">{track}</span>
+                      <span className="text-xs text-neutral-400">{desc}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </section>
+
     </main>
   );
 }

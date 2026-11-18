@@ -237,11 +237,11 @@ function StatusBanner({ result }) {
   if (result.valid) {
     return (
       <div className="rounded-lg bg-green-50 border border-green-200 p-4 flex items-start gap-3">
-        <span className="text-green-500 text-lg">✓</span>
+        <span className="text-green-600 text-base">✓</span>
         <div>
-          <p className="font-semibold text-green-700 text-sm">Form submitted successfully!</p>
+          <p className="font-semibold text-green-700 text-sm">Registration submitted!</p>
           <p className="text-xs text-green-600 mt-0.5">
-            All fields passed validation. Sanitized data was sent to the server.
+            Your details have been received. We&apos;ll send a confirmation to your email shortly.
           </p>
         </div>
       </div>
@@ -251,13 +251,13 @@ function StatusBanner({ result }) {
   const errorCount = Object.values(result.errors ?? {}).flat().length;
   return (
     <div className="rounded-lg bg-red-50 border border-red-200 p-4 flex items-start gap-3">
-      <span className="text-red-500 text-lg">✕</span>
+      <span className="text-red-500 text-base">✕</span>
       <div>
         <p className="font-semibold text-red-700 text-sm">
-          {errorCount} validation error{errorCount !== 1 ? "s" : ""} found
+          Please fix {errorCount} error{errorCount !== 1 ? "s" : ""} before submitting
         </p>
-        <p className="text-xs text-red-600 mt-0.5">
-          Please fix the highlighted fields and try again.
+        <p className="text-xs text-red-500 mt-0.5">
+          Check the highlighted fields below.
         </p>
       </div>
     </div>
@@ -346,10 +346,10 @@ export default function DynamicFormValidator({
   return (
     <div className="max-w-xl mx-auto bg-white rounded-2xl shadow-sm border border-neutral-200 overflow-hidden">
       {/* Header */}
-      <div className="px-6 py-5 border-b border-neutral-100 bg-gradient-to-r from-indigo-50 to-white">
-        <h2 className="text-lg font-semibold text-neutral-900">{title}</h2>
+      <div className="px-6 py-5 border-b border-neutral-100">
+        <h2 className="text-base font-semibold text-neutral-900">{title}</h2>
         {description && (
-          <p className="text-sm text-neutral-500 mt-0.5">{description}</p>
+          <p className="text-sm text-neutral-500 mt-0.5 leading-relaxed">{description}</p>
         )}
       </div>
 
@@ -372,27 +372,15 @@ export default function DynamicFormValidator({
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.4 0 0 5.4 0 12h4z" />
               </svg>
-              Validating…
+              Submitting…
             </span>
           ) : (
-            "Submit & Validate"
+            "Register Team"
           )}
         </button>
       </form>
 
-      {/* Debug: show sanitized data on success */}
-      {result?.valid && result.sanitizedData && (
-        <div className="px-6 pb-5">
-          <details className="text-xs text-neutral-500 mt-2">
-            <summary className="cursor-pointer select-none font-medium text-neutral-600">
-              Sanitized payload (debug)
-            </summary>
-            <pre className="mt-2 p-3 bg-neutral-50 rounded-lg overflow-x-auto text-neutral-700 border border-neutral-200">
-              {JSON.stringify(result.sanitizedData, null, 2)}
-            </pre>
-          </details>
-        </div>
-      )}
+
     </div>
   );
 }
